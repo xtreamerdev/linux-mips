@@ -588,7 +588,7 @@ ioc3_rx(struct ioc3_private *ip)
 			ip->stats.rx_frame_errors++;
 next:
 		ip->rx_skbs[n_entry] = new_skb;
-		rxr[n_entry] = cpu_to_be32((0xa5UL << 56) |
+		rxr[n_entry] = cpu_to_be64((0xa5UL << 56) |
 		                         ((unsigned long) rxb & TO_PHYS_MASK));
 		rxb->w0 = 0;				/* Clear valid flag */
 		n_entry = (n_entry + 1) & 511;		/* Update erpir */
