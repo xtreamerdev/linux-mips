@@ -462,11 +462,13 @@ if [ "$CONFIG_MOMENCO_OCELOT" = "y" ]; then
    define_bool CONFIG_OLD_TIME_C y
 fi
 if [ "$CONFIG_MOMENCO_OCELOT_G" = "y" ]; then
+   define_bool CONFIG_IRQ_CPU y
+   define_bool CONFIG_IRQ_CPU_RM7K y
+   define_bool CONFIG_NONCOHERENT_IO y
+   define_bool CONFIG_OLD_TIME_C y
    define_bool CONFIG_SYSCLK_100 y
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
-   define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_OLD_TIME_C y
 fi
 if [ "$CONFIG_MOMENCO_OCELOT_C" = "y" ]; then
    define_bool CONFIG_SWAP_IO_SPACE y
