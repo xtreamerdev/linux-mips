@@ -471,6 +471,7 @@ CONFIG_UNIX98_PTY_COUNT=256
 # CONFIG_AMD_PM768 is not set
 # CONFIG_NVRAM is not set
 CONFIG_RTC=y
+# CONFIG_MIPS_RTC is not set
 # CONFIG_DTLK is not set
 # CONFIG_R3964 is not set
 # CONFIG_APPLICOM is not set
