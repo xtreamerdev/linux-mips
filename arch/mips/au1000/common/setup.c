@@ -52,6 +52,7 @@ extern void * __rd_start, * __rd_end;
 #endif
 
 #ifdef CONFIG_BLK_DEV_IDE
+extern struct ide_ops no_ide_ops;
 extern struct ide_ops std_ide_ops;
 extern struct ide_ops *ide_ops;
 #endif
@@ -185,7 +186,7 @@ void __init au1x00_setup(void)
 #ifdef CONFIG_BLK_DEV_IDE
 	/* Board setup takes precedence for unique devices.
 	*/
-	if (ide_ops == NULL)
+	if ((ide_ops == NULL) || (ide_ops == &no_ide_ops))
 		ide_ops = &std_ide_ops;
 #endif
 
