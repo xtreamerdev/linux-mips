@@ -3,9 +3,8 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 1997, 1998, 2001 by Ralf Baechle
+ * Copyright (C) 1997, 1998, 2001, 2003 by Ralf Baechle
  */
-
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -62,23 +61,23 @@ static void sgi_machine_halt(void)
 
 static void sgi_machine_power_off(void)
 {
-	unsigned char val;
+	unsigned int tmp;
 
 	cli();
 
 	/* Disable watchdog */
-	val = CMOS_READ(RTC_CMD);
-	CMOS_WRITE(val | RTC_WAM, RTC_CMD);
-	CMOS_WRITE(0, RTC_WSEC);
-	CMOS_WRITE(0, RTC_WHSEC);
+	tmp = hpc3c0->rtcregs[RTC_CMD] & 0xff;
+	hpc3c0->rtcregs[RTC_CMD] = tmp | RTC_WAM;
+	hpc3c0->rtcregs[RTC_WSEC] = 0;
+	hpc3c0->rtcregs[RTC_WHSEC] = 0;
 
-	while(1) {
+	while (1) {
 		sgioc->panel = ~SGIOC_PANEL_POWERON;
 		/* Good bye cruel world ...  */
 
 		/* If we're still running, we probably got sent an alarm
 		   interrupt.  Read the flag to clear it.  */
-		val = CMOS_READ(RTC_HOURS_ALARM);
+		tmp = hpc3c0->rtcregs[RTC_HOURS_ALARM];
 	}
 }
 
