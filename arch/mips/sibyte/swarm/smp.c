@@ -38,10 +38,12 @@ extern void asmlinkage smp_bootstrap(void);
 int prom_boot_secondary(int cpu, unsigned long sp, unsigned long gp)
 {
 	int retval;
+
 	if ((retval = cfe_start_cpu(1, &smp_bootstrap, sp, gp, 0)) != 0) {
 		printk("cfe_start_cpu returned %i\n" , retval);
 		panic("secondary bootstrap failed");
 	}
+
 	return 1;
 }
 
@@ -147,5 +149,6 @@ void __init smp_boot_cpus(void)
 
 	/* Wait for everyone to come up */
 	while (atomic_read(&cpus_booted) != smp_num_cpus);
+
 	smp_threads_ready = 1;
 }
