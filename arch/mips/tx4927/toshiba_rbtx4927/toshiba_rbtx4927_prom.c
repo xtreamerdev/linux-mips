@@ -63,7 +63,7 @@ void __init prom_init(int argc, char **argv, char **envp, int *pvec)
 {
 	extern int tx4927_get_mem_size(void);
 	int msize;
-        const char* toshiba_name_list[] = GROUP_TOSHIBA_NAMES;
+        char* toshiba_name_list[] = GROUP_TOSHIBA_NAMES;
         extern char* toshiba_name;
 
 	prom_init_cmdline(argc, argv);

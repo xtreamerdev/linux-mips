@@ -689,6 +689,8 @@ int tx4927_irq_nested(void)
 
 #ifdef CONFIG_TOSHIBA_RBTX4927
 			{
+				extern int toshiba_rbtx4927_irq_nested(int sw_irq);
+
 				sw_irq = toshiba_rbtx4927_irq_nested(sw_irq);
 			}
 #endif

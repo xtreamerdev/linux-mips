@@ -355,10 +355,8 @@ static int early_##rw##_config_##size(struct pci_channel *hose,                \
 }
 
 EARLY_PCI_OP(read, byte, u8 *)
-EARLY_PCI_OP(read, word, u16 *)
 EARLY_PCI_OP(read, dword, u32 *)
 EARLY_PCI_OP(write, byte, u8)
-EARLY_PCI_OP(write, word, u16)
 EARLY_PCI_OP(write, dword, u32)
 
 static int __init tx4927_pcibios_init(int busno, struct pci_channel *hose)
@@ -388,7 +386,9 @@ static int __init tx4927_pcibios_init(int busno, struct pci_channel *hose)
 			u8 v08_64;
 			u32 v32_b0;
 			u8 v08_e1;
+#ifdef TOSHIBA_RBTX4927_SETUP_DEBUG
 			char *s = " sb/isa --";
+#endif
 
 			TOSHIBA_RBTX4927_SETUP_DPRINTK
 			    (TOSHIBA_RBTX4927_SETUP_PCIBIOS, ":%s beg\n",
@@ -473,7 +473,9 @@ static int __init tx4927_pcibios_init(int busno, struct pci_channel *hose)
 			u8 v08_41;
 			u8 v08_43;
 			u8 v08_5c;
+#ifdef TOSHIBA_RBTX4927_SETUP_DEBUG
 			char *s = " sb/ide --";
+#endif
 
 			TOSHIBA_RBTX4927_SETUP_DPRINTK
 			    (TOSHIBA_RBTX4927_SETUP_PCIBIOS, ":%s beg\n",
@@ -950,7 +952,7 @@ void __init toshiba_rbtx4927_setup(void)
 
 
 
-	mips_io_port_base = KSEG1 + TBTX4927_ISA_IO_OFFSET;
+	set_io_port_base(KSEG1 + TBTX4927_ISA_IO_OFFSET);
 	TOSHIBA_RBTX4927_SETUP_DPRINTK(TOSHIBA_RBTX4927_SETUP_SETUP,
 				       ":mips_io_port_base=0x%08lx\n",
 				       mips_io_port_base);
@@ -1147,8 +1149,10 @@ void __init toshiba_rbtx4927_setup(void)
 void __init
 toshiba_rbtx4927_time_init(void)
 {
+#ifdef CONFIG_RTC_DS1742
 	u32 c1;
 	u32 c2;
+#endif
 
 	TOSHIBA_RBTX4927_SETUP_DPRINTK(TOSHIBA_RBTX4927_SETUP_TIME_INIT, "-\n");
 

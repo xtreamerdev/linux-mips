@@ -485,6 +485,7 @@ void __init setup_arch(char **cmdline_p)
 	void casio_e55_setup(void);
 	void tanbac_tb0226_setup(void);
 	void jmr3927_setup(void);
+	void tx4927_setup(void);
  	void it8172_setup(void);
 	void swarm_setup(void);
 	void hp_setup(void);

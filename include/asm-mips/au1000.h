@@ -35,6 +35,8 @@
 #ifndef _AU1000_H_
 #define _AU1000_H_
 
+#ifndef _LANGUAGE_ASSEMBLY
+
 #include <linux/delay.h>
 #include <asm/io.h>
 
@@ -134,6 +136,22 @@ extern void set_au1x00_uart_baud_base(unsigned long new_baud_base);
 extern unsigned long get_au1x00_uart_baud_base(void);
 extern void set_au1x00_lcd_clock(void);
 extern unsigned int get_au1x00_lcd_clock(void);
+
+/*
+ * Every board describes its IRQ mapping with this table.
+ */
+typedef struct au1xxx_irqmap {
+	int	im_irq;
+	int	im_type;
+	int	im_request;
+} au1xxx_irq_map_t;
+
+/*
+ * init_IRQ looks for a table with this name.
+ */
+extern au1xxx_irq_map_t au1xxx_irq_map[];
+
+#endif /* !defined (_LANGUAGE_ASSEMBLY) */
 
 #ifdef CONFIG_PM
 /* no CP0 timer irq */
@@ -360,19 +378,6 @@ extern unsigned int get_au1x00_lcd_clock(void);
 #define AU1100_SD		2
 #define	AU1100_GPIO_208_215	29
 // REDEFINE SECONDARY GPIO BLOCK INTO IC1 CONTROLLER HERE
-
-/* Every board describes its IRQ mapping with this table.
-*/
-typedef struct au1xxx_irqmap {
-	int	im_irq;
-	int	im_type;
-	int	im_request;
-} au1xxx_irq_map_t;
-
-/* init_IRQ looks for a table with this name.
-*/
-extern au1xxx_irq_map_t au1xxx_irq_map[];
-
 
 /* Programmable Counters 0 and 1 */
 #define SYS_BASE                   0xB1900000
