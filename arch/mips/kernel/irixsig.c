@@ -682,6 +682,7 @@ repeat:
 			if (!(options & (W_TRAPPED|W_STOPPED)) &&
 			    !(p->ptrace & PT_PTRACED))
 				continue;
+			read_unlock(&tasklist_lock);
 			if (ru != NULL)
 				getrusage(p, RUSAGE_BOTH, ru);
 			__put_user(SIGCHLD, &info->sig);
@@ -697,6 +698,7 @@ repeat:
 		case TASK_ZOMBIE:
 			current->times.tms_cutime += p->times.tms_utime + p->times.tms_cutime;
 			current->times.tms_cstime += p->times.tms_stime + p->times.tms_cstime;
+			read_unlock(&tasklist_lock);
 			if (ru != NULL)
 				getrusage(p, RUSAGE_BOTH, ru);
 			__put_user(SIGCHLD, &info->sig);
