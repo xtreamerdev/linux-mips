@@ -115,7 +115,7 @@ dump_tlb_addr(unsigned long addr)
 	unsigned int flags, oldpid;
 	int index;
 
-	__save_and_cli(flags);
+	local_irq_save(flags);
 	oldpid = read_c0_entryhi() & 0xff;
 	BARRIER;
 	write_c0_entryhi((addr & PAGE_MASK) | oldpid);
@@ -124,7 +124,7 @@ dump_tlb_addr(unsigned long addr)
 	BARRIER;
 	index = read_c0_index();
 	write_c0_entryhi(oldpid);
-	__restore_flags(flags);
+	local_irq_restore(flags);
 
 	if (index < 0) {
 		printk("No entry for address 0x%08lx in TLB\n", addr);
