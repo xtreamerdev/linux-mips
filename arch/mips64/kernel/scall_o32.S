@@ -184,9 +184,13 @@ bad_stack:
 	j	ret_from_sys_call
 
 not_o32_scall:
-	/* This is not an 32-bit compatibility syscall, pass it on to
+	/* This is not an o32 compatibility syscall, pass it on to
 	   the 64-bit syscall handlers.  */
+#ifdef CONFIG_MIPS32_N32
+	j	handle_sysn32
+#else
 	j	handle_sys64
+#endif
 
 illegal_syscall:
 	/* This also isn't a 64-bit syscall, throw an error.  */
