@@ -48,26 +48,6 @@
 #include <asm/system.h>
 #include <asm/au1000.h>
 
-#if defined(CONFIG_MIPS_PB1000)
-#include <asm/pb1000.h>
-#elif defined(CONFIG_MIPS_PB1500)
-#include <asm/pb1500.h>
-#elif defined(CONFIG_MIPS_PB1100)
-#include <asm/pb1100.h>
-#elif defined(CONFIG_MIPS_DB1000)
-#include <asm/db1x00.h>
-#elif defined(CONFIG_MIPS_DB1100)
-#include <asm/db1x00.h>
-#elif defined(CONFIG_MIPS_DB1500)
-#include <asm/db1x00.h>
-#elif defined(CONFIG_MIPS_BOSPORUS)
-#include <asm/db1x00.h>
-#elif defined(CONFIG_MIPS_XXS1500)
-#include <asm/xxs1500.h>
-#else
-#error unsupported Alchemy board
-#endif
-
 #undef DEBUG_IRQ
 #ifdef DEBUG_IRQ
 /* note: prints function name for you */
