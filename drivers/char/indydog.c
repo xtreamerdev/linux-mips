@@ -20,8 +20,6 @@
 #include <linux/miscdevice.h>
 #include <linux/watchdog.h>
 #include <linux/init.h>
-#include <linux/moduleparam.h>
-#include <linux/smp_lock.h>
 #include <asm/uaccess.h>
 #include <asm/sgi/mc.h>
 
@@ -87,7 +85,6 @@ static int indydog_release(struct inode *inode, struct file *file)
 {
 	/* Shut off the timer.
 	 * Lock it in if it's a module and we defined ...NOWAYOUT */
-	lock_kernel();
 	if (!nowayout) {
 		u32 mc_ctrl0 = sgimc->cpuctrl0; 
 		mc_ctrl0 &= ~SGIMC_CCTRL0_WDOG;
@@ -95,8 +92,7 @@ static int indydog_release(struct inode *inode, struct file *file)
 		printk(KERN_INFO "Stopped watchdog timer.\n");
 	}
 	indydog_alive = 0;
-	unlock_kernel();
-	
+
 	return 0;
 }
 
