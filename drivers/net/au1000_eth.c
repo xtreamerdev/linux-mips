@@ -936,6 +936,12 @@ found:
 			}
 		}
 	}
+	if (aup->mac_id == 0) {
+		/* the Bosporus phy responds to addresses 0-5 but 
+		 * 5 is the correct one.
+		 */
+		aup->phy_addr = 5;
+	}
 #endif
 
 	if (aup->mii == NULL) {
