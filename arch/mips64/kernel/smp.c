@@ -45,7 +45,6 @@ int smp_threads_ready;	/* Not used */
 atomic_t smp_commenced = ATOMIC_INIT(0);
 struct cpuinfo_mips cpu_data[NR_CPUS];
 
-// static atomic_t cpus_booted = ATOMIC_INIT(0);
 atomic_t cpus_booted = ATOMIC_INIT(0);
 
 int smp_num_cpus = 1;			/* Number that came online.  */
