@@ -63,7 +63,7 @@ if [ "$CONFIG_NET_ETHERNET" = "y" ]; then
       bool '  MIPS GT96100 Ethernet support' CONFIG_MIPS_GT96100ETH
    fi
    if [ "$CONFIG_SOC_AU1X00" = "y" ]; then
-      bool '  MIPS Au1x00 Ethernet support' CONFIG_MIPS_AU1X00_ENET
+      tristate '  MIPS Au1x00 Ethernet support' CONFIG_MIPS_AU1X00_ENET
       if [ "$CONFIG_MIPS_AU1X00_ENET" = "y" ]; then
          bool '   Broadcom 5222 Dual Phy Support' CONFIG_BCM5222_DUAL_PHY
       fi
