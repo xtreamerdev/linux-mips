@@ -969,11 +969,6 @@ void __init trap_init(void)
 	set_except_vector(4, handle_adel);
 	set_except_vector(5, handle_ades);
 
-	/*
-	 * The Data Bus Error/ Instruction Bus Errors are signaled
-	 * by external hardware.  Therefore these two exceptions
-	 * may have board specific handlers.
-	 */
 	set_except_vector(6, handle_ibe);
 	set_except_vector(7, handle_dbe);
 
