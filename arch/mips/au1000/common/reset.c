@@ -37,8 +37,6 @@
 #include <asm/system.h>
 #include <asm/au1000.h>
 
-extern int au_sleep(void);
-
 void au1000_restart(char *command)
 {
 	/* Set all integrated peripherals to disabled states */
@@ -183,32 +181,23 @@ void au1000_restart(char *command)
 
 void au1000_halt(void)
 {
-#if defined(CONFIG_MIPS_PB1550)
-	/* power off system */
-	printk("\n** Powering off Pb1550\n");
-	au_writew(au_readw(0xAF00001C) | (3<<14), 0xAF00001C); 
-	au_sync();
-	while(1); /* should not get here */
-#endif
-	printk(KERN_NOTICE "\n** You can safely turn off the power\n");
-#ifdef CONFIG_MIPS_MIRAGE
-	au_writel((1 << 26) | (1 << 10), GPIO2_OUTPUT);
-#endif
-#ifdef CONFIG_PM
-	au_sleep();
-
-	/* should not get here */
-	printk(KERN_ERR "Unable to put cpu in sleep mode\n");
-	while(1);
-#else
-	while (1)
+	/* Use WAIT in a low-power infinite spin loop */
+	while (1) {
 		__asm__(".set\tmips3\n\t"
 	                "wait\n\t"
 			".set\tmips0");
-#endif
+	}
 }
 
 void au1000_power_off(void)
 {
+	extern void board_power_off (void);
+
+	printk(KERN_NOTICE "\n** You can safely turn off the power\n");
+
+	/* Give board a chance to power-off */
+	board_power_off();
+
+	/* If board can't power-off, spin forever */
 	au1000_halt();
 }

@@ -81,6 +81,11 @@ void board_reset (void)
 	bcsr->resets = 0;
 }
 
+void board_power_off (void)
+{
+	bcsr->resets = 0xC000;
+}
+
 void __init board_setup(void)
 {
 	char *argptr = NULL;

@@ -64,6 +64,15 @@ void board_reset (void)
 	au_writew(au_readw(0xAF00001C) & ~(1<<15), 0xAF00001C);
 }
 
+void board_power_off (void)
+{
+	/* power off system */
+	printk("\n** Powering off Pb1550\n");
+	au_writew(au_readw(0xAF00001C) | (3<<14), 0xAF00001C); 
+	au_sync();
+	while(1); /* should not get here */
+}
+
 void __init board_setup(void)
 {
 	u32 pin_func;

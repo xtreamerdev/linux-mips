@@ -69,6 +69,13 @@ void board_reset (void)
 	au_writel(0x00000000, 0xAE00001C);
 }
 
+void board_power_off (void)
+{
+#ifdef CONFIG_MIPS_MIRAGE
+	au_writel((1 << 26) | (1 << 10), GPIO2_OUTPUT);
+#endif
+}
+
 void __init board_setup(void)
 {
 	u32 pin_func;

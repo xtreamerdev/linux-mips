@@ -74,6 +74,10 @@ void board_reset (void)
 	au_writel(0, 0xAD80001C);
 }
 
+void board_power_off (void)
+{
+}
+
 void __init board_setup(void)
 {
 	char *argptr = NULL;
