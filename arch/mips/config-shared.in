@@ -1043,8 +1043,13 @@ bool 'Are you using a crosscompiler' CONFIG_CROSSCOMPILE
 bool 'Enable run-time debugging' CONFIG_RUNTIME_DEBUG
 bool 'Remote GDB kernel debugging' CONFIG_KGDB
 dep_bool '  Console output to GDB' CONFIG_GDB_CONSOLE $CONFIG_KGDB
+if [ "$CONFIG_KGDB" = "y" ]; then
+   define_bool CONFIG_DEBUG_INFO y
+else
+   bool 'Debugging symbols' CONFIG_DEBUG_INFO
+fi
 if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
-   bool 'Compile for Corelis Debugger' CONFIG_SB1XXX_CORELIS
+   dep_bool 'Compile for Corelis Debugger' CONFIG_SB1XXX_CORELIS $CONFIG_DEBUG_INFO
 fi
 bool 'Magic SysRq key' CONFIG_MAGIC_SYSRQ
 if [ "$CONFIG_SMP" != "y" ]; then
