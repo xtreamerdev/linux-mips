@@ -56,8 +56,6 @@
 
 #define TX_INTEN 1
 
-#define SB1250_DUART_MINOR_BASE	64
-
 #ifndef MIN
 #define MIN(a,b)	((a) < (b) ? (a) : (b))
 #endif

@@ -21,6 +21,8 @@
 
 #define SB1250_NR_IRQS 64
 
+#define SB1250_DUART_MINOR_BASE		64
+
 #ifndef __ASSEMBLY__
 
 #include <asm/addrspace.h>

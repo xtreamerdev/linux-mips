@@ -11,8 +11,6 @@
 extern int cfe_cons_handle;
 static kdev_t cfe_consdev;
 
-#define SB1250_DUART_MINOR_BASE		192
-
 static void cfe_console_write(struct console *cons, const char *str,
 		       unsigned int count)
 {
