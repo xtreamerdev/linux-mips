@@ -82,6 +82,9 @@ au1xxx_irq_map_t au1xxx_irq_map[] = {
 	{ AU1550_MAC0_DMA_INT,  INTC_INT_HIGH_LEVEL, 0},
 	{ AU1550_MAC1_DMA_INT,  INTC_INT_HIGH_LEVEL, 0},
 
+	{ AU1000_GPIO_0, INTC_INT_LOW_LEVEL, 0 },
+	{ AU1000_GPIO_1, INTC_INT_LOW_LEVEL, 0 },
+
 
 	/*
 	 *  Need to define platform dependant GPIO ints here
