@@ -479,6 +479,7 @@ void __init setup_arch(char **cmdline_p)
 	void momenco_ocelot_setup(void);
 	void momenco_ocelot_g_setup(void);
 	void momenco_ocelot_c_setup(void);
+	void momenco_jaguar_atx_setup(void);
 	void nino_setup(void);
 	void nec_osprey_setup(void);
 	void nec_eagle_setup(void);
@@ -551,6 +552,11 @@ void __init setup_arch(char **cmdline_p)
 #ifdef CONFIG_MOMENCO_OCELOT_C
 	case MACH_GROUP_MOMENCO:
 		momenco_ocelot_c_setup();
+		break;
+#endif
+#ifdef CONFIG_MOMENCO_JAGUAR_ATX
+	case MACH_GROUP_MOMENCO:
+		momenco_jaguar_atx_setup();
 		break;
 #endif
 #ifdef CONFIG_MIPS_SEAD

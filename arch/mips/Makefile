@@ -391,6 +391,16 @@ SUBDIRS		+= arch/mips/momentum/ocelot_c
 LOADADDR	:= 0x80100000
 endif
 
+ifdef CONFIG_MOMENCO_JAGUAR_ATX
+LIBS		+= arch/mips/momentum/jaguar_atx/jaguar_atx.o
+SUBDIRS		+= arch/mips/momentum/jaguar_atx
+ifdef CONFIG_JAGUAR_DMALOW
+LOADADDR	:= 0x88000000
+else
+LOADADDR	:= 0x80100000
+endif
+endif
+
 #
 # NEC DDB Vrc-5074
 #
