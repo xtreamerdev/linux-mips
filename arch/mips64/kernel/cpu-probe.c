@@ -274,7 +274,7 @@ static inline void check_daddi(void)
 	extern asmlinkage void handle_daddi_ov(void);
 	unsigned long flags;
 	void *handler;
-	long v;
+	long v, tmp;
 
 	printk("Checking for the daddi bug... ");
 
@@ -294,13 +294,15 @@ static inline void check_daddi(void)
 		".set	noat\n\t"
 		".set	noreorder\n\t"
 		".set	nomacro\n\t"
+		"addiu	%1, $0, %2\n\t"
+		"dsrl	%1, %1, 1\n\t"
 #ifdef HAVE_AS_SET_DADDI
 		".set	daddi\n\t"
 #endif
-		"daddi	%0, %1, %2\n\t"
+		"daddi	%0, %1, %3\n\t"
 		".set	pop"
-		: "=r" (v)
-		: "r" (0x7fffffffffffedcd), "I" (0x1234));
+		: "=r" (v), "=&r" (tmp)
+		: "I" (0xffffffffffffdb9a), "I" (0x1234));
 	set_except_vector(12, handler);
 	local_irq_restore(flags);
 
@@ -314,9 +316,11 @@ static inline void check_daddi(void)
 	local_irq_save(flags);
 	handler = set_except_vector(12, handle_daddi_ov);
 	asm volatile(
-		"daddi	%0, %1, %2"
-		: "=r" (v)
-		: "r" (0x7fffffffffffedcd), "I" (0x1234));
+		"addiu	%1, $0, %2\n\t"
+		"dsrl	%1, %1, 1\n\t"
+		"daddi	%0, %1, %3"
+		: "=r" (v), "=&r" (tmp)
+		: "I" (0xffffffffffffdb9a), "I" (0x1234));
 	set_except_vector(12, handler);
 	local_irq_restore(flags);
 
@@ -337,7 +341,7 @@ static inline void check_daddi(void)
 
 static inline void check_daddiu(void)
 {
-	long v, w;
+	long v, w, tmp;
 
 	printk("Checking for the daddiu bug... ");
 
@@ -362,15 +366,17 @@ static inline void check_daddiu(void)
 		".set	noat\n\t"
 		".set	noreorder\n\t"
 		".set	nomacro\n\t"
+		"addiu	%2, $0, %3\n\t"
+		"dsrl	%2, %2, 1\n\t"
 #ifdef HAVE_AS_SET_DADDI
 		".set	daddi\n\t"
 #endif
-		"daddiu	%0, %2, %3\n\t"
-		"addiu	%1, $0, %3\n\t"
+		"daddiu	%0, %2, %4\n\t"
+		"addiu	%1, $0, %4\n\t"
 		"daddu	%1, %2\n\t"
 		".set	pop"
-		: "=&r" (v), "=&r" (w)
-		: "r" (0x7fffffffffffedcd), "I" (0x1234));
+		: "=&r" (v), "=&r" (w), "=&r" (tmp)
+		: "I" (0xffffffffffffdb9a), "I" (0x1234));
 
 	if (v == w) {
 		printk("no.\n");
@@ -380,11 +386,13 @@ static inline void check_daddiu(void)
 	printk("yes, workaround... ");
 
 	asm volatile(
-		"daddiu	%0, %2, %3\n\t"
-		"addiu	%1, $0, %3\n\t"
+		"addiu	%2, $0, %3\n\t"
+		"dsrl	%2, %2, 1\n\t"
+		"daddiu	%0, %2, %4\n\t"
+		"addiu	%1, $0, %4\n\t"
 		"daddu	%1, %2"
-		: "=&r" (v), "=&r" (w)
-		: "r" (0x7fffffffffffedcd), "I" (0x1234));
+		: "=&r" (v), "=&r" (w), "=&r" (tmp)
+		: "I" (0xffffffffffffdb9a), "I" (0x1234));
 
 	if (v == w) {
 		printk("yes.\n");
