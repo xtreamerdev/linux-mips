@@ -110,6 +110,10 @@ static struct dev_info device_list[] =
 	{"HP", "C1750A", "3226", BLIST_NOLUN},			/* scanjet iic */
 	{"HP", "C1790A", "", BLIST_NOLUN},			/* scanjet iip */
 	{"HP", "C2500A", "", BLIST_NOLUN},			/* scanjet iicx */
+	{"HP", "A6188A", "*", BLIST_SPARSELUN},			/* HP Va7100 Array */
+	{"HP", "A6189A", "*", BLIST_SPARSELUN},			/* HP Va7400 Array */
+	{"HP", "A6189B", "*", BLIST_SPARSELUN},			/* HP Va7410 Array */
+	{"HP", "OPEN-", "*", BLIST_SPARSELUN},			/* HP XP Arrays */
 	{"YAMAHA", "CDR100", "1.00", BLIST_NOLUN},		/* Locks up if polled for lun != 0 */
 	{"YAMAHA", "CDR102", "1.00", BLIST_NOLUN},		/* Locks up if polled for lun != 0  
 								 * extra reset */
@@ -151,16 +155,16 @@ static struct dev_info device_list[] =
  	{"TOSHIBA","CDROM","*", BLIST_ISROM},
  	{"TOSHIBA","CD-ROM","*", BLIST_ISROM},
 	{"MegaRAID", "LD", "*", BLIST_FORCELUN},
-	{"DGC",  "RAID",      "*", BLIST_SPARSELUN}, // Dell PV 650F (tgt @ LUN 0)
-	{"DGC",  "DISK",      "*", BLIST_SPARSELUN}, // Dell PV 650F (no tgt @ LUN 0) 
-	{"DELL", "PV660F",   "*", BLIST_SPARSELUN},
-	{"DELL", "PV660F   PSEUDO",   "*", BLIST_SPARSELUN},
-	{"DELL", "PSEUDO DEVICE .",   "*", BLIST_SPARSELUN}, // Dell PV 530F
-	{"DELL", "PV530F",    "*", BLIST_SPARSELUN}, // Dell PV 530F
+	{"DGC",  "RAID",      "*", BLIST_SPARSELUN | BLIST_LARGELUN}, // Dell PV 650F (tgt @ LUN 0)
+	{"DGC",  "DISK",      "*", BLIST_SPARSELUN | BLIST_LARGELUN}, // Dell PV 650F (no tgt @ LUN 0) 
+	{"DELL", "PV660F",   "*", BLIST_SPARSELUN | BLIST_LARGELUN},
+	{"DELL", "PV660F   PSEUDO",   "*", BLIST_SPARSELUN | BLIST_LARGELUN},
+	{"DELL", "PSEUDO DEVICE .",   "*", BLIST_SPARSELUN | BLIST_LARGELUN}, // Dell PV 530F
+	{"DELL", "PV530F",    "*", BLIST_SPARSELUN | BLIST_LARGELUN}, // Dell PV 530F
 	{"EMC", "SYMMETRIX", "*", BLIST_SPARSELUN | BLIST_LARGELUN | BLIST_FORCELUN},
 	{"HP", "A6189A", "*", BLIST_SPARSELUN |  BLIST_LARGELUN}, // HP VA7400, by Alar Aun
-	{"CMD", "CRA-7280", "*", BLIST_SPARSELUN},   // CMD RAID Controller
-	{"CNSI", "G7324", "*", BLIST_SPARSELUN},     // Chaparral G7324 RAID
+	{"CMD", "CRA-7280", "*", BLIST_SPARSELUN | BLIST_LARGELUN},   // CMD RAID Controller
+	{"CNSI", "G7324", "*", BLIST_SPARSELUN | BLIST_LARGELUN},     // Chaparral G7324 RAID
 	{"CNSi", "G8324", "*", BLIST_SPARSELUN},     // Chaparral G8324 RAID
 	{"Zzyzx", "RocketStor 500S", "*", BLIST_SPARSELUN},
 	{"Zzyzx", "RocketStor 2000", "*", BLIST_SPARSELUN},
@@ -172,6 +176,11 @@ static struct dev_info device_list[] =
 	{"COMPAQ", "MSA1000", "*", BLIST_FORCELUN},
 	{"HP", "C1557A", "*", BLIST_FORCELUN},
 	{"IBM", "AuSaV1S2", "*", BLIST_FORCELUN},
+	{"FSC", "CentricStor", "*", BLIST_SPARSELUN | BLIST_LARGELUN},
+	{"DDN", "SAN DataDirector", "*", BLIST_SPARSELUN},
+	{"HITACHI", "DF400", "*", BLIST_SPARSELUN},
+	{"HITACHI", "DF500", "*", BLIST_SPARSELUN},
+	{"HITACHI", "DF600", "*", BLIST_SPARSELUN},
 
 	/*
 	 * Must be at end of list...

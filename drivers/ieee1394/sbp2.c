@@ -86,6 +86,9 @@
  * sbp2_max_sectors, 		- Change max sectors per I/O supported (default = 255)
  * sbp2_max_outstanding_cmds	- Change max outstanding concurrent commands (default = 8)
  * sbp2_max_cmds_per_lun	- Change max concurrent commands per sbp2 device (default = 1)
+ * sbp2_exclusive_login		- Set to zero if you'd like to allow multiple hosts the ability
+ *				  to log in at the same time. Sbp2 device must support this,
+ *				  and you must know what you're doing (default = 1)
  *
  * (e.g. insmod sbp2 sbp2_serialize_io = 1)
  *
@@ -135,10 +138,13 @@
  *	- Error Handling: SCSI aborts and bus reset requests are handled somewhat
  *	  but the code needs additional debugging.
  *
- *	- The SBP-2 driver is currently only supported as a module. It would not take
+ *	- Module: The SBP-2 driver is currently only supported as a module. It would not take
  *	  much work to allow it to be compiled into the kernel, but you'd have to 
  *	  add some init code to the kernel to support this... and modules are much
  *	  more flexible anyway.   ;-)
+ *
+ *	- Hot-plugging: Interaction with the SCSI stack and support for hot-plugging could
+ *	  stand some improvement.
  *
  *
  * History:
@@ -265,7 +271,7 @@
  *		     which do not support requests of 128KB or greater. Now use 
  *		     max_sectors scsi host entry to limit transfer sizes.
  *		   * Change status fifo address from a single address to a set of addresses,
- *		     with each sbp2 device having it's own status fifo address. This makes
+ *		     with each sbp2 device having its own status fifo address. This makes
  *		     it easier to match the status write to the sbp2 device instance.
  *		   * Minor change to use lun when logging into sbp2 devices. First step in
  *		     supporting multi-lun devices such as CD/DVD changer devices.
@@ -278,7 +284,20 @@
  *	02/20/02 - Added a couple additional module load options. 
  *		   Needed to bump down max commands per lun because of the !%@&*^# QPS CDRW 
  *		   drive I have, which doesn't seem to get along with other sbp2 devices 
- *		   (or handle linked commands well).  
+ *		   (or handle linked commands well).
+ *	04/21/02 - Added some additional debug capabilities:
+ *		   * Able to handle phys dma requests directly, if host controller has phys
+ *		     dma disabled (e.g. insmod ohci1394 phys_dma=0). Undefine CONFIG_IEEE1394_SBP2_PHYS_DMA
+ *		     if you'd like to disable sbp2 driver from registering for phys address range. 
+ *		   * New packet dump debug define (CONFIG_IEEE1394_SBP2_PACKET_DUMP) which allows
+ *		     dumping of all sbp2 related packets sent and received. Especially effective
+ *		     when phys dma is disabled on ohci controller (e.g. insmod ohci1394 phys_dma=0).
+ *		   * Added new sbp2 module load option (sbp2_exclusive_login) for allowing
+ *		     non-exclusive login to sbp2 device, for special multi-host applications.
+ *	04/23/02 - Fix for Sony CD-ROM drives. Only send fetch agent reset to sbp2 device if it
+ *		   returns the dead bit in status. Thanks to Chandan (chandan@toad.net) for this one.
+ *	04/27/02 - Fix sbp2 login problem on SMP systems, enable real spinlocks by default. (JSG)
+ *	06/09/02 - Don't force 36-bute SCSI inquiry, but leave in a define for badly behaved devices. (JSG)   
  */
 
 
@@ -301,10 +320,12 @@
 #include <linux/blk.h>
 #include <linux/smp_lock.h>
 #include <linux/init.h>
+#include <linux/blk.h>
 #include <asm/current.h>
 #include <asm/uaccess.h>
 #include <asm/io.h>
 #include <asm/byteorder.h>
+#include <asm/atomic.h>
 #include <asm/system.h>
 #include <asm/io.h>
 #include <asm/scatterlist.h>
@@ -328,6 +349,9 @@
 #include "ieee1394_transactions.h"
 #include "ieee1394_hotplug.h"
 #include "sbp2.h"
+
+static char version[] __devinitdata =
+	"$Rev: 530 $ James Goodwin <jamesg@filanet.com>";
 
 /*
  * Module load parameter definitions
@@ -387,16 +411,37 @@ MODULE_PARM(sbp2_max_cmds_per_lun,"i");
 MODULE_PARM_DESC(sbp2_max_cmds_per_lun, "Change max concurrent commands per sbp2 device (default = 1)");
 static int sbp2_max_cmds_per_lun = SBP2SCSI_MAX_CMDS_PER_LUN;
 
+/*
+ * Exclusive login to sbp2 device? In most cases, the sbp2 driver should do an exclusive login, as it's
+ * generally unsafe to have two hosts talking to a single sbp2 device at the same time (filesystem
+ * coherency, etc.). If you're running an sbp2 device that supports multiple logins, and you're either
+ * running read-only filesystems or some sort of special filesystem supporting multiple hosts, then
+ * set sbp2_exclusive_login to zero. Note: The Oxsemi OXFW911 sbp2 chipset supports up to four
+ * concurrent logins.
+ */
+MODULE_PARM(sbp2_exclusive_login,"i");
+MODULE_PARM_DESC(sbp2_exclusive_login, "Exclusive login to sbp2 device (default = 1)");
+static int sbp2_exclusive_login = 1;
+
+/*
+ * SCSI inquiry hack for really badly behaved sbp2 devices. Turn this on if your sbp2 device
+ * is not properly handling the SCSI inquiry command. This hack makes the inquiry look more
+ * like a typical MS Windows inquiry.
+ */
+MODULE_PARM(sbp2_force_inquiry_hack,"i");
+MODULE_PARM_DESC(sbp2_force_inquiry_hack, "Force SCSI inquiry hack (default = 0)");
+static int sbp2_force_inquiry_hack = 0;
+
 
 /*
  * Export information about protocols/devices supported by this driver.
  */
 static struct ieee1394_device_id sbp2_id_table[] = {
 	{
-		match_flags:  IEEE1394_MATCH_SPECIFIER_ID |
+		.match_flags =IEEE1394_MATCH_SPECIFIER_ID |
 		              IEEE1394_MATCH_VERSION,
-		specifier_id: SBP2_UNIT_SPEC_ID_ENTRY & 0xffffff,
-		version:      SBP2_SW_VERSION_ENTRY & 0xffffff
+		.specifier_id = SBP2_UNIT_SPEC_ID_ENTRY & 0xffffff,
+		.version =    SBP2_SW_VERSION_ENTRY & 0xffffff
 	},
 	{ }
 };
@@ -411,6 +456,7 @@ MODULE_DEVICE_TABLE(ieee1394, sbp2_id_table);
 /* #define CONFIG_IEEE1394_SBP2_DEBUG_DMA */
 /* #define CONFIG_IEEE1394_SBP2_DEBUG 1 */
 /* #define CONFIG_IEEE1394_SBP2_DEBUG 2 */
+/* #define CONFIG_IEEE1394_SBP2_PACKET_DUMP */
 
 #ifdef CONFIG_IEEE1394_SBP2_DEBUG_ORBS
 #define SBP2_ORB_DEBUG(fmt, args...)	HPSB_ERR("sbp2(%s): "fmt, __FUNCTION__, ## args)
@@ -456,10 +502,10 @@ static u32 global_outstanding_dmas = 0;
 #define SBP2_ERR(fmt, args...)		HPSB_ERR("sbp2: "fmt, ## args)
 
 /*
- * Spinlock debugging stuff. I'm playing it safe until the driver has been
- * debugged on SMP. (JSG)
+ * Spinlock debugging stuff.
  */
-/* #define SBP2_USE_REAL_SPINLOCKS */
+#define SBP2_USE_REAL_SPINLOCKS
+
 #ifdef SBP2_USE_REAL_SPINLOCKS
 #define sbp2_spin_lock(lock, flags)	spin_lock_irqsave(lock, flags)	
 #define sbp2_spin_unlock(lock, flags)	spin_unlock_irqrestore(lock, flags);
@@ -482,23 +528,35 @@ static LIST_HEAD(sbp2_host_info_list);
 static struct hpsb_highlevel *sbp2_hl_handle = NULL;
 
 static struct hpsb_highlevel_ops sbp2_hl_ops = {
-	add_host:	sbp2_add_host,
-	remove_host:	sbp2_remove_host,
+	.add_host =	sbp2_add_host,
+	.remove_host =	sbp2_remove_host,
 };
 
 static struct hpsb_address_ops sbp2_ops = {
-	write: sbp2_handle_status_write
+	.write = sbp2_handle_status_write
 };
+
+#ifdef CONFIG_IEEE1394_SBP2_PHYS_DMA
+static struct hpsb_address_ops sbp2_physdma_ops = {
+        .read = sbp2_handle_physdma_read,
+        .write = sbp2_handle_physdma_write,
+};
+#endif
 
 static struct hpsb_protocol_driver sbp2_driver = {
-	name:		"SBP2 Driver",
-	id_table: 	sbp2_id_table,
-	probe: 		sbp2_probe,
-	disconnect: 	sbp2_disconnect,
-	update: 	sbp2_update
+	.name =		"SBP2 Driver",
+	.id_table = 	sbp2_id_table,
+	.probe = 		sbp2_probe,
+	.disconnect = 	sbp2_disconnect,
+	.update = 	sbp2_update
 };
 
-
+/* List of device firmware's that require a forced 36 byte inquiry. Note
+ * the final 0x0 needs to be there for denoting end of list.  */
+static u32 sbp2_broken_inquiry_list[] = {
+	0x00002800,	/* Stefan Richter <richtest@bauwesen.tu-cottbus.de> */
+	0x0
+};
 
 /**************************************
  * General utility functions
@@ -536,6 +594,56 @@ static __inline__ void sbp2util_cpu_to_be32_buffer(void *buffer, int length)
 #define sbp2util_be32_to_cpu_buffer(x,y)
 #define sbp2util_cpu_to_be32_buffer(x,y)
 #endif
+
+#ifdef CONFIG_IEEE1394_SBP2_PACKET_DUMP
+/*
+ * Debug packet dump routine. Length is in bytes.
+ */
+static void sbp2util_packet_dump(void *buffer, int length, char *dump_name, u32 dump_phys_addr)
+{
+	int i;
+	unsigned char *dump = buffer;
+
+	if (!dump || !length || !dump_name)
+		return;
+
+	if (dump_phys_addr)
+		printk("[%s, 0x%x]", dump_name, dump_phys_addr);
+	else
+		printk("[%s]", dump_name);
+	for (i = 0; i < length; i++) {
+		if (i > 0x3f) {
+			printk("\n   ...");
+			break;
+		}
+		if ((i & 0x3) == 0)
+			printk("  ");
+		if ((i & 0xf) == 0)
+			printk("\n   ");
+		printk("%02x ", (int) dump[i]);
+	}
+	printk("\n");
+
+	return;
+}
+#else
+#define sbp2util_packet_dump(w,x,y,z)
+#endif
+
+/*
+ * Goofy routine that basically does a down_timeout function.
+ */
+static int sbp2util_down_timeout(atomic_t *done, int timeout)
+{
+	int i;
+
+	for (i = timeout; (i > 0 && atomic_read(done) == 0); i-= HZ/10) {
+		set_current_state(TASK_INTERRUPTIBLE);
+		if (schedule_timeout(HZ/10))	/* 100ms */
+			return(1);
+	}
+	return ((i > 0) ? 0:1);
+}
 
 /*
  * This function is called to initially create a packet pool for use in
@@ -665,7 +773,7 @@ sbp2util_allocate_write_request_packet(struct sbp2scsi_host_info *hi,
 		
 		hpsb_node_fill_packet(ne, packet);
 
-		packet->tlabel = get_tlabel(hi->host, packet->node_id, 1);
+		packet->tlabel = get_tlabel(hi->host, packet->node_id, 0);
 
 		if (!data_size) {
 			fill_async_writequad(packet, addr, data);
@@ -949,6 +1057,13 @@ int sbp2_init(void)
 	hpsb_register_addrspace(sbp2_hl_handle, &sbp2_ops, SBP2_STATUS_FIFO_ADDRESS,
 				SBP2_STATUS_FIFO_ADDRESS + 
 				SBP2_STATUS_FIFO_ENTRY_TO_OFFSET(SBP2SCSI_MAX_SCSI_IDS+1));
+
+	/*
+	 * Handle data movement if physical dma is not enabled/supported on host controller
+	 */
+#ifdef CONFIG_IEEE1394_SBP2_PHYS_DMA
+	hpsb_register_addrspace(sbp2_hl_handle, &sbp2_physdma_ops, 0x0ULL, 0xfffffffcULL);
+#endif
 
 	hpsb_register_protocol(&sbp2_driver);
 
@@ -1241,7 +1356,7 @@ alloc_fail_first:
 	scsi_id->max_payload_size = sbp2_speedto_maxrec[SPEED_100];
 	ud->driver_data = scsi_id;
 
-	init_waitqueue_head(&scsi_id->sbp2_login_wait);
+	atomic_set(&scsi_id->sbp2_login_complete, 0);
 
 	/* 
 	 * Initialize structures needed for the command orb pool.
@@ -1379,11 +1494,54 @@ static void sbp2_remove_device(struct sbp2scsi_host_info *hi,
 	kfree(scsi_id);
 }
 
-
+#ifdef CONFIG_IEEE1394_SBP2_PHYS_DMA
+/*
+ * This function deals with physical dma write requests (for adapters that do not support
+ * physical dma in hardware). Mostly just here for debugging...
+ */
+static int sbp2_handle_physdma_write(struct hpsb_host *host, int nodeid, int destid, quadlet_t *data,
+                                     u64 addr, unsigned int length)
+{
+
+        /*
+         * Manually put the data in the right place.
+         */
+        memcpy(bus_to_virt((u32)addr), data, length);
+	sbp2util_packet_dump(data, length, "sbp2 phys dma write by device", (u32)addr);
+        return(RCODE_COMPLETE);
+}
+
+/*
+ * This function deals with physical dma read requests (for adapters that do not support
+ * physical dma in hardware). Mostly just here for debugging...
+ */
+static int sbp2_handle_physdma_read(struct hpsb_host *host, int nodeid, quadlet_t *data,
+                                    u64 addr, unsigned int length)
+{
+
+        /*
+         * Grab data from memory and send a read response.
+         */
+        memcpy(data, bus_to_virt((u32)addr), length);
+	sbp2util_packet_dump(data, length, "sbp2 phys dma read by device", (u32)addr);
+        return(RCODE_COMPLETE);
+}
+#endif
+
 
 /**************************************
  * SBP-2 protocol related section
  **************************************/
+
+/*
+ * This function determines if we should convert scsi commands for a particular sbp2 device type
+ */
+static __inline__ int sbp2_command_conversion_device_type(u8 device_type)
+{
+	return (((device_type == TYPE_DISK) ||
+		 (device_type == TYPE_SDAD) ||
+		 (device_type == TYPE_ROM)) ? 1:0);
+}
 
 /*
  * This function is called in order to login to a particular SBP-2 device,
@@ -1392,7 +1550,6 @@ static void sbp2_remove_device(struct sbp2scsi_host_info *hi,
 static int sbp2_login_device(struct sbp2scsi_host_info *hi, struct scsi_id_instance_data *scsi_id) 
 {
 	quadlet_t data[2];
-	unsigned long flags;
 
 	SBP2_DEBUG("sbp2_login_device");
 
@@ -1412,7 +1569,7 @@ static int sbp2_login_device(struct sbp2scsi_host_info *hi, struct scsi_id_insta
 
 	scsi_id->login_orb->lun_misc = ORB_SET_FUNCTION(LOGIN_REQUEST);
 	scsi_id->login_orb->lun_misc |= ORB_SET_RECONNECT(0);	/* One second reconnect time */
-	scsi_id->login_orb->lun_misc |= ORB_SET_EXCLUSIVE(1);	/* Exclusive access to device */
+	scsi_id->login_orb->lun_misc |= ORB_SET_EXCLUSIVE(sbp2_exclusive_login);	/* Exclusive access to device */
 	scsi_id->login_orb->lun_misc |= ORB_SET_NOTIFY(1);	/* Notify us of login complete */
 	/* Set the lun if we were able to pull it from the device's unit directory */
 	if (scsi_id->sbp2_device_type_and_lun != SBP2_DEVICE_TYPE_LUN_UNINITIALIZED) {
@@ -1437,6 +1594,9 @@ static int sbp2_login_device(struct sbp2scsi_host_info *hi, struct scsi_id_insta
 
 	SBP2_DEBUG("sbp2_login_device: orb byte-swapped");
 
+	sbp2util_packet_dump(scsi_id->login_orb, sizeof(struct sbp2_login_orb), 
+			     "sbp2 login orb", scsi_id->login_orb_dma);
+
 	/*
 	 * Initialize login response and status fifo
 	 */
@@ -1452,34 +1612,27 @@ static int sbp2_login_device(struct sbp2scsi_host_info *hi, struct scsi_id_insta
 	data[1] = scsi_id->login_orb_dma;
 	sbp2util_cpu_to_be32_buffer(data, 8);
 
+	atomic_set(&scsi_id->sbp2_login_complete, 0);
+
 	SBP2_DEBUG("sbp2_login_device: prepared to write");
 	hpsb_node_write(scsi_id->ne, scsi_id->sbp2_management_agent_addr, data, 8);
 	SBP2_DEBUG("sbp2_login_device: written");
 
 	/*
-	 * Wait for login status... but, only if the device has not
-	 * already logged-in (some devices are fast)
+	 * Wait for login status (up to 20 seconds)... 
 	 */
-
-	save_flags(flags);
-	cli();
-	/* 20 second timeout */
-	if (scsi_id->status_block.ORB_offset_lo != scsi_id->login_orb_dma)
-		sleep_on_timeout(&scsi_id->sbp2_login_wait, 20*HZ);
-	restore_flags(flags);
-
-	SBP2_DEBUG("sbp2_login_device: initial check");
+	if (sbp2util_down_timeout(&scsi_id->sbp2_login_complete, 20*HZ)) {
+		SBP2_ERR("Error logging into SBP-2 device - login timed-out");
+		return(-EIO);
+	}
 
 	/*
-	 * Match status to the login orb. If they do not match, it's
-	 * probably because the login timed-out.
+	 * Sanity. Make sure status returned matches login orb.
 	 */
 	if (scsi_id->status_block.ORB_offset_lo != scsi_id->login_orb_dma) {
 		SBP2_ERR("Error logging into SBP-2 device - login timed-out");
 		return(-EIO);
 	}
-
-	SBP2_DEBUG("sbp2_login_device: second check");
 
 	/*
 	 * Check status
@@ -1552,6 +1705,9 @@ static int sbp2_logout_device(struct sbp2scsi_host_info *hi, struct scsi_id_inst
 	 */
 	sbp2util_cpu_to_be32_buffer(scsi_id->logout_orb, sizeof(struct sbp2_logout_orb));
 
+	sbp2util_packet_dump(scsi_id->logout_orb, sizeof(struct sbp2_logout_orb), 
+			     "sbp2 logout orb", scsi_id->logout_orb_dma);
+
 	/*
 	 * Ok, let's write to the target's management agent register
 	 */
@@ -1559,10 +1715,12 @@ static int sbp2_logout_device(struct sbp2scsi_host_info *hi, struct scsi_id_inst
 	data[1] = scsi_id->logout_orb_dma;
 	sbp2util_cpu_to_be32_buffer(data, 8);
 
+	atomic_set(&scsi_id->sbp2_login_complete, 0);
+
 	hpsb_node_write(scsi_id->ne, scsi_id->sbp2_management_agent_addr, data, 8);
 
 	/* Wait for device to logout...1 second. */
-	sleep_on_timeout(&scsi_id->sbp2_login_wait, HZ);
+	sbp2util_down_timeout(&scsi_id->sbp2_login_complete, HZ);
 
 	SBP2_INFO("Logged out of SBP-2 device");
 
@@ -1577,7 +1735,6 @@ static int sbp2_logout_device(struct sbp2scsi_host_info *hi, struct scsi_id_inst
 static int sbp2_reconnect_device(struct sbp2scsi_host_info *hi, struct scsi_id_instance_data *scsi_id) 
 {
 	quadlet_t data[2];
-	unsigned long flags;
 
 	SBP2_DEBUG("sbp2_reconnect_device");
 
@@ -1607,6 +1764,9 @@ static int sbp2_reconnect_device(struct sbp2scsi_host_info *hi, struct scsi_id_i
 	 */
 	sbp2util_cpu_to_be32_buffer(scsi_id->reconnect_orb, sizeof(struct sbp2_reconnect_orb));
 
+	sbp2util_packet_dump(scsi_id->reconnect_orb, sizeof(struct sbp2_reconnect_orb), 
+			     "sbp2 reconnect orb", scsi_id->reconnect_orb_dma);
+
 	/*
 	 * Initialize status fifo
 	 */
@@ -1619,22 +1779,20 @@ static int sbp2_reconnect_device(struct sbp2scsi_host_info *hi, struct scsi_id_i
 	data[1] = scsi_id->reconnect_orb_dma;
 	sbp2util_cpu_to_be32_buffer(data, 8);
 
+	atomic_set(&scsi_id->sbp2_login_complete, 0);
+
 	hpsb_node_write(scsi_id->ne, scsi_id->sbp2_management_agent_addr, data, 8);
 
 	/*
-	 * Wait for reconnect status... but, only if the device has not
-	 * already reconnected (some devices are fast).
+	 * Wait for reconnect status (up to 1 second)...
 	 */
-	save_flags(flags);
-	cli();
-	/* One second timout */
-	if (scsi_id->status_block.ORB_offset_lo != scsi_id->reconnect_orb_dma)
-		sleep_on_timeout(&scsi_id->sbp2_login_wait, HZ);
-	restore_flags(flags);
+	if (sbp2util_down_timeout(&scsi_id->sbp2_login_complete, HZ)) {
+		SBP2_ERR("Error reconnecting to SBP-2 device - reconnect timed-out");
+		return(-EIO);
+	}
 
 	/*
-	 * Match status to the reconnect orb. If they do not match, it's
-	 * probably because the reconnect timed-out.
+	 * Sanity. Make sure status returned matches reconnect orb.
 	 */
 	if (scsi_id->status_block.ORB_offset_lo != scsi_id->reconnect_orb_dma) {
 		SBP2_ERR("Error reconnecting to SBP-2 device - reconnect timed-out");
@@ -1754,25 +1912,56 @@ static void sbp2_parse_unit_directory(struct scsi_id_instance_data *scsi_id)
 			break;
 
 		case SBP2_FIRMWARE_REVISION_KEY:
-			/*
-			 * Firmware revision (used to find broken
-			 * devices). If the vendor id is 0xa0b8
-			 * (Symbios vendor id), then we have a
-			 * bridge with 128KB max transfer size
-			 * limitation.
-			 */
+			/* Firmware revision */
 			scsi_id->sbp2_firmware_revision
 				= CONFIG_ROM_VALUE(ud->quadlets[i]);
 			SBP2_DEBUG("sbp2_firmware_revision = %x",
 				   (unsigned int) scsi_id->sbp2_firmware_revision);
-			if ((scsi_id->sbp2_firmware_revision & 0xffff00) ==
-			    SBP2_128KB_BROKEN_FIRMWARE) {
-				SBP2_WARN("warning: Bridge chipset supports 128KB max transfer size");
-			}
 			break;
 
 		default:
 			break;
+		}
+	}
+
+	/* This is the start of our broken device checking. We try to hack
+	 * around oddities and known defects.  */
+	scsi_id->workarounds = 0x0;
+
+	/* If the vendor id is 0xa0b8 (Symbios vendor id), then we have a
+	 * bridge with 128KB max transfer size limitation. For sanity, we
+	 * only voice this when the current sbp2_max_sectors setting
+	 * exceeds the 128k limit. By default, that is not the case.
+	 *
+	 * It would be really nice if we could detect this before the scsi
+	 * host gets initialized. That way we can down-force the
+	 * sbp2_max_sectors to account for it. That is not currently
+	 * possible.  */
+	if ((scsi_id->sbp2_firmware_revision & 0xffff00) ==
+			SBP2_128KB_BROKEN_FIRMWARE &&
+			(sbp2_max_sectors * 512) > (128 * 1024)) {
+		SBP2_WARN("Node " NODE_BUS_FMT ": Bridge only supports 128KB max transfer size.",
+				NODE_BUS_ARGS(scsi_id->ne->nodeid));
+		SBP2_WARN("WARNING: Current sbp2_max_sectors setting is larger than 128KB (%d sectors)!",
+				sbp2_max_sectors);
+		scsi_id->workarounds |= SBP2_BREAKAGE_128K_MAX_TRANSFER;
+	}
+
+	/* Check for a blacklisted set of devices that require us to force
+	 * a 36 byte host inquiry. This can be overriden as a module param
+	 * (to force all hosts).
+	 *
+	 * XXX If this does not detect your firmware as being defective,
+	 * but using the sbp2_force_inquiry_hack allows your device to
+	 * work, please submit the value of your firmware revision to the
+	 * linux1394-devel mailing list.  */
+	for (i = 0; sbp2_broken_inquiry_list[i]; i++) {
+		if ((scsi_id->sbp2_firmware_revision & 0xffff00) ==
+				sbp2_broken_inquiry_list[i]) {
+			SBP2_WARN("Node " NODE_BUS_FMT ": Using 36byte inquiry workaround",
+					NODE_BUS_ARGS(scsi_id->ne->nodeid));
+			scsi_id->workarounds |= SBP2_BREAKAGE_INQUIRY_HACK;
+			break; // No need to continue.
 		}
 	}
 }
@@ -2002,6 +2191,10 @@ static int sbp2_create_command_orb(struct sbp2scsi_host_info *hi,
 			/* Number of page table (s/g) elements */
 			command_orb->misc |= ORB_SET_DATA_SIZE(sg_count);
 
+			sbp2util_packet_dump(scatter_gather_element, 
+					     (sizeof(struct sbp2_unrestricted_page_table)) * sg_count, 
+					     "sbp2 s/g list", command->sge_dma);
+
 			/*
 			 * Byte swap page tables if necessary
 			 */
@@ -2080,6 +2273,10 @@ static int sbp2_create_command_orb(struct sbp2scsi_host_info *hi,
 
 			/* Number of page table (s/g) elements */
 			command_orb->misc |= ORB_SET_DATA_SIZE(sg_count);
+
+			sbp2util_packet_dump(scatter_gather_element, 
+					     (sizeof(struct sbp2_unrestricted_page_table)) * sg_count, 
+					     "sbp2 s/g list", command->sge_dma);
 
 			/*
 			 * Byte swap page tables if necessary
@@ -2219,13 +2416,11 @@ static int sbp2_send_command(struct sbp2scsi_host_info *hi, struct scsi_id_insta
 {
 	unchar *cmd = (unchar *) SCpnt->cmnd;
 	unsigned int request_bufflen = SCpnt->request_bufflen;
-	u8 device_type
-		= SBP2_DEVICE_TYPE (scsi_id->sbp2_device_type_and_lun);
 	struct sbp2_command_info *command;
 
 	SBP2_DEBUG("sbp2_send_command");
-	SBP2_DEBUG("SCSI command:");
-#if CONFIG_IEEE1394_SBP2_DEBUG >= 2
+#if (CONFIG_IEEE1394_SBP2_DEBUG >= 2) || defined(CONFIG_IEEE1394_SBP2_PACKET_DUMP)
+	printk("[scsi command]\n   ");
 	print_command (cmd);
 #endif
 	SBP2_DEBUG("SCSI transfer size = %x", request_bufflen);
@@ -2242,11 +2437,13 @@ static int sbp2_send_command(struct sbp2scsi_host_info *hi, struct scsi_id_insta
 	/*
 	 * The scsi stack sends down a request_bufflen which does not match the
 	 * length field in the scsi cdb. This causes some sbp2 devices to 
-	 * reject this inquiry command. Hack fix is to set both buff length and
-	 * length field in cdb to 36. This gives best compatibility.
+	 * reject this inquiry command. Fix the request_bufflen. 
 	 */
 	if (*cmd == INQUIRY) {
-		request_bufflen = cmd[4] = 0x24;
+		if (sbp2_force_inquiry_hack || scsi_id->workarounds & SBP2_BREAKAGE_INQUIRY_HACK)
+			request_bufflen = cmd[4] = 0x24;
+		else
+			request_bufflen = cmd[4];
 	}
 
 	/*
@@ -2259,11 +2456,10 @@ static int sbp2_send_command(struct sbp2scsi_host_info *hi, struct scsi_id_insta
 	 * Update our cdb if necessary (to handle sbp2 RBC command set
 	 * differences). This is where the command set hacks go!   =)
 	 */
-	if ((device_type == TYPE_DISK) ||
-	    (device_type == TYPE_SDAD) ||
-	    (device_type == TYPE_ROM)) {
-		sbp2_check_sbp2_command(command->command_orb.cdb);
-	}
+	sbp2_check_sbp2_command(scsi_id, command->command_orb.cdb);
+
+	sbp2util_packet_dump(&command->command_orb, sizeof(struct sbp2_command_orb), 
+			     "sbp2 command orb", command->command_orb_dma);
 
 	/*
 	 * Initialize status fifo
@@ -2283,9 +2479,10 @@ static int sbp2_send_command(struct sbp2scsi_host_info *hi, struct scsi_id_insta
  * This function deals with command set differences between Linux scsi
  * command set and sbp2 RBC command set.
  */
-static void sbp2_check_sbp2_command(unchar *cmd)
+static void sbp2_check_sbp2_command(struct scsi_id_instance_data *scsi_id, unchar *cmd)
 {
 	unchar new_cmd[16];
+	u8 device_type = SBP2_DEVICE_TYPE (scsi_id->sbp2_device_type_and_lun);
 
 	SBP2_DEBUG("sbp2_check_sbp2_command");
 
@@ -2293,67 +2490,79 @@ static void sbp2_check_sbp2_command(unchar *cmd)
 		
 		case READ_6:
 
-			SBP2_DEBUG("Convert READ_6 to READ_10");
+			if (sbp2_command_conversion_device_type(device_type)) {
 
-			/*
-			 * Need to turn read_6 into read_10
-			 */
-			new_cmd[0] = 0x28;
-			new_cmd[1] = (cmd[1] & 0xe0);
-			new_cmd[2] = 0x0;
-			new_cmd[3] = (cmd[1] & 0x1f);
-			new_cmd[4] = cmd[2];
-			new_cmd[5] = cmd[3];
-			new_cmd[6] = 0x0;
-			new_cmd[7] = 0x0;
-			new_cmd[8] = cmd[4];
-			new_cmd[9] = cmd[5];
+				SBP2_DEBUG("Convert READ_6 to READ_10");
+					    
+				/*
+				 * Need to turn read_6 into read_10
+				 */
+				new_cmd[0] = 0x28;
+				new_cmd[1] = (cmd[1] & 0xe0);
+				new_cmd[2] = 0x0;
+				new_cmd[3] = (cmd[1] & 0x1f);
+				new_cmd[4] = cmd[2];
+				new_cmd[5] = cmd[3];
+				new_cmd[6] = 0x0;
+				new_cmd[7] = 0x0;
+				new_cmd[8] = cmd[4];
+				new_cmd[9] = cmd[5];
+	
+				memcpy(cmd, new_cmd, 10);
 
-			memcpy(cmd, new_cmd, 10);
+			}
 
 			break;
 
 		case WRITE_6:
 
-			SBP2_DEBUG("Convert WRITE_6 to WRITE_10");
+			if (sbp2_command_conversion_device_type(device_type)) {
 
-			/*
-			 * Need to turn write_6 into write_10
-			 */
-			new_cmd[0] = 0x2a;
-			new_cmd[1] = (cmd[1] & 0xe0);
-			new_cmd[2] = 0x0;
-			new_cmd[3] = (cmd[1] & 0x1f);
-			new_cmd[4] = cmd[2];
-			new_cmd[5] = cmd[3];
-			new_cmd[6] = 0x0;
-			new_cmd[7] = 0x0;
-			new_cmd[8] = cmd[4];
-			new_cmd[9] = cmd[5];
+				SBP2_DEBUG("Convert WRITE_6 to WRITE_10");
+	
+				/*
+				 * Need to turn write_6 into write_10
+				 */
+				new_cmd[0] = 0x2a;
+				new_cmd[1] = (cmd[1] & 0xe0);
+				new_cmd[2] = 0x0;
+				new_cmd[3] = (cmd[1] & 0x1f);
+				new_cmd[4] = cmd[2];
+				new_cmd[5] = cmd[3];
+				new_cmd[6] = 0x0;
+				new_cmd[7] = 0x0;
+				new_cmd[8] = cmd[4];
+				new_cmd[9] = cmd[5];
+	
+				memcpy(cmd, new_cmd, 10);
 
-			memcpy(cmd, new_cmd, 10);
+			}
 
 			break;
 
 		case MODE_SENSE:
 
-			SBP2_DEBUG("Convert MODE_SENSE_6 to MOSE_SENSE_10");
+			if (sbp2_command_conversion_device_type(device_type)) {
 
-			/*
-			 * Need to turn mode_sense_6 into mode_sense_10
-			 */
-			new_cmd[0] = 0x5a;
-			new_cmd[1] = cmd[1];
-			new_cmd[2] = cmd[2];
-			new_cmd[3] = 0x0;
-			new_cmd[4] = 0x0;
-			new_cmd[5] = 0x0;
-			new_cmd[6] = 0x0;
-			new_cmd[7] = 0x0;
-			new_cmd[8] = cmd[4];
-			new_cmd[9] = cmd[5];
+				SBP2_DEBUG("Convert MODE_SENSE_6 to MODE_SENSE_10");
 
-			memcpy(cmd, new_cmd, 10);
+				/*
+				 * Need to turn mode_sense_6 into mode_sense_10
+				 */
+				new_cmd[0] = 0x5a;
+				new_cmd[1] = cmd[1];
+				new_cmd[2] = cmd[2];
+				new_cmd[3] = 0x0;
+				new_cmd[4] = 0x0;
+				new_cmd[5] = 0x0;
+				new_cmd[6] = 0x0;
+				new_cmd[7] = 0x0;
+				new_cmd[8] = cmd[4];
+				new_cmd[9] = cmd[5];
+	
+				memcpy(cmd, new_cmd, 10);
+
+			}
 
 			break;
 
@@ -2404,8 +2613,7 @@ static unsigned int sbp2_status_to_sense_data(unchar *sbp2_status, unchar *sense
  * This function is called after a command is completed, in order to do any necessary SBP-2
  * response data translations for the SCSI stack
  */
-static void sbp2_check_sbp2_response(struct sbp2scsi_host_info *hi,
-				     struct scsi_id_instance_data *scsi_id, 
+static void sbp2_check_sbp2_response(struct scsi_id_instance_data *scsi_id, 
 				     Scsi_Cmnd *SCpnt)
 {
 	u8 *scsi_buf = SCpnt->request_buffer;
@@ -2451,18 +2659,16 @@ static void sbp2_check_sbp2_response(struct sbp2scsi_host_info *hi,
 
 		case MODE_SENSE:
 
-			if ((device_type == TYPE_DISK) ||
-			    (device_type == TYPE_SDAD) ||
-			    (device_type == TYPE_ROM)) {
-
+			if (sbp2_command_conversion_device_type(device_type)) {
+			
 				SBP2_DEBUG("Modify mode sense response (10 byte version)");
-	
+
 				scsi_buf[0] = scsi_buf[1];	/* Mode data length */
 				scsi_buf[1] = scsi_buf[2];	/* Medium type */
 				scsi_buf[2] = scsi_buf[3];	/* Device specific parameter */
 				scsi_buf[3] = scsi_buf[7];	/* Block descriptor length */
 				memcpy(scsi_buf + 4, scsi_buf + 8, scsi_buf[0]);
-
+	
 			}
 
 			break;
@@ -2494,6 +2700,8 @@ static int sbp2_handle_status_write(struct hpsb_host *host, int nodeid, int dest
 	struct sbp2_command_info *command;
 
 	SBP2_DEBUG("sbp2_handle_status_write");
+
+	sbp2util_packet_dump(data, length, "sbp2 status write by device", (u32)addr);
 
 	if (!host) {
 		SBP2_ERR("host is NULL - this is bad!");
@@ -2566,21 +2774,21 @@ static int sbp2_handle_status_write(struct hpsb_host *host, int nodeid, int dest
 				/*
 				 * Translate SBP-2 status to SCSI sense data
 				 */
+				SBP2_DEBUG("CHECK CONDITION");
 				scsi_status = sbp2_status_to_sense_data((unchar *)&scsi_id->status_block, SCpnt->sense_buffer);
 			}
 
 			/*
-			 * Handle check conditions. If there is either SBP status or SCSI status
-			 * then we'll do a fetch agent reset and note that a check condition
-			 * occured.
+			 * Check to see if the dead bit is set. If so, we'll have to initiate
+			 * a fetch agent reset.
 			 */
-			if (STATUS_GET_SBP_STATUS(scsi_id->status_block.ORB_offset_hi_misc) ||
-			    scsi_status) {
+			if (STATUS_GET_DEAD_BIT(scsi_id->status_block.ORB_offset_hi_misc)) {
+
 				/*
 				 * Initiate a fetch agent reset. 
 				 */
-				SBP2_DEBUG("CHECK CONDITION");
-				sbp2_agent_reset(hi, scsi_id, SBP2_SEND_NO_WAIT);
+				SBP2_DEBUG("Dead bit set - initiating fetch agent reset");
+                                sbp2_agent_reset(hi, scsi_id, SBP2_SEND_NO_WAIT);
 			}
 
 			SBP2_ORB_DEBUG("completing command orb %p", &command->command_orb);
@@ -2602,10 +2810,19 @@ static int sbp2_handle_status_write(struct hpsb_host *host, int nodeid, int dest
 			scsi_id->last_orb = NULL;
 		}
 
+	} else {
+		
+		/* 
+		 * It's probably a login/logout/reconnect status.
+		 */
+		if ((scsi_id->login_orb_dma == scsi_id->status_block.ORB_offset_lo) ||
+		    (scsi_id->reconnect_orb_dma == scsi_id->status_block.ORB_offset_lo) ||
+		    (scsi_id->logout_orb_dma == scsi_id->status_block.ORB_offset_lo)) {
+			atomic_set(&scsi_id->sbp2_login_complete, 1);
+		}
 	}
 
 	sbp2_spin_unlock(&hi->sbp2_command_lock, flags);
-	wake_up(&scsi_id->sbp2_login_wait);
 	return(RCODE_COMPLETE);
 }
 
@@ -2805,7 +3022,7 @@ static void sbp2scsi_complete_command(struct sbp2scsi_host_info *hi, struct scsi
 	 * Take care of any sbp2 response data mucking here (RBC stuff, etc.)
 	 */
 	if (SCpnt->result == DID_OK) {
-		sbp2_check_sbp2_response(hi, scsi_id, SCpnt);
+		sbp2_check_sbp2_response(scsi_id, SCpnt);
 	}
 
 	/*
@@ -2822,10 +3039,13 @@ static void sbp2scsi_complete_command(struct sbp2scsi_host_info *hi, struct scsi
 	 * retried... it could have happened because of a 1394 bus reset
 	 * or hot-plug...
 	 */
-	if ((scsi_status == SBP2_SCSI_STATUS_CHECK_CONDITION) && (SCpnt->sense_buffer[2] == UNIT_ATTENTION)) {
+#if 0
+	if ((scsi_status == SBP2_SCSI_STATUS_CHECK_CONDITION) && 
+	    (SCpnt->sense_buffer[2] == UNIT_ATTENTION)) {
 		SBP2_DEBUG("UNIT ATTENTION - return busy");
 		SCpnt->result = DID_BUS_BUSY << 16;
 	}
+#endif
 
 	/*
 	 * Tell scsi stack that we're done with this command
@@ -2835,9 +3055,9 @@ static void sbp2scsi_complete_command(struct sbp2scsi_host_info *hi, struct scsi
 	done (SCpnt);
 	spin_unlock_irq(&io_request_lock);
 #else
-	spin_lock_irq(&hi->scsi_host->host_lock);
+	spin_lock_irq(hi->scsi_host->host_lock);
 	done (SCpnt);
-	spin_unlock_irq(&hi->scsi_host->host_lock);
+	spin_unlock_irq(hi->scsi_host->host_lock);
 #endif
 
 	return;
@@ -2905,7 +3125,7 @@ static int sbp2scsi_reset (Scsi_Cmnd *SCpnt)
 	SBP2_ERR("reset requested");
 
 	if (scsi_id) {
-		SBP2_ERR("Generating IEEE-1394 bus reset");
+		SBP2_ERR("Generating sbp2 fetch agent reset");
 		sbp2_agent_reset(hi, scsi_id, SBP2_SEND_NO_WAIT);
 	}
 
@@ -2951,7 +3171,14 @@ static int sbp2scsi_detect (Scsi_Host_Template *tpnt)
 	 * host controller currently registered, and for each of those
 	 * we register a scsi host with the scsi stack.
 	 */
+	
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0)
+	spin_unlock_irq(&io_request_lock);
 	sbp2_init();
+	spin_lock_irq(&io_request_lock);
+#else
+	sbp2_init();
+#endif
 
 	/* We return the number of hosts registered. */
 	return scsi_driver_template.present;
@@ -2969,19 +3196,22 @@ static const char *sbp2scsi_info (struct Scsi_Host *host)
 	if (!hi) /* shouldn't happen, but... */
         	return "IEEE-1394 SBP-2 protocol driver";
 
-	sprintf(info, "IEEE-1394 SBP-2 protocol driver (host: %s)\n"
+	sprintf(info, "IEEE-1394 SBP-2 protocol driver (host: %s)\n%s\n"
 		"SBP-2 module load options:\n"
 		"- Max speed supported: %s\n"
 		"- Max sectors per I/O supported: %d\n"
 		"- Max outstanding commands supported: %d\n"
 		"- Max outstanding commands per lun supported: %d\n"
-                "- Serialized I/O (debug): %s",
-		hi->host->driver->name, 
+                "- Serialized I/O (debug): %s\n"
+		"- Exclusive login: %s",
+		hi->host->driver->name,
+		version,
 		hpsb_speedto_str[sbp2_max_speed],
 		sbp2_max_sectors,
 		sbp2_max_outstanding_cmds,
 		sbp2_max_cmds_per_lun,
-		sbp2_serialize_io ? "yes" : "no");
+		sbp2_serialize_io ? "yes" : "no",
+		sbp2_exclusive_login ? "yes" : "no");
 
 	return info;
 }
@@ -2994,23 +3224,23 @@ MODULE_LICENSE("GPL");
 
 /* SCSI host template */
 static Scsi_Host_Template scsi_driver_template = {
-	name:			"IEEE-1394 SBP-2 protocol driver",
-	info:			sbp2scsi_info,
-	detect:			sbp2scsi_detect,
-	queuecommand:		sbp2scsi_queuecommand,
-	eh_abort_handler:	sbp2scsi_abort,
-	eh_device_reset_handler:sbp2scsi_reset,
-	eh_bus_reset_handler:	sbp2scsi_reset,
-	eh_host_reset_handler:	sbp2scsi_reset,
-	bios_param:		sbp2scsi_biosparam,
-	this_id:		-1,
-	sg_tablesize:		SBP2_MAX_SG_ELEMENTS,
-	use_clustering:		SBP2_CLUSTERING,
+	.name =			"IEEE-1394 SBP-2 protocol driver",
+	.info =			sbp2scsi_info,
+	.detect =		sbp2scsi_detect,
+	.queuecommand =		sbp2scsi_queuecommand,
+	.eh_abort_handler =	sbp2scsi_abort,
+	.eh_device_reset_handler =sbp2scsi_reset,
+	.eh_bus_reset_handler =	sbp2scsi_reset,
+	.eh_host_reset_handler =sbp2scsi_reset,
+	.bios_param =		sbp2scsi_biosparam,
+	.this_id =		-1,
+	.sg_tablesize =		SBP2_MAX_SG_ELEMENTS,
+	.use_clustering =	SBP2_CLUSTERING,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0)
-	use_new_eh_code:	TRUE,
+	.use_new_eh_code =	TRUE,
 #endif
-	emulated:		1,
-	proc_name:	SBP2_DEVICE_NAME,
+	.emulated =		1,
+	.proc_name =	SBP2_DEVICE_NAME,
 };
 
 static int sbp2_module_init(void)

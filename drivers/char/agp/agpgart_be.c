@@ -1402,6 +1402,12 @@ static int intel_8xx_fetch_size(void)
 	aper_size_info_8 *values;
 
 	pci_read_config_byte(agp_bridge.dev, INTEL_APSIZE, &temp);
+
+        /* Intel 815 chipsets have a _weird_ APSIZE register with only
+         * one non-reserved bit, so mask the others out ... */
+        if (agp_bridge.type == INTEL_I815) 
+          temp &= (1 << 3);
+        
 	values = A_SIZE_8(agp_bridge.aperture_sizes);
 
 	for (i = 0; i < agp_bridge.num_aperture_sizes; i++) {
@@ -3940,6 +3946,12 @@ static struct {
 		"Ali",
 		"M1651",
 		ali_generic_setup },  
+	{ PCI_DEVICE_ID_AL_M1671_0,
+		PCI_VENDOR_ID_AL,
+		ALI_M1671,
+		"Ali",
+		"M1671",
+		ali_generic_setup },  
 	{ 0,
 		PCI_VENDOR_ID_AL,
 		ALI_GENERIC,
@@ -4087,6 +4099,12 @@ static struct {
 		SIS_GENERIC,
 		"SiS",
 		"735",
+		sis_generic_setup },
+	{ PCI_DEVICE_ID_SI_745,
+		PCI_VENDOR_ID_SI,
+		SIS_GENERIC,
+		"SiS",
+		"745",
 		sis_generic_setup },
 	{ PCI_DEVICE_ID_SI_730,
 		PCI_VENDOR_ID_SI,

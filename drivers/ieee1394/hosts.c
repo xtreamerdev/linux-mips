@@ -39,8 +39,8 @@ static int dummy_devctl(struct hpsb_host *h, enum devctl_cmd c, int arg)
 }
 
 static struct hpsb_host_operations dummy_ops = {
-        transmit_packet:  dummy_transmit_packet,
-        devctl:           dummy_devctl
+        .transmit_packet = dummy_transmit_packet,
+        .devctl =          dummy_devctl
 };
 
 /**
@@ -124,7 +124,7 @@ struct hpsb_host *hpsb_alloc_host(struct hpsb_host_driver *drv, size_t extra)
 
         h = kmalloc(sizeof(struct hpsb_host) + extra, SLAB_KERNEL);
         if (!h) return NULL;
-        memset(h, 0, sizeof(struct hpsb_host));
+        memset(h, 0, sizeof(struct hpsb_host) + extra);
 
 	h->hostdata = h + 1;
         h->driver = drv;
