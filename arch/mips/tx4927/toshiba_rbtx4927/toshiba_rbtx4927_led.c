@@ -1,8 +1,11 @@
 /*
- * Author: MontaVista Software, Inc.
- *         source@mvista.com
+ * linux/arch/mips/tx4927/toshiba_rbtx4927/toshiba_rbtx4927_led.c
  *
- * Copyright 2001-2002 MontaVista Software Inc.
+ * RBTX4927 Status LED toggle
+ *
+ * Copyright (C) 2003 TimeSys Corp.
+ *                    S. James Hill (James.Hill@timesys.com)
+ *                                  (sjhill@realitydiluted.com)
  *
  *  This program is free software; you can redistribute it and/or modify it
  *  under the terms of the GNU General Public License as published by the
@@ -24,34 +27,47 @@
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
-#ifndef __ASM_TX4927_TOSHIBA_RBTX4927_H
-#define __ASM_TX4927_TOSHIBA_RBTX4927_H
+#include <linux/init.h>
+#include <asm/io.h>
+#include <asm/timex.h>
+#include <asm/tx4927/toshiba_rbtx4927.h>
 
-#include <asm/tx4927/tx4927.h>
-#include <asm/tx4927/tx4927_mips.h>
-#ifdef CONFIG_PCI
-#include <asm/tx4927/tx4927_pci.h>
-#endif
+static struct led_state {
+	struct timer_list timer;
+	unsigned char val123;
+	unsigned long val45;
+} led_state;
 
-#define TOSHIBA_RBTX4927_WR08(a,b) do { TX4927_WR08(a,b); wbflush(); } while ( 0 )
+void led_toggle (unsigned long v)
+{
+	struct led_state *l = (struct led_state *) v;
 
+	writeb(l->val123, RBTX4927_STATUS_LED_123);
+	writel(l->val45, RBTX4927_STATUS_LED_45);
 
-#ifdef CONFIG_PCI
-#define TBTX4927_ISA_IO_OFFSET TX4927_PCIIO
+	l->val123 = ~l->val123;
+	l->val45 = ~l->val45;
+
+	l->timer.expires = jiffies + HZ;
+	add_timer(&l->timer);
+}
+
+int __init led_setup (void)
+{
+	led_state.val123 = 0xfd;
+#ifdef __MIPSEB__
+	led_state.val45 = 0x5a000000;
 #else
-#define TBTX4927_ISA_IO_OFFSET 0
+	led_state.val45 = 0x0000005a;
 #endif
 
-#define RBTX4927_SW_RESET_DO         0xbc00f000
-#define RBTX4927_SW_RESET_DO_SET                0x01
+	led_state.timer.data = (unsigned long) &led_state;
+	led_state.timer.expires = jiffies + HZ;
+	init_timer(&led_state.timer);
+	led_state.timer.function = led_toggle;
+	add_timer(&led_state.timer);
 
-#define RBTX4927_SW_RESET_ENABLE     0xbc00f002
-#define RBTX4927_SW_RESET_ENABLE_SET            0x01
+	return 0;
+}
 
-#define RBTX4927_STATUS_LED_123      0xbc001000
-#define RBTX4927_STATUS_LED_45       0xff1ff500
-
-#define RBTX4927_RTL_8019_BASE (0x1c020280-TBTX4927_ISA_IO_OFFSET)
-#define RBTX4927_RTL_8019_IRQ  (29)
-
-#endif /* __ASM_TX4927_TOSHIBA_RBTX4927_H */
+__initcall (led_setup);
