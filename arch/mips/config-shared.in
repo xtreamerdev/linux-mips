@@ -885,7 +885,9 @@ fi
 
 tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
 
-dep_bool 'Power Management support' CONFIG_PM $CONFIG_SOC_AU1X00
+if [ "$CONFIG_SOC_AU1X00" = "y" ]; then
+   bool 'Power Management support' CONFIG_PM
+fi
 endmenu
 
 source drivers/mtd/Config.in
