@@ -48,6 +48,10 @@
 
 #include <linux/rtc.h>
 
+#ifdef CONFIG_SIBYTE_TBPROF
+#include <asm/sibyte/trace_prof.h>
+#endif
+
 long sys_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg);
 
 static int w_long(unsigned int fd, unsigned int cmd, unsigned long arg)
@@ -1090,6 +1094,12 @@ static struct ioctl32_list ioctl32_handler_table[] = {
 	IOCTL32_DEFAULT(STOP_ARRAY_RO),
 	IOCTL32_DEFAULT(RESTART_ARRAY_RW),
 #endif /* CONFIG_MD */
+
+#ifdef CONFIG_SIBYTE_TBPROF
+	IOCTL32_DEFAULT(SBPROF_ZBSTART),
+	IOCTL32_DEFAULT(SBPROF_ZBSTOP),
+	IOCTL32_DEFAULT(SBPROF_ZBWAITFULL),
+#endif /* CONFIG_SIBYTE_TBPROF */
 
 	IOCTL32_DEFAULT(MTIOCTOP),			/* mtio.h ioctls  */
 	IOCTL32_HANDLER(MTIOCGET32, mt_ioctl_trans),

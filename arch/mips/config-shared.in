@@ -165,7 +165,7 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
 
    bool '   Support for Bus Watcher statistics' CONFIG_SIBYTE_BUS_WATCHER
    bool '   Support for SB1/SOC profiling - SB1/SCD perf counters' CONFIG_SIBYTE_SB1250_PROF
-   bool '   Support for ZBbus profiling' CONFIG_BCM1250_TBPROF
+   bool '   Support for ZBbus profiling' CONFIG_SIBYTE_TBPROF
 
    if [ "$CONFIG_SIBYTE_SB1250" = "y" -o \
         "$CONFIG_SIBYTE_BCM1125" = "y" -o \
