@@ -4075,6 +4075,11 @@ CONFIG_TCIC
   "Bridge" is the name used for the hardware inside your computer that
   PCMCIA cards are plugged into. If unsure, say N.
 
+CONFIG_PCMCIA_SIBYTE
+  Say Y here to include support for the SiByte SOC's built-in PCMCIA
+  interface.  Only ATA cards and CompactFlash are currently
+  supported.
+
 System V IPC
 CONFIG_SYSVIPC
   Inter Process Communication is a suite of library functions and
