@@ -213,6 +213,7 @@ static int __init au1000_pcmcia_driver_init(void)
 			pcmcia_socket[i].phys_mem = 
 				(ioaddr_t)AU1X_SOCK0_PHYS_MEM;
 		}
+#ifndef CONFIG_MIPS_TITANIUM
 		else  {
 			pcmcia_socket[i].virt_io = 
 				(u32)ioremap((ioaddr_t)AU1X_SOCK1_IO, 0x1000) -
@@ -222,6 +223,7 @@ static int __init au1000_pcmcia_driver_init(void)
 			pcmcia_socket[i].phys_mem = 
 				(ioaddr_t)AU1X_SOCK1_PHYS_MEM;
 		}
+#endif
 	}
 
 	/* Only advertise as many sockets as we can detect: */

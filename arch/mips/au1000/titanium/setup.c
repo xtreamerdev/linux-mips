@@ -81,8 +81,7 @@ static phys_t au1500_fixup_bigphys_addr(phys_t phys_addr, phys_t size);
 void __init au1x00_setup(void)
 {
 	char *argptr;
-	u32 pin_func, static_cfg0;
-	u32 sys_freqctrl, sys_clksrc;
+	u32 pin_func;
 	
 	argptr = prom_getcmdline();
 
@@ -121,10 +120,6 @@ void __init au1x00_setup(void)
 	initrd_end = (unsigned long)&__rd_end;
 #endif
 
-	// set AUX clock to 12MHz * 8 = 96 MHz
-	au_writel(8, SYS_AUXPLL);
-	au_writel(0, SYS_PINSTATERD);
-	udelay(100);
 
 #if defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1X00_USB_DEVICE)
 #ifdef CONFIG_USB_OHCI
@@ -136,46 +131,18 @@ void __init au1x00_setup(void)
 			USB_OHCI_BASE, USB_OHCI_LEN, AU1000_USB_HOST_INT);
 		strcat(argptr, usb_args);
 	}
+
+	// enable host controller and wait for reset done
+	au_writel(0x08, USB_HOST_CONFIG);
+	udelay(1000);
+	au_writel(0x0c, USB_HOST_CONFIG);
+	udelay(1000);
+	au_readl(USB_HOST_CONFIG);
+	while (!(au_readl(USB_HOST_CONFIG) & 0x10))
+	    ;
+	au_readl(USB_HOST_CONFIG);
 #endif
 
-	/* zero and disable FREQ2 */
-	sys_freqctrl = au_readl(SYS_FREQCTRL0);
-	sys_freqctrl &= ~0xFFF00000;
-	au_writel(sys_freqctrl, SYS_FREQCTRL0);
-
-	/* zero and disable USBH/USBD clocks */
-	sys_clksrc = au_readl(SYS_CLKSRC);
-	sys_clksrc &= ~0x00007FE0;
-	au_writel(sys_clksrc, SYS_CLKSRC);
-
-	sys_freqctrl = au_readl(SYS_FREQCTRL0);
-	sys_freqctrl &= ~0xFFF00000;
-
-	sys_clksrc = au_readl(SYS_CLKSRC);
-	sys_clksrc &= ~0x00007FE0;
-
-	// FREQ2 = aux/2 = 48 MHz
-	sys_freqctrl |= ((0<<22) | (1<<21) | (1<<20));
-	au_writel(sys_freqctrl, SYS_FREQCTRL0);
-
-	/*
-	 * Route 48MHz FREQ2 into USB Host and/or Device
-	 */
-#ifdef CONFIG_USB_OHCI
-	sys_clksrc |= ((4<<12) | (0<<11) | (0<<10));
-#endif
-#ifdef CONFIG_AU1X00_USB_DEVICE
-	sys_clksrc |= ((4<<7) | (0<<6) | (0<<5));
-#endif
-	au_writel(sys_clksrc, SYS_CLKSRC);
-
-
-	pin_func = au_readl(SYS_PINFUNC) & (u32)(~0x8000);
-#ifndef CONFIG_AU1X00_USB_DEVICE
-	// 2nd USB port is USB host
-	pin_func |= 0x8000;
-#endif
-	au_writel(pin_func, SYS_PINFUNC);
 #endif // defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1000_USB_DEVICE)
 
 
@@ -195,18 +162,6 @@ void __init au1x00_setup(void)
 	au_writel(0x01, UART3_ADDR+UART_MCR); //? UART_MCR_DTR is 0x01???
 	// CONFIG_MYCABLE_XXS_1500
 
-
-#ifdef CONFIG_USB_OHCI
-	// enable host controller and wait for reset done
-	au_writel(0x08, USB_HOST_CONFIG);
-	udelay(1000);
-	au_writel(0x0c, USB_HOST_CONFIG);
-	udelay(1000);
-	au_readl(USB_HOST_CONFIG);
-	while (!(au_readl(USB_HOST_CONFIG) & 0x10))
-	    ;
-	au_readl(USB_HOST_CONFIG);
-#endif
 
 #ifdef CONFIG_PCMCIA_TITANIUM
 	/* setup pcmcia signals */
@@ -234,20 +189,11 @@ void __init au1x00_setup(void)
 #endif
 
 #ifdef CONFIG_PCI
-	// Setup PCI bus controller
-	au_writel(0, Au1500_PCI_CMEM);
-	au_writel(0x00003fff, Au1500_CFG_BASE);
 #if defined(__MIPSEB__)
 	au_writel(0xf | (2<<6) | (1<<4), Au1500_PCI_CFG);
 #else
 	au_writel(0xf, Au1500_PCI_CFG);
 #endif
-	au_writel(0xf0000000, Au1500_PCI_MWMASK_DEV);
-	au_writel(0, Au1500_PCI_MWBASE_REV_CCL);
-	au_writel(0x02a00356, Au1500_PCI_STATCMD);
-	au_writel(0x00003c04, Au1500_PCI_HDRTYPE);	
-	au_writel(0x00000008, Au1500_PCI_MBAR);
-	au_sync();
 #endif
 
 	while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_E0S);
@@ -255,16 +201,6 @@ void __init au1x00_setup(void)
 	au_sync();
 	while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_T0S);
 	au_writel(0, SYS_TOYTRIM);
-
-	/* Enable BCLK switching */
-	au_writel(0x00000060, 0xb190003c);
-
-	/* setup the static bus controller */
-	au_writel(0x00000002, MEM_STCFG3);  /* type = PCMCIA */
-	au_writel(0x280E3D07, MEM_STTIME3); /* 250ns cycle time */
-	au_writel(0x10000000, MEM_STADDR3); /* any PCMCIA select */
-
-	printk("AMD Alchemy Titanium Board\n");
 }
 
 static phys_t au1500_fixup_bigphys_addr(phys_t phys_addr, phys_t size)
