@@ -5,10 +5,10 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * (C) Copyright 1996, 1997 by Ralf Baechle
+ * (C) Copyright 1996, 1997, 2002 by Ralf Baechle
  */
-#ifndef	__ASM_MIPS_CACHEOPS_H
-#define	__ASM_MIPS_CACHEOPS_H
+#ifndef	__ASM_CACHEOPS_H
+#define	__ASM_CACHEOPS_H
 
 /*
  * Cache Operations
@@ -35,6 +35,7 @@
 #define Hit_Writeback_Inv_D	0x15
 					/* 0x16 is unused */
 #define Hit_Writeback_Inv_SD	0x17
+#define R5K_Page_Invalidate_S	0x17
 #define Hit_Writeback_I		0x18
 #define Hit_Writeback_D		0x19
 					/* 0x1a is unused */
@@ -44,4 +45,4 @@
 #define Hit_Set_Virtual_SI	0x1e
 #define Hit_Set_Virtual_SD	0x1f
 
-#endif	/* __ASM_MIPS_CACHEOPS_H */
+#endif	/* __ASM_CACHEOPS_H */
