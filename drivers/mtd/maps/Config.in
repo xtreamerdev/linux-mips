@@ -52,6 +52,11 @@ if [ "$CONFIG_MIPS" = "y" ]; then
       bool '  Pb1[015]00 boot flash device' CONFIG_MTD_PB1500_BOOT 
       bool '  Pb1[015]00 user flash device (2nd 32MB bank)' CONFIG_MTD_PB1500_USER
    fi
+   tristate '  Db1x00 MTD support' CONFIG_MTD_DB1X00
+   if [ "$CONFIG_MTD_DB1X00" = "y" -o "$CONFIG_MTD_DB1X00" = "m" ]; then
+      bool '  Db1x00 boot flash device' CONFIG_MTD_DB1X00_BOOT 
+      bool '  Db1x00 user flash device (2nd bank)' CONFIG_MTD_DB1X00_USER
+   fi
    dep_tristate '  Flash chip mapping on ITE QED-4N-S01B, Globespan IVR or custom board' CONFIG_MTD_CSTM_MIPS_IXX $CONFIG_MTD_CFI $CONFIG_MTD_JEDEC $CONFIG_MTD_PARTITIONS 
    if [ "$CONFIG_MTD_CSTM_MIPS_IXX" = "y" -o "$CONFIG_MTD_CSTM_MIPS_IXX" = "m" ]; then
       hex '    Physical start address of flash mapping' CONFIG_MTD_CSTM_MIPS_IXX_START 0x8000000
