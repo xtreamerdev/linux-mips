@@ -224,9 +224,16 @@ setup_arch(char **cmdline_p, unsigned long * memory_start_p,
 	alpha_using_srm = strncmp((const char *)hwrpb->ssn, "MILO", 4) != 0;
 #endif
 
-	printk("Booting on %s%s%s using machine vector %s\n",
+	printk("%s on %s%s%s using machine vector %s from %s\n",
+#ifdef CONFIG_ALPHA_GENERIC
+	       "Booting GENERIC",
+#else
+	       "Booting",
+#endif
 	       type_name, (*var_name ? " variation " : ""),
-	       var_name, alpha_mv.vector_name);
+	       var_name, alpha_mv.vector_name,
+	       (alpha_using_srm ? "SRM" : "MILO"));
+
 	printk("Command line: %s\n", command_line);
 
 	/* 
@@ -333,8 +340,11 @@ find_end_memory(void)
 	high = (high + PAGE_SIZE) & (PAGE_MASK*2);
 
 	/* Enforce maximum of 2GB even if there is more.  Blah.  */
-	if (high > 0x80000000UL)
+	if (high > 0x80000000UL) {
+		printk("Cropping memory from %luMB to 2048MB\n", high);
 		high = 0x80000000UL;
+	}
+
 	return PAGE_OFFSET + high;
 }
 
@@ -727,7 +737,8 @@ int get_cpuinfo(char *buffer)
 		      "BogoMIPS\t\t: %lu.%02lu\n"
 		      "kernel unaligned acc\t: %ld (pc=%lx,va=%lx)\n"
 		      "user unaligned acc\t: %ld (pc=%lx,va=%lx)\n"
-		      "platform string\t\t: %s\n",
+		      "platform string\t\t: %s\n"
+		      "cpus detected\t\t: %ld\n",
 		       cpu_name, cpu->variation, cpu->revision,
 		       (char*)cpu->serial_no,
 		       systype_name, sysvariation_name, hwrpb->sys_revision,
@@ -742,7 +753,7 @@ int get_cpuinfo(char *buffer)
 		       loops_per_sec / 500000, (loops_per_sec / 5000) % 100,
 		       unaligned[0].count, unaligned[0].pc, unaligned[0].va,
 		       unaligned[1].count, unaligned[1].pc, unaligned[1].va,
-		       platform_string());
+		       platform_string(), hwrpb->nr_processors);
 
 #ifdef __SMP__
 	len += smp_info(buffer+len);

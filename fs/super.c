@@ -48,6 +48,7 @@ extern void wait_for_keypress(void);
 extern struct file_operations * get_blkfops(unsigned int major);
 
 extern int root_mountflags;
+extern void rd_load_secondary(void);
 
 static int do_remount_sb(struct super_block *sb, int flags, char * data);
 
@@ -104,7 +105,8 @@ static struct vfsmount *add_vfsmnt(struct super_block *sb,
 	lptr->mnt_dev = sb->s_dev;
 	lptr->mnt_flags = sb->s_flags;
 
-	sema_init(&lptr->mnt_dquot.semaphore, 1);
+	sema_init(&lptr->mnt_dquot.dqio_sem, 1);
+	sema_init(&lptr->mnt_dquot.dqoff_sem, 1);
 	lptr->mnt_dquot.flags = 0;
 
 	/* N.B. Is it really OK to have a vfsmount without names? */
@@ -1160,9 +1162,9 @@ void __init mount_root(void)
 
 #ifdef CONFIG_BLK_DEV_FD
 	if (MAJOR(ROOT_DEV) == FLOPPY_MAJOR) {
-#ifdef CONFIG_BLK_DEV_RAM
+#ifdef CONFIG_BLK_DEV_RAM	
 		extern int rd_doload;
-#endif
+#endif		
 		floppy_eject();
 #ifndef CONFIG_BLK_DEV_RAM
 		printk(KERN_NOTICE "(Warning, this kernel has no ramdisk support)\n");
@@ -1171,7 +1173,7 @@ void __init mount_root(void)
 		if(rd_doload==2)
 			rd_load_secondary();
 		else
-#endif
+#endif		
 		{
 			printk(KERN_NOTICE "VFS: Insert root floppy and press ENTER\n");
 			wait_for_keypress();

@@ -110,15 +110,14 @@ void timer_interrupt(struct pt_regs * regs)
 			/*
 			 * update the rtc when needed
 			 */
-			if ( xtime.tv_sec > last_rtc_update + 660 )
+			if ( (time_status & STA_UNSYNC) &&
+			     (xtime.tv_sec > last_rtc_update + 660) )
 			{
-				if (ppc_md.set_rtc_time(xtime.tv_sec) == 0) {
+				if (ppc_md.set_rtc_time(xtime.tv_sec) == 0)
 					last_rtc_update = xtime.tv_sec;
-				}
-				else {
+				else
 					/* do it again in 60 s */
 					last_rtc_update = xtime.tv_sec - 60;
-				}
 			}
 		}
 	}
@@ -168,7 +167,6 @@ void do_settimeofday(struct timeval *tv)
 	int frac_tick;
 	
 	last_rtc_update = 0; /* so the rtc gets updated soon */
-	
 	frac_tick = tv->tv_usec % (1000000 / HZ);
 	save_flags(flags);
 	cli();
@@ -332,6 +330,3 @@ void to_tm(int tim, struct rtc_time * tm)
 	 */
 	GregorianDay(tm);
 }
-
-
-

@@ -225,6 +225,11 @@ static void iommu_map_dma_area(unsigned long addr, int len)
 			pmd_t *pmdp;
 			pte_t *ptep;
 
+			if (viking_mxcc_present)
+				viking_mxcc_flush_page(page);
+			else if (viking_flush)
+				viking_flush_page(page);
+
 			pgdp = pgd_offset(init_task.mm, addr);
 			pmdp = pmd_offset(pgdp, addr);
 			ptep = pte_offset(pmdp, addr);

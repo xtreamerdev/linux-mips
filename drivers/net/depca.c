@@ -221,11 +221,13 @@
                            by <tymm@computer.org> 
       0.451    5-Nov-98   Fixed mca stuff cuz I'm a dummy. <tymm@computer.org>
       0.5     14-Nov-98   Re-spin for 2.1.x kernels.
+      0.51    27-Jun-99   Correct received packet length for CRC from
+                           report by <worm@dkik.dk>
 
     =========================================================================
 */
 
-static const char *version = "depca.c:v0.5 1998/11/14 davies@maniac.ultranet.com\n";
+static const char *version = "depca.c:v0.51 1999/6/27 davies@maniac.ultranet.com\n";
 
 #include <linux/config.h>
 #include <linux/module.h>
@@ -947,7 +949,7 @@ depca_rx(struct device *dev)
 	if (status & R_CRC)  lp->stats.rx_crc_errors++;
 	if (status & R_BUFF) lp->stats.rx_fifo_errors++;
       } else {	
-	short len, pkt_len = readw(&lp->rx_ring[entry].msg_length);
+	short len, pkt_len = readw(&lp->rx_ring[entry].msg_length) - 4;
 	struct sk_buff *skb;
 
 	skb = dev_alloc_skb(pkt_len+2);
@@ -1898,14 +1900,12 @@ static int depca_ioctl(struct device *dev, struct ifreq *rq, int cmd)
       tmp.addr[i] = dev->dev_addr[i];
     }
     ioc->len = ETH_ALEN;
-    if (verify_area(VERIFY_WRITE, (void *)ioc->data, ioc->len)) return -EFAULT;
-    copy_to_user(ioc->data, tmp.addr, ioc->len);
+    if (copy_to_user(ioc->data, tmp.addr, ioc->len)) return -EFAULT;
     break;
 
   case DEPCA_SET_HWADDR:             /* Set the hardware address */
     if (!capable(CAP_NET_ADMIN)) return -EPERM;
-    if (verify_area(VERIFY_READ, (void *)ioc->data, ETH_ALEN)) return -EFAULT;
-    copy_from_user(tmp.addr,ioc->data,ETH_ALEN);
+    if (copy_from_user(tmp.addr,ioc->data,ETH_ALEN)) return -EFAULT;
     for (i=0; i<ETH_ALEN; i++) {
       dev->dev_addr[i] = tmp.addr[i];
     }
@@ -1956,14 +1956,12 @@ static int depca_ioctl(struct device *dev, struct ifreq *rq, int cmd)
 
   case DEPCA_GET_MCA:                /* Get the multicast address table */
     ioc->len = (HASH_TABLE_LEN >> 3);
-    if (verify_area(VERIFY_WRITE, ioc->data, ioc->len)) return -EFAULT;
-    copy_to_user(ioc->data, lp->init_block.mcast_table, ioc->len); 
+    if (copy_to_user(ioc->data, lp->init_block.mcast_table, ioc->len)) return -EFAULT; 
     break;
 
   case DEPCA_SET_MCA:                /* Set a multicast address */
     if (!capable(CAP_NET_ADMIN)) return -EPERM;
-    if (verify_area(VERIFY_READ, ioc->data, ETH_ALEN*ioc->len)) return -EFAULT;
-    copy_from_user(tmp.addr, ioc->data, ETH_ALEN * ioc->len);
+    if (copy_from_user(tmp.addr, ioc->data, ETH_ALEN * ioc->len)) return -EFAULT;
     set_multicast_list(dev);
     break;
 
@@ -1980,11 +1978,8 @@ static int depca_ioctl(struct device *dev, struct ifreq *rq, int cmd)
   case DEPCA_GET_STATS:              /* Get the driver statistics */
     cli();
     ioc->len = sizeof(lp->pktStats);
-    if (verify_area(VERIFY_WRITE, ioc->data, ioc->len)) {
-	status = -EFAULT;
-    } else {
-	copy_to_user(ioc->data, &lp->pktStats, ioc->len); 
-    }
+	if (copy_to_user(ioc->data, &lp->pktStats, ioc->len)) 
+		status = -EFAULT;
     sti();
     break;
 
@@ -2002,8 +1997,7 @@ static int depca_ioctl(struct device *dev, struct ifreq *rq, int cmd)
     tmp.sval[i++] = inw(DEPCA_DATA);
     memcpy(&tmp.sval[i], &lp->init_block, sizeof(struct depca_init));
     ioc->len = i+sizeof(struct depca_init);
-    if (verify_area(VERIFY_WRITE, ioc->data, ioc->len)) return -EFAULT;
-    copy_to_user(ioc->data, tmp.addr, ioc->len);
+    if (copy_to_user(ioc->data, tmp.addr, ioc->len)) return -EFAULT;
     break;
 
   default:

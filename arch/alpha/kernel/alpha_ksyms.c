@@ -104,7 +104,9 @@ EXPORT_SYMBOL(hwrpb);
 EXPORT_SYMBOL(wrusp);
 EXPORT_SYMBOL(start_thread);
 EXPORT_SYMBOL(alpha_read_fp_reg);
+EXPORT_SYMBOL(alpha_read_fp_reg_s);
 EXPORT_SYMBOL(alpha_write_fp_reg);
+EXPORT_SYMBOL(alpha_write_fp_reg_s);
 
 /* In-kernel system calls.  */
 EXPORT_SYMBOL(__kernel_thread);
@@ -199,3 +201,5 @@ EXPORT_SYMBOL_NOVERS(__remq);
 EXPORT_SYMBOL_NOVERS(__remqu);
 EXPORT_SYMBOL_NOVERS(memcpy);
 EXPORT_SYMBOL_NOVERS(memset);
+
+

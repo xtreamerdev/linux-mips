@@ -145,7 +145,10 @@ cookie_v4_check(struct sock *sk, struct sk_buff *skb, struct ip_options *opt)
  	req->rmt_port = skb->h.th->source;
 	req->af.v4_req.loc_addr = skb->nh.iph->daddr;
 	req->af.v4_req.rmt_addr = skb->nh.iph->saddr;
-	req->class = &or_ipv4; /* for savety */
+	req->class = &or_ipv4; /* for safety */
+#ifdef CONFIG_IP_TRANSPARENT_PROXY 
+	req->lcl_port = skb->h.th->dest;
+#endif
 
 	req->af.v4_req.opt = NULL;
 

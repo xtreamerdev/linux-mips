@@ -1,6 +1,6 @@
 VERSION = 2
 PATCHLEVEL = 2
-SUBLEVEL = 10
+SUBLEVEL = 12
 EXTRAVERSION =
 
 ARCH = mips
@@ -71,7 +71,7 @@ KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 #
 # INSTALL_MOD_PATH specifies a prefix to MODLIB for module directory 
 # relocations required by build roots.  This is not defined in the
-# makefile but the arguement can be passed to make if needed.
+# makefile but the argument can be passed to make if needed.
 #
 
 #
@@ -88,6 +88,9 @@ SVGA_MODE=	-DSVGA_MODE=NORMAL_VGA
 #
 
 CFLAGS = -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer
+
+# use '-fno-strict-aliasing', but only if the compiler can take it
+CFLAGS += $(shell if $(CC) -fno-strict-aliasing -S -o /dev/null -xc /dev/null >/dev/null 2>&1; then echo "-fno-strict-aliasing"; fi)
 
 ifdef CONFIG_SMP
 CFLAGS += -D__SMP__
@@ -153,6 +156,10 @@ endif
 
 ifeq ($(CONFIG_FC4),y)
 DRIVERS := $(DRIVERS) drivers/fc4/fc4.a
+endif
+
+ifeq ($(CONFIG_NET_FC),y)
+DRIVERS := $(DRIVERS) drivers/net/fc/fc.a
 endif
 
 ifdef CONFIG_PPC
@@ -332,7 +339,7 @@ modules_install:
 	if [ -f FC4_MODULES   ]; then inst_mod FC4_MODULES   fc4;   fi; \
 	if [ -f IRDA_MODULES  ]; then inst_mod IRDA_MODULES  net;   fi; \
 	\
-	ls *.o > $$MODLIB/.allmods; \
+	for f in *.o; do [ -r $$f ] && echo $$f; done > $$MODLIB/.allmods; \
 	echo $$MODULES | tr ' ' '\n' | sort | comm -23 $$MODLIB/.allmods - > $$MODLIB/.misc; \
 	if [ -s $$MODLIB/.misc ]; then inst_mod $$MODLIB/.misc misc; fi; \
 	rm -f $$MODLIB/.misc $$MODLIB/.allmods; \
@@ -352,8 +359,8 @@ endif
 
 clean:	archclean
 	rm -f kernel/ksyms.lst include/linux/compile.h
-	rm -f core `find . -name '*.[oas]' ! -regex '.*lxdialog/.*' \
-		! -regex '.*ksymoops/.*' -print`
+	rm -f core `find . -name '*.[oas]' ! \( -regex '.*lxdialog/.*' \
+		-o -regex '.*ksymoops/.*' \) -print`
 	rm -f core `find . -type f -name 'core' -print`
 	rm -f core `find . -name '.*.flags' -print`
 	rm -f vmlinux System.map
@@ -401,7 +408,7 @@ backup: mrproper
 sums:
 	find . -type f -print | sort | env -i xargs sum > .SUMS
 
-dep-files: scripts/mkdep archdep include/linux/version.h
+dep-files: scripts/mkdep archdep include/linux/version.h new-genksyms
 	scripts/mkdep init/*.c > .depend
 	find $(FINDHPATH) -follow -name \*.h ! -name modversions.h -print | env -i PATH="$(PATH)" HPATH="$(HPATH)" xargs scripts/mkdep > .hdepend
 #	set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i fastdep; done
@@ -411,7 +418,19 @@ dep-files: scripts/mkdep archdep include/linux/version.h
 MODVERFILE :=
 
 ifdef CONFIG_MODVERSIONS
+
 MODVERFILE := $(TOPDIR)/include/linux/modversions.h
+
+new-genksyms:
+	@$(GENKSYMS) -k $(VERSION).$(PATCHLEVEL).$(SUBLEVEL) </dev/null \
+	2>/dev/null || ( echo -e "\nYou need a new version of the genksyms\
+	program, which is part of\nthe modutils package. Please read the file\
+	Documentation/Changes\nfor more information.\n"; exit 1 )
+
+else
+
+new-genksyms:
+
 endif
 
 depend dep: dep-files $(MODVERFILE)

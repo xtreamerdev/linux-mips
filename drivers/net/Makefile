@@ -5,7 +5,7 @@
 
 SUB_DIRS     := 
 MOD_SUB_DIRS := $(SUB_DIRS)
-ALL_SUB_DIRS := $(SUB_DIRS) hamradio irda
+ALL_SUB_DIRS := $(SUB_DIRS) hamradio irda fc
 
 L_TARGET := net.a
 L_OBJS   := auto_irq.o
@@ -67,6 +67,14 @@ else
   endif
 endif
 
+ifeq ($(CONFIG_IBMOL),y)
+L_OBJS += olympic.o
+else
+  ifeq ($(CONFIG_IBMOL),m)
+  M_OBJS += olympic.o
+  endif
+endif
+
 ifeq ($(CONFIG_SKTR),y)
 L_OBJS += sktr.o
 else
@@ -80,6 +88,14 @@ L_OBJS += ethertap.o
 else
   ifeq ($(CONFIG_ETHERTAP),m)
   M_OBJS += ethertap.o
+  endif
+endif
+
+ifeq ($(CONFIG_NET_SB1000),y)
+L_OBJS += sb1000.o
+else
+  ifeq ($(CONFIG_NET_SB1000),m)
+  M_OBJS += sb1000.o
   endif
 endif
 
@@ -143,14 +159,6 @@ else
   endif
 endif
 
-ifeq ($(CONFIG_ETHERH),y)
-CONFIG_8390_BUILTIN = y
-else
-  ifeq ($(CONFIG_ETHERH),m)
-  CONFIG_8390_MODULE = y
-  endif
-endif
-
 ifeq ($(CONFIG_WD80x3),y)
 L_OBJS += wd.o
 CONFIG_8390_BUILTIN = y
@@ -168,14 +176,6 @@ else
   ifeq ($(CONFIG_EL2),m)
   CONFIG_8390_MODULE = y
   M_OBJS += 3c503.o
-  endif
-endif
-
-ifeq ($(CONFIG_ETHERH),y)
-CONFIG_8390_BUILTIN = y
-else
-  ifeq ($(CONFIG_ETHERH),m)
-  CONFIG_8390_MODULE = y
   endif
 endif
 
@@ -438,6 +438,14 @@ else
   endif
 endif
 
+ifeq ($(CONFIG_SUNBMAC),y)
+L_OBJS += sunbmac.o
+else
+  ifeq ($(CONFIG_SUNBMAC),m)
+  M_OBJS += sunbmac.o
+  endif
+endif
+
 ifeq ($(CONFIG_MYRI_SBUS),y)
 L_OBJS += myri_sbus.o
 else
@@ -558,6 +566,14 @@ else
   endif
 endif
 
+ifeq ($(CONFIG_SIS900),y)
+L_OBJS += sis900.o
+else
+  ifeq ($(CONFIG_SIS900),m)
+  M_OBJS += sis900.o
+  endif
+endif
+
 ifeq ($(CONFIG_YELLOWFIN),y)
 L_OBJS += yellowfin.o
 else
@@ -579,6 +595,14 @@ L_OBJS += wavelan.o
 else
   ifeq ($(CONFIG_WAVELAN),m)
   M_OBJS += wavelan.o
+  endif
+endif
+
+ifeq ($(CONFIG_ARLAN),y)
+LX_OBJS += arlan.o arlan-proc.o
+else
+  ifeq ($(CONFIG_ARLAN),m)
+  MX_OBJS += arlan.o arlan-proc.o
   endif
 endif
 
@@ -779,6 +803,19 @@ else
   M_OBJS += hostess_sv11.o
   endif
 endif
+
+ifeq ($(CONFIG_SEALEVEL_4021),y)
+L_OBJS += sealevel.o
+CONFIG_85230_BUILTIN = y
+CONFIG_SYNCPPP_BUILTIN = y
+else
+  ifeq ($(CONFIG_SEALEVEL_4021),m)
+  CONFIG_85230_MODULE = y
+  CONFIG_SYNCPPP_MODULE = y
+  M_OBJS += sealevel.o
+  endif
+endif
+
 
 ifeq ($(CONFIG_COSA),y)
 L_OBJS += cosa.o
@@ -1098,6 +1135,15 @@ MOD_IN_SUB_DIRS += irda
 else
   ifeq ($(CONFIG_IRDA),m)
   MOD_IN_SUB_DIRS += irda
+  endif
+endif
+
+ifeq ($(CONFIG_NET_FC),y)
+SUB_DIRS += fc
+MOD_IN_SUB_DIRS += fc
+else
+  ifeq ($(CONFIG_NET_FC),m)
+  MOD_IN_SUB_DIRS += fc
   endif
 endif
 

@@ -1,7 +1,6 @@
 /* sgiserial.c: Serial port driver for SGI machines.
  *
  * Copyright (C) 1996 David S. Miller (dm@engr.sgi.com)
- *
  */
 
 /*
@@ -631,7 +630,7 @@ static void do_softint(void *private_)
 {
 	struct sgi_serial	*info = (struct sgi_serial *) private_;
 	struct tty_struct	*tty;
-	
+
 	tty = info->tty;
 	if (!tty)
 		return;
@@ -657,14 +656,13 @@ static void do_serial_hangup(void *private_)
 {
 	struct sgi_serial	*info = (struct sgi_serial *) private_;
 	struct tty_struct	*tty;
-	
+
 	tty = info->tty;
 	if (!tty)
 		return;
 
 	tty_hangup(tty);
 }
-
 
 /*
  * This subroutine is called when the RS_TIMER goes off.  It is used
@@ -1357,7 +1355,7 @@ static int rs_ioctl(struct tty_struct *tty, struct file * file,
 		if (tty->flags & (1 << TTY_IO_ERROR))
 		    return -EIO;
 	}
-	
+
 	switch (cmd) {
 		case TCSBRK:	/* SVID version: non-zero arg --> no break */
 			retval = tty_check_change(tty);
@@ -1779,7 +1777,6 @@ static inline struct sgi_zslayout *get_zs(int chip)
 
 }
 
-
 static inline void
 rs_cons_check(struct sgi_serial *ss, int channel)
 {
@@ -1794,8 +1791,6 @@ rs_cons_check(struct sgi_serial *ss, int channel)
 		return;
 	zs_conschan = ss->zs_channel;
 	zs_consinfo = ss;
-
-
 
 	/* If this is console input, we handle the break received
 	 * status interrupt on this line to mean prom_halt().
@@ -1813,7 +1808,6 @@ rs_cons_check(struct sgi_serial *ss, int channel)
 		panic("Console baud rate weirdness");
 	}
 
-
 	/* Set flag variable for this port so that it cannot be
 	 * opened for other uses by accident.
 	 */
@@ -1824,7 +1818,6 @@ rs_cons_check(struct sgi_serial *ss, int channel)
 			printk("zs%d: console I/O\n", ((channel>>1)&1));
 			msg_printed = 1;
 		}
-
 	} else {
 		printk("zs%d: console %s\n", ((channel>>1)&1),
 		       (i==1 ? "input" : (o==1 ? "output" : "WEIRD")));
@@ -1840,7 +1833,6 @@ int rs_init(void)
 	int chip, channel, i, flags;
 	struct sgi_serial *info;
 
-
 	/* Setup base handler, and timer table. */
 	init_bh(SERIAL_BH, do_serial_bh);
 	timer_table[RS_TIMER].fn = rs_timer;
@@ -1850,7 +1842,7 @@ int rs_init(void)
 
 	/* Initialize the tty_driver structure */
 	/* SGI: Not all of this is exactly right for us. */
-	
+
 	memset(&serial_driver, 0, sizeof(struct tty_driver));
 	serial_driver.magic = TTY_DRIVER_MAGIC;
 	serial_driver.name = "ttyS";
@@ -1897,7 +1889,7 @@ int rs_init(void)
 		panic("Couldn't register serial driver\n");
 	if (tty_register_driver(&callout_driver))
 		panic("Couldn't register callout driver\n");
-	
+
 	save_flags(flags); cli();
 
 	/* Set up our interrupt linked list */
@@ -2082,7 +2074,8 @@ rs_kgdb_hook(int tty_num)
 	ZS_CLEARFIFO(zs_kgdbchan);
 }
 
-static void zs_console_write(struct console *co, const char *str, unsigned int count)
+static void
+zs_console_write(struct console *co, const char *str, unsigned int count)
 {
 
 	while(count--) {
@@ -2107,7 +2100,7 @@ static kdev_t zs_console_device(struct console *con)
 }
 
 
-__initfunc(static int zs_console_setup(struct console *con, char *options))
+static int __init zs_console_setup(struct console *con, char *options)
 {
 	struct sgi_serial *info;
 	int	baud = 9600;
@@ -2175,7 +2168,7 @@ __initfunc(static int zs_console_setup(struct console *con, char *options))
 	}
 	con->cflag = cflag;
 
-        rs_cons_hook(0, 0, con->index);
+	rs_cons_hook(0, 0, con->index);
 	info = zs_soft + con->index;
 	info->is_cons = 1;
     
@@ -2227,30 +2220,30 @@ __initfunc(static int zs_console_setup(struct console *con, char *options))
 	load_zsregs(info->zs_channel, zscons_regs);
 	ZS_CLEARERR(info->zs_channel);
 	ZS_CLEARFIFO(info->zs_channel);
+
 	return 0;
 }
 
 static struct console sgi_console_driver = {
-        "ttyS",
-        zs_console_write,       /* write */
-        NULL,                   /* read */
-        zs_console_device,      /* device */
-        zs_console_wait_key,    /* wait_key */
-        NULL,                   /* unblank */
-        zs_console_setup,       /* setup */
-        CON_PRINTBUFFER,
-        -1,
-        0,
-        NULL
+	"ttyS",
+	zs_console_write,	/* write */
+	NULL,			/* read */
+	zs_console_device,	/* device */
+	zs_console_wait_key,	/* wait_key */
+	NULL,			/* unblank */
+	zs_console_setup,	/* setup */
+	CON_PRINTBUFFER,
+	-1,
+	0,
+	NULL
 };
 
 /*
  *	Register console.
  */
-__initfunc (long serial_console_init(long kmem_start, long kmem_end))
+long __init serial_console_init(long kmem_start, long kmem_end)
 {
 	register_console(&sgi_console_driver);
+
 	return kmem_start;
 }
-
-

@@ -141,10 +141,10 @@ else
 endif
 
 ifeq ($(CONFIG_FB_SGIVW),y)
-L_OBJS += sgivwfb.o
+LX_OBJS += sgivwfb.o
 else
   ifeq ($(CONFIG_FB_SGIVW),m)
-  M_OBJS += sgivwfb.o
+  MX_OBJS += sgivwfb.o
   endif
 endif
 
@@ -192,14 +192,20 @@ endif
 
 ifeq ($(CONFIG_FB_TGA),y)
 L_OBJS += tgafb.o
+CONFIG_FBGEN_BUILTIN = y
 else
   ifeq ($(CONFIG_FB_TGA),m)
   M_OBJS += tgafb.o
+  CONFIG_FBGEN_MODULE = y
   endif
 endif
 
 ifeq ($(CONFIG_FB_VESA),y)
 L_OBJS += vesafb.o
+endif
+
+ifeq ($(CONFIG_FB_VGA16),y)
+L_OBJS += vga16fb.o
 endif
 
 ifeq ($(CONFIG_FB_VIRGE),y)
@@ -208,10 +214,6 @@ else
   ifeq ($(CONFIG_FB_VIRGE),m)
   M_OBJS += virgefb.o
   endif
-endif
-
-ifdef CONFIG_FB_G364
-L_OBJS := $(L_OBJS) g364fb.o
 endif
 
 ifdef CONFIG_FB_FM2
@@ -459,6 +461,14 @@ OX_OBJS += fbcon-mfb.o
 else
   ifeq ($(CONFIG_FBCON_MFB),m)
   MX_OBJS += fbcon-mfb.o
+  endif
+endif
+
+ifeq ($(CONFIG_FBCON_VGA_PLANES),y)
+OX_OBJS += fbcon-vga-planes.o
+else
+  ifeq ($(CONFIG_FBCON_VGA_PLANES),m)
+  MX_OBJS += fbcon-vga-planes.o
   endif
 endif
 

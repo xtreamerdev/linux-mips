@@ -28,10 +28,12 @@ __initfunc(static void no_halt(char *s, int *ints))
 	boot_cpu_data.hlt_works_ok = 0;
 }
 
+#ifdef CONFIG_MCA
 __initfunc(static void mca_pentium(char *s, int *ints))
 {
 	mca_pentium_flag = 1;
 }
+#endif
 
 __initfunc(static void no_387(char *s, int *ints))
 {
@@ -44,7 +46,7 @@ static char __initdata fpu_error = 0;
 __initfunc(static void copro_timeout(void))
 {
 	fpu_error = 1;
-	timer_table[COPRO_TIMER].expires = jiffies+100;
+	timer_table[COPRO_TIMER].expires = jiffies+HZ;
 	timer_active |= 1<<COPRO_TIMER;
 	printk(KERN_ERR "387 failed: trying to reset\n");
 	send_sig(SIGFPE, current, 1);
@@ -102,7 +104,7 @@ __initfunc(static void check_fpu(void))
 	 * should get there first..
 	 */
 	printk(KERN_INFO "Checking 386/387 coupling... ");
-	timer_table[COPRO_TIMER].expires = jiffies+50;
+	timer_table[COPRO_TIMER].expires = jiffies+HZ/2;
 	timer_table[COPRO_TIMER].fn = copro_timeout;
 	timer_active |= 1<<COPRO_TIMER;
 	__asm__("clts ; fninit ; fnstcw %0 ; fwait":"=m" (*&control_word));
@@ -356,22 +358,6 @@ __initfunc(static void check_cyrix_cpu(void))
 
 __initfunc(static void check_cyrix_coma(void))
 {
-	if (boot_cpu_data.coma_bug) {
-		unsigned char ccr3, tmp;
-		cli();
-		ccr3 = getCx86(CX86_CCR3);
-		setCx86(CX86_CCR3, (ccr3 & 0x0f) | 0x10); /* enable MAPEN  */
-		tmp = getCx86(0x31);
-		setCx86(0x31, tmp | 0xf8);
-		tmp = getCx86(0x32);
-		setCx86(0x32, tmp | 0x7f);
-		setCx86(0x33, 0);
-		tmp = getCx86(0x3c);
-		setCx86(0x3c, tmp | 0x87);
-		setCx86(CX86_CCR3, ccr3);                 /* disable MAPEN */
-		sti();
-		printk("Cyrix processor with \"coma bug\" found, workaround enabled\n");
-	}
 }
  
 /*

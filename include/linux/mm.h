@@ -356,8 +356,6 @@ extern void put_cached_page(unsigned long);
 
 #define GFP_DMA		__GFP_DMA
 
-#define GFP_LEVEL_MASK 0xf
-
 /* vma is the first one with  address < vma->vm_end,
  * and even  address < vma->vm_start. Have to extend vma. */
 static inline int expand_stack(struct vm_area_struct * vma, unsigned long address)
@@ -366,10 +364,11 @@ static inline int expand_stack(struct vm_area_struct * vma, unsigned long addres
 
 	address &= PAGE_MASK;
 	grow = vma->vm_start - address;
-	if (vma->vm_end - address
-	    > (unsigned long) current->rlim[RLIMIT_STACK].rlim_cur ||
-	    (vma->vm_mm->total_vm << PAGE_SHIFT) + grow
-	    > (unsigned long) current->rlim[RLIMIT_AS].rlim_cur)
+	if ((vma->vm_end - address
+	    > current->rlim[RLIMIT_STACK].rlim_cur) ||
+	    ((current->rlim[RLIMIT_AS].rlim_cur < RLIM_INFINITY) &&
+	    ((vma->vm_mm->total_vm << PAGE_SHIFT) + grow
+	    > current->rlim[RLIMIT_AS].rlim_cur)))
 		return -ENOMEM;
 	vma->vm_start = address;
 	vma->vm_offset -= grow;

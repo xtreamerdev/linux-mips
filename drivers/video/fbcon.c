@@ -91,6 +91,9 @@
 #include <asm/machdep.h>
 #include <asm/setup.h>
 #endif
+#ifdef CONFIG_FBCON_VGA_PLANES
+#include <asm/io.h>
+#endif
 #define INCLUDE_LINUX_LOGO_DATA
 #include <asm/linux_logo.h>
 
@@ -212,7 +215,7 @@ static int fbcon_show_logo(void);
 
 #ifdef CONFIG_MAC
 /*
- * On the Macintoy, there may or may not be a working VBL int. We need to prob
+ * On the Macintoy, there may or may not be a working VBL int. We need to probe
  */
 static int vbl_detected = 0;
 
@@ -1383,14 +1386,6 @@ static int fbcon_blank(struct vc_data *conp, int blank)
 
     if (!p->can_soft_blank) {
 	if (blank) {
-#ifdef CONFIG_MAC
-	    if (MACH_IS_MAC) {
-		if (p->screen_base)
-		    mymemset(p->screen_base,
-			     p->var.xres_virtual*p->var.yres_virtual*
-			     p->var.bits_per_pixel>>3);
-	    } else
-#endif
 	    if (p->visual == FB_VISUAL_MONO01) {
 		if (p->screen_base)
 		    mymemset(p->screen_base,
@@ -2225,18 +2220,48 @@ __initfunc(static int fbcon_show_logo( void ))
 			   p->type == FB_TYPE_INTERLEAVED_PLANES)) {
 
 	    /* monochrome */
-	    unsigned char inverse = p->inverse ? 0x00 : 0xff;
+	    unsigned char inverse = p->inverse || p->visual == FB_VISUAL_MONO01
+		? 0x00 : 0xff;
 
 	    /* can't use simply memcpy because need to apply inverse */
 	    for( y1 = 0; y1 < LOGO_H; y1++ ) {
-		src = logo + y1*LOGO_LINE + x/8;
-		dst = fb + y1*line;
+		src = logo + y1*LOGO_LINE;
+		dst = fb + y1*line + x/8;
 		for( x1 = 0; x1 < LOGO_LINE; ++x1 )
 		    *dst++ = *src++ ^ inverse;
 	    }
 	    done = 1;
 	}
 #endif
+#if defined(CONFIG_FBCON_VGA_PLANES)
+	if (depth == 4 && p->type == FB_TYPE_VGA_PLANES) {
+		outb_p(1,0x3ce); outb_p(0xf,0x3cf);
+		outb_p(3,0x3ce); outb_p(0,0x3cf);
+		outb_p(5,0x3ce); outb_p(0,0x3cf);
+
+		src = logo;
+		for (y1 = 0; y1 < LOGO_H; y1++) {
+			for (x1 = 0; x1 < LOGO_W / 2; x1++) {
+				dst = fb + y1*line + x1/4 + x/8;
+
+				outb_p(0,0x3ce);
+				outb_p(*src >> 4,0x3cf);
+				outb_p(8,0x3ce);
+				outb_p(1 << (7 - x1 % 4 * 2),0x3cf);
+				*(volatile char *) dst |= 1;
+
+				outb_p(0,0x3ce);
+				outb_p(*src & 0xf,0x3cf);
+				outb_p(8,0x3ce);
+				outb_p(1 << (7 - (1 + x1 % 4 * 2)),0x3cf);
+				*(volatile char *) dst |= 1;
+
+				src++;
+			}
+		}
+		done = 1;
+	}
+#endif			
     }
     
     if (p->fb_info->fbops->fb_rasterimg)

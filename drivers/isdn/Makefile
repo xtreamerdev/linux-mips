@@ -1,6 +1,6 @@
 SUB_DIRS     :=
 MOD_SUB_DIRS :=
-ALL_SUB_DIRS := icn pcbit hisax avmb1 act2000
+ALL_SUB_DIRS := icn pcbit hisax avmb1 act2000 eicon divert
 
 L_OBJS :=
 LX_OBJS :=
@@ -24,6 +24,9 @@ ifeq ($(CONFIG_ISDN),y)
   endif
   ifdef CONFIG_ISDN_AUDIO
     L_OBJS += isdn_audio.o
+    ifdef CONFIG_ISDN_TTY_FAX
+      L_OBJS += isdn_ttyfax.o
+    endif
   endif
 else
   ifeq ($(CONFIG_ISDN),m)
@@ -33,6 +36,7 @@ else
     OX_OBJS += isdn_common.o
     ifdef CONFIG_ISDN_PPP
       O_OBJS += isdn_ppp.o
+      M_OBJS += isdn_bsdcomp.o
     endif
     ifdef CONFIG_ISDN_X25
       O_OBJS += isdn_x25iface.o
@@ -40,8 +44,17 @@ else
     endif  
     ifdef CONFIG_ISDN_AUDIO
       O_OBJS += isdn_audio.o
+      ifdef CONFIG_ISDN_TTY_FAX
+        O_OBJS += isdn_ttyfax.o
+      endif
     endif
   endif
+endif
+
+ifeq ($(CONFIG_ISDN_DIVERSION),y)
+ ifeq ($(CONFIG_MODULES),y)
+    MOD_SUB_DIRS += divert
+ endif
 endif
 
 ifeq ($(CONFIG_ISDN_DRV_HISAX),y)
@@ -111,6 +124,16 @@ ifeq ($(CONFIG_ISDN_DRV_ACT2000),y)
 else
   ifeq ($(CONFIG_ISDN_DRV_ACT2000),m)
     MOD_SUB_DIRS += act2000
+  endif
+endif
+
+ifeq ($(CONFIG_ISDN_DRV_EICON),y)
+  L_OBJS += eicon/eicon.o
+  SUB_DIRS += eicon
+  MOD_SUB_DIRS += eicon
+else
+  ifeq ($(CONFIG_ISDN_DRV_EICON),m)
+    MOD_SUB_DIRS += eicon
   endif
 endif
 

@@ -98,6 +98,9 @@
  *                     (micz). From Kim.Berts@fisub.mail.abb.com
  *    11.05.99   0.22  Implemented the IMIX call to mute recording monitor.
  *                     Guenter Geiger <geiger@epy.co.at>
+ *    15.06.99   0.23  Fix bad allocation bug.
+ *                     Thanks to Deti Fliegl <fliegl@in.tum.de>
+ *    28.06.99   0.24  Add pci_set_master
  *
  * some important things missing in Ensoniq documentation:
  *
@@ -531,8 +534,9 @@ static int prog_dmabuf(struct es1370_state *s, struct dmabuf *db, unsigned rate,
 	db->hwptr = db->swptr = db->total_bytes = db->count = db->error = db->endcleared = 0;
 	if (!db->rawbuf) {
 		db->ready = db->mapped = 0;
-		for (order = DMABUF_DEFAULTORDER; order >= DMABUF_MINORDER && !db->rawbuf; order--)
-			db->rawbuf = (void *)__get_free_pages(GFP_KERNEL, order);
+		for (order = DMABUF_DEFAULTORDER; order >= DMABUF_MINORDER; order--)
+			if ((db->rawbuf = (void *)__get_free_pages(GFP_KERNEL, order)))
+				break;
 		if (!db->rawbuf)
 			return -ENOMEM;
 		db->buforder = order;
@@ -2317,7 +2321,7 @@ __initfunc(int init_es1370(void))
 
 	if (!pci_present())   /* No PCI bus in this machine! */
 		return -ENODEV;
-	printk(KERN_INFO "es1370: version v0.22 time " __TIME__ " " __DATE__ "\n");
+	printk(KERN_INFO "es1370: version v0.24 time " __TIME__ " " __DATE__ "\n");
 	while (index < NR_DEVICE && 
 	       (pcidev = pci_find_device(PCI_VENDOR_ID_ENSONIQ, PCI_DEVICE_ID_ENSONIQ_ES1370, pcidev))) {
 		if (pcidev->base_address[0] == 0 || 
@@ -2381,6 +2385,7 @@ __initfunc(int init_es1370(void))
 		/* initialize the chips */
 		outl(s->ctrl, s->io+ES1370_REG_CONTROL);
 		outl(s->sctrl, s->io+ES1370_REG_SERIAL_CONTROL);
+		pci_set_master(pcidev);  /* enable bus mastering */
 		wrcodec(s, 0x16, 3); /* no RST, PD */
 		wrcodec(s, 0x17, 0); /* CODEC ADC and CODEC DAC use {LR,B}CLK2 and run off the LRCLK2 PLL; program DAC_SYNC=0!!  */
 		wrcodec(s, 0x18, 0); /* recording source is mixer */

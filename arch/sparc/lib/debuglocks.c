@@ -53,7 +53,7 @@ static inline void show_write(char *str, rwlock_t *lock, unsigned long caller)
 		lock, cpu, caller, lock->owner_pc & ~3, lock->owner_pc & 3);
 
 	for(i = 0; i < NR_CPUS; i++)
-		printk(" reader[i]=%08lx", lock->reader_pc[i]);
+		printk(" reader[%d]=%08lx", i, lock->reader_pc[i]);
 
 	printk("\n");
 }

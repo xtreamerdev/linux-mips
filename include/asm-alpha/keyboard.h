@@ -55,12 +55,6 @@ extern unsigned char pckbd_sysrq_xlate[128];
 /* Some stoneage hardware needs delays after some operations.  */
 #define kbd_pause() do { } while(0)
 
-/* Get the keyboard controller registers (incomplete decode) */
-#define kbd_request_region() request_region(0x60, 16, "keyboard")
-
-#define kbd_request_irq() request_irq(KEYBOARD_IRQ, keyboard_interrupt, 0, \
-                                      "keyboard", NULL);
-
 /*
  * Machine specific bits for the PS/2 driver
  */

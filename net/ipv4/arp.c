@@ -383,9 +383,9 @@ int arp_find(unsigned char *haddr, struct sk_buff *skb)
 			end_bh_atomic();
 			return 0;
 		}
+		neigh_release(n);
 	} else
 		kfree_skb(skb);
-	neigh_release(n);
 	end_bh_atomic();
 	return 1;
 }

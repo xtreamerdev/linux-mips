@@ -95,7 +95,8 @@ static inline void io_remap_pte_range(pte_t * pte, unsigned long address, unsign
 						  space);
 				curend = address + 0x10000;
 				offset += 0x10000;
-			}
+			} else
+				offset += PAGE_SIZE;
 		} else
 			offset += PAGE_SIZE;
 

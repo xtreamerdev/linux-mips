@@ -75,11 +75,7 @@ extern struct sock *tcp_listening_hash[TCP_LHTABLE_SIZE];
  */
 struct tcp_bind_bucket {
 	unsigned short		port;
-	unsigned short		flags;
-#define TCPB_FLAG_LOCKED	0x0001
-#define TCPB_FLAG_FASTREUSE	0x0002
-#define TCPB_FLAG_GOODSOCKNUM	0x0004
-
+	unsigned short		fastreuse;
 	struct tcp_bind_bucket	*next;
 	struct sock		*owners;
 	struct tcp_bind_bucket	**pprev;
@@ -116,32 +112,6 @@ static __inline__ int tcp_bhashfn(__u16 lport)
 	return (lport & (TCP_BHTABLE_SIZE - 1));
 }
 
-static __inline__ void tcp_sk_bindify(struct sock *sk)
-{
-	struct tcp_bind_bucket *tb;
-	unsigned short snum = sk->num;
-
-	for(tb = tcp_bound_hash[tcp_bhashfn(snum)]; tb->port != snum; tb = tb->next)
-		;
-	/* Update bucket flags. */
-	if(tb->owners == NULL) {
-		/* We're the first. */
-		if(sk->reuse && sk->state != TCP_LISTEN)
-			tb->flags = TCPB_FLAG_FASTREUSE;
-		else
-			tb->flags = 0;
-	} else {
-		if((tb->flags & TCPB_FLAG_FASTREUSE) &&
-		   ((sk->reuse == 0) || (sk->state == TCP_LISTEN)))
-			tb->flags &= ~TCPB_FLAG_FASTREUSE;
-	}
-	if((sk->bind_next = tb->owners) != NULL)
-		tb->owners->bind_pprev = &sk->bind_next;
-	tb->owners = sk;
-	sk->bind_pprev = &tb->owners;
-	sk->prev = (struct sock *) tb;
-}
-
 /* This is a TIME_WAIT bucket.  It works around the memory consumption
  * problems of sockets in such a state on heavily loaded servers, but
  * without violating the protocol specification.
@@ -150,6 +120,8 @@ struct tcp_tw_bucket {
 	/* These _must_ match the beginning of struct sock precisely.
 	 * XXX Yes I know this is gross, but I'd have to edit every single
 	 * XXX networking file if I created a "struct sock_header". -DaveM
+	 * Just don't forget -fno-strict-aliasing, but it should be really
+	 * fixed -AK
 	 */
 	struct sock		*sklist_next;
 	struct sock		*sklist_prev;
@@ -170,12 +142,14 @@ struct tcp_tw_bucket {
 				nonagle;
 
 	/* And these are ours. */
-	__u32			rcv_nxt;
+	__u32			rcv_nxt, snd_nxt;
+	__u16			window;
 	struct tcp_func		*af_specific;
 	struct tcp_bind_bucket	*tb;
 	struct tcp_tw_bucket	*next_death;
 	struct tcp_tw_bucket	**pprev_death;
 	int			death_slot;
+	
 #if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
 	struct in6_addr		v6_daddr;
 	struct in6_addr		v6_rcv_saddr;
@@ -478,7 +452,9 @@ extern __inline int between(__u32 seq1, __u32 seq2, __u32 seq3)
 extern struct proto tcp_prot;
 extern struct tcp_mib tcp_statistics;
 
-extern unsigned short		tcp_good_socknum(void);
+extern void			tcp_put_port(struct sock *sk);
+extern void			__tcp_put_port(struct sock *sk);
+extern void			tcp_inherit_port(struct sock *sk, struct sock *child);
 
 extern void			tcp_v4_err(struct sk_buff *skb,
 					   unsigned char *, int);
@@ -504,7 +480,13 @@ extern int			tcp_rcv_established(struct sock *sk,
 						    struct tcphdr *th, 
 						    unsigned len);
 
-extern int			tcp_timewait_state_process(struct tcp_tw_bucket *tw,
+enum tcp_tw_status {
+		TCP_TW_SUCCESS = 0,
+		TCP_TW_RST = 1,
+		TCP_TW_ACK = 2
+		};
+
+extern enum tcp_tw_status tcp_timewait_state_process(struct tcp_tw_bucket *tw,
 							   struct sk_buff *skb,
 							   struct tcphdr *th,
 							   unsigned len);
@@ -631,8 +613,7 @@ struct tcp_sl_timer {
 #define TCP_SLT_SYNACK		0
 #define TCP_SLT_KEEPALIVE	1
 #define TCP_SLT_TWKILL		2
-#define TCP_SLT_BUCKETGC	3
-#define TCP_SLT_MAX		4
+#define TCP_SLT_MAX		3
 
 extern struct tcp_sl_timer tcp_slt_array[TCP_SLT_MAX];
  
@@ -1068,17 +1049,6 @@ extern __inline__ void tcp_dec_slow_timer(int timer)
 	struct tcp_sl_timer *slt = &tcp_slt_array[timer];
 
 	atomic_dec(&slt->count);
-}
-
-/* This needs to use a slow timer, so it is here. */
-static __inline__ void tcp_sk_unbindify(struct sock *sk)
-{
-	struct tcp_bind_bucket *tb = (struct tcp_bind_bucket *) sk->prev;
-	if(sk->bind_next)
-		sk->bind_next->bind_pprev = sk->bind_pprev;
-	*sk->bind_pprev = sk->bind_next;
-	if(tb->owners == NULL)
-		tcp_inc_slow_timer(TCP_SLT_BUCKETGC);
 }
 
 extern const char timer_bug_msg[];

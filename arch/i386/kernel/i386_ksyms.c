@@ -42,6 +42,8 @@ EXPORT_SYMBOL(disable_irq);
 EXPORT_SYMBOL(disable_irq_nosync);
 EXPORT_SYMBOL(kernel_thread);
 
+EXPORT_SYMBOL(init_mm);
+
 EXPORT_SYMBOL_NOVERS(__down_failed);
 EXPORT_SYMBOL_NOVERS(__down_failed_interruptible);
 EXPORT_SYMBOL_NOVERS(__down_failed_trylock);
@@ -110,6 +112,7 @@ EXPORT_SYMBOL(mca_isadapter);
 EXPORT_SYMBOL(mca_mark_as_used);
 EXPORT_SYMBOL(mca_mark_as_unused);
 EXPORT_SYMBOL(mca_find_unused_adapter);
+EXPORT_SYMBOL(mca_is_adapter_used);
 #endif
 
 #ifdef CONFIG_VT

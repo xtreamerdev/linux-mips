@@ -294,4 +294,5 @@ extern int isa_dma_bridge_buggy;
 #else
 #define isa_dma_bridge_buggy 	(0)
 #endif
+
 #endif /* _ASM_DMA_H */

@@ -32,6 +32,7 @@
 #include <linux/string.h>
 #include <linux/random.h>
 #include <linux/init.h>
+#include <linux/module.h>
 
 #include <asm/keyboard.h>
 #include <asm/bitops.h>
@@ -247,7 +248,7 @@ void handle_scancode(unsigned char scancode, int down)
 		sysrq_pressed = !up_flag;
 		return;
 	} else if (sysrq_pressed) {
-		if (!up_flag)
+		if (!up_flag && sysrq_enabled)
 			handle_sysrq(kbd_sysrq_xlate[keycode], kbd_pt_regs, kbd, tty);
 		return;
 	}

@@ -213,21 +213,19 @@ static __inline__ void tcp_bound_rto(struct tcp_opt *tp)
 extern __inline__ void tcp_replace_ts_recent(struct sock *sk, struct tcp_opt *tp,
 					     __u32 start_seq, __u32 end_seq)
 {
-	/* From draft-ietf-tcplw-high-performance: the correct
-	 * test is last_ack_sent <= end_seq.
-	 * (RFC1323 stated last_ack_sent < end_seq.)
-	 *
-	 * HOWEVER: The current check contradicts the draft statements.
-	 * It has been done for good reasons.
-	 * The implemented check improves security and eliminates
-	 * unnecessary RTT overestimation.
-	 *		1998/06/27  Andrey V. Savochkin <saw@msu.ru>
+	/* It is start_seq <= last_ack_seq combined
+	   with in window check. If start_seq<=last_ack_seq<=rcv_nxt,
+	   then segment is in window if end_seq>=rcv_nxt.
 	 */
-	if (!before(end_seq, tp->last_ack_sent - sk->rcvbuf) &&
-	    !after(start_seq, tp->rcv_wup + tp->rcv_wnd)) {
+	if (!after(start_seq, tp->last_ack_sent) &&
+	    !before(end_seq, tp->rcv_nxt)) {
 		/* PAWS bug workaround wrt. ACK frames, the PAWS discard
 		 * extra check below makes sure this can only happen
 		 * for pure ACK frames.  -DaveM
+		 *
+		 * Plus: expired timestamps.
+		 *
+		 * Plus: resets failing PAWS.
 		 */
 		if((s32)(tp->rcv_tsval - tp->ts_recent) >= 0) {
 			tp->ts_recent = tp->rcv_tsval;
@@ -240,11 +238,10 @@ extern __inline__ void tcp_replace_ts_recent(struct sock *sk, struct tcp_opt *tp
 
 extern __inline__ int tcp_paws_discard(struct tcp_opt *tp, struct tcphdr *th, unsigned len)
 {
-	/* ts_recent must be younger than 24 days */
-	return (((s32)(tcp_time_stamp - tp->ts_recent_stamp) >= PAWS_24DAYS) ||
-		(((s32)(tp->rcv_tsval - tp->ts_recent) < 0) &&
-		 /* Sorry, PAWS as specified is broken wrt. pure-ACKs -DaveM */
-		 (len != (th->doff * 4))));
+	return ((s32)(tp->rcv_tsval - tp->ts_recent) < 0 &&
+		(s32)(tcp_time_stamp - tp->ts_recent_stamp) < PAWS_24DAYS &&
+		/* Sorry, PAWS as specified is broken wrt. pure-ACKs -DaveM */
+		len != (th->doff * 4));
 }
 
 
@@ -916,13 +913,20 @@ extern void tcp_tw_deschedule(struct tcp_tw_bucket *tw);
 
 void tcp_timewait_kill(struct tcp_tw_bucket *tw)
 {
-	/* Unlink from various places. */
+	struct tcp_bind_bucket *tb = tw->tb;
+
+	/* Disassociate with bind bucket. */
 	if(tw->bind_next)
 		tw->bind_next->bind_pprev = tw->bind_pprev;
 	*(tw->bind_pprev) = tw->bind_next;
-	if(tw->tb->owners == NULL)
-		tcp_inc_slow_timer(TCP_SLT_BUCKETGC);
+	if (tb->owners == NULL) {
+		if (tb->next)
+			tb->next->pprev = tb->pprev;
+		*(tb->pprev) = tb->next;
+		kmem_cache_free(tcp_bucket_cachep, tb);
+	}
 
+	/* Unlink from established hashes. */
 	if(tw->next)
 		tw->next->pprev = tw->pprev;
 	*tw->pprev = tw->next;
@@ -939,11 +943,13 @@ void tcp_timewait_kill(struct tcp_tw_bucket *tw)
 
 /* We come here as a special case from the AF specific TCP input processing,
  * and the SKB has no owner.  Essentially handling this is very simple,
- * we just keep silently eating rx'd packets until none show up for the
- * entire timeout period.  The only special cases are for BSD TIME_WAIT
- * reconnects and SYN/RST bits being set in the TCP header.
+ * we just keep silently eating rx'd packets, acking them if necessary,
+ * until none show up for the entire timeout period. 
+ *
+ * Return 0, TCP_TW_ACK, TCP_TW_RST
  */
-int tcp_timewait_state_process(struct tcp_tw_bucket *tw, struct sk_buff *skb,
+enum tcp_tw_status 
+tcp_timewait_state_process(struct tcp_tw_bucket *tw, struct sk_buff *skb,
 			       struct tcphdr *th, unsigned len)
 {
 	/*	RFC 1122:
@@ -964,7 +970,7 @@ int tcp_timewait_state_process(struct tcp_tw_bucket *tw, struct sk_buff *skb,
 		struct tcp_func *af_specific = tw->af_specific;
 		__u32 isn;
 
-		isn = tw->rcv_nxt + 128000;
+		isn = tw->snd_nxt + 128000;
 		if(isn == 0)
 			isn++;
 		tcp_tw_deschedule(tw);
@@ -977,7 +983,7 @@ int tcp_timewait_state_process(struct tcp_tw_bucket *tw, struct sk_buff *skb,
 		skb_set_owner_r(skb, sk);
 		af_specific = sk->tp_pinfo.af_tcp.af_specific;
 		if(af_specific->conn_request(sk, skb, isn) < 0)
-			return 1; /* Toss a reset back. */
+			return TCP_TW_RST; /* Toss a reset back. */
 		return 0; /* Discard the frame. */
 	}
 
@@ -992,13 +998,18 @@ int tcp_timewait_state_process(struct tcp_tw_bucket *tw, struct sk_buff *skb,
 			tcp_timewait_kill(tw);
 		}
 		if(!th->rst)
-			return 1; /* toss a reset back */
+			return TCP_TW_RST; /* toss a reset back */
+		return 0;
 	} else {
 		/* In this case we must reset the TIMEWAIT timer. */
 		if(th->ack)
 			tcp_tw_reschedule(tw);
 	}
-	return 0; /* Discard the frame. */
+	/* Ack old packets if necessary */ 
+	if (!after(TCP_SKB_CB(skb)->end_seq, tw->rcv_nxt) &&
+	    (th->doff * 4) > len)
+		return TCP_TW_ACK; 
+	return 0; 
 }
 
 /* Enter the time wait state.  This is always called from BH
@@ -1023,6 +1034,7 @@ static __inline__ void tcp_tw_hashdance(struct sock *sk, struct tcp_tw_bucket *t
 		sk->bind_next->bind_pprev = &tw->bind_next;
 	tw->bind_pprev = sk->bind_pprev;
 	*sk->bind_pprev = (struct sock *)tw;
+	sk->prev = NULL;
 
 	/* Step 3: Same for the protocol sklist. */
 	(tw->sklist_next = sk->sklist_next)->sklist_prev = (struct sock *)tw;
@@ -1056,6 +1068,8 @@ void tcp_time_wait(struct sock *sk)
 		tw->family	= sk->family;
 		tw->reuse	= sk->reuse;
 		tw->rcv_nxt	= sk->tp_pinfo.af_tcp.rcv_nxt;
+		tw->snd_nxt     = sk->tp_pinfo.af_tcp.snd_nxt;
+		tw->window	= tcp_select_window(sk);
 		tw->af_specific	= sk->tp_pinfo.af_tcp.af_specific;
 
 #if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
@@ -1527,7 +1541,6 @@ static int tcp_data(struct sk_buff *skb, struct sock *sk, unsigned int len)
 	 * Now tell the user we may have some data.
 	 */
 	if (!sk->dead) {
-		SOCK_DEBUG(sk, "Data wakeup.\n");
 		sk->data_ready(sk,0);
 	}
 	return(1);
@@ -1967,7 +1980,7 @@ struct sock *tcp_check_req(struct sock *sk, struct sk_buff *skb,
 	flg &= __constant_htonl(0x00170000);
 	/* Only SYN set? */
 	if (flg == __constant_htonl(0x00020000)) {
-		if (!after(TCP_SKB_CB(skb)->seq, req->rcv_isn)) {
+		if (TCP_SKB_CB(skb)->seq == req->rcv_isn) {
 			/*	retransmited syn.
 			 */
 			req->class->rtx_syn_ack(sk, req); 

@@ -1,11 +1,10 @@
-/* $Id$
+/* $Id: setup.c,v 1.2 1999/04/11 17:03:38 harald Exp $
  *
  * setup.c: Baget/MIPS specific setup, including init of the feature struct.
  *
  * Copyright (C) 1998 Gleb Raiko & Vladimir Roganov
  *
  */
-#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>

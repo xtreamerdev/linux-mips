@@ -17,7 +17,6 @@
 #include <linux/smp.h>
 #include <linux/signal.h>
 #include <linux/mm.h>
-#include <linux/smp.h>
 #include <linux/smp_lock.h>
 #include <linux/interrupt.h>
 
@@ -383,12 +382,13 @@ inline void force_user_fault(unsigned long address, int write)
 	if(expand_stack(vma, address))
 		goto bad_area;
 good_area:
-	if(write)
+	if(write) {
 		if(!(vma->vm_flags & VM_WRITE))
 			goto bad_area;
-	else
+	} else {
 		if(!(vma->vm_flags & (VM_READ | VM_EXEC)))
 			goto bad_area;
+	}
 	if (!handle_mm_fault(current, vma, address, write))
 		goto do_sigbus;
 	up(&mm->mmap_sem);

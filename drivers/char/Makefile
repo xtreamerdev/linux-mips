@@ -52,9 +52,9 @@ else
   endif
 endif
 
-ifndef CONFIG_SUN_KEYBOARD
 ifndef CONFIG_DECSTATION
 ifndef CONFIG_BAGET_MIPS
+ifndef CONFIG_SUN_KEYBOARD
 ifdef CONFIG_VT
 LX_OBJS += keyboard.o
 endif
@@ -132,6 +132,14 @@ else
   endif
 endif
 
+ifeq ($(CONFIG_COMPUTONE),y)
+L_OBJS += ip2.o ip2main.o
+else
+  ifeq ($(CONFIG_COMPUTONE),m)
+  M_OBJS += ip2.o ip2main.o
+  endif
+endif
+
 ifeq ($(CONFIG_RISCOM8),y)
 L_OBJS += riscom8.o
 else
@@ -169,6 +177,14 @@ L_OBJS += specialix.o
 else
   ifeq ($(CONFIG_SPECIALIX),m)
   M_OBJS += specialix.o
+  endif
+endif
+
+ifeq ($(CONFIG_SX),y)
+L_OBJS += sx.o generic_serial.o
+else
+  ifeq ($(CONFIG_SX),m)
+  M_OBJS += sx.o
   endif
 endif
 
@@ -359,6 +375,30 @@ L_OBJS += c-qcam.o
 else
   ifeq ($(CONFIG_VIDEO_CQCAM),m)
     M_OBJS += c-qcam.o
+  endif
+endif
+
+ifeq ($(CONFIG_VIDEO_ZORAN),y)
+L_OBJS += buz.o
+else
+  ifeq ($(CONFIG_VIDEO_ZORAN),m)
+    M_OBJS += buz.o
+  endif
+endif
+
+ifeq ($(CONFIG_VIDEO_LML33),y)
+L_OBJS += bt856.o bt819.o
+else
+  ifeq ($(CONFIG_VIDEO_LML33),m)
+    M_OBJS += bt856.o bt819.o
+  endif
+endif
+
+ifeq ($(CONFIG_VIDEO_BUZ),y)
+L_OBJS += saa7111.o saa7185.o
+else
+  ifeq ($(CONFIG_VIDEO_BUZ),m)
+    M_OBJS += saa7111.o saa7185.o
   endif
 endif
 

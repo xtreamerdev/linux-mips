@@ -689,14 +689,11 @@ S: Woodbridge, Connecticut 06525
 S: USA
 
 N: Paul Gortmaker
-E: gpg109@rsphy1.anu.edu.au
-W: http://rsphy1.anu.edu.au/~gpg109
-D: Real Time Clock driver author.
-D: 8390 net driver hacker (ne2000, wd8013, smc-ultra, 3c503, etc.) 
-D: Ethernet-HOWTO and BootPrompt-HOWTO author.
-D: Added many new CONFIG options (modules, ramdisk, generic-serial, etc.)
-D: Implemented 1st "official" kernel thread (moved user bdflush to kflushd)
-D: Various other random hacks, patches and utilities.
+E: p_gortmaker@yahoo.com
+D: Author of RTC driver & several net drivers, Ethernet & BootPrompt Howto.
+D: Made support for modules, ramdisk, generic-serial, etc. optional.
+D: Transformed old user space bdflush into 1st kernel thread - kflushd.
+D: Many other patches, documentation files, mini kernels, utilities, ...
 
 N: John E. Gotts
 E: jgotts@engin.umich.edu
@@ -958,7 +955,7 @@ N: Niels Kristian Bech Jensen
 E: nkbj@image.dk
 W: http://www.image.dk/~nkbj
 D: 4.4BSD and NeXTstep filesystem support in the old ufs.
-D: Openstep filesystem support in the new ufs.
+D: Openstep filesystem and NeXTstep CDROM support in the new ufs.
 D: Danish HOWTO, Linux+FreeBSD mini-HOWTO.
 S: Dr. Holsts Vej 34, lejl. 164
 S: DK-8230 Åbyhøj
@@ -978,6 +975,16 @@ S: 201 Howell Street, Apartment 1C
 S: Chapel Hill, North Carolina 27514-4818
 S: USA
 
+N: Dave Jones
+E: dave@powertweak.com
+W: http://linux.powertweak.com
+D: Centaur/IDT Winchip/Winchip 2 tweaks
+D: Misc clean ups and other random hacking.
+S: 40, Heol Edward Lewis,
+S: Gelligaer, Hengoed,
+S: Mid Glamorgan, CF82 8EJ,
+S: Wales, United Kingdom
+
 N: Bernhard Kaindl
 E: bkaindl@netway.at
 E: edv@bartelt.via.at
@@ -987,6 +994,15 @@ D: digiboard driver update(modularisation work and 2.1.x upd)
 S: Tallak 95
 S: 8103 Rein
 S: Austria
+
+N: Jan Kara
+E: jack@atrey.karlin.mff.cuni.cz
+D: Quota fixes for 2.2 kernel
+D: Few other fixes in filesystem area (isofs, loopback)
+W: http://atrey.karlin.mff.cuni.cz/~jack/
+S: Krosenska' 543
+S: 181 00 Praha 8
+S: Czech Republic
 
 N: Jan "Yenya" Kasprzak
 E: kas@fi.muni.cz
@@ -1563,6 +1579,13 @@ S: Demonstratsii 8-382
 S: Tula 300000
 S: Russia
 
+N: Johnnie Peters
+E: jpeters@phx.mcd.mot.com
+D: Motorola PowerPC changes for PReP
+S: 2900 S. Diable Way
+S: Tempe, Arizona 85282
+S: USA
+
 N: Kirk Petersen
 E: kirk@speakeasy.org
 W: http://www.speakeasy.org/~kirk/
@@ -1615,6 +1638,15 @@ S: 4390 Albany Drive #41A
 S: San Jose, California 95129
 S: USA
 
+N: Augusto Cesar Radtke
+E: bishop@sekure.org
+W: http://bishop.sekure.org
+D: {copy,get,put}_user calls updates
+D: Miscellaneous hacks
+S: R. Otto Marquardt, 226 - Garcia
+S: 89020-350 Blumenau - Santa Catarina
+S: Brazil
+
 N: Eric S. Raymond
 E: esr@thyrsus.com
 W: http://www.tuxedo.org/~esr/
@@ -1650,12 +1682,13 @@ S: 75019 Paris
 S: France
 
 N: Rik van Riel
-E: H.H.vanRiel@humbolt.geo.uu.nl
-W: http://humbolt.geo.uu.nl/
-D: Maintainer of the mm-patches page (see www.linuxhq.com)
-D: Documentation/sysctl/*, kswapd fixes, random kernel hacker
-S: Vorenkampsweg 1
-S: NL-9488 TG  Zeijerveld
+E: riel@nl.linux.org
+W: http://www.nl.linux.org/~riel/
+D: Linux-MM site, Documentation/sysctl/*, swap/mm readaround
+D: clustering contributor, kswapd fixes, random kernel hacker,
+D: nl.linux.org maintainer, minor scheduler additions
+S: IJsselstraat 23a
+S: 9725 GA  Groningen
 S: The Netherlands
 
 N: William E. Roadcap
@@ -2201,6 +2234,7 @@ N: Roger E. Wolff
 E: R.E.Wolff@BitWizard.nl
 D: Written kmalloc/kfree
 D: Written Specialix IO8+ driver
+D: Written Specialix SX driver
 S: van Bronckhorststraat 12
 S: 2612 XV Delft
 S: The Netherlands
@@ -2265,6 +2299,7 @@ N: Leonard N. Zubkoff
 E: lnz@dandelion.com
 W: http://www.dandelion.com/Linux/
 D: BusLogic SCSI driver
+D: Mylex DAC960 PCI RAID driver
 D: Miscellaneous kernel fixes
 S: 3078 Sulphur Spring Court
 S: San Jose, California 95148

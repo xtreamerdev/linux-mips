@@ -1,11 +1,10 @@
-/*
+/* $Id: keyboard.h,v 1.13 1999/06/13 16:35:53 ralf Exp $
+ *
  * CPU specific parts of the keyboard driver
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
- *
- * $Id: keyboard.h,v 1.12 1999/01/04 16:09:22 ralf Exp $
  */
 #ifndef __ASM_MIPS_KEYBOARD_H
 #define __ASM_MIPS_KEYBOARD_H

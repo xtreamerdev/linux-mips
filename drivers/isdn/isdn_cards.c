@@ -1,8 +1,8 @@
-/* $Id: isdn_cards.c,v 1.7 1998/02/20 17:24:28 fritz Exp $
+/* $Id: isdn_cards.c,v 1.10 1999/07/20 06:41:28 calle Exp $
 
  * Linux ISDN subsystem, initialization for non-modularized drivers.
  *
- * Copyright 1994,95,96 by Fritz Elfert (fritz@wuemaus.franken.de)
+ * Copyright 1994,95,96 by Fritz Elfert (fritz@isdn4linux.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
  * $Log: isdn_cards.c,v $
+ * Revision 1.10  1999/07/20 06:41:28  calle
+ * Bugfix: After the redesign of the AVM B1 driver, the driver didn't even
+ *         compile, if not selected as modules.
+ *
+ * Revision 1.9  1999/04/12 12:33:11  fritz
+ * Changes from 2.0 tree.
+ *
+ * Revision 1.8  1999/03/29 11:13:23  armin
+ * Added eicon driver init.
+ *
  * Revision 1.7  1998/02/20 17:24:28  fritz
  * Added ACT2000 init.
  *
@@ -56,13 +66,14 @@ extern void HiSax_init(void);
 extern void pcbit_init(void);
 #endif
 
+#ifdef CONFIG_ISDN_DRV_EICON
+extern void eicon_init(void);
+#endif
+
 #ifdef CONFIG_ISDN_DRV_AVMB1
-extern void avmb1_init(void);
+extern void kcapi_init(void);
 extern void capi_init(void);
 extern void capidrv_init(void);
-#ifdef CONFIG_PCI
-extern int b1pci_init(void);
-#endif
 #endif
 
 void
@@ -78,14 +89,14 @@ isdn_cards_init(void)
 	pcbit_init();
 #endif
 #ifdef CONFIG_ISDN_DRV_AVMB1
-	avmb1_init();
-#ifdef CONFIG_PCI
-	b1pci_init();
-#endif
+	kcapi_init();
 	capi_init();
 	capidrv_init();
 #endif
 #if CONFIG_ISDN_DRV_ACT2000
 	act2000_init();
+#endif
+#if CONFIG_ISDN_DRV_EICON
+	eicon_init();
 #endif
 }

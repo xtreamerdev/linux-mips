@@ -23,6 +23,15 @@ smp_trampoline:		.skip	0x300
 	.globl		sparc64_cpu_startup, sparc64_cpu_startup_end
 sparc64_cpu_startup:
 	flushw
+#if 1
+	/* XXX Disable reception of correctable memory errors until
+	 * XXX we code up the proper handler... -DaveM
+	 */
+	ldxa	[%g0] ASI_ESTATE_ERROR_EN, %g1
+	andn	%g1, 0x1, %g1
+	stxa	%g1, [%g0] ASI_ESTATE_ERROR_EN
+	membar	#Sync
+#endif
 	mov	(LSU_CONTROL_IC | LSU_CONTROL_DC | LSU_CONTROL_IM | LSU_CONTROL_DM), %g1
 	stxa	%g1, [%g0] ASI_LSU_CONTROL
 	membar	#Sync

@@ -925,6 +925,7 @@ asmlinkage unsigned long osf_getsysinfo(unsigned long op, void *buffer,
 			return -EINVAL;
 		cpu = (struct percpu_struct*)
 		  ((char*)hwrpb + hwrpb->processor_offset);
+		w = cpu->type;
 		if (put_user(w, (unsigned long *)buffer))
 			return -EFAULT;
 		return 1;
@@ -949,7 +950,7 @@ asmlinkage unsigned long osf_setsysinfo(unsigned long op, void *buffer,
 {
 	switch (op) {
 	case SSI_IEEE_FP_CONTROL: {
-		unsigned long swcr, fpcr, undz;
+		unsigned long swcr, fpcr, undz, ev6;
 
 		/* 
 		 * Alpha Architecture Handbook 4.7.7.3:
@@ -957,6 +958,8 @@ asmlinkage unsigned long osf_setsysinfo(unsigned long op, void *buffer,
 		 * exception state in software, because spurrious bits can be
 		 * set in the trap shadow of a software-complete insn.
 		 */
+
+		ev6 = (implver() == IMPLVER_EV6);
 
 		/* Update softare trap enable bits.  */
 		if (get_user(swcr, (unsigned long *)buffer))
@@ -966,10 +969,17 @@ asmlinkage unsigned long osf_setsysinfo(unsigned long op, void *buffer,
 
 		/* Update the real fpcr.  Keep UNFD off if not UNDZ.  */
 		fpcr = rdfpcr();
-		undz = (fpcr & FPCR_UNDZ);
-		fpcr &= ~(FPCR_MASK | FPCR_DYN_MASK | FPCR_UNDZ);
+		if(ev6) {
+		    undz = (fpcr & FPCR_UNDZ);
+		    fpcr &= (~(FPCR_MASK | FPCR_UNDZ)) | FPCR_DYN_MASK;
+		}
+		else {
+		    fpcr &= (~FPCR_MASK) | FPCR_DYN_MASK;
+		}
 		fpcr |= ieee_swcr_to_fpcr(swcr);
-		fpcr &= ~(undz << 1);
+		if(ev6 && !undz) {
+		    fpcr &= ~FPCR_UNFD;
+		}
 		wrfpcr(fpcr);
 		   
 		return 0;

@@ -4,8 +4,9 @@
  * Copyright (C) 1996 David S. Miller (dm@engr.sgi.com)
  * Copyright (C) 1999 Andrew R. Baker (andrewb@uab.edu) - Indigo2 changes
  *
- * $Id: indy_mc.c,v 1.4 1999/05/07 22:34:32 ulfc Exp $
+ * $Id: indy_mc.c,v 1.4.2.1 1999/09/07 20:42:28 andrewb Exp $
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 
@@ -60,6 +61,7 @@ __initfunc(void sgimc_init(void))
 	printk("MC: SGI memory controller Revision %d\n",
 	       (int) mcmisc_regs->systemid & SGIMC_SYSID_MASKREV);
 
+#ifdef CONFIG_SGI_EISA
 	/* XXX Until I figure out what this bit really indicates XXX */
 	/* it should indicate whether we have an (E)ISA bus or not -Andrew */
 	/* XXX Is this systemid bit reliable? */
@@ -70,6 +72,7 @@ __initfunc(void sgimc_init(void))
 		sgi_eisa_bus = 0;
 		printk("no EISA\n");
 	}
+#endif
 
 #ifdef DEBUG_SGIMC
 	prom_printf("sgimc_init: memconfig0<%s> mconfig1<%s>\n",

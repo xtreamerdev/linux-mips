@@ -57,6 +57,10 @@ int start_secondary(void *);
 extern int cpu_idle(void *unused);
 u_int openpic_read(volatile u_int *addr);
 
+extern int mot_multi;
+extern unsigned long *MotSave_SmpIar;
+extern unsigned char *MotSave_CpusState[2];
+
 /* register for interrupting the secondary processor on the powersurge */
 #define PSURGE_INTR	((volatile unsigned *)0xf80000c0)
 
@@ -171,7 +175,7 @@ spinlock_t mesg_pass_lock = SPIN_LOCK_UNLOCKED;
 void smp_message_pass(int target, int msg, unsigned long data, int wait)
 {
 	int i;
-	if ( !(_machine & (_MACH_Pmac|_MACH_chrp)) )
+	if ( !(_machine & (_MACH_Pmac|_MACH_chrp|_MACH_prep)) )
 		return;
 
 	spin_lock(&mesg_pass_lock);
@@ -197,8 +201,8 @@ void smp_message_pass(int target, int msg, unsigned long data, int wait)
 		break;
 	}
 	
-	if ( _machine == _MACH_Pmac )
-	{
+	switch (_machine) {
+	case _MACH_Pmac:
 		/* interrupt secondary processor */
 		out_be32(PSURGE_INTR, ~0);
 		out_be32(PSURGE_INTR, 0);
@@ -208,10 +212,10 @@ void smp_message_pass(int target, int msg, unsigned long data, int wait)
 		 */
 		/* interrupt primary */
 		/**(volatile unsigned long *)(0xf3019000);*/
-	}
+		break;
 	
-	if ( _machine == _MACH_chrp )
-	{
+	case _MACH_chrp:
+	case _MACH_prep:
 		/*
 		 * There has to be some way of doing this better -
 		 * perhaps a sent-to-all or send-to-all-but-self
@@ -234,6 +238,7 @@ void smp_message_pass(int target, int msg, unsigned long data, int wait)
 			openpic_cause_IPI(target, 0, 1U << target);
 			break;
 		}
+		break;
 	}
 	
 	spin_unlock(&mesg_pass_lock);
@@ -243,20 +248,21 @@ void __init smp_boot_cpus(void)
 {
 	extern struct task_struct *current_set[NR_CPUS];
 	extern void __secondary_start_psurge(void);
-	int i;
+	extern void __secondary_start_chrp(void);
+	int i, cpu_nr;
 	struct task_struct *p;
 	unsigned long a;
 
         printk("Entering SMP Mode...\n");
 	/* let other processors know to not do certain initialization */
 	first_cpu_booted = 1;
+	smp_num_cpus = 1;
 	
 	/*
 	 * assume for now that the first cpu booted is
 	 * cpu 0, the master -- Cort
 	 */
 	cpu_callin_map[0] = 1;
-	cpu_callin_map[1] = 0;
         smp_store_cpu_info(0);
         active_kernel_processor = 0;
 	current->processor = 0;
@@ -272,34 +278,34 @@ void __init smp_boot_cpus(void)
 	 */
 	cacheflush_time = 5 * 1024;
 
-	if ( !(_machine & (_MACH_Pmac|_MACH_chrp)) )
-	{
-		printk("SMP not supported on this machine.\n");
-		return;
-	}
-	
 	switch ( _machine )
 	{
 	case _MACH_Pmac:
 		/* assume powersurge board - 2 processors -- Cort */
-		smp_num_cpus = 2; 
+		cpu_nr = 2;
 		break;
 	case _MACH_chrp:
-		smp_num_cpus = ((openpic_read(&OpenPIC->Global.Feature_Reporting0)
+		cpu_nr = ((openpic_read(&OpenPIC->Global.Feature_Reporting0)
 				 & OPENPIC_FEATURE_LAST_PROCESSOR_MASK) >>
 				OPENPIC_FEATURE_LAST_PROCESSOR_SHIFT)+1;
-		/* get our processor # - we may not be cpu 0 */
-		printk("SMP %d processors, boot CPU is %d (should be 0)\n",
-		       smp_num_cpus,
-		       10/*openpic_read(&OpenPIC->Processor[0]._Who_Am_I)*/);
 		break;
+ 	case _MACH_prep:
+ 		/* assume 2 for now == fix later -- Johnnie */
+		if ( mot_multi )
+		{
+			cpu_nr = 2;
+			break;
+		}
+	default:
+		printk("SMP not supported on this machine.\n");
+		return;
 	}
 
 	/*
 	 * only check for cpus we know exist.  We keep the callin map
 	 * with cpus at the bottom -- Cort
 	 */
-	for ( i = 1 ; i < smp_num_cpus; i++ )
+	for ( i = 1 ; i < cpu_nr; i++ )
 	{
 		int c;
 		
@@ -332,6 +338,24 @@ void __init smp_boot_cpus(void)
 		case _MACH_chrp:
 			*(unsigned long *)KERNELBASE = i;
 			asm volatile("dcbf 0,%0"::"r"(KERNELBASE):"memory");
+#if 0
+			device = find_type_devices("cpu");
+			/* assume cpu device list is in order, find the ith cpu */
+			for ( a = i; device && a; device = device->next, a-- )
+				;
+			if ( !device )
+				break;
+			printk( "Starting %s (%lu): ", device->full_name,
+				*(ulong *)get_property(device, "reg", NULL) );
+			call_rtas( "start-cpu", 3, 1, NULL,
+				   *(ulong *)get_property(device, "reg", NULL),
+				   __pa(__secondary_start_chrp), i);
+#endif			
+			break;
+		case _MACH_prep:
+			*MotSave_SmpIar = (unsigned long)__secondary_start_psurge - KERNELBASE;
+			*MotSave_CpusState[1] = CPU_GOOD;
+			printk("CPU1 reset, waiting\n");
 			break;
 		}
 		
@@ -349,6 +373,7 @@ void __init smp_boot_cpus(void)
 			/* this sync's the decr's -- Cort */
 			if ( _machine == _MACH_Pmac )
 				set_dec(decrementer_count);
+			smp_num_cpus++;
 		} else {
 			printk("Processor %d is stuck.\n", i);
 		}
@@ -366,7 +391,6 @@ void __init smp_boot_cpus(void)
 
 void __init smp_commence(void)
 {
-	printk("SMP %d: smp_commence()\n",current->processor);
 	/*
 	 *	Lets the callin's below out of their loop.
 	 */
@@ -381,24 +405,20 @@ void __init initialize_secondary(void)
 /* Activate a secondary processor. */
 asmlinkage int __init start_secondary(void *unused)
 {
-	printk("SMP %d: start_secondary()\n",current->processor);
 	smp_callin();
 	return cpu_idle(NULL);
 }
 
 void __init smp_callin(void)
 {
-	int i;
-	
-	printk("SMP %d: smp_callin()\n",current->processor);
         smp_store_cpu_info(current->processor);
 	set_dec(decrementer_count);
-	
 #if 0
 	current->mm->mmap->vm_page_prot = PAGE_SHARED;
 	current->mm->mmap->vm_start = PAGE_OFFSET;
 	current->mm->mmap->vm_end = init_task.mm->mmap->vm_end;
 #endif
+	init_idle();
 	cpu_callin_map[current->processor] = 1;
 	while(!smp_commenced)
 		barrier();
@@ -407,7 +427,6 @@ void __init smp_callin(void)
 
 void __init smp_setup(char *str, int *ints)
 {
-	printk("SMP %d: smp_setup()\n",current->processor);
 }
 
 int __init setup_profiling_timer(unsigned int multiplier)

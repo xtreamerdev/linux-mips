@@ -18,6 +18,11 @@
 #define APB_DMA_TARGET_LATENCY_TIMER		0xdb
 #define APB_SECONDARY_MASTER_RETRY_LIMIT	0xdc
 #define APB_SECONDARY_CONTROL			0xdd
+#  define APB_SECONDARY_CTL_PIO_PREF			(1 << 0)
+#  define APB_SECONDARY_CTL_MRM_CVRT			(1 << 1)
+#  define APB_SECONDARY_CTL_RIACK			(1 << 2)
+#  define APB_SECONDARY_CTL_MIACK			(1 << 3)
+#  define APB_SECONDARY_CTL_DISCON_FULL			(1 << 4) /* rev >1.3 only */
 #define APB_IO_ADDRESS_MAP			0xde
 #define APB_MEM_ADDRESS_MAP			0xdf
 

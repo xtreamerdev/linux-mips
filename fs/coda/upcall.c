@@ -580,6 +580,33 @@ int venus_pioctl(struct super_block *sb, struct ViceFid *fid,
 	return error;
 }
 
+int venus_statfs(struct super_block *sb, struct statfs *sfs) 
+{ 
+        union inputArgs *inp;
+        union outputArgs *outp;
+        int insize, outsize, error;
+        
+	insize = max(INSIZE(statfs), OUTSIZE(statfs));
+	UPARG(CODA_STATFS);
+
+        error =  coda_upcall(coda_sbp(sb), insize, &outsize, inp);
+	
+        if (!error) {
+		sfs->f_blocks = outp->coda_statfs.stat.f_blocks;
+		sfs->f_bfree  = outp->coda_statfs.stat.f_bfree;
+		sfs->f_bavail = outp->coda_statfs.stat.f_bavail;
+		sfs->f_files  = outp->coda_statfs.stat.f_files;
+		sfs->f_ffree  = outp->coda_statfs.stat.f_ffree;
+	} else {
+		printk("coda_statfs: Venus returns: %d\n", error);
+	}
+
+        if (inp) CODA_FREE(inp, insize);
+        CDEBUG(D_INODE, " result %d\n",error);
+        EXIT;
+        return error;
+}
+
 /*
  * coda_upcall and coda_downcall routines.
  * 
@@ -588,10 +615,12 @@ int venus_pioctl(struct super_block *sb, struct ViceFid *fid,
 static inline unsigned long coda_waitfor_upcall(struct upc_req *vmp)
 {
 	struct wait_queue	wait = { current, NULL };
-	unsigned long posttime;
+	struct timeval begin = { 0, 0 }, end = { 0, 0 };
 
 	vmp->uc_posttime = jiffies;
-	posttime = jiffies;
+
+	if (coda_upcall_timestamping)
+		do_gettimeofday(&begin);
 
 	add_wait_queue(&vmp->uc_sleep, &wait);
 	for (;;) {
@@ -620,9 +649,20 @@ static inline unsigned long coda_waitfor_upcall(struct upc_req *vmp)
 	remove_wait_queue(&vmp->uc_sleep, &wait);
 	current->state = TASK_RUNNING;
 
-	CDEBUG(D_SPECIAL, "posttime: %ld, returned: %ld\n", posttime, jiffies-posttime);
-	return 	(jiffies - posttime);
+	if (coda_upcall_timestamping && begin.tv_sec != 0) {
+		do_gettimeofday(&end);
 
+		if (end.tv_usec < begin.tv_usec) {
+			end.tv_usec += 1000000; end.tv_sec--;
+		}
+		end.tv_sec  -= begin.tv_sec;
+		end.tv_usec -= begin.tv_usec;
+	}
+
+	CDEBUG(D_SPECIAL, "begin: %ld.%06ld, elapsed: %ld.%06ld\n",
+		begin.tv_sec, begin.tv_usec, end.tv_sec, end.tv_usec);
+
+	return 	((end.tv_sec * 1000000) + end.tv_usec);
 }
 
 
@@ -670,8 +710,8 @@ ENTRY;
 	/* Append msg to pending queue and poke Venus. */
 	list_add(&(req->uc_chain), vcommp->vc_pending.prev);
 	CDEBUG(D_UPCALL, 
-	       "Proc %d wake Venus for(opc,uniq) =(%d,%d) msg at %x.zzz.\n",
-	       current->pid, req->uc_opcode, req->uc_unique, (int)req);
+	       "Proc %d wake Venus for(opc,uniq) =(%d,%d) msg at %p.zzz.\n",
+	       current->pid, req->uc_opcode, req->uc_unique, req);
 
 	wake_up_interruptible(&vcommp->vc_waitq);
 	/* We can be interrupted while we wait for Venus to process
@@ -691,8 +731,8 @@ ENTRY;
 	       req->uc_opcode, jiffies - req->uc_posttime, 
 	       req->uc_unique, req->uc_outSize);
 	CDEBUG(D_UPCALL, 
-	       "..process %d woken up by Venus for req at 0x%x, data at %x\n", 
-	       current->pid, (int)req, (int)req->uc_data);
+	       "..process %d woken up by Venus for req at %p, data at %p\n", 
+	       current->pid, req, req->uc_data);
 	if (vcommp->vc_pid) {      /* i.e. Venus is still alive */
 	    /* Op went through, interrupt or not... */
 	    if (req->uc_flags & REQ_WRITE) {

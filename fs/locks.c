@@ -193,6 +193,14 @@ static void locks_insert_block(struct file_lock *blocker,
 {
 	struct file_lock *prevblock;
 
+	if (waiter->fl_prevblock) {
+		printk(KERN_ERR "locks_insert_block: remove duplicated lock "
+			"(pid=%d %ld-%ld type=%d)\n",
+			waiter->fl_pid, waiter->fl_start,
+			waiter->fl_end, waiter->fl_type);
+		locks_delete_block(waiter->fl_prevblock, waiter);
+	}
+
 	if (blocker->fl_prevblock == NULL)
 		/* No previous waiters - list is empty */
 		prevblock = blocker;
@@ -341,7 +349,11 @@ int fcntl_getlk(unsigned int fd, struct flock *l)
 		error = filp->f_op->lock(filp, F_GETLK, &file_lock);
 		if (error < 0)
 			goto out_putf;
-		fl = &file_lock;
+		else if (error == LOCK_USE_CLNT)
+		  /* Bypass for NFS with no locking - 2.0.36 compat */
+		  fl = posix_test_lock(filp, &file_lock);
+		else
+		  fl = (file_lock.fl_type == F_UNLCK ? NULL : &file_lock);
 	} else {
 		fl = posix_test_lock(filp, &file_lock);
 	}
@@ -512,7 +524,9 @@ repeat:
 	while ((fl = *before) != NULL) {
 		if ((fl->fl_flags & FL_FLOCK) && fl->fl_file == filp) {
 			int (*lock)(struct file *, int, struct file_lock *);
-			lock = filp->f_op->lock;
+			lock = NULL;
+			if (filp->f_op)
+				lock = filp->f_op->lock;
 			if (lock) {
 				file_lock = *fl;
 				file_lock.fl_type = F_UNLCK;

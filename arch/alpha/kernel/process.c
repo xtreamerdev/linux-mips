@@ -55,7 +55,6 @@
 unsigned long init_user_stack[1024] = { STACK_MAGIC, };
 static struct vm_area_struct init_mmap = INIT_MMAP;
 static struct fs_struct init_fs = INIT_FS;
-static struct file * init_fd_array[NR_OPEN] = { NULL, };
 static struct files_struct init_files = INIT_FILES;
 static struct signal_struct init_signals = INIT_SIGNALS;
 struct mm_struct init_mm = INIT_MM;
@@ -76,7 +75,7 @@ sys_sethae(unsigned long hae, unsigned long a1, unsigned long a2,
 }
 
 #ifdef __SMP__
-void
+int
 cpu_idle(void *unused)
 {
 	/* An endless idle loop with no priority at all.  */
@@ -89,6 +88,7 @@ cpu_idle(void *unused)
 
 		/* Although we are an idle CPU, we do not want to 
 		   get into the scheduler unnecessarily.  */
+		barrier();
 		if (current->need_resched) {
 			schedule();
 			check_pgt_cache();
@@ -329,7 +329,6 @@ int copy_thread(int nr, unsigned long clone_flags, unsigned long usp,
 	p->tss.ksp = (unsigned long) childstack;
 	p->tss.pal_flags = 1;	/* set FEN, clear everything else */
 	p->tss.flags = current->tss.flags;
-	p->mm->context = 0;
 
 	return 0;
 }

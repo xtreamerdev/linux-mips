@@ -51,6 +51,7 @@
 #define HID0_DLOCK	(1<<12)		/* Data Cache Lock */
 #define HID0_ICFI	(1<<11)		/* Instruction Cache Flash Invalidate */
 #define HID0_DCI	(1<<10)		/* Data Cache Invalidate */
+#define HID0_SPD	(1<<9)		/* Speculative disable */
 #define HID0_SIED	(1<<7)		/* Serial Instruction Execution [Disable] */
 #define HID0_BHTE	(1<<2)		/* Branch History Table Enable */
 #define HID0_BTCD	(1<<1)		/* Branch target cache disable */
@@ -198,6 +199,11 @@ void start_thread(struct pt_regs *regs, unsigned long nip, unsigned long sp);
 void release_thread(struct task_struct *);
 
 /*
+ * Create a new kernel thread.
+ */
+extern long kernel_thread(int (*fn)(void *), void *arg, unsigned long flags);
+
+/*
  * Bus types
  */
 #define EISA_bus 0
@@ -280,22 +286,13 @@ static inline unsigned long thread_saved_pc(struct thread_struct *t)
 int ll_printk(const char *, ...);
 void ll_puts(const char *);
 
-#endif /* ndef ASSEMBLY*/
-
 #define init_task	(init_task_union.task)
 #define init_stack	(init_task_union.stack)
- 
+
 /* In misc.c */
 void _nmask_and_or_msr(unsigned long nmask, unsigned long or_val);
 
-/*
- * Return_address is a replacement for __builtin_return_address(count)
- * which on certain architectures cannot reasonably be implemented in GCC
- * (MIPS, Alpha) or is unuseable with -fomit-frame-pointer (i386).
- * Note that __builtin_return_address(x>=1) is forbidden because the GCC
- * aborts compilation on some CPUs.  It's simply not possible to unwind
- * some CPU's stackframes.
- */
-#define return_address() __builtin_return_address(0)
+#endif /* ndef ASSEMBLY*/
 
+  
 #endif /* __ASM_PPC_PROCESSOR_H */

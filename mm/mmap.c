@@ -197,7 +197,8 @@ unsigned long do_mmap(struct file * file, unsigned long addr, unsigned long len,
 	if (mm->def_flags & VM_LOCKED) {
 		unsigned long locked = mm->locked_vm << PAGE_SHIFT;
 		locked += len;
-		if (locked > current->rlim[RLIMIT_MEMLOCK].rlim_cur)
+		if ((current->rlim[RLIMIT_MEMLOCK].rlim_cur < RLIM_INFINITY) &&
+		   (locked > current->rlim[RLIMIT_MEMLOCK].rlim_cur))
 			return -EAGAIN;
 	}
 
@@ -288,8 +289,9 @@ unsigned long do_mmap(struct file * file, unsigned long addr, unsigned long len,
 		goto free_vma;
 
 	/* Check against address space limit. */
-	if ((mm->total_vm << PAGE_SHIFT) + len
-	    > current->rlim[RLIMIT_AS].rlim_cur)
+	if ((current->rlim[RLIMIT_AS].rlim_cur < RLIM_INFINITY) &&
+	    ((mm->total_vm << PAGE_SHIFT) + len
+	    > current->rlim[RLIMIT_AS].rlim_cur))
 		goto free_vma;
 
 	/* Private writable mapping? Check memory availability.. */
@@ -359,8 +361,11 @@ unsigned long get_unmapped_area(unsigned long addr, unsigned long len)
 
 	if (len > TASK_SIZE)
 		return 0;
-	if (!addr)
-		addr = TASK_UNMAPPED_BASE;
+	if (!addr) {
+		addr = current->rlim[RLIMIT_DATA].rlim_cur;
+		if (addr >= RLIM_INFINITY)
+			addr = TASK_UNMAPPED_BASE;
+	}
 	addr = PAGE_ALIGN(addr);
 
 	for (vmm = find_vma(current->mm, addr); ; vmm = vmm->vm_next) {

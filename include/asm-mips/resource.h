@@ -1,4 +1,4 @@
-/* $Id: resource.h,v 1.2 1998/12/08 20:51:59 ralf Exp $
+/* $Id: resource.h,v 1.2 1999/01/04 16:09:25 ralf Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
@@ -34,7 +34,7 @@
 	{ LONG_MAX, LONG_MAX },				\
 	{ _STK_LIM, LONG_MAX },				\
 	{        0, LONG_MAX },				\
-	{ NR_OPEN, NR_OPEN },				\
+	{ INR_OPEN, INR_OPEN },				\
 	{ LONG_MAX, LONG_MAX },				\
 	{ LONG_MAX, LONG_MAX },				\
 	{ MAX_TASKS_PER_USER, MAX_TASKS_PER_USER },	\

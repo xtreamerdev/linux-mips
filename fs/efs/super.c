@@ -133,6 +133,7 @@ static efs_block_t efs_validate_vh(struct volume_header *vh) {
 static int efs_validate_super(struct efs_sb_info *sb, struct efs_super *super) {
 
 	if (!IS_EFS_MAGIC(be32_to_cpu(super->fs_magic))) return -1;
+	if (!(super->fs_cgisize)) return -1;
 
 	sb->fs_magic     = be32_to_cpu(super->fs_magic);
 	sb->total_blocks = be32_to_cpu(super->fs_size);

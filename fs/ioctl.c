@@ -18,6 +18,8 @@ static int file_ioctl(struct file *filp,unsigned int cmd,unsigned long arg)
 
 	switch (cmd) {
 		case FIBMAP:
+			if (!capable(CAP_SYS_RAWIO))
+				return -EPERM;
 			if (inode->i_op == NULL)
 				return -EBADF;
 		    	if (inode->i_op->bmap == NULL)
@@ -52,11 +54,11 @@ asmlinkage int sys_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg)
 	error = 0;
 	switch (cmd) {
 		case FIOCLEX:
-			FD_SET(fd, &current->files->close_on_exec);
+			FD_SET(fd, current->files->close_on_exec);
 			break;
 
 		case FIONCLEX:
-			FD_CLR(fd, &current->files->close_on_exec);
+			FD_CLR(fd, current->files->close_on_exec);
 			break;
 
 		case FIONBIO:

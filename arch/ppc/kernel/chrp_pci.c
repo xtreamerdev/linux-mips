@@ -96,7 +96,7 @@ int gg2_pcibios_write_config_dword(unsigned char bus, unsigned char dev_fn,
 #define python_config_data(bus) ((0xfef00000+0xf8010)-(bus*0x100000))
 #define PYTHON_CFA(b, d, o)	(0x80 | ((b<<6) << 8) | ((d) << 16) \
 				 | (((o) & ~3) << 24))
-unsigned int python_busnr = 1;
+unsigned int python_busnr = 0;
 
 int python_pcibios_read_config_byte(unsigned char bus, unsigned char dev_fn,
 				    unsigned char offset, unsigned char *val)
@@ -300,11 +300,11 @@ chrp_pcibios_fixup(void)
 		}
 		/* the F50 identifies the amd as a trident */
 		if ( (dev->vendor == PCI_VENDOR_ID_TRIDENT) &&
-		      (dev->class == PCI_CLASS_NETWORK_ETHERNET) )
+		      (dev->class>>8 == PCI_CLASS_NETWORK_ETHERNET) )
 		{
 			dev->vendor = PCI_VENDOR_ID_AMD;
-			pcibios_write_config_word(dev->bus->number, dev->devfn,
-						   PCI_VENDOR_ID, PCI_VENDOR_ID_AMD);
+			pcibios_write_config_word(dev->bus->number,
+			  dev->devfn, PCI_VENDOR_ID, PCI_VENDOR_ID_AMD);
 		}
 	}
 }
@@ -353,7 +353,8 @@ chrp_setup_pci_ptrs(void)
                 }
                 else
                 {
-			if ( !strncmp("IBM,7043-150", get_property(find_path_device("/"), "name", NULL),12) )
+			if ( !strncmp("IBM,7043-150", get_property(find_path_device("/"), "name", NULL),12) ||
+			     !strncmp("IBM,7046-155", get_property(find_path_device("/"), "name", NULL),12) )
 			{
 				pci_dram_offset = 0;
 				isa_mem_base = 0x80000000;

@@ -242,6 +242,9 @@ static int beep_playing = 0;
 static short *beep_buf;
 static volatile struct dbdma_cmd *beep_dbdma_cmd;
 static void (*orig_mksound)(unsigned int, unsigned int);
+static int is_pbook_3400;
+static int is_pbook_G3;
+static unsigned char *macio_base;
 
 /* Burgundy functions */
 static void awacs_burgundy_wcw(unsigned addr,unsigned newval);
@@ -255,9 +258,9 @@ static int awacs_burgundy_read_mvolume(unsigned address);
 /*
  * Stuff for restoring after a sleep.
  */
-static int awacs_sleep_notify(struct notifier_block *, unsigned long, void *);
-struct notifier_block awacs_sleep_notifier = {
-	awacs_sleep_notify
+static int awacs_sleep_notify(struct pmu_sleep_notifier *self, int when);
+struct pmu_sleep_notifier awacs_sleep_notifier = {
+	awacs_sleep_notify, SLEEP_LEVEL_SOUND,
 };
 #endif /* CONFIG_PMAC_PBOOK */
 
@@ -784,6 +787,7 @@ static ssize_t sound_copy_translate(const u_char *userPtr,
 
 struct sound_mixer {
     int busy;
+    int modify_counter;
 };
 
 static struct sound_mixer mixer;
@@ -3019,7 +3023,7 @@ static void PMacIrqCleanup(void)
 		kfree(beep_buf);
 	kd_mksound = orig_mksound;
 #ifdef CONFIG_PMAC_PBOOK
-	notifier_chain_unregister(&sleep_notifier_list, &awacs_sleep_notifier);
+	pmu_unregister_sleep_notifier(&awacs_sleep_notifier);
 #endif
 }
 #endif /* MODULE */
@@ -3341,14 +3345,15 @@ static void awacs_mksound(unsigned int hz, unsigned int ticks)
 /*
  * Save state when going to sleep, restore it afterwards.
  */
-static int awacs_sleep_notify(struct notifier_block *this,
-			      unsigned long code, void *x)
+static int awacs_sleep_notify(struct pmu_sleep_notifier *self, int when)
 {
-	switch (code) {
-	case PBOOK_SLEEP:
+	switch (when) {
+	case PBOOK_SLEEP_NOW:
 		/* XXX we should stop any dma in progress when going to sleep
 		   and restart it when we wake. */
 		PMacSilence();
+		disable_irq(awacs_irq);
+		disable_irq(awacs_tx_irq);
 		break;
 	case PBOOK_WAKE:
 		out_le32(&awacs->control, MASK_IEPC
@@ -3359,8 +3364,10 @@ static int awacs_sleep_notify(struct notifier_block *this,
 		awacs_write(awacs_reg[2] | MASK_ADDR2);
 		awacs_write(awacs_reg[4] | MASK_ADDR4);
 		out_le32(&awacs->byteswap, sound.hard.format != AFMT_S16_BE);
+		enable_irq(awacs_irq);
+		enable_irq(awacs_tx_irq);
 	}
-	return NOTIFY_DONE;
+	return PBOOK_SLEEP_OK;
 }
 #endif /* CONFIG_PMAC_PBOOK */
 
@@ -3811,10 +3818,23 @@ static int mixer_ioctl(struct inode *inode, struct file *file, u_int cmd,
 		       u_long arg)
 {
 	int data;
+	if (_SIOC_DIR(cmd) & _SIOC_WRITE)
+	    mixer.modify_counter++;
+	if (cmd == OSS_GETVERSION)
+	    return IOCTL_OUT(arg, SOUND_VERSION);
 	switch (sound.mach.type) {
 #ifdef CONFIG_ATARI
 	case DMASND_FALCON:
 		switch (cmd) {
+		case SOUND_MIXER_INFO: {
+		    mixer_info info;
+		    strncpy(info.id, "FALCON", sizeof(info.id));
+		    strncpy(info.name, "FALCON", sizeof(info.name));
+		    info.name[sizeof(info.name)-1] = 0;
+		    info.modify_counter = mixer.modify_counter;
+		    copy_to_user_ret((int *)arg, &info, sizeof(info), -EFAULT);
+		    return 0;
+		}
 		case SOUND_MIXER_READ_DEVMASK:
 			return IOCTL_OUT(arg, SOUND_MASK_VOLUME | SOUND_MASK_MIC | SOUND_MASK_SPEAKER);
 		case SOUND_MIXER_READ_RECMASK:
@@ -3866,6 +3886,15 @@ static int mixer_ioctl(struct inode *inode, struct file *file, u_int cmd,
 
 	case DMASND_TT:
 		switch (cmd) {
+		case SOUND_MIXER_INFO: {
+		    mixer_info info;
+		    strncpy(info.id, "TT", sizeof(info.id));
+		    strncpy(info.name, "TT", sizeof(info.name));
+		    info.name[sizeof(info.name)-1] = 0;
+		    info.modify_counter = mixer.modify_counter;
+		    copy_to_user_ret((int *)arg, &info, sizeof(info), -EFAULT);
+		    return 0;
+		}
 		case SOUND_MIXER_READ_DEVMASK:
 			return IOCTL_OUT(arg,
 					 SOUND_MASK_VOLUME | SOUND_MASK_TREBLE | SOUND_MASK_BASS |
@@ -3927,6 +3956,15 @@ static int mixer_ioctl(struct inode *inode, struct file *file, u_int cmd,
 #ifdef CONFIG_AMIGA
 	case DMASND_AMIGA:
 		switch (cmd) {
+		case SOUND_MIXER_INFO: {
+		    mixer_info info;
+		    strncpy(info.id, "AMIGA", sizeof(info.id));
+		    strncpy(info.name, "AMIGA", sizeof(info.name));
+		    info.name[sizeof(info.name)-1] = 0;
+		    info.modify_counter = mixer.modify_counter;
+		    copy_to_user_ret((int *)arg, &info, sizeof(info), -EFAULT);
+		    return 0;
+		}
 		case SOUND_MIXER_READ_DEVMASK:
 			return IOCTL_OUT(arg, SOUND_MASK_VOLUME | SOUND_MASK_TREBLE);
 		case SOUND_MIXER_READ_RECMASK:
@@ -3951,8 +3989,19 @@ static int mixer_ioctl(struct inode *inode, struct file *file, u_int cmd,
 
 #ifdef CONFIG_PPC
 	case DMASND_AWACS:
-		if (awacs_revision<AWACS_BURGUNDY) { /* Different IOCTLS for burgundy*/
+		/* Different IOCTLS for burgundy*/
+		if (awacs_revision < AWACS_BURGUNDY) {
 			switch (cmd) {
+			case SOUND_MIXER_INFO: {
+			    mixer_info info;
+			    strncpy(info.id, "AWACS", sizeof(info.id));
+			    strncpy(info.name, "AWACS", sizeof(info.name));
+			    info.name[sizeof(info.name)-1] = 0;
+			    info.modify_counter = mixer.modify_counter;
+			    copy_to_user_ret((int *)arg, &info, 
+					     sizeof(info), -EFAULT);
+			    return 0;
+			}
 			case SOUND_MIXER_READ_DEVMASK:
 				data = SOUND_MASK_VOLUME | SOUND_MASK_SPEAKER
 					| SOUND_MASK_LINE | SOUND_MASK_MIC
@@ -4066,6 +4115,16 @@ static int mixer_ioctl(struct inode *inode, struct file *file, u_int cmd,
 		} else {
 			/* We are, we are, we are... Burgundy or better */
 			switch(cmd) {
+			case SOUND_MIXER_INFO: {
+			    mixer_info info;
+			    strncpy(info.id, "AWACS", sizeof(info.id));
+			    strncpy(info.name, "AWACS", sizeof(info.name));
+			    info.name[sizeof(info.name)-1] = 0;
+			    info.modify_counter = mixer.modify_counter;
+			    copy_to_user_ret((int *)arg, &info, 
+					     sizeof(info), -EFAULT);
+			    return 0;
+			}
 			case SOUND_MIXER_READ_DEVMASK:
 				data = SOUND_MASK_VOLUME | SOUND_MASK_CD |
 					SOUND_MASK_LINE | SOUND_MASK_MIC |
@@ -4579,7 +4638,7 @@ static int sq_ioctl(struct inode *inode, struct file *file, u_int cmd,
 		if (nbufs < 2 || nbufs > numBufs)
 			nbufs = numBufs;
 		size &= 0xffff;
-		if (size >= 8 && size <= 30) {
+		if (size >= 8 && size <= 29) {
 			size = 1 << size;
 			size *= sound.hard.size * (sound.hard.stereo + 1);
 			size /= sound.soft.size * (sound.soft.stereo + 1);
@@ -4947,9 +5006,33 @@ void __init dmasound_init(void)
 			printk(KERN_WARNING "dmasound: no memory for "
 			       "beep buffer\n");
 #ifdef CONFIG_PMAC_PBOOK
-		notifier_chain_register(&sleep_notifier_list,
-					&awacs_sleep_notifier);
+		pmu_register_sleep_notifier(&awacs_sleep_notifier);
 #endif /* CONFIG_PMAC_PBOOK */
+
+		/* Powerbooks have odd ways of enabling inputs such as
+		   an expansion-bay CD or sound from an internal modem
+		   or a PC-card modem. */
+		if (machine_is_compatible("AAPL,3400/2400")) {
+			is_pbook_3400 = 1;
+			/*
+			 * Enable CD and PC-card sound inputs.
+			 * This is done by reading from address
+			 * f301a000, + 0x10 to enable the expansion-bay
+			 * CD sound input, + 0x80 to enable the PC-card
+			 * sound input.  The 0x100 seems to enable the
+			 * MESH and/or its SCSI bus drivers.
+			 */
+			in_8((unsigned char *)0xf301a190);
+		} else if (machine_is_compatible("PowerBook1,1")) {
+			np = find_devices("mac-io");
+			if (np && np->n_addrs > 0) {
+				is_pbook_G3 = 1;
+				macio_base = (unsigned char *)
+					ioremap(np->addrs[0].address, 0x40);
+				/* enable CD sound input */
+				out_8(macio_base + 0x37, 3);
+			}
+		}
 	}
 #endif /* CONFIG_PPC */
 

@@ -193,7 +193,7 @@ extern void entDbg(void);
 
 /* process.c */
 extern void generic_kill_arch (int mode, char *reboot_cmd);
-extern void cpu_idle(void *) __attribute__((noreturn));
+extern int cpu_idle(void *) __attribute__((noreturn));
 
 /* ptrace.c */
 extern int ptrace_set_bpt (struct task_struct *child);
@@ -201,3 +201,9 @@ extern int ptrace_cancel_bpt (struct task_struct *child);
 
 /* ../mm/init.c */
 void srm_paging_stop(void);
+
+/* irq.c */
+extern void process_mcheck_info(unsigned long vector, unsigned long la_ptr,
+				struct pt_regs *regs, char *machine,
+				unsigned int debug, unsigned int expected);
+

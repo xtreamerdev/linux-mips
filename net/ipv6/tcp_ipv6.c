@@ -84,101 +84,123 @@ static __inline__ int tcp_v6_sk_hashfn(struct sock *sk)
  * But it doesn't matter, the recalculation is in the rarest path
  * this function ever takes.
  */
-static int tcp_v6_verify_bind(struct sock *sk, unsigned short snum)
+static int tcp_v6_get_port(struct sock *sk, unsigned short snum)
 {
 	struct tcp_bind_bucket *tb;
-	int result = 0;
 
 	SOCKHASH_LOCK();
-	for(tb = tcp_bound_hash[tcp_bhashfn(snum)];
-	    (tb && (tb->port != snum));
-	    tb = tb->next)
-		;
-	if(tb && tb->owners) {
-		/* Fast path for reuse ports, see include/net/tcp.h for a very
-		 * detailed description of why this works, and why it is worth
-		 * the effort at all. -DaveM
-		 */
-		if((tb->flags & TCPB_FLAG_FASTREUSE)	&&
-		   (sk->reuse != 0)) {
-			goto go_like_smoke;
+	if (snum == 0) {
+		int rover = tcp_port_rover;
+		int low = sysctl_local_port_range[0];
+		int high = sysctl_local_port_range[1];
+		int remaining = (high - low) + 1;
+
+		do {	rover++;
+			if ((rover < low) || (rover > high))
+				rover = low;
+			tb = tcp_bound_hash[tcp_bhashfn(rover)];
+			for ( ; tb; tb = tb->next)
+				if (tb->port == rover)
+					goto next;
+			break;
+		next:
+		} while (--remaining > 0);
+		tcp_port_rover = rover;
+
+		/* Exhausted local port range during search? */
+		if (remaining <= 0)
+			goto fail;
+
+		/* OK, here is the one we will use. */
+		snum = rover;
+		tb = NULL;
+	} else {
+		for (tb = tcp_bound_hash[tcp_bhashfn(snum)];
+		     tb != NULL;
+		     tb = tb->next)
+			if (tb->port == snum)
+				break;
+	}
+	if (tb != NULL && tb->owners != NULL) {
+		if (tb->fastreuse != 0 && sk->reuse != 0) {
+			goto success;
 		} else {
-			struct sock *sk2;
+			struct sock *sk2 = tb->owners;
 			int sk_reuse = sk->reuse;
 			int addr_type = ipv6_addr_type(&sk->net_pinfo.af_inet6.rcv_saddr);
 
-			/* We must walk the whole port owner list in this case. -DaveM */
-			for(sk2 = tb->owners; sk2; sk2 = sk2->bind_next) {
-				if(sk->bound_dev_if == sk2->bound_dev_if) {
-					if(!sk_reuse || !sk2->reuse || sk2->state == TCP_LISTEN) {
-						if(addr_type == IPV6_ADDR_ANY	||
-						   !sk2->rcv_saddr		||
-						   !ipv6_addr_cmp(&sk->net_pinfo.af_inet6.rcv_saddr,
-								  &sk2->net_pinfo.af_inet6.rcv_saddr))
+			for( ; sk2 != NULL; sk2 = sk2->bind_next) {
+				if (sk->bound_dev_if == sk2->bound_dev_if) {
+					if (!sk_reuse	||
+					    !sk2->reuse	||
+					    sk2->state == TCP_LISTEN) {
+						/* NOTE: IPv6 tw bucket have different format */
+						if (!sk2->rcv_saddr	||
+						    addr_type == IPV6_ADDR_ANY ||
+						    !ipv6_addr_cmp(&sk->net_pinfo.af_inet6.rcv_saddr,
+								   sk2->state != TCP_TIME_WAIT ?
+								   &sk2->net_pinfo.af_inet6.rcv_saddr :
+								   &((struct tcp_tw_bucket*)sk)->v6_rcv_saddr))
 							break;
 					}
 				}
 			}
-			if(sk2 != NULL)
-				result = 1;
+			/* If we found a conflict, fail. */
+			if (sk2 != NULL)
+				goto fail;
 		}
 	}
-	if(result == 0) {
-		if(tb == NULL) {
-			if((tb = tcp_bucket_create(snum)) == NULL)
-				result = 1;
-			else if (sk->reuse && sk->state != TCP_LISTEN)
-				tb->flags |= TCPB_FLAG_FASTREUSE;
-		} else {
-			/* It could be pending garbage collection, this
-			 * kills the race and prevents it from disappearing
-			 * out from under us by the time we use it.  -DaveM
-			 */
-			if(tb->owners == NULL) {
-				if (!(tb->flags & TCPB_FLAG_LOCKED)) {
-					tb->flags = (TCPB_FLAG_LOCKED |
-						     ((sk->reuse &&
-						       sk->state != TCP_LISTEN) ?
-						      TCPB_FLAG_FASTREUSE : 0));
-					tcp_dec_slow_timer(TCP_SLT_BUCKETGC);
-				} else if (!(tb->flags & TCPB_FLAG_GOODSOCKNUM)) {
-					/* Someone is in between the bind
-					 * and the actual connect or listen.
-					 * See if it was a legitimate reuse
-					 * and we are as well, else punt.
-					 */
-					if (sk->reuse == 0 ||
-					    !(tb->flags & TCPB_FLAG_FASTREUSE))
-						result = 1;
-				} else
-					tb->flags &= ~TCPB_FLAG_GOODSOCKNUM;
-			}
-		}
-	}
-go_like_smoke:
+	if (tb == NULL &&
+	    (tb = tcp_bucket_create(snum)) == NULL)
+			goto fail;
+	if (tb->owners == NULL) {
+		if (sk->reuse && sk->state != TCP_LISTEN)
+			tb->fastreuse = 1;
+		else
+			tb->fastreuse = 0;
+	} else if (tb->fastreuse &&
+		   ((sk->reuse == 0) || (sk->state == TCP_LISTEN)))
+		tb->fastreuse = 0;
+
+success:
+	sk->num = snum;
+	if ((sk->bind_next = tb->owners) != NULL)
+		tb->owners->bind_pprev = &sk->bind_next;
+	tb->owners = sk;
+	sk->bind_pprev = &tb->owners;
+	sk->prev = (struct sock *) tb;
+
 	SOCKHASH_UNLOCK();
-	return result;
+	return 0;
+
+fail:
+	SOCKHASH_UNLOCK();
+	return 1;
 }
 
 static void tcp_v6_hash(struct sock *sk)
 {
-	/* Well, I know that it is ugly...
-	   All this ->prot, ->af_specific etc. need LARGE cleanup --ANK
-	 */
-	if (sk->tp_pinfo.af_tcp.af_specific == &ipv6_mapped) {
-		tcp_prot.hash(sk);
-		return;
-	}
 	if(sk->state != TCP_CLOSE) {
 		struct sock **skp;
 
+		/* Well, I know that it is ugly...
+		 * All this ->prot, ->af_specific etc. need LARGE cleanup --ANK
+		 */
+		if (sk->tp_pinfo.af_tcp.af_specific == &ipv6_mapped) {
+			tcp_prot.hash(sk);
+			return;
+		}
+
+		if(sk->state == TCP_LISTEN)
+			skp = &tcp_listening_hash[tcp_sk_listen_hashfn(sk)];
+		else
+			skp = &tcp_established_hash[(sk->hashent = tcp_v6_sk_hashfn(sk))];
+
 		SOCKHASH_LOCK();
-		skp = &tcp_established_hash[(sk->hashent = tcp_v6_sk_hashfn(sk))];
 		if((sk->next = *skp) != NULL)
 			(*skp)->pprev = &sk->next;
 		*skp = sk;
 		sk->pprev = skp;
-		tcp_sk_bindify(sk);
 		SOCKHASH_UNLOCK();
 	}
 }
@@ -191,39 +213,8 @@ static void tcp_v6_unhash(struct sock *sk)
 			sk->next->pprev = sk->pprev;
 		*sk->pprev = sk->next;
 		sk->pprev = NULL;
-		tcp_sk_unbindify(sk);
 		tcp_reg_zap(sk);
-	}
-	SOCKHASH_UNLOCK();
-}
-
-static void tcp_v6_rehash(struct sock *sk)
-{
-	unsigned char state;
-
-	SOCKHASH_LOCK();
-	state = sk->state;
-	if(sk->pprev != NULL) {
-		if(sk->next)
-			sk->next->pprev = sk->pprev;
-		*sk->pprev = sk->next;
-		sk->pprev = NULL;
-		tcp_reg_zap(sk);
-	}
-	if(state != TCP_CLOSE) {
-		struct sock **skp;
-
-		if(state == TCP_LISTEN)
-			skp = &tcp_listening_hash[tcp_sk_listen_hashfn(sk)];
-		else
-			skp = &tcp_established_hash[(sk->hashent = tcp_v6_sk_hashfn(sk))];
-
-		if((sk->next = *skp) != NULL)
-			(*skp)->pprev = &sk->next;
-		*skp = sk;
-		sk->pprev = skp;
-		if(state == TCP_LISTEN)
-			tcp_sk_bindify(sk);
+		__tcp_put_port(sk);
 	}
 	SOCKHASH_UNLOCK();
 }
@@ -354,7 +345,8 @@ static int tcp_v6_unique_address(struct sock *sk)
 			 */
 			sk = __tcp_v6_lookup(NULL, &sk->net_pinfo.af_inet6.daddr,
 					     sk->dport,
-					     &sk->net_pinfo.af_inet6.rcv_saddr, snum,
+					     &sk->net_pinfo.af_inet6.rcv_saddr,
+					     htons(snum),
 					     sk->bound_dev_if);
 			if((sk != NULL) && (sk->state != TCP_LISTEN))
 				retval = 0;
@@ -1048,8 +1040,8 @@ static struct sock * tcp_v6_syn_recv_sock(struct sock *sk, struct sk_buff *skb,
 	newsk->rcv_saddr= LOOPBACK4_IPV6;
 
 	newsk->prot->hash(newsk);
+	tcp_inherit_port(sk, newsk);
 	add_to_prot_sklist(newsk);
-
 	sk->data_ready(sk, 0); /* Deliver SIGIO */ 
 
 	return newsk;
@@ -1126,6 +1118,59 @@ static void tcp_v6_send_reset(struct sk_buff *skb)
 		ip6_xmit(NULL, buff, &fl, NULL);
 		tcp_statistics.TcpOutSegs++;
 		tcp_statistics.TcpOutRsts++;
+		return;
+	}
+
+	kfree_skb(buff);
+}
+
+static void tcp_v6_send_ack(struct sk_buff *skb, __u32 seq, __u32 ack, __u16 window)
+{
+	struct tcphdr *th = skb->h.th, *t1; 
+	struct sk_buff *buff;
+	struct flowi fl;
+
+	buff = alloc_skb(MAX_HEADER + sizeof(struct ipv6hdr), GFP_ATOMIC);
+	if (buff == NULL) 
+	  	return;
+
+	skb_reserve(buff, MAX_HEADER + sizeof(struct ipv6hdr));
+
+	t1 = (struct tcphdr *) skb_push(buff,sizeof(struct tcphdr));
+
+	/* Swap the send and the receive. */
+	memset(t1, 0, sizeof(*t1));
+	t1->dest = th->source;
+	t1->source = th->dest;
+	t1->doff = sizeof(*t1)/4;
+	t1->ack = 1;
+	t1->seq = seq;
+	t1->ack_seq = ack; 
+
+	t1->window = htons(window);
+
+	buff->csum = csum_partial((char *)t1, sizeof(*t1), 0);
+
+	fl.nl_u.ip6_u.daddr = &skb->nh.ipv6h->saddr;
+	fl.nl_u.ip6_u.saddr = &skb->nh.ipv6h->daddr;
+	fl.fl6_flowlabel = 0;
+
+	t1->check = csum_ipv6_magic(fl.nl_u.ip6_u.saddr,
+				    fl.nl_u.ip6_u.daddr, 
+				    sizeof(*t1), IPPROTO_TCP,
+				    buff->csum);
+
+	fl.proto = IPPROTO_TCP;
+	fl.oif = tcp_v6_iif(skb);
+	fl.uli_u.ports.dport = t1->dest;
+	fl.uli_u.ports.sport = t1->source;
+
+	/* sk = NULL, but it is safe for now. static socket required. */
+	buff->dst = ip6_route_output(NULL, &fl);
+
+	if (buff->dst->error == 0) {
+		ip6_xmit(NULL, buff, &fl, NULL);
+		tcp_statistics.TcpOutSegs++;
 		return;
 	}
 
@@ -1420,10 +1465,19 @@ discard_it:
 	return 0;
 
 do_time_wait:
-	if(tcp_timewait_state_process((struct tcp_tw_bucket *)sk,
-				      skb, th, skb->len))
+	switch (tcp_timewait_state_process((struct tcp_tw_bucket *)sk,
+					   skb, th, skb->len)) {
+	case TCP_TW_ACK:
+		tcp_v6_send_ack(skb,
+				((struct tcp_tw_bucket *)sk)->snd_nxt,
+				((struct tcp_tw_bucket *)sk)->rcv_nxt,
+				((struct tcp_tw_bucket *)sk)->window);
+		goto discard_it; 
+	case TCP_TW_RST:
 		goto no_tcp_socket;
-	goto discard_it;
+	default:
+		goto discard_it; 
+	}
 }
 
 static int tcp_v6_rebuild_header(struct sock *sk)
@@ -1633,11 +1687,9 @@ static int tcp_v6_destroy_sock(struct sock *sk)
 
 	/* Clean up a locked TCP bind bucket, this only happens if a
 	 * port is allocated for a socket, but it never fully connects.
-	 * In which case we will find num to be non-zero and daddr to
-	 * be zero.
 	 */
-	if(ipv6_addr_any(&(sk->net_pinfo.af_inet6.daddr)) && sk->num != 0)
-		tcp_bucket_unlock(sk);
+	if(sk->prev != NULL)
+		tcp_put_port(sk);
 
 	return inet6_destroy_sock(sk);
 }
@@ -1664,9 +1716,7 @@ struct proto tcpv6_prot = {
 	tcp_v6_do_rcv,			/* backlog_rcv */
 	tcp_v6_hash,			/* hash */
 	tcp_v6_unhash,			/* unhash */
-	tcp_v6_rehash,			/* rehash */
-	tcp_good_socknum,		/* good_socknum */
-	tcp_v6_verify_bind,		/* verify_bind */
+	tcp_v6_get_port,		/* get_port */
 	128,				/* max_header */
 	0,				/* retransmits */
 	"TCPv6",			/* name */

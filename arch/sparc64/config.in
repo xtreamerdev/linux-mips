@@ -238,6 +238,16 @@ if [ "$CONFIG_UNIX98_PTYS" = "y" ]; then
 fi
 endmenu
 
+mainmenu_option next_comment
+comment 'Video For Linux'
+tristate 'Video For Linux' CONFIG_VIDEO_DEV
+if [ "$CONFIG_VIDEO_DEV" != "n" ]; then
+  if [ "$CONFIG_PCI" != "n" ]; then
+    dep_tristate 'BT848 Video For Linux' CONFIG_VIDEO_BT848 $CONFIG_VIDEO_DEV
+  fi
+fi
+endmenu
+
 source fs/Config.in
 
 mainmenu_option next_comment

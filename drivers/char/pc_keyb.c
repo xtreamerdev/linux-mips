@@ -36,7 +36,6 @@
 #include <asm/uaccess.h>
 #include <asm/irq.h>
 #include <asm/system.h>
-#include <asm/irq.h>
 
 /* Some configuration switches are present in the include file... */
 
@@ -421,12 +420,12 @@ static inline void handle_mouse_event(unsigned char scancode)
 static unsigned char handle_kbd_event(void)
 {
 	unsigned char status = kbd_read_status();
+	unsigned int work = 10000;
 
 	while (status & KBD_STAT_OBF) {
 		unsigned char scancode;
 
 		scancode = kbd_read_input();
-
 		if (status & KBD_STAT_MOUSE_OBF) {
 			handle_mouse_event(scancode);
 		} else {
@@ -436,6 +435,13 @@ static unsigned char handle_kbd_event(void)
 		}
 
 		status = kbd_read_status();
+		
+		if(!work--)
+		{
+			printk(KERN_ERR "pc_keyb: controller jammed (0x%02X).\n",
+				status);
+			break;
+		}
 	}
 
 	return status;
@@ -658,9 +664,9 @@ static char * __init initialize_kbd(void)
 
 	kbd_write_command_w(KBD_CCMD_WRITE_MODE);
 	kbd_write_output_w(KBD_MODE_KBD_INT
-			 | KBD_MODE_SYS
-			 | KBD_MODE_DISABLE_MOUSE
-			 | KBD_MODE_KCC);
+			      | KBD_MODE_SYS
+			      | KBD_MODE_DISABLE_MOUSE
+			      | KBD_MODE_KCC);
 
 	/* ibm powerpc portables need this to use scan-code set 1 -- Cort */
 	kbd_write_command_w(KBD_CCMD_READ_MODE);

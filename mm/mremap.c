@@ -115,7 +115,7 @@ oops_we_failed:
 	flush_cache_range(mm, new_addr, new_addr + len);
 	while ((offset += PAGE_SIZE) < len)
 		move_one_page(mm, new_addr + offset, old_addr + offset);
-	zap_page_range(mm, new_addr, new_addr + len);
+	zap_page_range(mm, new_addr, len);
 	flush_tlb_range(mm, new_addr, new_addr + len);
 	return -1;
 }
@@ -196,12 +196,14 @@ asmlinkage unsigned long sys_mremap(unsigned long addr,
 		unsigned long locked = current->mm->locked_vm << PAGE_SHIFT;
 		locked += new_len - old_len;
 		ret = -EAGAIN;
-		if (locked > current->rlim[RLIMIT_MEMLOCK].rlim_cur)
+		if ((current->rlim[RLIMIT_MEMLOCK].rlim_cur < RLIM_INFINITY) &&
+		   (locked > current->rlim[RLIMIT_MEMLOCK].rlim_cur))
 			goto out;
 	}
 	ret = -ENOMEM;
-	if ((current->mm->total_vm << PAGE_SHIFT) + (new_len - old_len)
-	    > current->rlim[RLIMIT_AS].rlim_cur)
+	if ((current->rlim[RLIMIT_AS].rlim_cur < RLIM_INFINITY) &&
+	    ((current->mm->total_vm << PAGE_SHIFT) + (new_len - old_len)
+	    > current->rlim[RLIMIT_AS].rlim_cur))
 		goto out;
 	/* Private writable mapping? Check memory availability.. */
 	if ((vma->vm_flags & (VM_SHARED | VM_WRITE)) == VM_WRITE &&

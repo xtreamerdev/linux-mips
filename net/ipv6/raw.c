@@ -45,57 +45,25 @@ struct sock *raw_v6_htable[RAWV6_HTABLE_SIZE];
 
 static void raw_v6_hash(struct sock *sk)
 {
-	struct sock **skp;
-	int num = sk->num;
+	struct sock **skp = &raw_v6_htable[sk->num & (RAWV6_HTABLE_SIZE - 1)];
 
-	num &= (RAWV6_HTABLE_SIZE - 1);
-	skp = &raw_v6_htable[num];
 	SOCKHASH_LOCK();
-	sk->next = *skp;
+	if ((sk->next = *skp) != NULL)
+		(*skp)->pprev = &sk->next;
 	*skp = sk;
-	sk->hashent = num;
+	sk->pprev = skp;
 	SOCKHASH_UNLOCK();
 }
 
 static void raw_v6_unhash(struct sock *sk)
 {
-	struct sock **skp;
-	int num = sk->num;
-
-	num &= (RAWV6_HTABLE_SIZE - 1);
-	skp = &raw_v6_htable[num];
-
 	SOCKHASH_LOCK();
-	while(*skp != NULL) {
-		if(*skp == sk) {
-			*skp = sk->next;
-			break;
-		}
-		skp = &((*skp)->next);
+	if (sk->pprev) {
+		if (sk->next)
+			sk->next->pprev = sk->pprev;
+		*sk->pprev = sk->next;
+		sk->pprev = NULL;
 	}
-	SOCKHASH_UNLOCK();
-}
-
-static void raw_v6_rehash(struct sock *sk)
-{
-	struct sock **skp;
-	int num = sk->num;
-	int oldnum = sk->hashent;
-
-	num &= (RAWV6_HTABLE_SIZE - 1);
-	skp = &raw_v6_htable[oldnum];
-
-	SOCKHASH_LOCK();
-	while(*skp != NULL) {
-		if(*skp == sk) {
-			*skp = sk->next;
-			break;
-		}
-		skp = &((*skp)->next);
-	}
-	sk->next = raw_v6_htable[num];
-	raw_v6_htable[num] = sk;
-	sk->hashent = num;
 	SOCKHASH_UNLOCK();
 }
 
@@ -667,9 +635,7 @@ struct proto rawv6_prot = {
 	rawv6_rcv_skb,			/* backlog_rcv */
 	raw_v6_hash,			/* hash */
 	raw_v6_unhash,			/* unhash */
-	raw_v6_rehash,			/* rehash */
-	NULL,				/* good_socknum */
-	NULL,				/* verify_bind */
+	NULL,				/* get_port */
 	128,				/* max_header */
 	0,				/* retransmits */
 	"RAW",				/* name */

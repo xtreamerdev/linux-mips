@@ -699,8 +699,8 @@ static void icmp_unreach(struct icmphdr *icmph, struct sk_buff *skb, int len)
 			case ICMP_FRAG_NEEDED:
 				if (ipv4_config.no_pmtu_disc) {
 					if (net_ratelimit())
-						printk(KERN_INFO "ICMP: %s: fragmentation needed and DF set.\n",
-					       in_ntoa(iph->daddr));
+						printk(KERN_INFO "ICMP: %d.%d.%d.%d: fragmentation needed and DF set.\n",
+					       NIPQUAD(iph->daddr));
 				} else {
 					unsigned short new_mtu;
 					new_mtu = ip_rt_frag_needed(iph, ntohs(icmph->un.frag.mtu));
@@ -711,7 +711,7 @@ static void icmp_unreach(struct icmphdr *icmph, struct sk_buff *skb, int len)
 				break;
 			case ICMP_SR_FAILED:
 				if (net_ratelimit())
-					printk(KERN_INFO "ICMP: %s: Source Route Failed.\n", in_ntoa(iph->daddr));
+					printk(KERN_INFO "ICMP: %d.%d.%d.%d: Source Route Failed.\n", NIPQUAD(iph->daddr));
 				break;
 			default:
 				break;
@@ -741,8 +741,8 @@ static void icmp_unreach(struct icmphdr *icmph, struct sk_buff *skb, int len)
 		if (inet_addr_type(iph->daddr) == RTN_BROADCAST)
 		{
 			if (net_ratelimit())
-				printk(KERN_WARNING "%s sent an invalid ICMP error to a broadcast.\n",
-			       	in_ntoa(skb->nh.iph->saddr));
+				printk(KERN_WARNING "%d.%d.%d.%d sent an invalid ICMP error to a broadcast.\n",
+			       	NIPQUAD(skb->nh.iph->saddr));
 			return; 
 		}
 	}

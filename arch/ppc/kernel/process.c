@@ -31,7 +31,6 @@
 #include <linux/malloc.h>
 #include <linux/user.h>
 #include <linux/elf.h>
-#include <linux/elf.h>
 #include <linux/init.h>
 
 #include <asm/pgtable.h>
@@ -48,7 +47,6 @@ extern unsigned long _get_SP(void);
 struct task_struct *last_task_used_math = NULL;
 static struct vm_area_struct init_mmap = INIT_MMAP;
 static struct fs_struct init_fs = INIT_FS;
-static struct file * init_fd_array[NR_OPEN] = { NULL, };
 static struct files_struct init_files = INIT_FILES;
 static struct signal_struct init_signals = INIT_SIGNALS;
 struct mm_struct init_mm = INIT_MM;

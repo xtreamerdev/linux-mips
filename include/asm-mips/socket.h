@@ -1,5 +1,5 @@
 /*
- * $Id: socket.h,v 1.5 1998/03/17 22:16:17 ralf Exp $
+ * $Id: socket.h,v 1.5.2.1 1999/06/24 22:01:44 ralf Exp $
  */
 #ifndef __ASM_MIPS_SOCKET_H
 #define __ASM_MIPS_SOCKET_H
@@ -12,6 +12,7 @@
  * This defines are ABI conformant as far as Linux supports these ...
  */
 #define SOL_SOCKET	0xffff
+
 
 #define SO_DEBUG	0x0001	/* Record debugging information.  */
 #define SO_REUSEADDR	0x0004	/* Allow reuse of local addresses.  */
@@ -57,6 +58,9 @@ To add: #define SO_REUSEPORT 0x0200	/* Allow local address and port reuse.  */
 #define SO_DETACH_FILTER        27
 
 /* Socket types. */
+
+#ifdef __KERNEL__
+
 #define SOCK_DGRAM	1		/* datagram (conn.less) socket	*/
 #define SOCK_STREAM	2		/* stream (connection) socket	*/
 #define SOCK_RAW	3		/* raw socket			*/
@@ -68,4 +72,5 @@ To add: #define SO_REUSEPORT 0x0200	/* Allow local address and port reuse.  */
 					/* other similar things on the	*/
 					/* user level.			*/
 
+#endif
 #endif /* __ASM_MIPS_SOCKET_H */

@@ -531,8 +531,8 @@ static struct sk_buff * skb_replace(struct sk_buff *skb, int pri, char *o_buf, i
 
                 n_skb = alloc_skb(MAX_HEADER + skb->len + diff, pri);
                 if (n_skb == NULL) {
-                        IP_MASQ_ERR(KERN_ERR "skb_replace(): no room left (from %p)\n",
-                               return_address());
+                        IP_MASQ_ERR("skb_replace(): no room left (from %p)\n",
+                               __builtin_return_address(0));
                         return skb;
 
                 }

@@ -248,7 +248,7 @@
 #endif
 
 #ifdef CONFIG_SCSI_SUNESP
-#include "sparc_esp.h"
+#include "esp.h"
 #endif
 
 #ifdef CONFIG_SCSI_SGIWD93
@@ -333,6 +333,10 @@
 
 #ifdef CONFIG_SCSI_DECNCR
 #include "dec_esp.h"
+#endif
+
+#ifdef CONFIG_IPHASE5526
+#include "../net/fc/iph5526_scsi.h"
 #endif
 
 /*
@@ -596,6 +600,9 @@ static Scsi_Host_Template builtin_scsi_hosts[] =
 #ifdef CONFIG_SCSI_POWERTECSCSI
     POWERTECSCSI,
 #endif
+#endif
+#ifdef CONFIG_IPHASE5526
+	IPH5526_SCSI_FC,
 #endif
 #ifdef CONFIG_SCSI_DECNCR	
     SCSI_DEC_ESP,

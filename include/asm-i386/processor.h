@@ -325,14 +325,4 @@ extern void free_task_struct(struct task_struct *);
 #define init_task	(init_task_union.task)
 #define init_stack	(init_task_union.stack)
 
-/*
- * Return_address is a replacement for __builtin_return_address(count)
- * which on certain architectures cannot reasonably be implemented in GCC
- * (MIPS, Alpha) or is unuseable with -fomit-frame-pointer (i386).
- * Note that __builtin_return_address(x>=1) is forbidden because the GCC
- * aborts compilation on some CPUs.  It's simply not possible to unwind
- * some CPU's stackframes.
- */
-#define return_address() __builtin_return_address(0)
-
 #endif /* __ASM_I386_PROCESSOR_H */

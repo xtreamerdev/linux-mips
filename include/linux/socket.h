@@ -123,9 +123,9 @@ __KINLINE struct cmsghdr * cmsg_nxthdr (struct msghdr *__msg, struct cmsghdr *__
 #define SCM_CONNECT	0x03		/* rw: struct scm_connect	*/
 
 struct ucred {
-	__u32  pid;
-	__u32  uid;
-	__u32  gid;
+	__u32	pid;
+	__u32	uid;
+	__u32	gid;
 };
 
 
@@ -146,7 +146,7 @@ struct ucred {
 #define AF_DECnet	12	/* Reserved for DECnet project	*/
 #define AF_NETBEUI	13	/* Reserved for 802.2LLC project*/
 #define AF_SECURITY	14	/* Security callback pseudo AF */
-#define pseudo_AF_KEY   15      /* PF_KEY key management API */
+#define AF_KEY   15      /* PF_KEY key management API */
 #define AF_NETLINK	16
 #define AF_ROUTE	AF_NETLINK /* Alias to emulate 4.4BSD */
 #define AF_PACKET	17	/* Packet family		*/
@@ -174,7 +174,7 @@ struct ucred {
 #define PF_DECnet	AF_DECnet
 #define PF_NETBEUI	AF_NETBEUI
 #define PF_SECURITY	AF_SECURITY
-#define PF_KEY          pseudo_AF_KEY
+#define PF_KEY      AF_KEY
 #define PF_NETLINK	AF_NETLINK
 #define PF_ROUTE	AF_ROUTE
 #define PF_PACKET	AF_PACKET
@@ -189,10 +189,10 @@ struct ucred {
 /* Maximum queue length specifiable by listen.  */
 #define SOMAXCONN	128
 
-/* Flags we can use with send/ and recv.
+/* Flags we can use with send/ and recv. 
    Added those for 1003.1g not all are supported yet
  */
-
+ 
 #define MSG_OOB		1
 #define MSG_PEEK	2
 #define MSG_DONTROUTE	4
@@ -261,4 +261,20 @@ extern int move_addr_to_kernel(void *uaddr, int ulen, void *kaddr);
 extern int put_cmsg(struct msghdr*, int level, int type, int len, void *data);
 #endif
 #endif /* not kernel and not glibc */
+
+#if !defined(__KERNEL__) && (!defined(__GLIBC__) || (__GLIBC__ < 2))
+
+/* Socket types for libc5 compatibility -- KTK */
+
+#define SOCK_STREAM    1		/* stream (connection) socket	*/
+#define SOCK_DGRAM     2		/* datagram (conn.less) socket	*/
+#define SOCK_RAW       3		/* raw socket			*/
+#define SOCK_RDM       4		/* reliably-delivered message	*/
+#define SOCK_SEQPACKET 5		/* sequential packet socket	*/
+#define SOCK_PACKET    10		/* linux specific way of	*/
+					/* getting packets at the dev	*/
+					/* level.  For writing rarp and */
+					/* other similar things on the	*/
+					/* user level.			*/
+#endif /* libc<=5 && !kernel */
 #endif /* _LINUX_SOCKET_H */

@@ -2,7 +2,7 @@
  *  linux/include/asm-ppc/keyboard.h
  *
  *  Created 3 Nov 1996 by Geert Uytterhoeven
- * Modified for Power Macintosh by Paul Mackerras
+ *  Modified for Power Macintosh by Paul Mackerras
  */
 
 /*
@@ -29,35 +29,45 @@
 #define DISABLE_KBD_DURING_INTERRUPTS	0
 #define INIT_KBD
 
+#ifdef CONFIG_PREP
+extern int prep_kbd_present;
+#endif /* CONFIG_PREP */
+
 static inline int kbd_setkeycode(unsigned int scancode, unsigned int keycode)
 {
 	return ppc_md.kbd_setkeycode(scancode, keycode);
 }
-
+  
 static inline int kbd_getkeycode(unsigned int scancode)
 {
 	return ppc_md.kbd_getkeycode(scancode);
 }
-
+  
 static inline int kbd_translate(unsigned char keycode, unsigned char *keycodep,
 				char raw_mode)
 {
 	return ppc_md.kbd_translate(keycode, keycodep, raw_mode);
 }
-
+  
 static inline int kbd_unexpected_up(unsigned char keycode)
 {
 	return ppc_md.kbd_unexpected_up(keycode);
 }
-
+  
 static inline void kbd_leds(unsigned char leds)
 {
-	ppc_md.kbd_leds(leds);
+#ifdef CONFIG_PREP
+	if (prep_kbd_present)
+#endif /* CONFIG_PREP */
+		ppc_md.kbd_leds(leds);
 }
-
+  
 static inline void kbd_init_hw(void)
 {
-	ppc_md.kbd_init_hw();
+#ifdef CONFIG_PREP
+	if (prep_kbd_present)
+#endif /* CONFIG_PREP */
+		ppc_md.kbd_init_hw();
 }
 
 #define kbd_sysrq_xlate	(ppc_md.kbd_sysrq_xlate)

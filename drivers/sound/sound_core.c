@@ -67,6 +67,9 @@ extern int msnd_classic_init(void);
 #ifdef CONFIG_SOUND_MSNDPIN
 extern int msnd_pinnacle_init(void);
 #endif
+#ifdef CONFIG_SOUND_ESSSOLO1
+extern int init_solo1(void);
+#endif
 
 /*
  *	Low level list operator. Scan the ordered list, find a hole and
@@ -395,6 +398,9 @@ int soundcore_init(void)
 	/*
 	 *	Now init non OSS drivers
 	 */
+#ifdef CONFIG_SOUND_VWSND
+	init_vwsnd();
+#endif
 #ifdef CONFIG_SOUND_SONICVIBES
 	init_sonicvibes();
 #endif
@@ -409,6 +415,9 @@ int soundcore_init(void)
 #endif
 #ifdef CONFIG_SOUND_MSNDPIN
 	msnd_pinnacle_init();
+#endif
+#ifdef CONFIG_SOUND_ESSSOLO1
+	init_solo1();
 #endif
 	return 0;
 }

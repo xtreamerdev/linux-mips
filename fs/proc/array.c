@@ -76,6 +76,11 @@ int get_malloc(char * buffer);
 #endif
 
 
+static int open_kcore(struct inode * inode, struct file * filp)
+{
+	return capable(CAP_SYS_RAWIO) ? 0 : -EPERM;
+}
+
 static ssize_t read_core(struct file * file, char * buf,
 			 size_t count, loff_t *ppos)
 {
@@ -93,6 +98,9 @@ static ssize_t read_core(struct file * file, char * buf,
 	memset(&dump, 0, sizeof(struct user));
 	dump.magic = CMAGIC;
 	dump.u_dsize = max_mapnr;
+#if defined (__i386__)
+	dump.start_code = PAGE_OFFSET;
+#endif
 #ifdef __alpha__
 	dump.start_data = PAGE_OFFSET;
 #endif
@@ -137,6 +145,12 @@ static ssize_t read_core(struct file * file, char * buf,
 static struct file_operations proc_kcore_operations = {
 	NULL,           /* lseek */
 	read_core,
+	NULL,		/* write */
+	NULL,		/* readdir */
+	NULL,		/* poll */
+	NULL,		/* ioctl */
+	NULL,		/* mmap */
+	open_kcore
 };
 
 struct inode_operations proc_kcore_inode_operations = {

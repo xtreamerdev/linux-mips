@@ -1,4 +1,4 @@
-/* $Id: sysirix.c,v 1.18 1999/05/01 22:40:38 ralf Exp $
+/* $Id: sysirix.c,v 1.19 1999/06/13 16:30:33 ralf Exp $
  *
  * sysirix.c: IRIX system call emulation.
  *
@@ -2424,3 +2424,4 @@ asmlinkage int irix_unimp(struct pt_regs *regs)
 
 	return -ENOSYS;
 }
+

@@ -60,4 +60,17 @@
 					/* other similar things on the	*/
 					/* user level.			*/
 
+#ifdef __KERNEL__
+/* Socket types. */
+#define SOCK_STREAM	1		/* stream (connection) socket	*/
+#define SOCK_DGRAM	2		/* datagram (conn.less) socket	*/
+#define SOCK_RAW	3		/* raw socket			*/
+#define SOCK_RDM	4		/* reliably-delivered message	*/
+#define SOCK_SEQPACKET	5		/* sequential packet socket	*/
+#define SOCK_PACKET	10		/* linux specific way of	*/
+					/* getting packets at the dev	*/
+					/* level.  For writing rarp and	*/
+					/* other similar things on the	*/
+					/* user level.			*/
+#endif
 #endif /* _ASM_SOCKET_H */

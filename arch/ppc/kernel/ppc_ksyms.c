@@ -30,8 +30,8 @@
 #include <asm/dma.h>
 #include <asm/machdep.h>
 
-#define __KERNEL_SYSCALLS__
-#include <linux/unistd.h>
+/* Tell string.h we don't want memcpy etc. as cpp defines */
+#define EXPORT_SYMTAB_STROPS
 
 extern void transfer_to_handler(void);
 extern void int_return(void);
@@ -47,6 +47,7 @@ extern void do_lost_interrupts(unsigned long);
 extern int do_signal(sigset_t *, struct pt_regs *);
 
 asmlinkage long long __ashrdi3(long long, int);
+asmlinkage long long __lshrdi3(long long, int);
 asmlinkage int abs(int);
 
 EXPORT_SYMBOL(clear_page);
@@ -55,7 +56,6 @@ EXPORT_SYMBOL(syscall_trace);
 EXPORT_SYMBOL(transfer_to_handler);
 EXPORT_SYMBOL(int_return);
 EXPORT_SYMBOL(do_IRQ);
-EXPORT_SYMBOL(init_task_union);
 EXPORT_SYMBOL(MachineCheckException);
 EXPORT_SYMBOL(AlignmentException);
 EXPORT_SYMBOL(ProgramCheckException);
@@ -65,6 +65,7 @@ EXPORT_SYMBOL(ppc_n_lost_interrupts);
 EXPORT_SYMBOL(do_lost_interrupts);
 EXPORT_SYMBOL(enable_irq);
 EXPORT_SYMBOL(disable_irq);
+EXPORT_SYMBOL(disable_irq_nosync);
 EXPORT_SYMBOL(ppc_local_irq_count);
 EXPORT_SYMBOL(ppc_local_bh_count);
 
@@ -111,11 +112,6 @@ EXPORT_SYMBOL(strnlen);
 EXPORT_SYMBOL(strspn);
 EXPORT_SYMBOL(strcmp);
 EXPORT_SYMBOL(strncmp);
-EXPORT_SYMBOL(memset);
-EXPORT_SYMBOL(memcpy);
-EXPORT_SYMBOL(memmove);
-EXPORT_SYMBOL(memscan);
-EXPORT_SYMBOL(memcmp);
 
 /* EXPORT_SYMBOL(csum_partial); already in net/netsyms.c */
 EXPORT_SYMBOL(csum_partial_copy_generic);
@@ -152,9 +148,10 @@ EXPORT_SYMBOL(iounmap);
 
 EXPORT_SYMBOL(ide_insw);
 EXPORT_SYMBOL(ide_outsw);
+EXPORT_SYMBOL(ppc_ide_md);
 
 EXPORT_SYMBOL(start_thread);
-EXPORT_SYMBOL(__kernel_thread);
+EXPORT_SYMBOL(kernel_thread);
 
 EXPORT_SYMBOL(__cli);
 EXPORT_SYMBOL(__sti);
@@ -191,7 +188,8 @@ EXPORT_SYMBOL(cuda_poll);
 EXPORT_SYMBOL(pmu_request);
 EXPORT_SYMBOL(pmu_poll);
 #ifdef CONFIG_PMAC_PBOOK
-EXPORT_SYMBOL(sleep_notifier_list);
+EXPORT_SYMBOL(pmu_register_sleep_notifier);
+EXPORT_SYMBOL(pmu_unregister_sleep_notifier);
 #endif CONFIG_PMAC_PBOOK
 EXPORT_SYMBOL(abort);
 EXPORT_SYMBOL(find_devices);
@@ -217,8 +215,10 @@ EXPORT_SYMBOL(nvram_write_byte);
 EXPORT_SYMBOL(abs);
 EXPORT_SYMBOL(device_is_compatible);
 
-/* The following are special because they're not called
-   explicitly (the C compiler generates them).  Fortunately,
-   their interface isn't gonna change any time soon now, so
-   it's OK to leave it out of version control.  */
 EXPORT_SYMBOL_NOVERS(__ashrdi3);
+EXPORT_SYMBOL_NOVERS(__lshrdi3);
+EXPORT_SYMBOL_NOVERS(memcpy);
+EXPORT_SYMBOL_NOVERS(memset);
+EXPORT_SYMBOL_NOVERS(memmove);
+EXPORT_SYMBOL_NOVERS(memscan);
+EXPORT_SYMBOL_NOVERS(memcmp);

@@ -139,13 +139,16 @@ int request_irq(unsigned int irq, void (*handler)(int, void *, struct pt_regs *)
 		/* Free */
 		for (p = &irq_desc[irq].action; (action = *p) != NULL; p = &action->next)
 		{
-			/* Found it - now free it */
-			save_flags(flags);
-			cli();
-			*p = action->next;
-			restore_flags(flags);
-			irq_kfree(action);
-			return 0;
+			if (action->dev_id == dev_id)
+			{
+				/* Found it - now free it */
+				save_flags(flags);
+				cli();
+				*p = action->next;
+				restore_flags(flags);
+				irq_kfree(action);
+				return 0;
+			}
 		}
 		return -ENOENT;
 	}
@@ -187,6 +190,12 @@ int request_irq(unsigned int irq, void (*handler)(int, void *, struct pt_regs *)
 void free_irq(unsigned int irq, void *dev_id)
 {
 	request_irq(irq, NULL, 0, NULL, dev_id);
+}
+
+/* XXX should implement irq disable depth like on intel */
+void disable_irq_nosync(unsigned int irq_nr)
+{
+	mask_irq(irq_nr);
 }
 
 void disable_irq(unsigned int irq_nr)

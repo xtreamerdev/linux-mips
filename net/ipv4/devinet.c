@@ -100,6 +100,9 @@ struct in_device *inetdev_init(struct device *dev)
 {
 	struct in_device *in_dev;
 
+	if (dev->mtu < 68)
+		return NULL;
+
 	in_dev = kmalloc(sizeof(*in_dev), GFP_KERNEL);
 	if (!in_dev)
 		return NULL;
@@ -649,9 +652,10 @@ u32 inet_select_addr(struct device *dev, u32 dst, int scope)
 	for_primary_ifa(in_dev) {
 		if (ifa->ifa_scope > scope)
 			continue;
-		addr = ifa->ifa_local;
 		if (!dst || inet_ifa_match(dst, ifa))
-			return addr;
+			return ifa->ifa_local;
+		if (!addr)
+			addr = ifa->ifa_local;
 	} endfor_ifa(in_dev);
 	
 	if (addr || scope >= RT_SCOPE_LINK)
@@ -721,6 +725,10 @@ static int inetdev_event(struct notifier_block *this, unsigned long event, void 
 	case NETDEV_DOWN:
 		ip_mc_down(in_dev);
 		break;
+	case NETDEV_CHANGEMTU:	
+		if (dev->mtu >= 68)
+			break;
+		/* MTU falled under minimal IP mtu. Disable IP. */
 	case NETDEV_UNREGISTER:
 		inetdev_destroy(in_dev);
 		break;

@@ -725,6 +725,23 @@ static void wait_for_tcp_memory(struct sock * sk)
 	lock_sock(sk);
 }
 
+/*
+ * Wait for a buffer.
+ */ 
+static int wait_for_buffer(struct sock *sk) 
+{ 
+	struct wait_queue wait = { current, NULL }; 
+
+	release_sock(sk); 
+	add_wait_queue(sk->sleep, &wait); 
+	current->state = TASK_INTERRUPTIBLE; 
+	schedule(); 
+	current->state = TASK_RUNNING; 
+	remove_wait_queue(sk->sleep, &wait);
+	lock_sock(sk); 
+	return 0; 
+} 
+
 /* When all user supplied data has been queued set the PSH bit */
 #define PSH_NEEDED (seglen == 0 && iovlen == 0)
 
@@ -802,11 +819,21 @@ int tcp_do_sendmsg(struct sock *sk, struct msghdr *msg)
 				    tp->snd_nxt < TCP_SKB_CB(skb)->end_seq) {
 					int last_byte_was_odd = (copy % 4);
 
+					/* 
+					 * Check for parallel writers sleeping in user access.
+					 */ 
+					if (tp->partial_writers++ > 0) { 
+						wait_for_buffer(sk);
+						tp->partial_writers--;
+						continue; 
+					}
+				
 					copy = mss_now - copy;
 					if(copy > skb_tailroom(skb))
 						copy = skb_tailroom(skb);
 					if(copy > seglen)
 						copy = seglen;
+		
 					if(last_byte_was_odd) {
 						if(copy_from_user(skb_put(skb, copy),
 								  from, copy))
@@ -819,6 +846,7 @@ int tcp_do_sendmsg(struct sock *sk, struct msghdr *msg)
 							from, skb_put(skb, copy),
 							copy, skb->csum, &err);
 					}
+		
 					/*
 					 * FIXME: the *_user functions should
 					 *	  return how much data was
@@ -838,6 +866,10 @@ int tcp_do_sendmsg(struct sock *sk, struct msghdr *msg)
 					seglen -= copy;
 					if (PSH_NEEDED)
 						TCP_SKB_CB(skb)->flags |= TCPCB_FLAG_PSH;
+
+					if (--tp->partial_writers > 0) 
+						wake_up_interruptible(sk->sleep); 
+
 					continue;
 				}
 			}
@@ -1332,12 +1364,12 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg,
 		break;
 	}
 
-	if(copied > 0 && msg->msg_name)
+	if(copied >= 0 && msg->msg_name) {
 		tp->af_specific->addr2sockaddr(sk, (struct sockaddr *)
 					       msg->msg_name);       
-
-	if(addr_len)
-		*addr_len = tp->af_specific->sockaddr_len;
+		if(addr_len)
+			*addr_len = tp->af_specific->sockaddr_len;
+	}
 
 	remove_wait_queue(sk->sleep, &wait);
 	current->state = TASK_RUNNING;
