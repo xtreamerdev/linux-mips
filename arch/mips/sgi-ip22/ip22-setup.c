@@ -37,15 +37,11 @@ extern void breakpoint(void);
 static int remote_debug = 0;
 #endif
 
-#if defined(CONFIG_IP22_SERIAL_CONSOLE) || defined(CONFIG_ARC_CONSOLE)
-extern void console_setup(char *);
-#endif
-
 extern struct rtc_ops ip22_rtc_ops;
 
-#define KBD_STAT_IBF		0x02	/* Keyboard input buffer full */
-
 unsigned long sgi_gfxaddr;
+
+#define KBD_STAT_IBF		0x02	/* Keyboard input buffer full */
 
 static void sgi_request_region(void)
 {
@@ -114,6 +110,8 @@ struct kbd_ops ip22_kbd_ops = {
 extern void ip22_be_init(void) __init;
 extern void ip22_time_init(void) __init;
 
+extern int console_setup(char *) __init;
+
 void __init ip22_setup(void)
 {
 	char *ctype;
@@ -147,20 +145,15 @@ void __init ip22_setup(void)
 	 */
 	ctype = ArcGetEnvironmentVariable("console");
 	if (ctype && *ctype == 'd') {
-#ifdef CONFIG_IP22_SERIAL_CONSOLE
 		if (*(ctype + 1) == '2')
 			console_setup("ttyS1");
 		else
 			console_setup("ttyS0");
-#endif
-	}
-#ifdef CONFIG_ARC_CONSOLE
-	else if (!ctype || *ctype != 'g') {
+	} else if (!ctype || *ctype != 'g') {
 		/* Use ARC if we don't want serial ('d') or Newport ('g'). */
 		prom_flags |= PROM_FLAG_USE_AS_CONSOLE;
 		console_setup("arc");
 	}
-#endif
 
 #ifdef CONFIG_KGDB
 	kgdb_ttyd = prom_getcmdline();

@@ -122,9 +122,6 @@ if [ "$CONFIG_SERIAL_NONSTANDARD" = "y" ]; then
    fi
    if [ "$CONFIG_SGI_IP22" = "y" ]; then
       bool '  SGI Zilog85C30 serial support' CONFIG_IP22_SERIAL
-      if [ "$CONFIG_IP22_SERIAL" = "y" ]; then
-	 bool '    Support for console on serial port' CONFIG_IP22_SERIAL_CONSOLE
-      fi
    fi
 fi
 
