@@ -47,10 +47,12 @@
 #define VINO_MIN_HEIGHT		32
 
 /* channel selection */
-#define VINO_INPUT_COMPOSITE	0
+#define VINO_INPUT_COMP		0
 #define VINO_INPUT_SVIDEO	1
 #define VINO_INPUT_CAMERA	2
 #define VINO_INPUT_CHANNELS	3
+
+#define PAGE_RATIO	(PAGE_SIZE / VINO_PAGE_SIZE)
 
 /* VINO ASIC registers */
 struct sgi_vino *vino;
@@ -71,7 +73,7 @@ struct vino_device {
 	unsigned int decimation;
 	/* palette used... */
 	unsigned int palette;
-	/* VINO_INPUT_COMPOSITE, VINO_INPUT_SVIDEO or VINO_INPUT_CAMERA */
+	/* VINO_INPUT_COMP, VINO_INPUT_SVIDEO or VINO_INPUT_CAMERA */
 	unsigned int input;
 	/* bytes per line */
 	unsigned int line_size;
@@ -540,7 +542,7 @@ static int vino_grab(struct vino_device *v, int frame)
 static int vino_waitfor(struct vino_device *v, int frame)
 {
 	wait_queue_t wait;
-	int err = 0;
+	int i, err = 0;
 
 	if (frame != 0)
 		return -EINVAL;
@@ -568,6 +570,9 @@ static int vino_waitfor(struct vino_device *v, int frame)
 			err = -EIO;
 		/* fall through */
 	case VINO_BUF_DONE:
+		for (i = 0; i < v->page_count; i++)
+			pci_dma_sync_single(NULL, v->dma_desc.cpu[PAGE_RATIO*i],
+					    PAGE_SIZE, PCI_DMA_FROMDEVICE);
 		v->buffer_state = VINO_BUF_UNUSED;
 		break;
 	default:
@@ -585,8 +590,6 @@ static int vino_waitfor(struct vino_device *v, int frame)
 
 	return err;
 }
-
-#define PAGE_RATIO	(PAGE_SIZE / VINO_PAGE_SIZE)
 
 static int alloc_buffer(struct vino_device *v, int size)
 {
@@ -672,9 +675,22 @@ static int vino_open(struct inode *inode, struct file *file)
 	}
 	/* Check for input device (IndyCam, saa7191) availability */
 	spin_lock(&Vino->input_lock);
-	/* TODO */
+	if (Vino->camera.driver) {
+		v->input = VINO_INPUT_CAMERA;
+		if (!Vino->camera.owner)
+			Vino->camera.owner = v->chan;
+	}
+	if (Vino->decoder.driver && Vino->camera.owner != v->chan) {
+		v->input = VINO_INPUT_COMP;
+		if (!Vino->decoder.owner)
+			Vino->decoder.owner = v->chan;
+	}
+	if (v->input == -1)
+		err = -ENODEV;
 	spin_unlock(&Vino->input_lock);
 
+	if (err)
+		goto out;
 	if (alloc_buffer(v, VINO_FBUFSIZE)) {
 		err = -ENOBUFS;
 		goto out;
@@ -682,7 +698,7 @@ static int vino_open(struct inode *inode, struct file *file)
 	v->users++;
 out:
 	up(&v->sem);
-	return 0;
+	return err;
 }
 
 static int vino_close(struct inode *inode, struct file *file)
@@ -691,9 +707,25 @@ static int vino_close(struct inode *inode, struct file *file)
 	struct vino_device *v = dev->priv;
 
 	down(&v->sem);
-	vino_waitfor(v, 0);
-	free_buffer(v);
 	v->users--;
+	if (!v->users) {
+		struct vino_device *w = (v->chan == VINO_CHAN_A) ?
+					&Vino->chB : &Vino->chA;
+		/* Eventually make other channel owner of input device */
+		spin_lock(&Vino->input_lock);
+		if (Vino->camera.owner == v->chan)
+			Vino->camera.owner = (w->input == VINO_INPUT_CAMERA) ?
+					     w->chan : 0;
+		else if (Vino->decoder.owner == v->chan)
+			Vino->decoder.owner = (w->input == VINO_INPUT_COMP ||
+					       w->input == VINO_INPUT_SVIDEO) ?
+					      w->chan : 0;
+		v->input = -1;
+		spin_unlock(&Vino->input_lock);
+
+		vino_waitfor(v, 0);
+		free_buffer(v);
+	}
 	up(&v->sem);
 	return 0;
 }
@@ -714,7 +746,7 @@ static int vino_mmap(struct file *file, struct vm_area_struct *vma)
 	}
 	for (i = 0; i < v->page_count; i++) {
 		unsigned long page = virt_to_phys((void *)v->desc[i]);
-		if (remap_page_range(start, page, PAGE_SIZE, PAGE_SHARED)) {
+		if (remap_page_range(start, page, PAGE_SIZE, PAGE_READONLY)) {
 			err = -EAGAIN;
 			goto out;
 		}
@@ -754,7 +786,7 @@ static int vino_do_ioctl(struct inode *inode, struct file *file,
 		ch->flags = 0;
 		ch->tuners = 0;
 		switch (ch->channel) {
-		case VINO_INPUT_COMPOSITE:
+		case VINO_INPUT_COMP:
 			ch->norm = VIDEO_MODE_PAL | VIDEO_MODE_NTSC |
 				   VIDEO_MODE_AUTO;
 			ch->type = VIDEO_TYPE_TV;
@@ -778,11 +810,46 @@ static int vino_do_ioctl(struct inode *inode, struct file *file,
 	}
 	case VIDIOCSCHAN: {
 		struct video_channel *ch = arg;
+		int err = 0;
+		struct vino_device *w = (v->chan == VINO_CHAN_A) ?
+					&Vino->chB : &Vino->chA;
 
-		if (ch->channel < 0 || ch->channel > VINO_INPUT_CAMERA)
-			return -EINVAL;
-		v->input = ch->channel;
-		break;
+		spin_lock(&Vino->input_lock);
+		switch (ch->channel) {
+		case VINO_INPUT_COMP:
+		case VINO_INPUT_SVIDEO:
+			if (!Vino->decoder.driver) {
+				err = -ENODEV;
+				break;
+			}
+			if (Vino->camera.owner == v->chan)
+				Vino->camera.owner =
+					(w->input == VINO_INPUT_CAMERA) ?
+					w->chan : 0;
+			if (!Vino->decoder.owner)
+				Vino->decoder.owner = v->chan;
+			break;
+		case VINO_INPUT_CAMERA:
+			if (!Vino->camera.driver) {
+				err = -ENODEV;
+				break;
+			}
+			if (Vino->decoder.owner == v->chan)
+				Vino->decoder.owner =
+					(w->input == VINO_INPUT_COMP ||
+					 w->input == VINO_INPUT_SVIDEO) ?
+					w->chan : 0;
+			if (!Vino->camera.owner)
+				Vino->camera.owner = v->chan;
+			break;
+		default:
+			err = -EINVAL;
+		}
+		if (!err)
+			v->input = ch->channel;
+		spin_unlock(&Vino->input_lock);
+
+		return err;
 	}
 	case VIDIOCGPICT: {	/* TODO */
 		struct video_picture *pic = arg;
@@ -875,7 +942,7 @@ static int vino_do_ioctl(struct inode *inode, struct file *file,
 }
 
 static int vino_ioctl(struct inode *inode, struct file *file,
-		     unsigned int cmd, unsigned long arg)
+		      unsigned int cmd, unsigned long arg)
 {
 	struct video_device *dev = video_devdata(file);
 	struct vino_device *v = dev->priv;
@@ -914,7 +981,7 @@ static void init_channel_data(struct vino_device *v, int channel)
 	memcpy(&v->vdev, &vino_template, sizeof(vino_template));
 	v->vdev.priv = v;
 	v->chan = channel;
-	v->input = VINO_INPUT_CAMERA;
+	v->input = -1;
 	v->palette = VIDEO_PALETTE_RGB32;
 	v->buffer_state = VINO_BUF_UNUSED;
 	v->users = 0;
