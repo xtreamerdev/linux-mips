@@ -223,7 +223,7 @@ static void stop_this_cpu(void *dummy)
 	 */
 	clear_bit(smp_processor_id(), &cpu_online_map);
 	/* May need to service _machine_restart IPI */
-	__sti();
+	local_irq_enable();
 	/* XXXKW wait if available? */
 	for (;;);
 }
