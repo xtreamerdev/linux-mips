@@ -521,8 +521,8 @@ CONFIG_AUTOFS4_FS=y
 # CONFIG_BEFS_FS is not set
 # CONFIG_BEFS_DEBUG is not set
 # CONFIG_BFS_FS is not set
-# CONFIG_EXT3_FS is not set
-# CONFIG_JBD is not set
+CONFIG_EXT3_FS=y
+CONFIG_JBD=y
 # CONFIG_JBD_DEBUG is not set
 # CONFIG_FAT_FS is not set
 # CONFIG_MSDOS_FS is not set
@@ -553,7 +553,7 @@ CONFIG_DEVPTS_FS=y
 # CONFIG_QNX4FS_FS is not set
 # CONFIG_QNX4FS_RW is not set
 # CONFIG_ROMFS_FS is not set
-CONFIG_EXT2_FS=y
+# CONFIG_EXT2_FS is not set
 # CONFIG_SYSV_FS is not set
 # CONFIG_UDF_FS is not set
 # CONFIG_UDF_RW is not set
