@@ -97,6 +97,10 @@ extern void tc_init(void);
 extern void ecard_init(void);
 #endif
 
+#ifdef CONFIG_SGI_EISA
+extern void sgi_eisa_init(void);
+#endif
+
 extern void smp_setup(char *str, int *ints);
 #ifdef __i386__
 extern void ioapic_pirq_setup(char *str, int *ints);
@@ -878,6 +882,7 @@ static struct kernel_param cooked_params[] __initdata = {
 };
 
 static struct kernel_param raw_params[] __initdata = {
+	{ "OSLoadOptions=", root_dev_setup },
 	{ "root=", root_dev_setup },
 #ifdef CONFIG_ROOT_NFS
 	{ "nfsroot=", nfs_root_setup },
@@ -1303,6 +1308,10 @@ static void __init do_basic_setup(void)
 #endif
 #ifdef CONFIG_TC
 	tc_init();
+#endif
+	
+#if defined(CONFIG_SGI_EISA)
+	sgi_eisa_init();
 #endif
 
 	/* Networking initialization needs a process context */ 

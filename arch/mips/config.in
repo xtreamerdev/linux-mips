@@ -70,6 +70,9 @@ if [ "$CONFIG_PCI" = "y" ]; then
   fi
   bool '   Backward-compatible /proc/pci' CONFIG_PCI_OLD_PROC
 fi
+if [ "$CONFIG_SGI" = "y" -a "$CONFIG_EXPERIMENTAL" = "y" ]; then
+	bool 'SGI (E)ISA support (experimental)' CONFIG_SGI_EISA
+fi
 
 if [ "$CONFIG_DECSTATION" = "y" ]; then
   define_bool CONFIG_CPU_LITTLE_ENDIAN y

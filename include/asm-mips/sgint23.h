@@ -1,8 +1,10 @@
-/* $Id: sgint23.h,v 1.3 1999/05/07 22:35:37 ulfc Exp $
+/* $Id: sgint23.h,v 1.3.2.1 1999/08/06 13:25:29 andrewb Exp $
  * sgint23.h: Defines for the SGI INT2 and INT3 chipsets.
  *
  * Copyright (C) 1996 David S. Miller (dm@engr.sgi.com)
- * Copyright (C) 1999 Andrew R. Baker (andrewb@uab.edu) - INT2 corrections
+ * Copyright (C) 1999 Andrew R. Baker (andrewb@uab.edu) 
+ * 		- INT2 corrections
+ * 		- EISA additions
  */
 #ifndef _MIPS_SGINT23_H
 #define _MIPS_SGINT23_H
@@ -12,13 +14,14 @@
  * that particular IRQ on an SGI machine.  Add new 'spaces' as new
  * IRQ hardware is supported.
  */
-#define SGINT_LOCAL0   0   /* INDY has 8 local0 irq levels */
-#define SGINT_LOCAL1   8   /* INDY has 8 local1 irq levels */
-#define SGINT_LOCAL2   16  /* INDY has 8 local2 vectored irq levels */
-#define SGINT_LOCAL3   24  /* INDY has 8 local3 vectored irq levels */
-#define SGINT_GIO      32  /* INDY has 9 GIO irq levels */
-#define SGINT_HPCDMA   41  /* INDY has 11 HPCDMA irq _sources_ */
-#define SGINT_END      52  /* End of 'spaces' */
+#define SGINT_EISA     0   /* Indigo2 has EISA interrupts 0-15 */  
+#define SGINT_LOCAL0   16  /* INDY has 8 local0 irq levels */
+#define SGINT_LOCAL1   24  /* INDY has 8 local1 irq levels */
+#define SGINT_LOCAL2   32  /* INDY has 8 local2 vectored irq levels */
+#define SGINT_LOCAL3   40  /* INDY has 8 local3 vectored irq levels */
+#define SGINT_GIO      48  /* INDY has 9 GIO irq levels */
+#define SGINT_HPCDMA   57  /* INDY has 11 HPCDMA irq _sources_ */
+#define SGINT_END      68  /* End of 'spaces' */
 
 /* Individual interrupt definitions for the INDY and Indigo2
  */

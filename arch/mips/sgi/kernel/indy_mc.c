@@ -4,7 +4,7 @@
  * Copyright (C) 1996 David S. Miller (dm@engr.sgi.com)
  * Copyright (C) 1999 Andrew R. Baker (andrewb@uab.edu) - Indigo2 changes
  *
- * $Id: indy_mc.c,v 1.3 1998/05/04 09:12:57 ralf Exp $
+ * $Id: indy_mc.c,v 1.4 1999/05/07 22:34:32 ulfc Exp $
  */
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -16,6 +16,8 @@
 #include <asm/sgialib.h>
 
 /* #define DEBUG_SGIMC */
+
+extern int sgi_eisa_bus;
 
 struct sgimc_misc_ctrl *mcmisc_regs;
 unsigned long *rpsscounter;
@@ -58,16 +60,16 @@ __initfunc(void sgimc_init(void))
 	printk("MC: SGI memory controller Revision %d\n",
 	       (int) mcmisc_regs->systemid & SGIMC_SYSID_MASKREV);
 
-#if 0 /* XXX Until I figure out what this bit really indicates XXX */
+	/* XXX Until I figure out what this bit really indicates XXX */
+	/* it should indicate whether we have an (E)ISA bus or not -Andrew */
 	/* XXX Is this systemid bit reliable? */
 	if(mcmisc_regs->systemid & SGIMC_SYSID_EPRESENT) {
-		EISA_bus = 1;
+		sgi_eisa_bus = 1;
 		printk("with EISA\n");
 	} else {
-		EISA_bus = 0;
+		sgi_eisa_bus = 0;
 		printk("no EISA\n");
 	}
-#endif
 
 #ifdef DEBUG_SGIMC
 	prom_printf("sgimc_init: memconfig0<%s> mconfig1<%s>\n",

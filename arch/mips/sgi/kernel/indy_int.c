@@ -1,4 +1,4 @@
-/* $Id: indy_int.c,v 1.12 1999/05/07 22:34:32 ulfc Exp $
+/* $Id: indy_int.c,v 1.13 1999/06/12 17:26:15 ulfc Exp $
  *
  * indy_int.c: Routines for generic manipulation of the INT[23] ASIC
  *             found on INDY workstations..
@@ -8,6 +8,7 @@
  * Copyright (C) 1999 Andrew R. Baker (andrewb@uab.edu) 
  *                    - Indigo2 changes
  *                    - Interrupt handling fixes
+ *                    - EISA support
  */
 #include <linux/config.h>
 #include <linux/init.h>
@@ -39,6 +40,10 @@
 #include <asm/sgint23.h>
 #include <asm/sgialib.h>
 #include <asm/gdb-stub.h>
+
+#ifdef CONFIG_SGI_EISA
+  #include <asm/sgieisa.h>
+#endif
 
 /* #define DEBUG_SGINT */
 
@@ -146,14 +151,20 @@ void disable_irq(unsigned int irq_nr)
 		printk("whee, invalid irq_nr %d\n", irq_nr);
 		panic("IRQ, you lose...");
 	}
-	if(n >= SGINT_LOCAL0 && n < SGINT_GIO) {
+	if(n >= SGINT_EISA && n < SGINT_LOCAL0) {
+#ifdef CONFIG_SGI_EISA
+		i8259_disable_irq(n - SGINT_EISA);
+#else
+		printk("No (E)ISA support.");
+#endif
+	} else if(n >= SGINT_LOCAL0 && n < SGINT_GIO) {
 		disable_local_irq(n - SGINT_LOCAL0);
 	} else if(n >= SGINT_GIO && n < SGINT_HPCDMA) {
 		disable_gio_irq(n - SGINT_GIO);
 	} else if(n >= SGINT_HPCDMA && n < SGINT_END) {
 		disable_hpcdma_irq(n - SGINT_HPCDMA);
 	} else {
-		panic("how did I get here?");
+		panic("how did I get here? (%i)", irq_nr);
 	}
 }
 
@@ -164,14 +175,20 @@ void enable_irq(unsigned int irq_nr)
 		printk("whee, invalid irq_nr %d\n", irq_nr);
 		panic("IRQ, you lose...");
 	}
-	if(n >= SGINT_LOCAL0 && n < SGINT_GIO) {
+	if(n >= SGINT_EISA && n < SGINT_LOCAL0) {
+#ifdef CONFIG_SGI_EISA
+		i8259_enable_irq(n - SGINT_EISA);
+#else
+		printk("No (E)ISA support.\n");
+#endif
+	} if(n >= SGINT_LOCAL0 && n < SGINT_GIO) {
 		enable_local_irq(n - SGINT_LOCAL0);
 	} else if(n >= SGINT_GIO && n < SGINT_HPCDMA) {
 		enable_gio_irq(n - SGINT_GIO);
 	} else if(n >= SGINT_HPCDMA && n < SGINT_END) {
 		enable_hpcdma_irq(n - SGINT_HPCDMA);
 	} else {
-		panic("how did I get here?");
+		panic("how did I get here? (%i)", irq_nr);
 	}
 }
 
@@ -355,6 +372,7 @@ void free_local_irq(unsigned int lirq, void *dev_id)
 	kfree(action);
 }
 
+
 int request_irq(unsigned int irq, 
 		void (*handler)(int, void *, struct pt_regs *),
 		unsigned long irqflags, 
@@ -368,7 +386,16 @@ int request_irq(unsigned int irq,
 		return -EINVAL;
 	if (!handler)
 		return -EINVAL;
-
+	
+	if((irq >= SGINT_EISA) && (irq < SGINT_LOCAL0))
+#ifdef CONFIG_SGI_EISA
+		return i8259_request_irq(irq, handler, irqflags, devname, dev_id);
+#else
+	{
+		printk("No (E)ISA support.");
+		return -EINVAL;
+	}
+#endif
 	if((irq >= SGINT_LOCAL0) && (irq < SGINT_GIO))
 		return request_local_irq(irq, handler, irqflags, devname, dev_id);
 
@@ -397,6 +424,14 @@ void free_irq(unsigned int irq, void *dev_id)
 
 	if (irq >= SGINT_END) {
 		printk("Trying to free IRQ%d\n",irq);
+		return;
+	}
+	if((irq >= SGINT_EISA) && (irq <SGINT_LOCAL0)) {
+#ifdef CONFIG_SGI_EISA
+		i8259_free_irq(irq, dev_id);
+#else
+		printk("No (E)ISA support.\n");
+#endif
 		return;
 	}
 	if((irq >= SGINT_LOCAL0) && (irq < SGINT_GIO)) {
