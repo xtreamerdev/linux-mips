@@ -11255,6 +11255,24 @@ CONFIG_TIGON3
   say M here and read <file:Documentation/modules.txt>.  This is
   recommended.  The module will be called tg3.o.
 
+MV-64340 Ethernet support
+CONFIG_MV64340_ETH
+  This driver supports the Marvell Discovery II MV64340 device
+  as an Ethernet controller.  Say Y here and select Port 0,1,2
+  as needed.  Otherwise, say N.
+
+MV-64340 Port 0
+CONFIG_MV64340_ETH_0
+  Enable port 0 on the MV64340 Ethernet controller.
+
+MV-64340 Port 1
+CONFIG_MV64340_ETH_1
+  Enable port 1 on the MV64340 Ethernet controller.
+
+MV-64340 Port 2
+CONFIG_MV64340_ETH_2
+  Enable port 2 on the MV64340 Ethernet controller.
+
 MyriCOM Gigabit Ethernet support
 CONFIG_MYRI_SBUS
   This driver supports MyriCOM Sbus gigabit Ethernet cards.
