@@ -105,13 +105,15 @@ fi
 dep_bool 'Support for Broadcom BCM1xxx SOCs (EXPERIMENTAL)' CONFIG_SIBYTE_SB1xxx_SOC $CONFIG_EXPERIMENTAL
 if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    choice '   BCM1xxx SOC-based board' \
-          "BCM91250A-SWARM     CONFIG_SIBYTE_SWARM \
-           BCM91250E-Sentosa   CONFIG_SIBYTE_SENTOSA \
-           BCM91120C-CRhine    CONFIG_SIBYTE_CRHINE \
-           BCM91120x-Carmel    CONFIG_SIBYTE_CARMEL \
-           BCM91125C-CRhone    CONFIG_SIBYTE_CRHONE \
-           BCM91125E-Rhone     CONFIG_SIBYTE_RHONE \
-           Other               CONFIG_SIBYTE_UNKNOWN" CONFIG_SIBYTE_SWARM
+          "BCM91250A-SWARM      CONFIG_SIBYTE_SWARM \
+           BCM91250E-Sentosa    CONFIG_SIBYTE_SENTOSA \
+           BCM91125E-Rhone      CONFIG_SIBYTE_RHONE \
+           BCM91120x-Carmel     CONFIG_SIBYTE_CARMEL \
+           BCM91250PT-PTSwarm   CONFIG_SIBYTE_PTSWARM \
+           BCM91250C2-LittleSur CONFIG_SIBYTE_LITTLESUR \
+           BCM91120C-CRhine     CONFIG_SIBYTE_CRHINE \
+           BCM91125C-CRhone     CONFIG_SIBYTE_CRHONE \
+           Other                CONFIG_SIBYTE_UNKNOWN" CONFIG_SIBYTE_SWARM
 
    if [ "$CONFIG_SIBYTE_UNKNOWN" = "y" ]; then
       choice '   BCM1xxx SOC Type' \
@@ -123,6 +125,8 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    else
       define_bool CONFIG_SIBYTE_BOARD y
       if [ "$CONFIG_SIBYTE_SWARM" = "y" -o \
+           "$CONFIG_SIBYTE_LITTLESUR" = "y" -o \
+           "$CONFIG_SIBYTE_PTSWARM" = "y" -o \
            "$CONFIG_SIBYTE_SENTOSA" = "y" ]; then
          define_bool CONFIG_SIBYTE_SB1250 y
          unset CONFIG_SIBYTE_BCM1120
@@ -186,14 +190,15 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    fi
 
    if [ "$CONFIG_SIBYTE_SWARM" = "y" -o \
+        "$CONFIG_SIBYTE_LITTLESUR" = "y" -o \
+        "$CONFIG_SIBYTE_PTSWARM" = "y" -o \
         "$CONFIG_SIBYTE_CARMEL" = "y" ]; then
       define_bool CONFIG_SIBYTE_GENBUS_IDE y
    fi
 
-   if [ "$CONFIG_SIBYTE_SB1250" = "y" ]; then
-      if [ "$CONFIG_SIBYTE_STANDALONE" != "y" ]; then
-	 define_bool CONFIG_SMP_CAPABLE y
-      fi
+   if [ "$CONFIG_SIBYTE_SB1250" = "y" -a \
+        "$CONFIG_SIBYTE_STANDALONE" != "y" ]; then
+      define_bool CONFIG_SMP_CAPABLE y
    fi
 fi
 bool 'Support for SNI RM200 PCI' CONFIG_SNI_RM200_PCI

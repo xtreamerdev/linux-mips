@@ -301,9 +301,6 @@ __init int prom_init(int argc, char **argv, char **envp, int *prom_vec)
 			 *  command line
 			 */
 			strcpy(arcs_cmdline, "root=/dev/ram0 ");
-#ifdef CONFIG_SIBYTE_PTSWARM
-			strcat(arcs_cmdline, "console=ttyS0,115200 ");
-#endif
 		} else {
 			/* The loader should have set the command line */
 			/* too early for panic to do any good */
@@ -317,6 +314,13 @@ __init int prom_init(int argc, char **argv, char **envp, int *prom_vec)
 		kgdb_port = (arg[10] == '0') ? 0 : 1;
 	else
 		kgdb_port = 1;
+#endif
+
+#ifdef SIBYTE_DEFAULT_CONSOLE
+	/* Force default console from board header (allowing override) */
+	if (!strstr(arcs_cmdline,"console=")) {
+		strcat(arcs_cmdline, "console=" SIBYTE_DEFAULT_CONSOLE);
+	}
 #endif
 
 #ifdef CONFIG_BLK_DEV_INITRD
