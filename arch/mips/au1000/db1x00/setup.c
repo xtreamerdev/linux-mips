@@ -61,7 +61,6 @@ extern struct ide_ops std_ide_ops;
 extern struct ide_ops *ide_ops;
 #endif
 
-void (*__wbflush) (void);
 extern struct rtc_ops no_rtc_ops;
 extern char * __init prom_getcmdline(void);
 extern void au1000_restart(char *);
@@ -75,11 +74,6 @@ static phys_t db_fixup_bigphys_addr(phys_t phys_addr, phys_t size);
 #endif
 
 void __init bus_error_init(void) { /* nothing */ }
-
-void au1x00_wbflush(void)
-{
-	__asm__ volatile ("sync");
-}
 
 void __init au1x00_setup(void)
 {
@@ -109,14 +103,13 @@ void __init au1x00_setup(void)
     }
 #endif
 
-#if defined(CONFIG_SOUND_AU1000) && !defined(CONFIG_CPU_AU1000)
+#if defined(CONFIG_SOUND_AU1X00) && !defined(CONFIG_CPU_AU1000)
 	// au1000 does not support vra, au1500 and au1100 do
-    strcat(argptr, " au1000_audio=vra");
-    argptr = prom_getcmdline();
+	strcat(argptr, " au1000_audio=vra");
+	argptr = prom_getcmdline();
 #endif
 
 	rtc_ops = &no_rtc_ops;
-	__wbflush = au1x00_wbflush;
 	_machine_restart = au1000_restart;
 	_machine_halt = au1000_halt;
 	_machine_power_off = au1000_power_off;
