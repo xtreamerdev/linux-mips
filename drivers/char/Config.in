@@ -267,7 +267,9 @@ if [ "$CONFIG_WATCHDOG" != "n" ]; then
       fi
    fi
    tristate '  ZF MachZ Watchdog' CONFIG_MACHZ_WDT
-   dep_tristate '  Indy/I2 Hardware Watchdog' CONFIG_INDYDOG $CONFIG_SGI_IP22
+   if [ "$CONFIG_SGI_IP22" =3D "y" ]; then
+      dep_tristate '  Indy/I2 Hardware Watchdog' CONFIG_INDYDOG $CONFIG_SGI_IP22
+   fi
    dep_tristate '  AMD 766/768 TCO Timer/Watchdog' CONFIG_AMD7XX_TCO $CONFIG_EXPERIMENTAL
 fi
 endmenu
