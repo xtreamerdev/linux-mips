@@ -36,11 +36,6 @@ void (*_flush_icache_range)(unsigned long start, unsigned long end);
 void (*_flush_icache_page)(struct vm_area_struct *vma, struct page *page);
 void (*_flush_icache_all)(void);
 
-/* MIPS specific cache operations */
-void (*_flush_cache_l2)(void);
-void (*_flush_cache_l1)(void);
-
-
 /* DMA cache operations. */
 void (*_dma_cache_wback_inv)(unsigned long start, unsigned long size);
 void (*_dma_cache_wback)(unsigned long start, unsigned long size);
