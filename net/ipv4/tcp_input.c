@@ -5,7 +5,7 @@
  *
  *		Implementation of the Transmission Control Protocol(TCP).
  *
- * Version:	$Id: tcp_input.c,v 1.164.2.4 1999/06/20 20:14:43 davem Exp $
+ * Version:	$Id: tcp_input.c,v 1.164.2.3 1999/06/02 04:15:06 davem Exp $
  *
  * Authors:	Ross Biro, <bir7@leland.Stanford.Edu>
  *		Fred N. van Kempen, <waltje@uWalt.NL.Mugnet.ORG>
@@ -916,20 +916,13 @@ extern void tcp_tw_deschedule(struct tcp_tw_bucket *tw);
 
 void tcp_timewait_kill(struct tcp_tw_bucket *tw)
 {
-	struct tcp_bind_bucket *tb = tw->tb;
-
-	/* Disassociate with bind bucket. */
+	/* Unlink from various places. */
 	if(tw->bind_next)
 		tw->bind_next->bind_pprev = tw->bind_pprev;
 	*(tw->bind_pprev) = tw->bind_next;
-	if (atomic_dec_and_test(&tb->refcnt)) {
-		if (tb->next)
-			tb->next->pprev = tb->pprev;
-		*(tb->pprev) = tb->next;
-		kmem_cache_free(tcp_bucket_cachep, tb);
-	}
+	if(tw->tb->owners == NULL)
+		tcp_inc_slow_timer(TCP_SLT_BUCKETGC);
 
-	/* Unlink from established hashes. */
 	if(tw->next)
 		tw->next->pprev = tw->pprev;
 	*tw->pprev = tw->next;

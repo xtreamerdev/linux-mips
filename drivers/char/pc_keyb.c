@@ -101,7 +101,6 @@ static unsigned char mouse_reply_expected = 0;
 static void kb_wait(void)
 {
 	unsigned long timeout = KBC_TIMEOUT;
-	unsigned char status;
 
 	do {
 		/*
@@ -442,6 +441,7 @@ static unsigned char handle_kbd_event(void)
 	return status;
 }
 
+
 static void keyboard_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 {
 	unsigned long flags;
@@ -555,7 +555,7 @@ static int __init kbd_wait_for_input(void)
 		int retval = kbd_read_data();
 		if (retval >= 0)
 			return retval;
-		mdelay(10);
+		mdelay(1);
 	} while (--timeout);
 	return -1;
 }
@@ -782,7 +782,7 @@ static void aux_write_ack(int val)
 
 	spin_lock_irqsave(&kbd_controller_lock, flags);
 	kb_wait();
-	kbd_write_cmd(KBD_CCMD_WRITE_MOUSE);
+	kbd_write_command(KBD_CCMD_WRITE_MOUSE);
 	kb_wait();
 	kbd_write_output(val);
 	/* we expect an ACK in response. */
@@ -832,7 +832,7 @@ static int release_aux(struct inode * inode, struct file * file)
 		return 0;
 	kbd_write_cmd(AUX_INTS_OFF);			    /* Disable controller ints */
 	kbd_write_command_w(KBD_CCMD_MOUSE_DISABLE);
-	aux_free_irq(inode);
+	aux_free_irq(AUX_DEV);
 	return 0;
 }
 
@@ -847,7 +847,7 @@ static int open_aux(struct inode * inode, struct file * file)
 		return 0;
 	}
 	queue->head = queue->tail = 0;		/* Flush input queue */
-	if (aux_request_irq(keyboard_interrupt, inode)) {
+	if (aux_request_irq(keyboard_interrupt, AUX_DEV)) {
 		aux_count--;
 		return -EBUSY;
 	}

@@ -278,9 +278,11 @@ EXPORT_SYMBOL(inet_sendmsg);
 EXPORT_SYMBOL(inet_recvmsg);
 
 /* Socket demultiplexing. */
+EXPORT_SYMBOL(tcp_good_socknum);
 EXPORT_SYMBOL(tcp_established_hash);
 EXPORT_SYMBOL(tcp_listening_hash);
 EXPORT_SYMBOL(tcp_bound_hash);
+EXPORT_SYMBOL(udp_good_socknum);
 EXPORT_SYMBOL(udp_hash);
 
 EXPORT_SYMBOL(destroy_sock);
@@ -321,9 +323,7 @@ EXPORT_SYMBOL(tcp_v4_send_check);
 EXPORT_SYMBOL(tcp_v4_conn_request);
 EXPORT_SYMBOL(tcp_create_openreq_child);
 EXPORT_SYMBOL(tcp_bucket_create);
-EXPORT_SYMBOL(__tcp_put_port);
-EXPORT_SYMBOL(tcp_put_port);
-EXPORT_SYMBOL(tcp_inherit_port);
+EXPORT_SYMBOL(tcp_bucket_unlock);
 EXPORT_SYMBOL(tcp_v4_syn_recv_sock);
 EXPORT_SYMBOL(tcp_v4_do_rcv);
 EXPORT_SYMBOL(tcp_v4_connect);

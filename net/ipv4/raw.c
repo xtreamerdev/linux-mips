@@ -5,7 +5,7 @@
  *
  *		RAW - implementation of IP "raw" sockets.
  *
- * Version:	$Id: raw.c,v 1.39.2.1 1999/06/20 20:14:50 davem Exp $
+ * Version:	$Id: raw.c,v 1.39 1998/11/08 11:17:04 davem Exp $
  *
  * Authors:	Ross Biro, <bir7@leland.Stanford.Edu>
  *		Fred N. van Kempen, <waltje@uWalt.NL.Mugnet.ORG>
@@ -70,25 +70,57 @@ struct sock *raw_v4_htable[RAWV4_HTABLE_SIZE];
 
 static void raw_v4_hash(struct sock *sk)
 {
-	struct sock **skp = &raw_v4_htable[sk->num & (RAWV4_HTABLE_SIZE - 1)];
+	struct sock **skp;
+	int num = sk->num;
 
+	num &= (RAWV4_HTABLE_SIZE - 1);
+	skp = &raw_v4_htable[num];
 	SOCKHASH_LOCK();
-	if ((sk->next = *skp) != NULL)
-		(*skp)->pprev = &sk->next;
+	sk->next = *skp;
 	*skp = sk;
-	sk->pprev = skp;
+	sk->hashent = num;
 	SOCKHASH_UNLOCK();
 }
 
 static void raw_v4_unhash(struct sock *sk)
 {
+	struct sock **skp;
+	int num = sk->num;
+
+	num &= (RAWV4_HTABLE_SIZE - 1);
+	skp = &raw_v4_htable[num];
+
 	SOCKHASH_LOCK();
-	if (sk->pprev) {
-		if (sk->next)
-			sk->next->pprev = sk->pprev;
-		*sk->pprev = sk->next;
-		sk->pprev = NULL;
+	while(*skp != NULL) {
+		if(*skp == sk) {
+			*skp = sk->next;
+			break;
+		}
+		skp = &((*skp)->next);
 	}
+	SOCKHASH_UNLOCK();
+}
+
+static void raw_v4_rehash(struct sock *sk)
+{
+	struct sock **skp;
+	int num = sk->num;
+	int oldnum = sk->hashent;
+
+	num &= (RAWV4_HTABLE_SIZE - 1);
+	skp = &raw_v4_htable[oldnum];
+
+	SOCKHASH_LOCK();
+	while(*skp != NULL) {
+		if(*skp == sk) {
+			*skp = sk->next;
+			break;
+		}
+		skp = &((*skp)->next);
+	}
+	sk->next = raw_v4_htable[num];
+	raw_v4_htable[num] = sk;
+	sk->hashent = num;
 	SOCKHASH_UNLOCK();
 }
 
@@ -564,7 +596,9 @@ struct proto raw_prot = {
 	raw_rcv_skb,			/* backlog_rcv */
 	raw_v4_hash,			/* hash */
 	raw_v4_unhash,			/* unhash */
-	NULL,				/* get_port */
+	raw_v4_rehash,			/* rehash */
+	NULL,				/* good_socknum */
+	NULL,				/* verify_bind */
 	128,				/* max_header */
 	0,				/* retransmits */
 	"RAW",				/* name */

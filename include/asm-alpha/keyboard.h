@@ -2,8 +2,6 @@
  *  linux/include/asm-alpha/keyboard.h
  *
  *  Created 3 Nov 1996 by Geert Uytterhoeven
- *
- * $Id: keyboard.h,v 1.8 1999/06/10 08:02:36 ralf Exp $
  */
 
 /*
@@ -39,14 +37,14 @@ extern unsigned char pckbd_sysrq_xlate[128];
 #define kbd_init_hw		pckbd_init_hw
 #define kbd_sysrq_xlate		pckbd_sysrq_xlate
 
+#define INIT_KBD
+
 #define SYSRQ_KEY 0x54
 
-/*
- * keyboard controller registers
- */
-#define KBD_STATUS_REG      (unsigned int) 0x64
-#define KBD_CNTL_REG        (unsigned int) 0x64
-#define KBD_DATA_REG        (unsigned int) 0x60
+/* resource allocation */
+#define kbd_request_region() request_region(0x60, 16, "keyboard")
+#define kbd_request_irq(handler) request_irq(KEYBOARD_IRQ, handler, 0, \
+                                             "keyboard", NULL)
 
 /* How to access the keyboard macros on this platform.  */
 #define kbd_read_input() inb(KBD_DATA_REG)
@@ -66,15 +64,16 @@ extern unsigned char pckbd_sysrq_xlate[128];
 /*
  * Machine specific bits for the PS/2 driver
  */
-#if defined(__alpha__) && !defined(CONFIG_PCI)
+#ifndef CONFIG_PCI
 # define AUX_IRQ	9		/* Jensen is odd indeed */
 #else
 # define AUX_IRQ	12
 #endif
 
-#define aux_request_irq(handler, dev_id) request_irq(AUX_IRQ, handler, 0, \
-	"PS/2 Mouse", NULL)
-#define aux_free_irq(dev_id) free_irq(AUX_IRQ, NULL)
+#define aux_request_irq(hand, dev_id)					\
+	request_irq(AUX_IRQ, hand, SA_SHIRQ, "PS/2 Mouse", dev_id)
+
+#define aux_free_irq(dev_id) free_irq(AUX_IRQ, dev_id)
 
 #endif /* __KERNEL__ */
-#endif /* __ASM_ALPHA_KEYBOARD_H */
+#endif /* _ALPHA_KEYBOARD_H */

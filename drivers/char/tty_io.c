@@ -2035,11 +2035,7 @@ long __init console_init(long kmem_start, long kmem_end)
 	memcpy(tty_std_termios.c_cc, INIT_C_CC, NCCS);
 	tty_std_termios.c_iflag = ICRNL | IXON;
 	tty_std_termios.c_oflag = OPOST | ONLCR;
-#if CONFIG_COBALT_SERIAL
-	tty_std_termios.c_cflag = B115200 | CS8 | CREAD | HUPCL;
-#else
 	tty_std_termios.c_cflag = B38400 | CS8 | CREAD | HUPCL;
-#endif
 	tty_std_termios.c_lflag = ISIG | ICANON | ECHO | ECHOE | ECHOK |
 		ECHOCTL | ECHOKE | IEXTEN;
 
@@ -2132,9 +2128,7 @@ __initfunc(int tty_init(void))
 	if (tty_register_driver(&dev_console_driver))
 		panic("Couldn't register /dev/tty0 driver\n");
 
-#ifndef CONFIG_COBALT_MICRO_SERVER
 	kbd_init();
-#endif
 #endif
 #ifdef CONFIG_ESPSERIAL  /* init ESP before rs, so rs doesn't see the port */
 	espserial_init();

@@ -2,8 +2,6 @@
  *  linux/include/asm-ppc/keyboard.h
  *
  *  Created 3 Nov 1996 by Geert Uytterhoeven
- *
- * $Id: keyboard.h,v 1.9 1999/06/10 10:08:56 ralf Exp $
  * Modified for Power Macintosh by Paul Mackerras
  */
 
@@ -17,6 +15,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/ioport.h>
 #include <asm/io.h>
 
 #include <linux/config.h>
@@ -71,6 +70,11 @@ static inline void kbd_init_hw(void)
 
 #endif /* CONFIG_APUS */
 
+/* resource allocation */
+#define kbd_request_region() request_region(0x60, 16, "keyboard")
+#define kbd_request_irq(handler) request_irq(KEYBOARD_IRQ, handler, 0, \
+                                             "keyboard", NULL)
+
 /* How to access the keyboard macros on this platform.  */
 #define kbd_read_input() inb(KBD_DATA_REG)
 #define kbd_read_status() inb(KBD_STATUS_REG)
@@ -80,24 +84,16 @@ static inline void kbd_init_hw(void)
 /* Some stoneage hardware needs delays after some operations.  */
 #define kbd_pause() do { } while(0)
 
-#endif /* CONFIG_MAC_KEYBOARD */
-
-#define keyboard_setup()						\
-	request_region(0x60, 16, "keyboard")
-
 /*
  * Machine specific bits for the PS/2 driver
- *
- * FIXME: does any PPC machine use the PS/2 driver at all?  If so,
- *        this should work, if not it's dead code ...
  */
 
 #define AUX_IRQ 12
 
-#define ps2_request_irq()						\
-	request_irq(AUX_IRQ, aux_interrupt, 0, "PS/2 Mouse", NULL)
+#define aux_request_irq(hand, dev_id)					\
+	request_irq(AUX_IRQ, hand, SA_SHIRQ, "PS/2 Mouse", dev_id)
 
-#define ps2_free_irq(inode) free_irq(AUX_IRQ, NULL)
+#define aux_free_irq(dev_id) free_irq(AUX_IRQ, dev_id)
 
 #endif /* __KERNEL__ */
 
