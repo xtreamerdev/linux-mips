@@ -2131,25 +2131,27 @@ CONFIG_SIBYTE_SB1250
 
   BCM1125     Uniprocessor SB1 with PCI (and HyperTransport for 1125H).
 
-BCM1250 Pass
+BCM1250 Stepping
 CONFIG_CPU_SB1_PASS_1
   Which pass of the SOC is supported (see the "system_revision"
   register in the User Manual for more discussion of revisions):
 
   Pass1    1250 "Pass 1"
 
-  A3-A10   1250 "Pass 2"
+  An       1250 "Pass 2"
 
-  B0-B3    1250 "Pass 2.2"
+  Bn       1250 "Pass 2.2"
 
-BCM1xxx Pass
+  Cn       1250 "Pass 3"
+
+BCM112x Stepping
 CONFIG_CPU_SB1_PASS_2
   Which pass of the SOC is supported (see the "system_revision"
   register in the User Manual for more discussion of revisions):
 
   Hybrid   1250 "Pass 2"
 
-  A1-A2    112x A1-A2
+  An       112x "Pass 1"
 
 Booting from CFE
 CONFIG_SIBYTE_CFE

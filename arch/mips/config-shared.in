@@ -145,15 +145,16 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
         "$CONFIG_SIBYTE_BCM1125" = "y" -o \
         "$CONFIG_SIBYTE_BCM1125H" = "y" ]; then
       define_bool CONFIG_SIBYTE_BCM112X y
-      choice 'BCM1xxx Pass' \
+      choice 'BCM112x Stepping' \
          "Hybrid CONFIG_CPU_SB1_PASS_2 \
-          A1-A2  CONFIG_CPU_SB1_PASS_3" A1-A2
+          An     CONFIG_CPU_SB1_PASS_3" An
    else
       unset CONFIG_SIBYTE_BCM112X
-      choice 'BCM1250 Pass' \
+      choice 'BCM1250 Stepping' \
          "Pass1   CONFIG_CPU_SB1_PASS_1 \
-          A3-A10  CONFIG_CPU_SB1_PASS_2 \
-          B0-B3   CONFIG_CPU_SB1_PASS_2_2" A3-A10
+          An      CONFIG_CPU_SB1_PASS_2 \
+          Bn      CONFIG_CPU_SB1_PASS_2_2 \
+          Cn      CONFIG_CPU_SB1_PASS_4" An
    fi
 
    bool '   Booting from CFE' CONFIG_SIBYTE_CFE
