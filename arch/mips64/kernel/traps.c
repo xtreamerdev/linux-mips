@@ -851,8 +851,7 @@ void __init trap_init(void)
 		set_except_vector(i, handle_reserved);
 
 	/*
-	 * Only some CPUs have the watch exceptions or a dedicated
-	 * interrupt vector.
+	 * Only some CPUs have the watch exceptions.
 	 */
 	if (cpu_has_watch)
 		set_except_vector(23, handle_watch);
