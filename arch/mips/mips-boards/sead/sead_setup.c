@@ -32,7 +32,7 @@
 #include <asm/time.h>
 
 #if defined(CONFIG_SERIAL_CONSOLE) || defined(CONFIG_PROM_CONSOLE)
-extern void console_setup(char *, int *);
+extern void console_setup(char *);
 char serial_console[20];
 #endif
 
@@ -61,7 +61,7 @@ void __init sead_setup(void)
 		strcpy(serial_console, "ttyS0,");
 		strncpy(serial_console + 6, s, i);
 		prom_printf("Config serial console: %s\n", serial_console);
-		console_setup(serial_console, NULL);
+		console_setup(serial_console);
 	}
 #endif
 
