@@ -32,7 +32,7 @@
 extern unsigned long pgd_current[];
 
 #ifdef CONFIG_SMP
-#define cpu_contexT(cpu, mm)	((mm)->context[cpu])
+#define cpu_context(cpu, mm)	((mm)->context[cpu])
 #else
 #define cpu_context(cpu, mm)	((mm)->context)
 #endif
@@ -74,15 +74,14 @@ static inline int
 init_new_context(struct task_struct *tsk, struct mm_struct *mm)
 {
 #ifdef CONFIG_SMP
-	mm->context = (unsigned long)kmalloc(smp_num_cpus *
-				sizeof(unsigned long), GFP_KERNEL);
+	mm->context = kmalloc(smp_num_cpus * sizeof(unsigned long), GFP_KERNEL);
 	/*
  	 * Init the "context" values so that a tlbpid allocation
 	 * happens on the first switch.
  	 */
 	if (mm->context == 0)
 		return -ENOMEM;
-	memset((void *)mm->context, 0, smp_num_cpus * sizeof(unsigned long));
+	memset(mm->context, 0, smp_num_cpus * sizeof(unsigned long));
 #else
 	mm->context = 0;
 #endif
@@ -108,7 +107,7 @@ static inline void destroy_context(struct mm_struct *mm)
 {
 #ifdef CONFIG_SMP
 	if (mm->context)
-		kfree((void *)mm->context);
+		kfree(mm->context);
 #endif
 }
 
