@@ -5,7 +5,7 @@
  * Derived from drivers/macintosh/macserial.c by Harald Koerfgen.
  *
  * DECstation changes
- * Copyright (C) 1998-2000 Harald Koerfgen
+ * Copyright (C) 1998-2002 Harald Koerfgen
  * Copyright (C) 2000,2001 Maciej W. Rozycki <macro@ds2.pg.gda.pl>
  *
  * For the rest of the code the original Copyright applies:
@@ -456,7 +456,7 @@ static _INLINE_ void receive_chars(struct dec_serial *info,
 			(*info->hook->rx_char)(ch, flag);
 			return;
   		}
-		
+
 		if (tty->flip.count >= TTY_FLIPBUF_SIZE) {
 			static int flip_buf_ovf;
 			++flip_buf_ovf;
@@ -471,7 +471,9 @@ static _INLINE_ void receive_chars(struct dec_serial *info,
 
 		*tty->flip.flag_buf_ptr++ = flag;
 		*tty->flip.char_buf_ptr++ = ch;
+#if defined(CONFIG_SERIAL_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && !defined(MODULE)
 	ignore_char:
+#endif
 	}
 	if (tty)
 		tty_flip_buffer_push(tty);
@@ -1719,7 +1721,7 @@ int rs_open(struct tty_struct *tty, struct file * filp)
 
 static void __init show_serial_version(void)
 {
-	printk("DECstation Z8530 serial driver version 0.05\n");
+	printk("DECstation Z8530 serial driver version 0.06\n");
 }
 
 /*  Initialize Z8530s zs_channels
@@ -2010,32 +2012,27 @@ zs_poll_tx_char(struct dec_serial *info, unsigned char ch)
 
 	if(chan) {
 		int loops = 10000;
-//		int nine = read_zsreg(chan, R9);
 
-		RECOVERY_DELAY;
-//        	write_zsreg(chan, R9, nine & ~MIE);
+ 		RECOVERY_DELAY;
                	wbflush();
 		RECOVERY_DELAY;
 
-        	while (!(*(chan->control) & Tx_BUF_EMP) && --loops)
+		while (loops && !(*(chan->control) & Tx_BUF_EMP)) {
+			loops--;
 	        	RECOVERY_DELAY;
+		}
 
-                if (loops) {
-                        ret = 0;
-        	        *(chan->data) = ch;
-                	wbflush();
+		if (loops) {
+			*(chan->data) = ch;
+			wbflush();
 			RECOVERY_DELAY;
+			ret = 0;
                 } else
-                        ret = -EAGAIN;
+			ret = -EAGAIN;
 
-//        	write_zsreg(chan, R9, nine);
-               	wbflush();
-		RECOVERY_DELAY;
-
-                return ret;
-        }
-
-	return -ENODEV;
+		return ret;
+	} else
+		return -ENODEV;
 }
 
 static int
@@ -2047,15 +2044,16 @@ zs_poll_rx_char(struct dec_serial *info)
 	if(chan) {
                 int loops = 10000;
 
-                while((read_zsreg(chan, 0) & Rx_CH_AV) == 0)
-		        loops--;
+                while(loops && ((read_zsreg(chan, 0) & Rx_CH_AV) == 0)) {
+			loops--;
+		}
 
                 if (loops)
                         ret = read_zsdata(chan);
                 else
                         ret = -EAGAIN;
 
-                return ret;
+		return ret;
         } else
                 return -ENODEV;
 }
