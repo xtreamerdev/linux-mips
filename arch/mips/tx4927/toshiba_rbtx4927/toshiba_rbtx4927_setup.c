@@ -929,7 +929,7 @@ void toshiba_rbtx4927_nmi (struct pt_regs *regs)
 	bust_spinlocks(0);
 }
 
-void toshiba_rbtx4927_nmi_handler_setup (void)
+void __init toshiba_rbtx4927_nmi_handler_setup (void)
 {
 	extern void tx4927_nmi_handler (void);
 	unsigned long vec[2];
