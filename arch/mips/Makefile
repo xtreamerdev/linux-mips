@@ -282,8 +282,8 @@ endif
 # NEC DDB Vrc-5074
 #
 ifdef CONFIG_DDB5074
-SUBDIRS		+= arch/mips/ddb5074
-LIBS		+= arch/mips/ddb5074/ddb5074.a
+SUBDIRS		+= arch/mips/ddb5xxx/common arch/mips/ddb5xxx/ddb5074
+LIBS		+= arch/mips/ddb5xxx/common/ddb5xxx.o arch/mips/ddb5xxx/ddb5074/ddb5074.o
 LOADADDR	:= 0x80080000
 endif
 
@@ -315,6 +315,28 @@ SUBDIRS		+= arch/mips/vr4181/common arch/mips/vr4181/osprey
 LIBS		+= arch/mips/vr4181/common/vr4181.o \
 		   arch/mips/vr4181/osprey/osprey.o
 LOADADDR	:= 0x80002000
+endif
+
+#
+# NEC Eagle/Hawk (VR4122/VR4131) board
+#
+ifdef CONFIG_NEC_EAGLE
+SUBDIRS		+= arch/mips/vr41xx/common \
+		   arch/mips/vr41xx/nec-eagle
+LIBS		+= arch/mips/vr41xx/common/vr41xx.o \
+		   arch/mips/vr41xx/nec-eagle/eagle.o
+LOADADDR	:= 0x80000000
+endif
+
+#
+# ZAO Networks Capcella (VR4131)
+#
+ifdef CONFIG_ZAO_CAPCELLA
+SUBDIRS		+= arch/mips/vr41xx/common \
+		   arch/mips/vr41xx/zao-capcella
+LIBS		+= arch/mips/vr41xx/common/vr41xx.o \
+		   arch/mips/vr41xx/zao-capcella/capcella.o
+LOADADDR	:= 0x80000000
 endif
 
 #
