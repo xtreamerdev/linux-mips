@@ -1,5 +1,4 @@
 /*
- *
  * BRIEF MODULE DESCRIPTION
  *	Galileo EV96100 interrupt/setup routines.
  *
@@ -49,7 +48,6 @@
 #include <asm/bitops.h>
 #include <asm/bootinfo.h>
 #include <asm/io.h>
-#include <asm/irq.h>
 #include <asm/mipsregs.h>
 #include <asm/system.h>
 #include <asm/galileo-boards/ev96100int.h>
@@ -64,25 +62,9 @@ extern void mips_timer_interrupt(int irq, struct pt_regs *regs);
 extern asmlinkage void ev96100IRQ(void);
 unsigned int local_bh_count[NR_CPUS];
 unsigned int local_irq_count[NR_CPUS];
-volatile unsigned long irq_err_count;
+atomic_t irq_err_count;
 irq_desc_t irq_desc[NR_IRQS];
 irq_desc_t *irq_desc_base=&irq_desc[0];
-
-#if 0 /* unused at this time */
-static struct irqaction timer_action = {
-	NULL, 0, 0, "R7000 timer/counter", NULL, NULL,
-};
-
-static struct hw_interrupt_type mips_timer = {
-        "MIPS CPU Timer",
-        NULL,
-        NULL,
-        NULL, /* unmask_irq */
-        NULL, /* mask_irq */
-        NULL, /* mask_and_ack */
-        0
-};
-#endif
 
 /* Function for careful CP0 interrupt mask access */
 static inline void modify_cp0_intmask(unsigned clr_mask, unsigned set_mask)
@@ -153,7 +135,7 @@ int get_irq_list(char *buf)
                 }
                 len += sprintf(buf+len, "\n");
         }
-        len += sprintf(buf+len, "BAD: %10lu\n", irq_err_count);
+        len += sprintf(buf+len, "BAD: %10lu\n", atomic_read(&irq_err_count));
         return len;
 }
 
@@ -210,7 +192,7 @@ asmlinkage void do_IRQ(unsigned long cause, struct pt_regs * regs)
 	}
 	else
 	{
-		irq_err_count++;
+		atomic_inc(&irq_err_count);
 		printk("Unhandled interrupt %x, cause %x, disabled\n", 
 				(unsigned)irq, (unsigned)cause);
 		disable_irq(1<<irq);
@@ -303,17 +285,14 @@ int probe_irq_off (unsigned long irqs)
         return 0;
 }
 
-int (*irq_cannonicalize)(int irq);
-
-int ev96100_irq_cannonicalize(int i)
+void init_irq_proc(void)
 {
-        return i;
+	/* Nothing, for now.  */
 }
 
 void __init init_IRQ(void)
 {
         memset(irq_desc, 0, sizeof(irq_desc));
-        irq_cannonicalize = ev96100_irq_cannonicalize;
         set_except_vector(0, ev96100IRQ);
 
 #ifdef CONFIG_REMOTE_DEBUG
@@ -339,5 +318,3 @@ void mips_spurious_interrupt(struct pt_regs *regs)
 //	while(1);
 #endif
 }
-
-EXPORT_SYMBOL(irq_cannonicalize);

@@ -1,6 +1,4 @@
 /*
- * irq.c
- *
  * BRIEF MODULE DESCRIPTION
  * Code to handle irqs on GT64120A boards
  *  Derived from mips/orion and Cort <cort@fsmlabs.com>
@@ -28,9 +26,7 @@
  *  You should have received a copy of the  GNU General Public License along
  *  with this program; if not, write  to the Free Software Foundation, Inc.,
  *  675 Mass Ave, Cambridge, MA 02139, USA.
- *
  */
-
 #include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/kernel_stat.h>
@@ -43,15 +39,12 @@
 #include <linux/timex.h>
 #include <linux/slab.h>
 #include <linux/random.h>
-#include <linux/irq.h>
 #include <asm/bitops.h>
 #include <asm/bootinfo.h>
 #include <asm/io.h>
-#include <asm/irq.h>
 #include <asm/mipsregs.h>
 #include <asm/system.h>
 #include <asm/galileo-boards/ev64120int.h>
-
 
 #undef IRQ_DEBUG
 
@@ -189,7 +182,7 @@ struct hw_interrupt_type no_irq_type = {
  */
 irq_desc_t irq_desc[NR_IRQS];
 
-volatile unsigned long irq_err_count;
+atomic_t irq_err_count;
 
 int get_irq_list(char *buf)
 {
@@ -219,7 +212,7 @@ int get_irq_list(char *buf)
 		}
 		len += sprintf(buf + len, "\n");
 	}
-	len += sprintf(buf + len, "BAD: %10lu\n", irq_err_count);
+	len += sprintf(buf + len, "BAD: %10lu\n", atomic_read(&irq_err_count));
 	return len;
 }
 
@@ -438,6 +431,10 @@ void galileo_irq_setup(void)
 #endif
 }
 
+void init_irq_proc(void)
+{
+	/* Nothing, for now.  */
+}
 
 void __init init_IRQ(void)
 {
@@ -456,22 +453,3 @@ void __init init_IRQ(void)
 
 	galileo_irq_setup();
 }
-
-/*
- * Overrides for Emacs so that we follow Linus's tabbing style.
- * Emacs will notice this stuff at the end of the file and automatically
- * adjust the settings for this buffer only.  This must remain at the end
- * of the file.
- * ---------------------------------------------------------------------------
- * Local variables:
- * c-indent-level: 4 
- * c-brace-imaginary-offset: 0
- * c-brace-offset: -4
- * c-argdecl-indent: 4
- * c-label-offset: -4
- * c-continued-statement-offset: 4
- * c-continued-brace-offset: 0
- * indent-tabs-mode: nil
- * tab-width: 8
- * End:
- */

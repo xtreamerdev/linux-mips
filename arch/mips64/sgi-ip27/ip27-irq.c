@@ -498,7 +498,7 @@ void core_send_ipi(int destid, unsigned int action)
 	int irq;
 
 #if (CPUS_PER_NODE == 2)
-	switch (status) {
+	switch (action) {
 		case SMP_RESCHEDULE_YOURSELF:
 			irq = CPU_RESCHED_A_IRQ;
 			break;
@@ -506,7 +506,7 @@ void core_send_ipi(int destid, unsigned int action)
 			irq = CPU_CALL_A_IRQ;
 			break;
 		default:
-			panic("sendintr");
+			panic("core_send_ipi");
 	}
 	irq += cputoslice(destid);
 
