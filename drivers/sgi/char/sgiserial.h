@@ -33,7 +33,7 @@ struct sgi_zslayout {
 struct serial_struct {
 	int	type;
 	int	line;
-	int	port;
+	unsigned int	port;
 	int	irq;
 	int	flags;
 	int	xmit_fifo_size;
@@ -129,7 +129,7 @@ struct sgi_serial {
 
 	int			magic;
 	int			baud_base;
-	int			port;
+	unsigned int		port;
 	int			irq;
 	int			flags; 		/* defined in tty.h */
 	int			type; 		/* UART type */

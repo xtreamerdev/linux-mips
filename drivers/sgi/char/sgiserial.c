@@ -785,8 +785,7 @@ static void shutdown(struct sgi_serial * info)
  */
 static void change_speed(struct sgi_serial *info)
 {
-	unsigned short port;
-	unsigned cflag;
+	unsigned int port, cflag;
 	int	i;
 	int	brg;
 
