@@ -4,7 +4,7 @@
  *	Description: Device Driver for Tekram DC-390 (T) PCI SCSI      *
  *		     Bus Master Host Adapter			       *
  ***********************************************************************/
-/* $Id: scsiiom.c,v 1.5 1999/01/04 16:07:12 ralf Exp $ */
+/* $Id: scsiiom.c,v 2.15 1998/12/25 17:33:27 garloff Exp $ */
 
 UCHAR
 dc390_StartSCSI( PACB pACB, PDCB pDCB, PSRB pSRB )

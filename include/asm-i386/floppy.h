@@ -33,13 +33,14 @@
 
 #define fd_inb(port)			inb_p(port)
 #define fd_outb(port,value)		outb_p(port,value)
-#define fd_request_dma(channel)		CSW._request_dma(channel,"floppy")
-#define fd_free_dma(channel)		CSW._free_dma(channel)
-#define fd_enable_irq(irq)		enable_irq(irq)
-#define fd_disable_irq(irq)		disable_irq(irq)
-#define fd_free_irq(irq)		free_irq(irq, NULL)
-#define fd_get_dma_residue(channel)	SW._get_dma_residue(channel)
-#define fd_dma_mem_alloc(size)		SW._dma_mem_alloc(size)
+
+#define fd_request_dma()        CSW._request_dma(FLOPPY_DMA,"floppy")
+#define fd_free_dma()           CSW._free_dma(FLOPPY_DMA)
+#define fd_enable_irq()         enable_irq(FLOPPY_IRQ)
+#define fd_disable_irq()        disable_irq(FLOPPY_IRQ)
+#define fd_free_irq()		free_irq(FLOPPY_IRQ, NULL)
+#define fd_get_dma_residue()    SW._get_dma_residue(FLOPPY_DMA)
+#define fd_dma_mem_alloc(size)	SW._dma_mem_alloc(size)
 #define fd_dma_setup(addr, size, mode, io) SW._dma_setup(addr, size, mode, io)
 
 #define FLOPPY_CAN_FALLBACK_ON_NODMA
@@ -150,10 +151,10 @@ static void floppy_hardint(int irq, void *dev_id, struct pt_regs * regs)
 #endif
 }
 
-static void fd_disable_dma(int channel)
+static void fd_disable_dma(void)
 {
 	if(! (can_use_virtual_dma & 1))
-		disable_dma(channel);
+		disable_dma(FLOPPY_DMA);
 	doing_pdma = 0;
 	virtual_dma_residue += virtual_dma_count;
 	virtual_dma_count=0;
@@ -175,30 +176,16 @@ static int vdma_get_dma_residue(unsigned int dummy)
 }
 
 
-static int fd_request_irq(unsigned int irq)
+static int fd_request_irq(void)
 {
 	if(can_use_virtual_dma)
-		return request_irq(irq, floppy_hardint,SA_INTERRUPT,
+		return request_irq(FLOPPY_IRQ, floppy_hardint,SA_INTERRUPT,
 						   "floppy", NULL);
 	else
-		return request_irq(irq, floppy_interrupt,
+		return request_irq(FLOPPY_IRQ, floppy_interrupt,
 						   SA_INTERRUPT|SA_SAMPLE_RANDOM,
 						   "floppy", NULL);	
 
-}
-
-/* Pure 2^n version of get_order */
-extern __inline__ int __get_order(unsigned long size)
-{
-	int order;
-
-	size = (size-1) >> (PAGE_SHIFT-1);
-	order = -1;
-	do {
-		size >>= 1;
-		order++;
-	} while (size);
-	return order;
 }
 
 static unsigned long dma_mem_alloc(unsigned long size)
