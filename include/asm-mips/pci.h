@@ -57,6 +57,13 @@ static inline void pcibios_penalize_isa_irq(int irq)
 struct pci_dev;
 
 /*
+ * The PCI address space does equal the physical memory address space.  The
+ * networking and block device layers use this boolean for bounce buffer
+ * decisions.
+ */
+#define PCI_DMA_BUS_IS_PHYS	(1)
+
+/*
  * Allocate and map kernel buffer using consistent mode DMA for a device.
  * hwdev should be valid struct pci_dev pointer for PCI devices,
  * NULL for PCI-like buses (ISA, EISA).
@@ -92,9 +99,7 @@ static inline dma_addr_t pci_map_single(struct pci_dev *hwdev, void *ptr,
 	if (direction == PCI_DMA_NONE)
 		out_of_line_bug();
 
-#ifdef CONFIG_NONCOHERENT_IO
 	dma_cache_wback_inv((unsigned long)ptr, size);
-#endif
 
 	return virt_to_bus(ptr);
 }
@@ -124,12 +129,13 @@ static inline dma_addr_t pci_map_page(struct pci_dev *hwdev, struct page *page,
 				      unsigned long offset, size_t size,
                                       int direction)
 {
+	unsigned long addr;
+
 	if (direction == PCI_DMA_NONE)
 		out_of_line_bug();
 
-#ifdef CONFIG_NONCOHERENT_IO
-	dma_cache_wback_inv((unsigned long) page_address(page) + offset, size);
-#endif
+	addr = (unsigned long) page_address(page) + offset;
+	dma_cache_wback_inv(addr, size);
 
 	return page_to_bus(page) + offset;
 }
@@ -220,12 +226,13 @@ static inline void pci_dma_sync_single(struct pci_dev *hwdev,
 				       dma_addr_t dma_handle,
 				       size_t size, int direction)
 {
+	unsigned long addr;
+
 	if (direction == PCI_DMA_NONE)
 		out_of_line_bug();
 
-#ifdef CONFIG_NONCOHERENT_IO
-	dma_cache_wback_inv((unsigned long)bus_to_virt(dma_handle), size);
-#endif
+	addr = dma_handle - bus_to_baddr(hwdev->bus->number) + PAGE_OFFSET;
+	dma_cache_wback_inv(addr, size);
 }
 
 /*
@@ -253,7 +260,8 @@ static inline void pci_dma_sync_sg(struct pci_dev *hwdev,
 #endif
 }
 
-/* Return whether the given PCI device DMA address mask can
+/*
+ * Return whether the given PCI device DMA address mask can
  * be supported properly.  For example, if your device can
  * only drive the low 24-bits during PCI bus mastering, then
  * you would pass 0x00ffffff as the mask to this function.
@@ -307,7 +315,9 @@ pci_dac_dma_sync_single(struct pci_dev *pdev, dma64_addr_t dma_addr,
 }
 #endif
 
-/* Return the index of the PCI controller for device. */
+/*
+ * Return the index of the PCI controller for device.
+ */
 #define pci_controller_num(pdev)	(0)
 
 /*
