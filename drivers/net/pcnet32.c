@@ -752,8 +752,12 @@ pcnet32_probe1(unsigned long ioaddr, unsigned int irq_line, int shared,
     if (irq_line) {
 	dev->irq = irq_line;
     }
-    
+
+#ifdef CONFIG_LASAT
+    if (dev->irq >= 0)
+#else
     if (dev->irq >= 2)
+#endif
 	printk(" assigned IRQ %d.\n", dev->irq);
     else {
 	unsigned long irq_mask = probe_irq_on();
@@ -808,7 +812,10 @@ pcnet32_open(struct net_device *dev)
     u16 val;
     int i;
 
-    if (dev->irq == 0 ||
+    if (
+#ifndef CONFIG_LASAT
+	dev->irq == 0 ||
+#endif
 	request_irq(dev->irq, &pcnet32_interrupt,
 		    lp->shared_irq ? SA_SHIRQ : 0, lp->name, (void *)dev)) {
 	return -EAGAIN;
@@ -1342,6 +1349,10 @@ pcnet32_rx(struct net_device *dev)
 		if (!rx_in_place) {
 		    skb_reserve(skb,2); /* 16 byte align */
 		    skb_put(skb,pkt_len);	/* Make room */
+                    pci_dma_sync_single(lp->pci_dev, 
+				    lp->rx_dma_addr[entry],
+				    pkt_len,
+				    PCI_DMA_FROMDEVICE);
 		    eth_copy_and_sum(skb,
 				     (unsigned char *)(lp->rx_skbuff[entry]->tail),
 				     pkt_len,0);
