@@ -146,7 +146,7 @@ CONFIG_BLK_DEV_RAM_SIZE=9220
 # Networking options
 #
 # CONFIG_PACKET is not set
-# CONFIG_NETLINK is not set
+# CONFIG_NETLINK_DEV is not set
 # CONFIG_NETFILTER is not set
 # CONFIG_FILTER is not set
 CONFIG_UNIX=y
@@ -156,6 +156,7 @@ CONFIG_INET=y
 # CONFIG_IP_PNP is not set
 # CONFIG_NET_IPIP is not set
 # CONFIG_NET_IPGRE is not set
+# CONFIG_ARPD is not set
 # CONFIG_INET_ECN is not set
 # CONFIG_SYN_COOKIES is not set
 # CONFIG_IPV6 is not set
@@ -225,6 +226,7 @@ CONFIG_NETDEVICES=y
 # CONFIG_BONDING is not set
 # CONFIG_EQUALIZER is not set
 # CONFIG_TUN is not set
+# CONFIG_ETHERTAP is not set
 
 #
 # Ethernet (10 or 100Mbit)

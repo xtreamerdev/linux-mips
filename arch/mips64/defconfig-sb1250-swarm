@@ -101,7 +101,7 @@ CONFIG_BLK_DEV_INITRD=y
 # Networking options
 #
 # CONFIG_PACKET is not set
-# CONFIG_NETLINK is not set
+# CONFIG_NETLINK_DEV is not set
 # CONFIG_NETFILTER is not set
 # CONFIG_FILTER is not set
 CONFIG_UNIX=y

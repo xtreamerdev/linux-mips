@@ -165,7 +165,7 @@ void show_code(unsigned int *pc)
 	}
 }
 
-spinlock_t die_lock;
+static spinlock_t die_lock;
 
 void die(const char * str, struct pt_regs * regs, unsigned long err)
 {

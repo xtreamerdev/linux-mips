@@ -3156,6 +3156,10 @@ static int get_async_struct(int line, struct async_struct **ret_info)
  * enables interrupts for a serial port, linking in its async structure into
  * the IRQ chain.   It also performs the serial-specific
  * initialization for the tty structure.
+ *
+ * Note that on failure, we don't decrement the module use count - the tty
+ * later will call rs_close, which will decrement it for us as long as
+ * tty->driver_data is set non-NULL. --rmk
  */
 static int rs_open(struct tty_struct *tty, struct file * filp)
 {
@@ -3176,10 +3180,8 @@ static int rs_open(struct tty_struct *tty, struct file * filp)
 	}
 	tty->driver_data = info;
 	info->tty = tty;
-	if (serial_paranoia_check(info, tty->device, "rs_open")) {
-		MOD_DEC_USE_COUNT;		
+	if (serial_paranoia_check(info, tty->device, "rs_open"))
 		return -ENODEV;
-	}
 
 #ifdef SERIAL_DEBUG_OPEN
 	printk("rs_open %s%d, count = %d\n", tty->driver.name, info->line,
@@ -3194,10 +3196,8 @@ static int rs_open(struct tty_struct *tty, struct file * filp)
 	 */
 	if (!tmp_buf) {
 		page = get_zeroed_page(GFP_KERNEL);
-		if (!page) {
-			MOD_DEC_USE_COUNT;
+		if (!page)
 			return -ENOMEM;
-		}
 		if (tmp_buf)
 			free_page(page);
 		else
@@ -3211,7 +3211,6 @@ static int rs_open(struct tty_struct *tty, struct file * filp)
 	    (info->flags & ASYNC_CLOSING)) {
 		if (info->flags & ASYNC_CLOSING)
 			interruptible_sleep_on(&info->close_wait);
-		MOD_DEC_USE_COUNT;
 #ifdef SERIAL_DO_RESTART
 		return ((info->flags & ASYNC_HUP_NOTIFY) ?
 			-EAGAIN : -ERESTARTSYS);
@@ -3224,10 +3223,8 @@ static int rs_open(struct tty_struct *tty, struct file * filp)
 	 * Start up serial port
 	 */
 	retval = startup(info);
-	if (retval) {
-		MOD_DEC_USE_COUNT;
+	if (retval)
 		return retval;
-	}
 
 	retval = block_til_ready(tty, filp, info);
 	if (retval) {
@@ -3235,7 +3232,6 @@ static int rs_open(struct tty_struct *tty, struct file * filp)
 		printk("rs_open returning after block_til_ready with %d\n",
 		       retval);
 #endif
-		MOD_DEC_USE_COUNT;
 		return retval;
 	}
 
@@ -4919,7 +4915,7 @@ MODULE_DEVICE_TABLE(pci, serial_pci_tbl);
 static struct pci_driver serial_pci_driver = {
        name:           "serial",
        probe:          serial_init_one,
-       remove:	       serial_remove_one,
+       remove:	       __devexit_p(serial_remove_one),
        id_table:       serial_pci_tbl,
 };
 
