@@ -67,7 +67,6 @@
 #include <asm/segment.h>
 #include <asm/bitops.h>
 #include <asm/uaccess.h>
-#include <asm/wbflush.h>
 #include <asm/bootinfo.h>
 #ifdef CONFIG_DECSTATION
 #include <asm/dec/interrupts.h>
@@ -276,7 +275,7 @@ static inline unsigned char read_zsreg(struct dec_zschannel *channel,
 
 	if (reg != 0) {
 		*channel->control = reg & 0xf;
-		wbflush(); RECOVERY_DELAY;
+		fast_iob(); RECOVERY_DELAY;
 	}
 	retval = *channel->control;
 	RECOVERY_DELAY;
@@ -288,10 +287,10 @@ static inline void write_zsreg(struct dec_zschannel *channel,
 {
 	if (reg != 0) {
 		*channel->control = reg & 0xf;
-		wbflush(); RECOVERY_DELAY;
+		fast_iob(); RECOVERY_DELAY;
 	}
 	*channel->control = value;
-	wbflush(); RECOVERY_DELAY;
+	fast_iob(); RECOVERY_DELAY;
 	return;
 }
 
@@ -308,7 +307,7 @@ static inline void write_zsdata(struct dec_zschannel *channel,
 				unsigned char value)
 {
 	*channel->data = value;
-	wbflush(); RECOVERY_DELAY;
+	fast_iob(); RECOVERY_DELAY;
 	return;
 }
 
