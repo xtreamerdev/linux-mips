@@ -128,6 +128,7 @@ illegal_syscall:
 	j	ret_from_sys_call
 	END(handle_sys64)
 
+	.align	3
 sys_call_table:
 	PTR	sys_syscall				/* 5000 */
 	PTR	sys_exit
