@@ -437,6 +437,8 @@
 
 #ifndef _LANGUAGE_ASSEMBLY
 
+#include <asm/system.h>
+
 /*
  * Macros to access the system control coprocessor
  */
@@ -585,19 +587,83 @@ static inline void set_pagemask(unsigned long val)
 		: : "Jr" (val));
 }
 
-/* CP0_ENTRYLO0 and CP0_ENTRYLO1 registers */
-static inline unsigned long get_entrylo0(void)
-{
-	unsigned long val;
+#if defined(CONFIG_64BIT_PHYS_ADDR) && !defined(CONFIG_CPU_MIPS32)
 
-	__asm__ __volatile__(	
-		".set push\n\t"
-		".set reorder\n\t"
-		"mfc0 %0, $2\n\t"
-		".set pop"
+/*
+ * These versions are only needed for systems with more than 38 bits of
+ * physical address space.
+ */
+static inline void set_entrylo0(unsigned long long val)
+{
+	unsigned long flags;
+
+	__save_and_cli(flags);
+	__asm__ __volatile__(
+		".set\tmips3\n\t"
+		"dsll\t%L0, %L0, 32\n\t"
+		"dsrl\t%L0, %L0, 32\n\t"
+		"dsll\t%M0, %M0, 32\n\t"
+		"or\t%L0, %L0, %M0\n\t"
+		"dmtc0\t%0, $2\n\t"
+		".set\tmips0"
+		: : "r" (val));
+	__restore_flags(flags);
+}
+
+static inline void set_entrylo1(unsigned long long val)
+{
+	unsigned long flags;
+
+	__save_and_cli(flags);
+	__asm__ __volatile__(
+		".set\tmips3\n\t"
+		"dsll\t%L0, %L0, 32\n\t"
+		"dsrl\t%L0, %L0, 32\n\t"
+		"dsll\t%M0, %M0, 32\n\t"
+		"or\t%L0, %L0, %M0\n\t"
+		"dmtc0\t%0, $3\n\t"
+		".set\tmips0"
+		: : "r" (val));
+	__restore_flags(flags);
+}
+
+static inline unsigned long long get_entrylo0(void)
+{
+	unsigned long flags, val;
+
+	__save_and_cli(flags);
+	__asm__ __volatile__(
+		".set\tmips0\n\t"
+		"dmfc0 %0, $2\n\t"
+		"dsrl\t%M0, %M0, 32\n\t"
+		"dsll\t%L0, %L0, 32\n\t"
+		"dsrl\t%L0, %L0, 32\n\t"
+		".set\tmips0"
 		: "=r" (val));
+	__restore_flags(flags);
+
 	return val;
 }
+
+static inline unsigned long long get_entrylo1(void)
+{
+	unsigned long flags, val;
+
+	__save_and_cli(flags);
+	__asm__ __volatile__(
+		".set\tmips0\n\t"
+		"dmfc0 %0, $3\n\t"
+		"dsrl\t%M0, %M0, 32\n\t"
+		"dsll\t%L0, %L0, 32\n\t"
+		"dsrl\t%L0, %L0, 32\n\t"
+		".set\tmips0"
+		: "=r" (val));
+	__restore_flags(flags);
+
+	return val;
+}
+
+#else
 
 static inline void set_entrylo0(unsigned long val)
 {
@@ -607,6 +673,29 @@ static inline void set_entrylo0(unsigned long val)
 		"mtc0 %z0, $2\n\t"
 		".set pop"
 		: : "Jr" (val));
+}
+
+static inline void set_entrylo1(unsigned long val)
+{
+	__asm__ __volatile__(
+		".set push\n\t"
+		".set reorder\n\t"
+		"mtc0 %z0, $3\n\t"
+		".set pop"
+		: : "Jr" (val));
+}
+
+static inline unsigned long get_entrylo0(void)
+{
+	unsigned long val;
+
+	__asm__ __volatile__(
+		".set push\n\t"
+		".set reorder\n\t"
+		"mfc0 %0, $2\n\t"
+		".set pop" : "=r" (val));
+
+	return val;
 }
 
 static inline unsigned long get_entrylo1(void)
@@ -622,15 +711,7 @@ static inline unsigned long get_entrylo1(void)
 	return val;
 }
 
-static inline void set_entrylo1(unsigned long val)
-{
-	__asm__ __volatile__(
-		".set push\n\t"
-		".set reorder\n\t"
-		"mtc0 %z0, $3\n\t"
-		".set pop"
-		: : "Jr" (val));
-}
+#endif
 
 /* CP0_ENTRYHI register */
 static inline unsigned long get_entryhi(void)
