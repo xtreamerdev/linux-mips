@@ -90,11 +90,10 @@
 #define I2C_DRIVERID_DRP3510	43     /* ADR decoder (Astra Radio)	*/
 #define I2C_DRIVERID_SP5055	44     /* Satellite tuner		*/
 #define I2C_DRIVERID_STV0030	45     /* Multipurpose switch		*/
-#define I2C_DRIVERID_SAA7114H	46     /* video decoder			*/
-#define I2C_DRIVERID_MAX1617	47     /* temp sensor			*/
-#define I2C_DRIVERID_ADV717X	48     /* video encoder			*/
-#define I2C_DRIVERID_SAA7191	49     /* video decoder                 */
-#define I2C_DRIVERID_INDYCAM	50     /* SGI IndyCam			*/
+#define I2C_DRIVERID_ADV717X   48     /* video encoder                 */
+#define I2C_DRIVERID_MAX1617	56     /* temp sensor			*/
+#define I2C_DRIVERID_SAA7191	57     /* video decoder                 */
+#define I2C_DRIVERID_INDYCAM	58     /* SGI IndyCam			*/
 
 #define I2C_DRIVERID_EXP0	0xF0	/* experimental use id's	*/
 #define I2C_DRIVERID_EXP1	0xF1
