@@ -132,10 +132,16 @@ symbol		=	value
     (_MIPS_ISA == _MIPS_ISA_MIPS64)
 
 #define PREF(hint,addr)                                 \
-		pref	hint,addr
+		.set	push;				\
+		.set	mips4;				\
+		pref	hint,addr;			\
+		.set	pop
 
 #define PREFX(hint,addr)                                \
-		prefx	hint,addr
+		.set	push;				\
+		.set	mips4;				\
+		prefx	hint,addr;			\
+		.set	pop
 
 #else
 

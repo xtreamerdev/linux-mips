@@ -482,6 +482,11 @@ bad_alignment:
 	sys	sys_ni_syscall	0		/* reserved for removexattr */
 	sys	sys_ni_syscall	0		/* reserved for lremovexattr */
 	sys	sys_ni_syscall	0		/* 4235 res. for fremovexattr */
+	sys	sys_tkill, 2
+	sys	sys_ni_syscall, 0		/* res. for sendfile64 */
+	sys	sys_ni_syscall, 0		/* res. for futex */
+	sys	sys_ni_syscall, 0		/* res. for sched_setaffinity */
+	sys	sys_ni_syscall, 0		/* 4240 res. for sched_getaffinity */
 
 	.endm
 

@@ -250,3 +250,8 @@ SYS(sys_ni_syscall, 0)				/* reserved for flistxattr */
 SYS(sys_ni_syscall, 0)				/* reserved for removexattr */
 SYS(sys_ni_syscall, 0)				/* reserved for lremovexattr */
 SYS(sys_ni_syscall, 0)				/* 4235 res. for fremovexattr */
+SYS(sys_tkill, 2)
+SYS(sys_ni_syscall, 0)				/* res. for sendfile64 */
+SYS(sys_ni_syscall, 0)				/* res. for futex */
+SYS(sys_ni_syscall, 0)				/* res. for sched_setaffinity */
+SYS(sys_ni_syscall, 0)				/* 4240 res. for sched_getaffinity */

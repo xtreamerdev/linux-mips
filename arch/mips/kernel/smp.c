@@ -144,7 +144,7 @@ int smp_call_function (void (*func) (void *info), void *info, int retry,
 	if (wait)
 		atomic_set(&data.finished, 0);
 
-	spin_lock_bh(&call_lock);
+	spin_lock(&call_lock);
 	call_data = &data;
 
 	/* Send a message to all other CPUs and wait for them to respond */
@@ -160,7 +160,7 @@ int smp_call_function (void (*func) (void *info), void *info, int retry,
 	if (wait)
 		while (atomic_read(&data.finished) != cpus)
 			barrier();
-	spin_unlock_bh(&call_lock);
+	spin_unlock(&call_lock);
 
 	return 0;
 }

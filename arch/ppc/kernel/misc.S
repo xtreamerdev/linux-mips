@@ -1,5 +1,5 @@
 /*
- * BK Id: SCCS/s.misc.S 1.36 12/01/01 20:09:06 benh
+ * BK Id: SCCS/s.misc.S 1.41 04/09/02 21:01:58 paulus
  */
 /*
  * This file contains miscellaneous low-level functions.
@@ -39,7 +39,6 @@ _GLOBAL(__delay)
  * Returns (address we're running at) - (address we were linked at)
  * for use before the text and data are mapped to KERNELBASE.
  */
-
 _GLOBAL(reloc_offset)
 	mflr	r0
 	bl	1f
@@ -48,6 +47,62 @@ _GLOBAL(reloc_offset)
 	addi	r4,r4,1b@l
 	subf	r3,r4,r3
 	mtlr	r0
+	blr
+
+/*
+ * add_reloc_offset(x) returns x + reloc_offset().
+ */
+_GLOBAL(add_reloc_offset)
+	mflr	r0
+	bl	1f
+1:	mflr	r5
+	lis	r4,1b@ha
+	addi	r4,r4,1b@l
+	subf	r5,r4,r5
+	add	r3,r3,r5
+	mtlr	r0
+	blr
+
+/*
+ * sub_reloc_offset(x) returns x - reloc_offset().
+ */
+_GLOBAL(sub_reloc_offset)
+	mflr	r0
+	bl	1f
+1:	mflr	r5
+	lis	r4,1b@ha
+	addi	r4,r4,1b@l
+	subf	r5,r4,r5
+	subf	r3,r5,r3
+	mtlr	r0
+	blr
+
+/*
+ * reloc_got2 runs through the .got2 section adding an offset
+ * to each entry.
+ */
+_GLOBAL(reloc_got2)
+	mflr	r11
+	lis	r7,__got2_start@ha
+	addi	r7,r7,__got2_start@l
+	lis	r8,__got2_end@ha
+	addi	r8,r8,__got2_end@l
+	subf	r8,r7,r8
+	srwi.	r8,r8,2
+	beqlr
+	mtctr	r8
+	bl	1f
+1:	mflr	r0
+	lis	r4,1b@ha
+	addi	r4,r4,1b@l
+	subf	r0,r4,r0
+	add	r7,r0,r7
+2:	lwz	r0,0(r7)
+	add	r0,r0,r3
+	stw	r0,0(r7)
+	addi	r7,r7,4
+	bdnz	2b
+	mtlr	r11
 	blr
 
 /*
@@ -281,7 +336,8 @@ _GLOBAL(_nmask_and_or_msr)
 	mfmsr	r0		/* Get current msr */
 	andc	r0,r0,r3	/* And off the bits set in r3 (first parm) */
 	or	r0,r0,r4	/* Or on the bits in r4 (second parm) */
-	SYNC			/* Some chip revs have problems here... */
+	sync			/* Some chip revs have problems here... */
+	isync
 	mtmsr	r0		/* Update machine state */
 	isync
 	blr			/* Done */
@@ -309,14 +365,19 @@ _GLOBAL(_tlbia)
 #endif /* CONFIG_SMP */
 	sync
 	tlbia
-	sync
 #ifdef CONFIG_SMP
+BEGIN_FTR_SECTION
+	DSSALL
+END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
+	sync
 	TLBSYNC
 	li	r0,0
 	stw	r0,0(r9)		/* clear hash_table_lock */
 	mtmsr	r10
 	SYNC
-#endif
+#else /* CONFIG_SMP */
+	sync
+#endif /* CONFIG_SMP */
 	blr	
 
 /*
@@ -478,9 +539,9 @@ _GLOBAL(invalidate_dcache_range)
  * snoop from the data cache.
  * This is a no-op on the 601 which has a unified cache.
  *
- *	void __flush_page_to_ram(void *page)
+ *	void __flush_dcache_icache(void *page)
  */
-_GLOBAL(__flush_page_to_ram)
+_GLOBAL(__flush_dcache_icache)
 	mfspr	r5,PVR
 	rlwinm	r5,r5,16,16,31
 	cmpi	0,r5,1
@@ -496,28 +557,6 @@ _GLOBAL(__flush_page_to_ram)
 	mtctr	r4
 1:	icbi	0,r6
 	addi	r6,r6,L1_CACHE_LINE_SIZE
-	bdnz	1b
-	sync
-	isync
-	blr
-
-/*
- * Flush a particular page from the instruction cache.
- * Note: this is necessary because the instruction cache does *not*
- * snoop from the data cache.
- * This is a no-op on the 601 which has a unified cache.
- *
- *	void __flush_icache_page(void *page)
- */
-_GLOBAL(__flush_icache_page)
-	mfspr	r5,PVR
-	rlwinm	r5,r5,16,16,31
-	cmpi	0,r5,1
-	beqlr					/* for 601, do nothing */
-	li	r4,4096/L1_CACHE_LINE_SIZE	/* Number of lines in a page */
-	mtctr	r4
-1:	icbi	0,r3
-	addi	r3,r3,L1_CACHE_LINE_SIZE
 	bdnz	1b
 	sync
 	isync
@@ -1122,6 +1161,7 @@ _GLOBAL(sys_call_table)
 	.long sys_madvise	/* 205 */
 	.long sys_mincore
 	.long sys_gettid
+	.long sys_tkill
 	.rept NR_syscalls-(.-sys_call_table)/4
 		.long sys_ni_syscall
 	.endr

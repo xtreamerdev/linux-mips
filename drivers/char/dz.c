@@ -63,7 +63,6 @@ extern int (*prom_printf) (char *,...);
 
 DECLARE_TASK_QUEUE(tq_serial);
 
-extern wait_queue_head_t keypress_wait;
 static struct dz_serial *lines[4];
 static unsigned char tmp_buffer[256];
 
@@ -212,16 +211,12 @@ static inline void receive_chars(struct dz_serial *info_in)
 		if (!(status & DZ_DVAL))
 			goto ignore_char;
 
-
 		ch = UCHAR(status);	/* grab the char */
 
 #if 0
 		if (info->is_console) {
 			if (ch == 0)
-				return;		/* it's a break ... */
-
-			/* It is a 'keyboard interrupt' ;-) */
-			wake_up(&keypress_wait);
+				return;	/* it's a break ... */
 		}
 #endif
 
@@ -1485,11 +1480,6 @@ static void dz_console_print(struct console *cons,
 	}
 }
 
-static int dz_console_wait_key(struct console *co)
-{
-	return 0;
-}
-
 static kdev_t dz_console_device(struct console *c)
 {
 	return MKDEV(TTY_MAJOR, 64 + c->index);
@@ -1588,7 +1578,6 @@ static struct console dz_sercons =
     name:	"ttyS",
     write:	dz_console_print,
     device:	dz_console_device,
-    wait_key:	dz_console_wait_key,
     setup:	dz_console_setup,
     flags:	CON_CONSDEV | CON_PRINTBUFFER,
     index:	CONSOLE_LINE,

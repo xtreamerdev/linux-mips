@@ -613,6 +613,9 @@ if [ "$CONFIG_SGI_IP22" = "y" ]; then
 fi
 
 source drivers/usb/Config.in
+
+source net/bluetooth/Config.in
+
 source drivers/input/Config.in
 
 mainmenu_option next_comment

@@ -806,27 +806,12 @@ static kdev_t ser_console_device(struct console *c)
 	return MKDEV(TTY_MAJOR, 64 + c->index);
 }
 
-static int ser_console_wait_key(struct console *cons)
-{
-	panic("ser_console_wait_key called");
-}
-
-static int ser_console_setup(struct console *cons, char *str)
-{
-	/* Initialize the transmitter */
-
-	duart_set_cflag(0, DEFAULT_CFLAGS);
-	return 0;
-}
-
 static struct console sb1250_ser_cons = {
-	name:		"ttyS",
-	write:		ser_console_write,
-	device:		ser_console_device,
-	wait_key:	ser_console_wait_key,
-	setup:		ser_console_setup,
-	flags:		CON_PRINTBUFFER,
-	index:		-1,
+    name:	"ttyS",
+    write:	ser_console_write,
+    device:	ser_console_device,
+    flags:	CON_PRINTBUFFER,
+    index:	-1,
 };
 
 void __init sb1250_serial_console_init(void)

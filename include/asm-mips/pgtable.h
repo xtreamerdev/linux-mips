@@ -53,6 +53,8 @@ extern void (*_flush_icache_all)(void);
 #define flush_page_to_ram(page)		_flush_page_to_ram(page)
 
 #define flush_icache_range(start, end)	_flush_icache_range(start,end)
+#define flush_icache_user_range(vma, page, addr, len) \
+					_flush_icache_page((vma), (page))
 #define flush_icache_page(vma, page) 	_flush_icache_page(vma, page)
 
 #define flush_cache_sigtramp(addr)	_flush_cache_sigtramp(addr)
@@ -282,7 +284,6 @@ static inline void pgd_clear(pgd_t *pgdp)	{ }
  * Permanent address of a page.  Obviously must never be called on a highmem
  * page.
  */
-#define page_address(page)	((page)->virtual)
 #ifdef CONFIG_CPU_VR41XX
 #define pte_page(x)             (mem_map+(unsigned long)((pte_val(x) >> (PAGE_SHIFT + 2))))
 #else

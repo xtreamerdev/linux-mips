@@ -94,13 +94,35 @@ extern const unsigned long mips_io_port_base;
 #endif
 
 /*
- * Change virtual addresses to physical addresses and vv.
- * These are trivial on the 1:1 Linux/MIPS mapping
+ *     virt_to_phys    -       map virtual addresses to physical
+ *     @address: address to remap
+ *
+ *     The returned physical address is the physical (CPU) mapping for
+ *     the memory address given. It is only valid to use this function on
+ *     addresses directly mapped or allocated via kmalloc. 
+ *
+ *     This function does not give bus mappings for DMA transfers. In
+ *     almost all conceivable cases a device driver should not be using
+ *     this function
  */
+
 static inline unsigned long virt_to_phys(volatile void * address)
 {
 	return PHYSADDR(address);
 }
+
+/*
+ *     phys_to_virt    -       map physical address to virtual
+ *     @address: address to remap
+ *
+ *     The returned virtual address is a current CPU mapping for
+ *     the memory address given. It is only valid to use this function on
+ *     addresses that have a kernel mapping
+ *
+ *     This function does not handle bus mappings for DMA transfers. In
+ *     almost all conceivable cases a device driver should not be using
+ *     this function
+ */
 
 static inline void * phys_to_virt(unsigned long address)
 {
@@ -131,12 +153,49 @@ extern unsigned long isa_slot_offset;
 /*
  * Change "struct page" to physical address.
  */
+#ifdef CONFIG_64BIT_PHYS_ADDR
+#define page_to_phys(page)	((u64)(page - mem_map) << PAGE_SHIFT)
+#else
 #define page_to_phys(page)	((page - mem_map) << PAGE_SHIFT)
+#endif
+
 
 extern void * __ioremap(phys_t offset, phys_t size, unsigned long flags);
 
+/*
+ *     ioremap         -       map bus memory into CPU space
+ *     @offset:        bus address of the memory
+ *     @size:          size of the resource to map
+ *
+ *     ioremap performs a platform specific sequence of operations to
+ *     make bus memory CPU accessible via the readb/readw/readl/writeb/
+ *     writew/writel functions and the other mmio helpers. The returned
+ *     address is not guaranteed to be usable directly as a virtual
+ *     address. 
+ */
+
 #define ioremap(offset, size)						\
 	__ioremap((offset), (size), _CACHE_UNCACHED)
+
+/*
+ *     ioremap_nocache         -       map bus memory into CPU space
+ *     @offset:        bus address of the memory
+ *     @size:          size of the resource to map
+ *
+ *     ioremap_nocache performs a platform specific sequence of operations to
+ *     make bus memory CPU accessible via the readb/readw/readl/writeb/
+ *     writew/writel functions and the other mmio helpers. The returned
+ *     address is not guaranteed to be usable directly as a virtual
+ *     address. 
+ *
+ *     This version of ioremap ensures that the memory is marked uncachable
+ *     on the CPU as well as honouring existing caching rules from things like
+ *     the PCI bus. Note that there are other caches and buffers on many 
+ *     busses. In paticular driver authors should read up on PCI writes
+ *
+ *     It's useful if some control registers are in such an area and
+ *     write combining or read caching is not desirable:
+ */
 #define ioremap_nocache(offset, size)					\
 	__ioremap((offset), (size), _CACHE_UNCACHED)
 #define ioremap_cacheable_cow(offset, size)				\
@@ -198,6 +257,16 @@ extern void iounmap(void *addr);
 #define eth_io_copy_and_sum(skb,src,len,unused) memcpy_fromio((skb)->data,(src),(len))
 #define isa_eth_io_copy_and_sum(a,b,c,d) eth_copy_and_sum((a),(b),(c),(d))
 
+/*
+ *     check_signature         -       find BIOS signatures
+ *     @io_addr: mmio address to check 
+ *     @signature:  signature block
+ *     @length: length of signature
+ *
+ *     Perform a signature comparison with the mmio address io_addr. This
+ *     address should have been obtained by ioremap.
+ *     Returns 1 on a match.
+ */
 static inline int check_signature(unsigned long io_addr,
                                   const unsigned char *signature, int length)
 {
@@ -213,7 +282,37 @@ static inline int check_signature(unsigned long io_addr,
 out:
 	return retval;
 }
-#define isa_check_signature(io, s, l) check_signature(i,s,l)
+
+/*
+ *     isa_check_signature             -       find BIOS signatures
+ *     @io_addr: mmio address to check 
+ *     @signature:  signature block
+ *     @length: length of signature
+ *
+ *     Perform a signature comparison with the ISA mmio address io_addr.
+ *     Returns 1 on a match.
+ *
+ *     This function is deprecated. New drivers should use ioremap and
+ *     check_signature.
+ */
+
+static inline int isa_check_signature(unsigned long io_addr,
+	const unsigned char *signature, int length)
+{
+	int retval = 0;
+	do {
+		if (isa_readb(io_addr) != *signature)
+			goto out;
+		io_addr++;
+		signature++;
+		length--;
+	} while (length);
+	retval = 1;
+out:
+	return retval;
+}
+
+
 
 
 #define outb(val,port)							\

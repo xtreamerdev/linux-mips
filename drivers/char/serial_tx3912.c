@@ -866,7 +866,6 @@ static struct console sercons = {
 	name:     "ttyS",
 	write:    serial_console_write,
 	device:   serial_console_device,
-	wait_key: serial_console_wait_key,
 	setup:    serial_console_setup,
 	flags:    CON_PRINTBUFFER,
 	index:    -1

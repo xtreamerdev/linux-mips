@@ -18,6 +18,7 @@
 #include <linux/linkage.h>
 #include <linux/mmzone.h>
 #include <asm/cachectl.h>
+#include <asm/io.h>
 
 /* Cache flushing:
  *
@@ -66,10 +67,12 @@ extern void andes_flush_icache_page(unsigned long);
 #define flush_cache_page(vma,page)	do { } while(0)
 #define flush_page_to_ram(page)		do { } while(0)
 #define flush_icache_range(start, end)	_flush_cache_l1()
+#define flush_icache_user_range(vma, page, addr, len) \
+	flush_icache_page((vma), (page))
 #define flush_icache_page(vma, page)					\
 do {									\
 	if ((vma)->vm_flags & VM_EXEC)					\
-		andes_flush_icache_page(page_address(page));		\
+		andes_flush_icache_page(phys_to_virt(page_to_phys(page))); \
 } while (0)
 
 #else
@@ -83,6 +86,8 @@ extern void (*_flush_icache_page)(struct vm_area_struct *vma, struct page *page)
 #define flush_cache_page(vma,page)	_flush_cache_page(vma, page)
 #define flush_page_to_ram(page)		_flush_page_to_ram(page)
 #define flush_icache_range(start, end)	_flush_icache_range(start, end)
+#define flush_icache_user_range(vma, page, addr, len) \
+	flush_icache_page((vma), (page))
 #define flush_icache_page(vma, page)	_flush_icache_page(vma, page)
 #ifdef CONFIG_VTAG_ICACHE
 #define flush_icache_all()		_flush_icache_all()
@@ -369,11 +374,6 @@ static inline void pgd_clear(pgd_t *pgdp)
 	pgd_val(*pgdp) = ((unsigned long) invalid_pmd_table);
 }
 
-/*
- * Permanent address of a page.  On MIPS64 we never have highmem, so this
- * is simple.
- */
-#define page_address(page)	((page)->virtual)
 #ifndef CONFIG_DISCONTIGMEM
 #define pte_page(x)		(mem_map+(unsigned long)((pte_val(x) >> PAGE_SHIFT)))
 #else
@@ -488,8 +488,8 @@ static inline pgprot_t pgprot_noncached(pgprot_t _prot)
 #define PAGE_TO_PA(page)	((page - mem_map) << PAGE_SHIFT)
 #else
 #define PAGE_TO_PA(page) \
-		((((page)-(page)->zone->zone_mem_map) << PAGE_SHIFT) \
-		+ ((page)->zone->zone_start_paddr))
+		((((page) - page_zone(page)->zone_mem_map) << PAGE_SHIFT) \
+		  + (page_zone(page)->zone_start_paddr))
 #endif
 #define mk_pte(page, pgprot)						\
 ({									\

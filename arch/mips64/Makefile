@@ -189,6 +189,7 @@ endif
 #
 ifdef CONFIG_BOOT_ELF32
 CFLAGS += -Wa,-32
+AFLAGS += -Wa,-32
 LINKFLAGS += -T arch/mips64/ld.script.elf32
 endif
 #
@@ -197,6 +198,7 @@ endif
 #
 ifdef CONFIG_BOOT_ELF64
 CFLAGS += -Wa,-32
+AFLAGS += -Wa,-32
 LINKFLAGS += -T arch/mips64/ld.script.elf32
 #AS += -64
 #LD += -m elf64bmip

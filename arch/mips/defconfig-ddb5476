@@ -129,7 +129,9 @@ CONFIG_BINFMT_ELF=y
 # CONFIG_PARIDE is not set
 # CONFIG_BLK_CPQ_DA is not set
 # CONFIG_BLK_CPQ_CISS_DA is not set
+# CONFIG_CISS_SCSI_TAPE is not set
 # CONFIG_BLK_DEV_DAC960 is not set
+# CONFIG_BLK_DEV_UMEM is not set
 # CONFIG_BLK_DEV_LOOP is not set
 # CONFIG_BLK_DEV_NBD is not set
 # CONFIG_BLK_DEV_RAM is not set
@@ -178,6 +180,11 @@ CONFIG_IP_PNP_BOOTP=y
 #
 # CONFIG_IPX is not set
 # CONFIG_ATALK is not set
+
+#
+# Appletalk devices
+#
+# CONFIG_DEV_APPLETALK is not set
 # CONFIG_DECNET is not set
 # CONFIG_BRIDGE is not set
 # CONFIG_X25 is not set
@@ -193,6 +200,11 @@ CONFIG_IP_PNP_BOOTP=y
 # QoS and/or fair queueing
 #
 # CONFIG_NET_SCHED is not set
+
+#
+# Network testing
+#
+# CONFIG_NET_PKTGEN is not set
 
 #
 # Telephony Support
@@ -218,6 +230,7 @@ CONFIG_BLK_DEV_IDE=y
 # CONFIG_BLK_DEV_HD is not set
 CONFIG_BLK_DEV_IDEDISK=y
 # CONFIG_IDEDISK_MULTI_MODE is not set
+# CONFIG_IDEDISK_STROKE is not set
 # CONFIG_BLK_DEV_IDEDISK_VENDOR is not set
 # CONFIG_BLK_DEV_IDEDISK_FUJITSU is not set
 # CONFIG_BLK_DEV_IDEDISK_IBM is not set
@@ -232,6 +245,7 @@ CONFIG_BLK_DEV_IDEDISK=y
 # CONFIG_BLK_DEV_IDETAPE is not set
 # CONFIG_BLK_DEV_IDEFLOPPY is not set
 # CONFIG_BLK_DEV_IDESCSI is not set
+# CONFIG_IDE_TASK_IOCTL is not set
 
 #
 # IDE chipset support/bugfixes
@@ -243,12 +257,15 @@ CONFIG_BLK_DEV_IDEDISK=y
 CONFIG_BLK_DEV_IDEPCI=y
 # CONFIG_IDEPCI_SHARE_IRQ is not set
 # CONFIG_BLK_DEV_IDEDMA_PCI is not set
-# CONFIG_BLK_DEV_ADMA is not set
 # CONFIG_BLK_DEV_OFFBOARD is not set
+# CONFIG_BLK_DEV_IDEDMA_FORCED is not set
 # CONFIG_IDEDMA_PCI_AUTO is not set
+# CONFIG_IDEDMA_ONLYDISK is not set
 # CONFIG_BLK_DEV_IDEDMA is not set
 # CONFIG_IDEDMA_PCI_WIP is not set
+# CONFIG_BLK_DEV_IDEDMA_TIMEOUT is not set
 # CONFIG_IDEDMA_NEW_DRIVE_LISTINGS is not set
+# CONFIG_BLK_DEV_ADMA is not set
 # CONFIG_BLK_DEV_AEC62XX is not set
 # CONFIG_AEC62XX_TUNING is not set
 # CONFIG_BLK_DEV_ALI15X3 is not set
@@ -256,6 +273,7 @@ CONFIG_BLK_DEV_IDEPCI=y
 # CONFIG_BLK_DEV_AMD74XX is not set
 # CONFIG_AMD74XX_OVERRIDE is not set
 # CONFIG_BLK_DEV_CMD64X is not set
+# CONFIG_BLK_DEV_CMD680 is not set
 # CONFIG_BLK_DEV_CY82C693 is not set
 # CONFIG_BLK_DEV_CS5530 is not set
 # CONFIG_BLK_DEV_HPT34X is not set
@@ -372,6 +390,7 @@ CONFIG_NE2K_PCI=y
 # CONFIG_HAMACHI is not set
 # CONFIG_YELLOWFIN is not set
 # CONFIG_SK98LIN is not set
+# CONFIG_TIGON3 is not set
 # CONFIG_FDDI is not set
 # CONFIG_HIPPI is not set
 # CONFIG_PLIP is not set
@@ -441,6 +460,7 @@ CONFIG_MOUSE=y
 CONFIG_PSMOUSE=y
 # CONFIG_82C710_MOUSE is not set
 # CONFIG_PC110_PAD is not set
+# CONFIG_MK712_MOUSE is not set
 
 #
 # Joysticks
@@ -460,7 +480,6 @@ CONFIG_PSMOUSE=y
 # Watchdog Cards
 #
 # CONFIG_WATCHDOG is not set
-# CONFIG_INTEL_RNG is not set
 # CONFIG_NVRAM is not set
 # CONFIG_RTC is not set
 # CONFIG_DTLK is not set
@@ -505,7 +524,7 @@ CONFIG_PSMOUSE=y
 # CONFIG_JFFS2_FS is not set
 # CONFIG_CRAMFS is not set
 # CONFIG_TMPFS is not set
-# CONFIG_RAMFS is not set
+CONFIG_RAMFS=y
 # CONFIG_ISO9660_FS is not set
 # CONFIG_JOLIET is not set
 # CONFIG_ZISOFS is not set
@@ -576,12 +595,14 @@ CONFIG_DUMMY_CONSOLE=y
 # CONFIG_FB_RIVA is not set
 # CONFIG_FB_CLGEN is not set
 # CONFIG_FB_PM2 is not set
+# CONFIG_FB_PM3 is not set
 # CONFIG_FB_CYBER2000 is not set
 # CONFIG_FB_MATROX is not set
 # CONFIG_FB_ATY is not set
 # CONFIG_FB_RADEON is not set
 # CONFIG_FB_ATY128 is not set
 # CONFIG_FB_SIS is not set
+# CONFIG_FB_NEOMAGIC is not set
 CONFIG_FB_3DFX=y
 # CONFIG_FB_VOODOO1 is not set
 # CONFIG_FB_TRIDENT is not set
@@ -606,107 +627,9 @@ CONFIG_FONT_8x16=y
 # CONFIG_USB is not set
 
 #
-# USB Controllers
+# Bluetooth support
 #
-# CONFIG_USB_UHCI is not set
-# CONFIG_USB_UHCI_ALT is not set
-# CONFIG_USB_OHCI is not set
-
-#
-# USB Device Class drivers
-#
-# CONFIG_USB_AUDIO is not set
-# CONFIG_USB_BLUETOOTH is not set
-
-#
-#   SCSI support is needed for USB Storage
-#
-# CONFIG_USB_STORAGE is not set
-# CONFIG_USB_STORAGE_DEBUG is not set
-# CONFIG_USB_STORAGE_DATAFAB is not set
-# CONFIG_USB_STORAGE_FREECOM is not set
-# CONFIG_USB_STORAGE_ISD200 is not set
-# CONFIG_USB_STORAGE_DPCM is not set
-# CONFIG_USB_STORAGE_HP8200e is not set
-# CONFIG_USB_STORAGE_SDDR09 is not set
-# CONFIG_USB_STORAGE_JUMPSHOT is not set
-# CONFIG_USB_ACM is not set
-# CONFIG_USB_PRINTER is not set
-
-#
-# USB Human Interface Devices (HID)
-#
-
-#
-#   Input core support is needed for USB HID
-#
-
-#
-# USB Imaging devices
-#
-# CONFIG_USB_DC2XX is not set
-# CONFIG_USB_MDC800 is not set
-# CONFIG_USB_SCANNER is not set
-# CONFIG_USB_MICROTEK is not set
-# CONFIG_USB_HPUSBSCSI is not set
-
-#
-# USB Multimedia devices
-#
-
-#
-#   Video4Linux support is needed for USB Multimedia device support
-#
-
-#
-# USB Network adaptors
-#
-# CONFIG_USB_PEGASUS is not set
-# CONFIG_USB_KAWETH is not set
-# CONFIG_USB_CATC is not set
-# CONFIG_USB_CDCETHER is not set
-# CONFIG_USB_USBNET is not set
-
-#
-# USB port drivers
-#
-# CONFIG_USB_USS720 is not set
-
-#
-# USB Serial Converter support
-#
-# CONFIG_USB_SERIAL is not set
-# CONFIG_USB_SERIAL_GENERIC is not set
-# CONFIG_USB_SERIAL_BELKIN is not set
-# CONFIG_USB_SERIAL_WHITEHEAT is not set
-# CONFIG_USB_SERIAL_DIGI_ACCELEPORT is not set
-# CONFIG_USB_SERIAL_EMPEG is not set
-# CONFIG_USB_SERIAL_FTDI_SIO is not set
-# CONFIG_USB_SERIAL_VISOR is not set
-# CONFIG_USB_SERIAL_IPAQ is not set
-# CONFIG_USB_SERIAL_IR is not set
-# CONFIG_USB_SERIAL_EDGEPORT is not set
-# CONFIG_USB_SERIAL_KEYSPAN_PDA is not set
-# CONFIG_USB_SERIAL_KEYSPAN is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA28 is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA28X is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA28XA is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA28XB is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA19 is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA18X is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA19W is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA49W is not set
-# CONFIG_USB_SERIAL_MCT_U232 is not set
-# CONFIG_USB_SERIAL_KLSI is not set
-# CONFIG_USB_SERIAL_PL2303 is not set
-# CONFIG_USB_SERIAL_CYBERJACK is not set
-# CONFIG_USB_SERIAL_XIRCOM is not set
-# CONFIG_USB_SERIAL_OMNINET is not set
-
-#
-# USB Miscellaneous drivers
-#
-# CONFIG_USB_RIO500 is not set
+# CONFIG_BLUEZ is not set
 
 #
 # Input core support

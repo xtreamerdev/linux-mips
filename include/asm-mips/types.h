@@ -71,7 +71,11 @@ typedef unsigned long long u64;
 
 #define BITS_PER_LONG _MIPS_SZLONG
 
+#ifdef CONFIG_64BIT_PHYS_ADDR
 typedef u32 dma_addr_t;
+#else
+typedef u64 dma_addr_t;
+#endif
 typedef u64 dma64_addr_t;
 
 #ifdef CONFIG_64BIT_PHYS_ADDR
