@@ -90,6 +90,8 @@
 #define I2C_DRIVERID_DRP3510	43     /* ADR decoder (Astra Radio)	*/
 #define I2C_DRIVERID_SP5055	44     /* Satellite tuner		*/
 #define I2C_DRIVERID_STV0030	45     /* Multipurpose switch		*/
+#define I2C_DRIVERID_SAA7114H	46     /* video decoder			*/
+#define I2C_DRIVERID_MAX1617	47     /* temp sensor			*/
 
 #define I2C_DRIVERID_EXP0	0xF0	/* experimental use id's	*/
 #define I2C_DRIVERID_EXP1	0xF1
@@ -148,6 +150,8 @@
 
 #define I2C_ALGO_MPC8XX 0x110000	/* MPC8xx PowerPC I2C algorithm */
 
+#define I2C_ALGO_SIBYTE 0x120000	/* Broadcom SiByte SOCs		*/
+
 #define I2C_ALGO_EXP	0x800000	/* experimental			*/
 
 #define I2C_ALGO_MASK	0xff0000	/* Mask for algorithms		*/
@@ -188,6 +192,9 @@
 
 /* --- MPC8xx PowerPC adapters						*/
 #define I2C_HW_MPC8XX_EPON 0x00	/* Eponymous MPC8xx I2C adapter 	*/
+
+/* --- Broadcom SiByte adapters						*/
+#define I2C_HW_SIBYTE	0x00
 
 /* --- SMBus only adapters						*/
 #define I2C_HW_SMBUS_PIIX4	0x00
