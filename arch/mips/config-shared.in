@@ -563,35 +563,42 @@ endmenu
 #
 mainmenu_option next_comment
 comment 'General setup'
-if [ "$CONFIG_MIPS_ATLAS" = "y" -o \
-     "$CONFIG_MIPS_MALTA" = "y" -o \
-     "$CONFIG_MIPS_SEAD" = "y" -o \
-     "$CONFIG_MIPS_MAGNUM_4000" = "y" -o \
+if [ "$CONFIG_ACER_PICA_61" = "y" -o \
+     "$CONFIG_CASIO_E55" = "y" -o \
+     "$CONFIG_DDB5074" = "y" -o \
      "$CONFIG_DDB5476" = "y" -o \
-     "$CONFIG_DDB5477" = "y" ]; then
-   bool 'Generate little endian code' CONFIG_CPU_LITTLE_ENDIAN
+     "$CONFIG_DDB5477" = "y" -o \
+     "$CONFIG_DECSTATION" = "y" -o \
+     "$CONFIG_HP_LASERJET" = "y" -o \
+     "$CONFIG_IBM_WORKPAD" = "y" -o \
+     "$CONFIG_LASAT" = "y" -o \
+     "$CONFIG_MIPS_COBALT" = "y" -o \
+     "$CONFIG_MIPS_ITE8172" = "y" -o \
+     "$CONFIG_MIPS_IVR" = "y" -o \
+     "$CONFIG_MIPS_PB1000" = "y" -o \
+     "$CONFIG_MIPS_PB1100" = "y" -o \
+     "$CONFIG_MIPS_PB1500" = "y" -o \
+     "$CONFIG_NEC_OSPREY" = "y" -o \
+     "$CONFIG_NEC_EAGLE" = "y" -o \
+     "$CONFIG_NINO" = "y" -o \
+     "$CONFIG_OLIVETTI_M700" = "y" -o \
+     "$CONFIG_SNI_RM200_PCI" = "y" -o \
+     "$CONFIG_VICTOR_MPC30X" = "y" -o \
+     "$CONFIG_ZAO_CAPCELLA" = "y" ]; then
+   define_bool CONFIG_CPU_LITTLE_ENDIAN y
 else
-   if [ "$CONFIG_CASIO_E55" = "y" -o \
-	"$CONFIG_DECSTATION"  = "y" -o \
-	"$CONFIG_DDB5074"     = "y" -o \
-	"$CONFIG_HP_LASERJET" = "y" -o \
-	"$CONFIG_IBM_WORKPAD" = "y" -o \
-	"$CONFIG_LASAT" = "y" -o \
-	"$CONFIG_MIPS_IVR" = "y" -o \
-	"$CONFIG_MIPS_COBALT" = "y" -o \
-	"$CONFIG_MIPS_ITE8172" = "y" -o \
-	"$CONFIG_MIPS_PB1000" = "y" -o \
-	"$CONFIG_MIPS_PB1100" = "y" -o \
-	"$CONFIG_MIPS_PB1500" = "y" -o \
-	"$CONFIG_NEC_EAGLE" = "y" -o \
-	"$CONFIG_NEC_OSPREY" = "y" -o \
-	"$CONFIG_NINO"        = "y" -o \
-	"$CONFIG_SNI_RM200_PCI" = "y" -o \
-	"$CONFIG_VICTOR_MPC30X" = "y" -o \
-	"$CONFIG_ZAO_CAPCELLA" = "y" ]; then
-      define_bool CONFIG_CPU_LITTLE_ENDIAN y
-   else
+   if [ "$CONFIG_BAGET_MIPS" = "y" -o \
+	"$CONFIG_MIPS_EV64120" = "y" -o \
+	"$CONFIG_MIPS_EV96100" = "y" -o \
+	"$CONFIG_MOMENCO_OCELOT" = "y" -o \
+	"$CONFIG_MOMENCO_OCELOT_G" = "y" -o \
+	"$CONFIG_SGI_IP22" = "y" -o \
+	"$CONFIG_SGI_IP27" = "y" -o \
+	"$CONFIG_SGI_IP32" = "y" -o \
+	"$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
       define_bool CONFIG_CPU_LITTLE_ENDIAN n
+   else
+      bool 'Generate little endian code' CONFIG_CPU_LITTLE_ENDIAN
    fi
 fi
 
