@@ -63,6 +63,11 @@ static __inline__ void ide_init_default_hwifs(void)
 #endif /* CONFIG_BLK_DEV_IDEPCI */
 }
 
+#ifdef CONFIG_PCMCIA_SIBYTE
+#define IDE_ARCH_ACK_INTR
+#define ide_ack_intr(hwif)    ((hwif)->hw.ack_intr ? (hwif)->hw.ack_intr(hwif) : 1)
+#endif
+
 #include <asm-generic/ide_iops.h>
 
 #endif /* __KERNEL__ */
