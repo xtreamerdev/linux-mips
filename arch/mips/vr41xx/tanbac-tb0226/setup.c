@@ -91,7 +91,9 @@ void __init tanbac_tb0226_setup(void)
 
 	vr41xx_cmu_init();
 
+#ifdef CONFIG_SERIAL
 	vr41xx_siu_init(SIU_RS232C, 0);
+#endif
 
 #ifdef CONFIG_PCI
 	vr41xx_pciu_init(&pci_address_map);

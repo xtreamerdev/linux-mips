@@ -50,5 +50,7 @@ void __init casio_e55_setup(void)
 
 	vr41xx_cmu_init();
 
+#ifdef CONFIG_SERIAL
 	vr41xx_siu_init(SIU_RS232C, 0);
+#endif
 }
