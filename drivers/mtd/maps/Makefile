@@ -56,6 +56,7 @@ obj-$(CONFIG_MTD_XXS1500)       += xxs1500.o
 obj-$(CONFIG_MTD_MTX1)		+= mtx-1.o
 obj-$(CONFIG_MTD_LASAT)		+= lasat.o
 obj-$(CONFIG_MTD_DB1X00)        += db1x00-flash.o
+obj-$(CONFIG_MTD_PB1550)        += pb1550-flash.o
 obj-$(CONFIG_MTD_HYDROGEN3)     += hydrogen3-flash.o
 obj-$(CONFIG_MTD_BOSPORUS)	+= pb1xxx-flash.o
 obj-$(CONFIG_MTD_AUTCPU12)	+= autcpu12-nvram.o

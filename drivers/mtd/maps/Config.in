@@ -64,6 +64,11 @@ if [ "$CONFIG_MIPS" = "y" ]; then
       bool '  Db1x00 boot flash device' CONFIG_MTD_DB1X00_BOOT 
       bool '  Db1x00 user flash device (2nd bank)' CONFIG_MTD_DB1X00_USER
    fi
+   tristate '  Pb1550 MTD support' CONFIG_MTD_PB1550
+   if [ "$CONFIG_MTD_PB1550" = "y" -o "$CONFIG_MTD_PB1550" = "m" ]; then
+      bool '  Pb1550 Boot Flash' CONFIG_MTD_PB1550_BOOT
+      bool '  Pb1550 User Parameter Flash' CONFIG_MTD_PB1550_USER
+   fi
    dep_tristate '  Hydrogen 3 MTD support' CONFIG_MTD_HYDROGEN3 $CONFIG_MIPS_HYDROGEN3
    dep_tristate '  Mirage MTD support' CONFIG_MTD_MIRAGE $CONFIG_MIPS_MIRAGE
    dep_tristate '  Flash chip mapping on ITE QED-4N-S01B, Globespan IVR or custom board' CONFIG_MTD_CSTM_MIPS_IXX $CONFIG_MTD_CFI $CONFIG_MTD_JEDEC $CONFIG_MTD_PARTITIONS 

@@ -197,6 +197,11 @@ extern au1xxx_irq_map_t au1xxx_irq_map[];
 #define MEM_STTIME3                0xB4001034
 #define MEM_STADDR3                0xB4001038
 
+#ifdef CONFIG_SOC_AU1550
+#define MEM_STNDCTL                0xB4001100
+#define MEM_STSTAT                 0xB4001104
+#endif
+
 /* Interrupt Controller 0 */
 #define IC0_CFG0RD                 0xB0400040
 #define IC0_CFG0SET                0xB0400040
@@ -959,7 +964,7 @@ extern au1xxx_irq_map_t au1xxx_irq_map[];
 #define SYS_PINSTATERD            0xB1900110
 #define SYS_PININPUTEN            0xB1900110
 
-/* GPIO2, Au1500 only */
+/* GPIO2, Au1500, Au1550 only */
 #define GPIO2_BASE                0xB1700000
 #define GPIO2_DIR                 (GPIO2_BASE + 0)
 #define GPIO2_OUTPUT              (GPIO2_BASE + 8)
