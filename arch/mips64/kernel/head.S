@@ -105,11 +105,8 @@ NESTED(kernel_entry, 16, sp)			# kernel entry point
 
 	CLI					# disable interrupts
 
-	PTR_LA	$28, init_task_union		# init current pointer
-	daddiu	sp, $28, KERNEL_STACK_SIZE-32
-	set_saved_sp	sp, t0, t1
-
-	/* The firmware/bootloader passes argc/argp/envp
+	/*
+	 * The firmware/bootloader passes argc/argp/envp
 	 * to us as arguments.  But clear bss first because
 	 * the romvec and other important info is stored there
 	 * by prom_init().
@@ -122,6 +119,9 @@ NESTED(kernel_entry, 16, sp)			# kernel entry point
 	sd	zero, (t0)
 	bne	t0, t1, 1b
 
+	PTR_LA	$28, init_task_union		# init current pointer
+	daddiu	sp, $28, KERNEL_STACK_SIZE-32
+	set_saved_sp	sp, t0, t1
 	dsubu	sp, 4*SZREG			# init stack pointer
 
 	j	init_arch
