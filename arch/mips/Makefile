@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.17 1999/05/02 20:56:18 harald Exp $
+# $Id: Makefile,v 1.17.2.1 1999/08/18 23:11:26 ralf Exp $
 #
 # This file is subject to the terms and conditions of the GNU General Public
 # License.  See the file "COPYING" in the main directory of this archive
@@ -134,7 +134,6 @@ SUBDIRS       += arch/mips/sgi/kernel arch/mips/arc
 # 8kb aligned or the handling of the current variable will break.
 #
 LOADADDR      += 0x88002000
-HOSTCC        = cc
 endif
 
 #

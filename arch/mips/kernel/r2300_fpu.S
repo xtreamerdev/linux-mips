@@ -1,4 +1,4 @@
-/* $Id: r2300_fpu.S,v 1.4 1999/04/11 17:13:55 harald Exp $
+/* $Id: r2300_fpu.S,v 1.5 1999/05/01 22:40:36 ralf Exp $
  * r2300_fpu.S: Save/restore floating point context for signal handlers.
  *
  * This file is subject to the terms and conditions of the GNU General Public
@@ -14,6 +14,7 @@
  * Copyright (c) 1998 Harald Koerfgen
  */
 #include <asm/asm.h>
+#include <asm/errno.h>
 #include <asm/fpregdef.h>
 #include <asm/mipsregs.h>
 #include <asm/offset.h>
@@ -29,7 +30,7 @@
 	.set	mips1
 	/* Save floating point context */
 LEAF(r2300_save_fp_context)
-
+	li	v0, 0					# assume success
 	cfc1	t1,fcr31
 	EX(swc1	$f0,(SC_FPREGS+0)(a0))
 	EX(swc1	$f1,(SC_FPREGS+8)(a0))
@@ -81,6 +82,7 @@ LEAF(r2300_save_fp_context)
  * stack frame which might have been changed by the user.
  */
 LEAF(r2300_restore_fp_context)
+	li	v0, 0					# assume success
 	EX(lw t0,SC_FPC_CSR(a0))
 	EX(lwc1	$f0,(SC_FPREGS+0)(a0))
 	EX(lwc1	$f1,(SC_FPREGS+8)(a0))
@@ -117,3 +119,9 @@ LEAF(r2300_restore_fp_context)
 	jr	ra
 	 ctc1	t0,fcr31
 	END(r2300_restore_fp_context)
+
+	.type	fault@function
+	.ent	fault
+fault:	li	v0, -EFAULT
+	jr	ra
+	.end	fault

@@ -10,9 +10,10 @@
  * Multi-arch abstraction and asm macros for easier reading:
  * Copyright (C) 1996 David S. Miller (dm@engr.sgi.com)
  *
- * $Id: r4k_fpu.S,v 1.5 1999/05/01 22:40:36 ralf Exp $
+ * $Id: r4k_fpu.S,v 1.5.2.1 1999/08/18 23:11:27 ralf Exp $
  */
 #include <asm/asm.h>
+#include <asm/errno.h>
 #include <asm/fpregdef.h>
 #include <asm/mipsregs.h>
 #include <asm/offset.h>
@@ -21,13 +22,14 @@
 #define EX(a,b)							\
 9:	a,##b;							\
 	.section __ex_table,"a";				\
-	PTR	9b,bad_stack;					\
+	PTR	9b, fault;					\
 	.previous
 
 	.set	noreorder
 	.set	mips3
 	/* Save floating point context */
 LEAF(r4k_save_fp_context)
+	li	v0, 0					# assume success
 	cfc1	t1,fcr31
 
 	/* Store the 16 even double precision registers */
@@ -66,6 +68,7 @@ LEAF(r4k_save_fp_context)
  * stack frame which might have been changed by the user.
  */
 LEAF(r4k_restore_fp_context)
+	li	v0, 0					# assume success
 	EX(lw	t0,SC_FPC_CSR(a0))
 
 	/*
@@ -91,3 +94,9 @@ LEAF(r4k_restore_fp_context)
 	jr	ra
 	 ctc1	t0,fcr31
 	END(r4k_restore_fp_context)
+
+	.type	fault@function
+	.ent	fault
+fault:	li	v0, -EFAULT
+	jr	ra
+	.end	fault
