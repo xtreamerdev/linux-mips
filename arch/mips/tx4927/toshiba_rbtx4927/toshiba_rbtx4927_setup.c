@@ -913,8 +913,7 @@ void toshiba_rbtx4927_nmi (struct pt_regs *regs)
 	extern void show_runqueue(void);
 	extern void show_stack(unsigned int *sp);
 	extern void show_state_nolock(void);
-	extern void show_trace(unsigned long *sp, unsigned int *ra,
-			       unsigned int *pc);
+	extern void show_trace(long *sp);
 
 	bust_spinlocks(1);
 	printk("\ncurrent = %d:%s\n",current->pid,current->comm);
@@ -922,9 +921,7 @@ void toshiba_rbtx4927_nmi (struct pt_regs *regs)
 	printk("Process %s (pid: %d, stackpage=%08lx)\n",
 		current->comm, current->pid, (unsigned long) current);
 	show_stack((unsigned int *)regs->regs[29]);
-	show_trace((unsigned long *)regs->regs[29], 
-	           (unsigned int *)regs->regs[31],
-	           (unsigned int *)regs->cp0_epc);
+	show_trace(regs->regs[29]);
 	show_code((unsigned int *)regs->cp0_epc);
 	bust_spinlocks(0);
 }
