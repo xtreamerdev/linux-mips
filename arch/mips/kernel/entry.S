@@ -28,7 +28,7 @@
 
 
 		.text
-		.align 4
+		.align	5
 		.set	push
 		.set	reorder
 FEXPORT(ret_from_irq)
