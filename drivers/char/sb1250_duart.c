@@ -57,6 +57,7 @@
 
 #define DEFAULT_CFLAGS          (CS8 | B115200)
 
+#define SB1250_DUART_MINOR_BASE	64
 
 /*
  * Still not sure what the termios structures set up here are for, 
@@ -129,13 +130,23 @@ static inline void duart_unmask_ints(unsigned int line, unsigned int mask)
 
 static inline unsigned long get_status_reg(unsigned int line)
 {
-	return in64(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_STATUS));
+	uint64_t status;
+
+	/* Workaround the UART synchronizer bug XXXKW Pass 2 Workaround */
+#ifdef CONFIG_SB1_PASS_2_WORKAROUNDS
+	in64(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_CMD));
+#endif
+	status = in64(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_STATUS));
+#ifdef CONFIG_SB1_PASS_2_WORKAROUNDS
+	in64(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_CMD));
+#endif
+	return status;
 }
 
 /* Derive which uart a call is for from the passed tty line.  */
 static inline unsigned int get_line(struct tty_struct *tty) 
 {
-	unsigned int line = MINOR(tty->device) - 64;
+	unsigned int line = MINOR(tty->device) - tty->driver.minor_start;
 	if (line > 1)
 		printk(KERN_CRIT "Invalid line\n");
 
@@ -560,11 +571,11 @@ static void duart_wait_until_sent(struct tty_struct *tty, int timeout)
 }
 
 /*
- * rs_hangup() --- called by tty_hangup() when a hangup is signaled.
+ * duart_hangup() --- called by tty_hangup() when a hangup is signaled.
  */
 static void duart_hangup(struct tty_struct *tty)
 {
-	uart_state_t *info = (uart_state_t *) tty->driver_data;
+	//uart_state_t *info = (uart_state_t *) tty->driver_data;
 
 	//info->tty = 0;
 	//wake_up_interruptible(&info->open_wait);
@@ -577,7 +588,7 @@ static void duart_hangup(struct tty_struct *tty)
  */
 static int duart_open(struct tty_struct *tty, struct file *filp)
 {
-	uart_state_t *us = (uart_state_t *) tty->driver_data;
+	uart_state_t *us;
 	unsigned long flags;
 	unsigned int line;
 
@@ -677,7 +688,7 @@ static int __init sb1250_duart_init(void)
 	sb1250_duart_driver.name             = "ttyS";
 #endif
 	sb1250_duart_driver.major            = TTY_MAJOR;
-	sb1250_duart_driver.minor_start      = 64;
+	sb1250_duart_driver.minor_start      = SB1250_DUART_MINOR_BASE;
 	sb1250_duart_driver.num              = 2;
 	sb1250_duart_driver.type             = TTY_DRIVER_TYPE_SERIAL;
 	sb1250_duart_driver.subtype          = SERIAL_TYPE_NORMAL;
@@ -715,11 +726,13 @@ static int __init sb1250_duart_init(void)
 	if (request_irq(K_INT_UART_0, duart_int, 0, "uart0", &uart_states[0])) {
 		panic("Couldn't get uart0 interrupt line");
 	}
+	out64(M_DUART_RX_EN|M_DUART_TX_EN, IO_SPACE_BASE | A_DUART_CHANREG(0, R_DUART_CMD));
 #ifndef CONFIG_SIBYTE_SB1250_DUART_NO_PORT_1
 	duart_mask_ints(1, 0xf);
 	if (request_irq(K_INT_UART_1, duart_int, 0, "uart1", &uart_states[1])) {
 		panic("Couldn't get uart1 interrupt line");
 	}
+	out64(M_DUART_RX_EN|M_DUART_TX_EN, IO_SPACE_BASE | A_DUART_CHANREG(1, R_DUART_CMD));
 #endif	
 
 	/* Interrupts are now active, our ISR can be called. */
@@ -743,8 +756,7 @@ static void __exit sb1250_duart_fini(void)
 	unsigned long flags;
 	int ret;
 
-	save_flags(flags);
-	cli();
+	save_and_cli(flags);
 	ret = tty_unregister_driver(&sb1250_duart_callout_driver);
 	if (ret) {
 		printk(KERN_ERR "Unable to unregister sb1250 duart callout driver (%d)\n", ret);
@@ -754,12 +766,11 @@ static void __exit sb1250_duart_fini(void)
 		printk(KERN_ERR "Unable to unregister sb1250 duart serial driver (%d)\n", ret);
 	}
 	free_irq(K_INT_UART_0, &uart_states[0]);
-	free_irq(K_INT_UART_1, &uart_states[1]);
-
-	/* mask lines in the scd */
 	disable_irq(K_INT_UART_0);
+#ifndef CONFIG_SIBYTE_SB1250_DUART_NO_PORT_1
+	free_irq(K_INT_UART_1, &uart_states[1]);
 	disable_irq(K_INT_UART_1);
-
+#endif
 	restore_flags(flags);
 }
 
@@ -768,23 +779,20 @@ module_exit(sb1250_duart_fini);
 MODULE_DESCRIPTION("SB1250 Duart serial driver");
 MODULE_AUTHOR("Justin Carlson <carlson@sibyte.com>");
 
-#ifdef CONFIG_SERIAL_CONSOLE
+#ifdef CONFIG_SIBYTE_SB1250_DUART_CONSOLE
 
 /*
- * Serial console stuff. 
- * Very basic, polling driver for doing serial console output. 
- * FIXME; there is a race here; we can't be sure that
- * the tx is still empty without holding outp_lock for this line.
- * Worst that can happen for now, though, is dropped characters.
+ * Serial console stuff.  Very basic, polling driver for doing serial
+ * console output.  The console_sem is held by the caller, so we
+ * shouldn't be interrupted for more console activity.
+ * XXXKW What about getting interrupted by uart driver activity?
  */
 
 static void ser_console_write(struct console *cons, const char *str,
                               unsigned int count)
 {
-	unsigned long flags;
 	unsigned int i;
 
-	spin_lock_irqsave(&uart_states[0].outp_lock, flags);
 	for (i = 0; i < count; i++) {
                 if (str[i] == '\n') {
                         /* Expand LF -> CRLF */
@@ -798,20 +806,35 @@ static void ser_console_write(struct console *cons, const char *str,
 		}
 		out64(str[i], IO_SPACE_BASE | A_DUART_CHANREG(0, R_DUART_TX_HOLD));
 	}
-	spin_unlock_irqrestore(&uart_states[0].outp_lock, flags);
+	/*
+	 * Make sure we leave room, in case the higher-level uart
+         * driver expects it
+	 */
+	while (!(get_status_reg(0) & M_DUART_TX_RDY)) {
+		/* Spin, doing nothing.  */
+	}
 }
 
 static kdev_t ser_console_device(struct console *c)
 {
-	return MKDEV(TTY_MAJOR, 64 + c->index);
+	return MKDEV(TTY_MAJOR, SB1250_DUART_MINOR_BASE + c->index);
+}
+
+static int ser_console_setup(struct console *cons, char *str)
+{
+	/* Initialize the transmitter */
+	
+	duart_set_cflag(0, DEFAULT_CFLAGS);
+	return 0;
 }
 
 static struct console sb1250_ser_cons = {
-    name:	"ttyS",
-    write:	ser_console_write,
-    device:	ser_console_device,
-    flags:	CON_PRINTBUFFER,
-    index:	-1,
+	name:		"ttyS",
+	write:		ser_console_write,
+	device:		ser_console_device,
+	setup:		ser_console_setup,
+	flags:		CON_PRINTBUFFER,
+	index:		-1,
 };
 
 void __init sb1250_serial_console_init(void)
@@ -819,4 +842,4 @@ void __init sb1250_serial_console_init(void)
 	register_console(&sb1250_ser_cons);
 }
 
-#endif /* CONFIG_SERIAL_CONSOLE */
+#endif /* CONFIG_SIBYTE_SB1250_DUART_CONSOLE */
