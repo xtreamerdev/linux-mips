@@ -1,4 +1,4 @@
-/* $Id: ds1286.c,v 1.3 1999/01/04 16:07:19 ralf Exp $
+/* $Id: ds1286.c,v 1.3.2.1 1999/06/13 21:52:18 ralf Exp $
  *
  *	Real Time Clock interface for Linux	
  *
@@ -53,7 +53,7 @@
  *	ioctls.
  */
 
-static struct wait_queue *ds1286_wait;
+static DECLARE_WAIT_QUEUE_HEAD(ds1286_wait);
 
 static long long ds1286_llseek(struct file *file, loff_t offset, int origin);
 
@@ -110,7 +110,7 @@ static long long ds1286_llseek(struct file *file, loff_t offset, int origin)
 static ssize_t ds1286_read(struct file *file, char *buf,
                            size_t count, loff_t *ppos)
 {
-	struct wait_queue wait = { current, NULL };
+	DECLARE_WAITQUEUE(wait, current);
 	unsigned long data;
 	ssize_t retval;
 	
@@ -381,7 +381,7 @@ static struct file_operations ds1286_fops = {
 	ds1286_ioctl,
 	NULL,		/* No mmap */
 	ds1286_open,
-	NULL,		/* No flush */
+	NULL,
 	ds1286_release
 };
 
@@ -396,8 +396,6 @@ __initfunc(int ds1286_init(void))
 {
 	printk(KERN_INFO "DS1286 Real Time Clock Driver v%s\n", DS1286_VERSION);
 	misc_register(&ds1286_dev);
-
-	ds1286_wait = NULL;
 
 	return 0;
 }

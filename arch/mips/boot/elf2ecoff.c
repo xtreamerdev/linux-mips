@@ -47,8 +47,11 @@
 
 /*
  * Some extra ELF definitions
+ * MIPS hosts may already have definitions, so we define it conditional.
  */
+#ifndef PT_MIPS_REGINFO
 #define PT_MIPS_REGINFO 0x70000000      /* Register usage information */
+#endif
 
 /* -------------------------------------------------------------------- */
 

@@ -5,7 +5,7 @@
  *
  *		Implementation of the Transmission Control Protocol(TCP).
  *
- * Version:	$Id: tcp.c,v 1.140 1999/04/22 10:34:31 davem Exp $
+ * Version:	$Id: tcp.c,v 1.141 1999/05/12 11:24:40 davem Exp $
  *
  * Authors:	Ross Biro, <bir7@leland.Stanford.Edu>
  *		Fred N. van Kempen, <waltje@uWalt.NL.Mugnet.ORG>
@@ -660,7 +660,7 @@ int tcp_ioctl(struct sock *sk, int cmd, unsigned long arg)
 static int wait_for_tcp_connect(struct sock * sk, int flags)
 {
 	struct task_struct *tsk = current;
-	struct wait_queue wait = { tsk, NULL };
+	DECLARE_WAITQUEUE(wait, tsk);
 
 	while((1 << sk->state) & ~(TCPF_ESTABLISHED | TCPF_CLOSE_WAIT)) {
 		if(sk->err)
@@ -703,7 +703,7 @@ static void wait_for_tcp_memory(struct sock * sk)
 {
 	release_sock(sk);
 	if (!tcp_memory_free(sk)) {
-		struct wait_queue wait = { current, NULL };
+		DECLARE_WAITQUEUE(wait, current);
 
 		sk->socket->flags &= ~SO_NOSPACE;
 		add_wait_queue(sk->sleep, &wait);
@@ -1117,7 +1117,7 @@ int tcp_recvmsg(struct sock *sk, struct msghdr *msg,
 		int len, int nonblock, int flags, int *addr_len)
 {
 	struct tcp_opt *tp = &(sk->tp_pinfo.af_tcp);
-	struct wait_queue wait = { current, NULL };
+	DECLARE_WAITQUEUE(wait, current);
 	int copied = 0;
 	u32 peek_seq;
 	volatile u32 *seq;	/* So gcc doesn't overoptimise */
@@ -1534,7 +1534,7 @@ void tcp_close(struct sock *sk, long timeout)
 
 	if (timeout) {
 		struct task_struct *tsk = current;
-		struct wait_queue wait = { tsk, NULL };
+		DECLARE_WAITQUEUE(wait, current);
 
 		add_wait_queue(sk->sleep, &wait);
 		release_sock(sk);
@@ -1570,12 +1570,29 @@ void tcp_close(struct sock *sk, long timeout)
 static struct open_request * wait_for_connect(struct sock * sk,
 					      struct open_request **pprev)
 {
-	struct wait_queue wait = { current, NULL };
+	DECLARE_WAITQUEUE(wait, current);
 	struct open_request *req;
 
-	add_wait_queue(sk->sleep, &wait);
+	/*
+	 * True wake-one mechanism for incoming connections: only
+	 * one process gets woken up, not the 'whole herd'.
+	 * Since we do not 'race & poll' for established sockets
+	 * anymore, the common case will execute the loop only once.
+	 *
+	 * Or rather, it _would_ execute only once if it wasn't for
+	 * some extraneous wakeups that currently happen.
+	 *
+	 * Subtle issue: "add_wait_queue_exclusive()" will be added
+	 * after any current non-exclusive waiters, and we know that
+	 * it will always _stay_ after any new non-exclusive waiters
+	 * because all non-exclusive waiters are added at the
+	 * beginning of the wait-queue. As such, it's ok to "drop"
+	 * our exclusiveness temporarily when we get woken up without
+	 * having to remove and re-insert us on the wait queue.
+	 */
+	add_wait_queue_exclusive(sk->sleep, &wait);
 	for (;;) {
-		current->state = TASK_INTERRUPTIBLE;
+		current->state = TASK_EXCLUSIVE | TASK_INTERRUPTIBLE;
 		release_sock(sk);
 		schedule();
 		lock_sock(sk);

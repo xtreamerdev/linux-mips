@@ -3,7 +3,7 @@
  *	
  *		Alan Cox, <alan@cymru.net>
  *
- *	Version: $Id: icmp.c,v 1.52 1999/03/21 12:04:11 davem Exp $
+ *	Version: $Id: icmp.c,v 1.53 1999/05/12 11:24:32 davem Exp $
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the terms of the GNU General Public License
@@ -1142,6 +1142,8 @@ __initfunc(void icmp_init(struct net_proto_family *ops))
 	icmp_inode.i_sock = 1;
 	icmp_inode.i_uid = 0;
 	icmp_inode.i_gid = 0;
+	init_waitqueue_head(&icmp_inode.i_wait);
+	init_waitqueue_head(&icmp_inode.u.socket_i.wait);
 
 	icmp_socket->inode = &icmp_inode;
 	icmp_socket->state = SS_UNCONNECTED;

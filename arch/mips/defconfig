@@ -63,6 +63,7 @@ CONFIG_BLK_DEV_IDE=m
 #
 # CONFIG_BLK_DEV_HD_IDE is not set
 CONFIG_BLK_DEV_IDEDISK=m
+# CONFIG_IDEDISK_MULTI_MODE is not set
 CONFIG_BLK_DEV_IDECD=m
 # CONFIG_BLK_DEV_IDETAPE is not set
 # CONFIG_BLK_DEV_IDEFLOPPY is not set
@@ -82,6 +83,7 @@ CONFIG_BLK_DEV_RAM=m
 # CONFIG_BLK_DEV_XD is not set
 CONFIG_PARIDE_PARPORT=y
 # CONFIG_PARIDE is not set
+# CONFIG_BLK_DEV_IDE_MODES is not set
 # CONFIG_BLK_DEV_HD is not set
 
 #
@@ -274,6 +276,11 @@ CONFIG_RTC=y
 # Ftape, the floppy tape device driver
 #
 # CONFIG_FTAPE is not set
+
+#
+# USB drivers - not for the faint of heart
+#
+# CONFIG_USB is not set
 
 #
 # Filesystems

@@ -1,4 +1,4 @@
-/* $Id: irixelf.c,v 1.16 1999/06/13 16:30:31 ralf Exp $
+/* $Id: irixelf.c,v 1.16.2.1 1999/06/13 21:52:12 ralf Exp $
  *
  * irixelf.c: Code to load IRIX ELF executables which conform to
  *            the MIPS ABI.
@@ -1114,6 +1114,7 @@ static int writenote(struct memelfnote *men, struct file *file)
 #define DUMP_SEEK(off)	\
 	if (!dump_seek(file, (off))) \
 		goto close_coredump;
+
 /* Actual dumper.
  *
  * This is a two-pass process; first we find the offsets of the bits,
