@@ -258,8 +258,10 @@ static inline int pci_dma_supported(struct pci_dev *hwdev, u64 mask)
 	 * so we can't guarantee allocations that must be
 	 * within a tighter range than GFP_DMA..
 	 */
-	if (mask < 0x1fffffff)
+#ifdef CONFIG_ISA
+	if (mask < 0x00ffffff)
 		return 0;
+#endif
 
 	return 1;
 }
