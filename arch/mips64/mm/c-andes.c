@@ -56,7 +56,8 @@ static void andes_flush_dcache_page(struct page * page)
 
 static void andes_flush_icache_range(unsigned long start, unsigned long end)
 {
-	blast_dcache32(); blast_icache64();
+	blast_dcache32();
+	blast_icache64();
 }
 
 /*
