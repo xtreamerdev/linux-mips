@@ -1,4 +1,4 @@
-/* $Id: r2300_switch.S,v 1.5 1999/04/11 17:13:56 harald Exp $
+/* $Id: r2300_switch.S,v 1.6 1999/06/13 16:30:32 ralf Exp $
  *
  * r2300_switch.S: R2300 specific task switching code.
  *
@@ -87,12 +87,12 @@ LEAF(r2300_lazy_fpu_switch)
 	and	t1, t3
 	sw	t1, ST_OFF(a0)
 	swc1	$f0, (THREAD_FPU + 0x00)(a0)
-	FPU_SAVE(a0, t1)			# clobbers t1
+	FPU_SAVE_SINGLE(a0, t1)			# clobbers t1
 
 2:
 	lwc1	$f0, (THREAD_FPU + 0x00)($28)
 	.set	reorder
-	FPU_RESTORE($28, t0)		# clobbers t0
+	FPU_RESTORE_SINGLE($28, t0)		# clobbers t0
 	jr	ra
 	END(r2300_lazy_fpu_switch)
 
@@ -101,7 +101,7 @@ LEAF(r2300_lazy_fpu_switch)
  */
 	.set	noreorder
 LEAF(r2300_save_fp)
-	FPU_SAVE(a0, t1)			# clobbers t1
+	FPU_SAVE_SINGLE(a0, t1)			# clobbers t1
 	jr	ra
 	 swc1	$f0, (THREAD_FPU + 0x00)(a0)
 	END(r2300_save_fp)

@@ -1,4 +1,4 @@
-/* $Id: processor.h,v 1.14 1999/01/04 16:09:25 ralf Exp $
+/* $Id: processor.h,v 1.15 1999/02/15 02:22:12 ralf Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
@@ -84,9 +84,9 @@ extern struct task_struct *last_task_used_math;
 #define NUM_FPU_REGS	32
 
 struct mips_fpu_hard_struct {
-	double fp_regs[NUM_FPU_REGS];
+	unsigned int fp_regs[NUM_FPU_REGS];
 	unsigned int control;
-};
+} __attribute__((aligned(8)));
 
 /*
  * FIXME: no fpu emulator yet (but who cares anyway?)

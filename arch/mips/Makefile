@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.16 1999/02/09 23:11:30 adevries Exp $
+# $Id: Makefile,v 1.17 1999/05/02 20:56:18 harald Exp $
 #
 # This file is subject to the terms and conditions of the GNU General Public
 # License.  See the file "COPYING" in the main directory of this archive
@@ -171,7 +171,7 @@ CFLAGS		+= -pipe
 
 HEAD := arch/mips/kernel/head.o arch/mips/kernel/init_task.o
 
-SUBDIRS := $(SUBDIRS) $(addprefix arch/mips/, kernel mm lib tools)
+SUBDIRS := $(addprefix arch/mips/, tools) $(SUBDIRS) $(addprefix arch/mips/, kernel mm lib)
 CORE_FILES := arch/mips/kernel/kernel.o arch/mips/mm/mm.o $(CORE_FILES)
 LIBS := arch/mips/lib/lib.a $(LIBS)
 

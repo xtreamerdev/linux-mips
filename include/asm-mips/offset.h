@@ -51,7 +51,8 @@
 #define TASK_NEED_RESCHED  20
 #define TASK_COUNTER       24
 #define TASK_PRIORITY      28
-#define TASK_MM            920
+#define TASK_MM            792
+#define TASK_STRUCT_SIZE   848
 
 /* MIPS specific thread_struct offsets. */
 #define THREAD_REG16   560
@@ -67,15 +68,15 @@
 #define THREAD_REG31   600
 #define THREAD_STATUS  604
 #define THREAD_FPU     608
-#define THREAD_BVADDR  872
-#define THREAD_BUADDR  876
-#define THREAD_ECODE   880
-#define THREAD_TRAPNO  884
-#define THREAD_PGDIR   888
-#define THREAD_MFLAGS  892
-#define THREAD_CURDS   896
-#define THREAD_TRAMP   900
-#define THREAD_OLDCTX  904
+#define THREAD_BVADDR  744
+#define THREAD_BUADDR  748
+#define THREAD_ECODE   752
+#define THREAD_TRAPNO  756
+#define THREAD_PGDIR   760
+#define THREAD_MFLAGS  764
+#define THREAD_CURDS   768
+#define THREAD_TRAMP   772
+#define THREAD_OLDCTX  776
 
 /* Linux mm_struct offsets. */
 #define MM_COUNT      16

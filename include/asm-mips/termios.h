@@ -5,9 +5,10 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 1995, 1996 by Ralf Baechle
+ * Copyright (C) 1995, 1996, 1999 by Ralf Baechle
  */
 #ifndef __ASM_MIPS_TERMIOS_H
+#define __ASM_MIPS_TERMIOS_H
 
 #include <asm/termbits.h>
 #include <asm/ioctls.h>

@@ -1,4 +1,4 @@
-/* $Id: ptrace.c,v 1.11 1999/02/15 02:16:51 ralf Exp $
+/* $Id: ptrace.c,v 1.12 1999/06/13 16:30:32 ralf Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
@@ -366,17 +366,13 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 			break;
 		case FPR_BASE ... FPR_BASE + 31:
 			if (child->used_math) {
-				unsigned long long *fregs;
-
 				if (last_task_used_math == child) {
 					enable_cp1();
 					r4xx0_save_fp(child);
 					disable_cp1();
 					last_task_used_math = NULL;
 				}
-				fregs = (unsigned long long *)
-					&child->tss.fpu.hard.fp_regs[0];
-				tmp = (unsigned long) fregs[(addr - 32)];
+				tmp = child->tss.fpu.hard.fp_regs[addr - 32];
 			} else {
 				tmp = -1;	/* FP not yet used  */
 			}
@@ -399,9 +395,15 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 		case FPC_CSR:
 			tmp = child->tss.fpu.hard.control;
 			break;
-		case FPC_EIR:	/* implementation / version register */
-			tmp = 0;	/* XXX */
+		case FPC_EIR: {	/* implementation / version register */
+			unsigned int flags;
+
+			__save_flags(flags);
+			enable_cp1();
+			__asm__ __volatile__("cfc1\t%0,$0": "=r" (tmp));
+			__restore_flags(flags);
 			break;
+		}
 		default:
 			tmp = 0;
 			res = -EIO;
@@ -419,22 +421,24 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 		goto out;
 
 	case PTRACE_POKEUSR: {
-		unsigned long long *fregs;
 		struct pt_regs *regs;
 		int res = 0;
+		regs = (struct pt_regs *) ((unsigned long) child +
+		       KERNEL_STACK_SIZE - 32 - sizeof(struct pt_regs));
 
 		switch (addr) {
 		case 0 ... 31:
-			regs = (struct pt_regs *) ((unsigned long) child +
-			       KERNEL_STACK_SIZE - 32 - sizeof(struct pt_regs));
+			regs->regs[addr] = data;
 			break;
-		case FPR_BASE ... FPR_BASE + 31:
+		case FPR_BASE ... FPR_BASE + 31: {
+			unsigned int *fregs;
 			if (child->used_math) {
 				if (last_task_used_math == child) {
 					enable_cp1();
 					r4xx0_save_fp(child);
 					disable_cp1();
 					last_task_used_math = NULL;
+					regs->cp0_status &= ~ST0_CU1;
 				}
 			} else {
 				/* FP not yet used  */
@@ -442,10 +446,10 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 				       sizeof(child->tss.fpu.hard));
 				child->tss.fpu.hard.control = 0;
 			}
-			fregs = (unsigned long long *)
-				&child->tss.fpu.hard.fp_regs[0];
-			fregs[(addr - 32)] = (unsigned long long) data;
+			fregs = child->tss.fpu.hard.fp_regs;
+			fregs[addr - FPR_BASE] = data;
 			break;
+		}
 		case PC:
 			regs->cp0_epc = data;
 			break;
