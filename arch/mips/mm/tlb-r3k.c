@@ -50,7 +50,7 @@ void local_flush_tlb_all(void)
 	printk("[tlball]");
 #endif
 
-	__save_and_cli(flags);
+	local_irq_save(flags);
 	old_ctx = read_c0_entryhi() & ASID_MASK;
 	write_c0_entrylo0(0);
 	entry = r3k_have_wired_reg ? read_c0_wired() : 8;
@@ -61,7 +61,7 @@ void local_flush_tlb_all(void)
 		tlb_write_indexed();
 	}
 	write_c0_entryhi(old_ctx);
-	__restore_flags(flags);
+	local_irq_restore(flags);
 }
 
 void local_flush_tlb_mm(struct mm_struct *mm)
@@ -74,11 +74,11 @@ void local_flush_tlb_mm(struct mm_struct *mm)
 #ifdef DEBUG_TLB
 		printk("[tlbmm<%lu>]", (unsigned long)cpu_context(cpu, mm));
 #endif
-		__save_and_cli(flags);
+		local_irq_save(flags);
 		get_new_mmu_context(mm, smp_processor_id());
 		if (mm == current->active_mm)
 			write_c0_entryhi(cpu_asid(cpu, mm));
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -95,7 +95,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 		printk("[tlbrange<%lu,0x%08lx,0x%08lx>]",
 			cpu_asid(cpu, mm), start, end);
 #endif
-		__save_and_cli(flags);
+		local_irq_save(flags);
 		size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
 		if (size <= mips_cpu.tlbsize) {
 			int oldpid = read_c0_entryhi() & ASID_MASK;
@@ -123,7 +123,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 			if (mm == current->active_mm)
 				write_c0_entryhi(cpu_asid(cpu, mm));
 		}
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -140,7 +140,7 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 #endif
 		newpid = cpu_asid(cpu, vma->vm_mm);
 		page &= PAGE_MASK;
-		__save_and_cli(flags);
+		local_irq_save(flags);
 		oldpid = read_c0_entryhi() & ASID_MASK;
 		write_c0_entryhi(page | newpid);
 		BARRIER;
@@ -154,7 +154,7 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 
 finish:
 		write_c0_entryhi(oldpid);
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -179,7 +179,7 @@ void update_mmu_cache(struct vm_area_struct *vma, unsigned long address,
 	}
 #endif
 
-	__save_and_cli(flags);
+	local_irq_save(flags);
 	address &= PAGE_MASK;
 	write_c0_entryhi(address | pid);
 	BARRIER;
@@ -193,7 +193,7 @@ void update_mmu_cache(struct vm_area_struct *vma, unsigned long address,
 		tlb_write_indexed();
 	}
 	write_c0_entryhi(pid);
-	__restore_flags(flags);
+	local_irq_restore(flags);
 }
 
 void __init add_wired_entry(unsigned long entrylo0, unsigned long entrylo1,
@@ -212,7 +212,7 @@ void __init add_wired_entry(unsigned long entrylo0, unsigned long entrylo1,
 		       entrylo0, entryhi, pagemask);
 #endif
 
-		__save_and_cli(flags);
+		local_irq_save(flags);
 		/* Save old context and create impossible VPN2 value */
 		old_ctx = read_c0_entryhi() & ASID_MASK;
 		old_pagemask = read_c0_pagemask();
@@ -232,7 +232,7 @@ void __init add_wired_entry(unsigned long entrylo0, unsigned long entrylo1,
 		write_c0_entryhi(old_ctx);
 		write_c0_pagemask(old_pagemask);
 		local_flush_tlb_all();
-		__restore_flags(flags);
+		local_irq_restore(flags);
 
 	} else if (wired < 8) {
 #ifdef DEBUG_TLB
@@ -240,7 +240,7 @@ void __init add_wired_entry(unsigned long entrylo0, unsigned long entrylo1,
 		       entrylo0, entryhi);
 #endif
 
-		__save_and_cli(flags);
+		local_irq_save(flags);
 		old_ctx = read_c0_entryhi() & ASID_MASK;
 		write_c0_entrylo0(entrylo0);
 		write_c0_entryhi(entryhi);
@@ -249,7 +249,7 @@ void __init add_wired_entry(unsigned long entrylo0, unsigned long entrylo1,
 		tlb_write_indexed();
 		write_c0_entryhi(old_ctx);
 		local_flush_tlb_all();
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 }
 

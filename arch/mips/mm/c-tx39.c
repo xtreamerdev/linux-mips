@@ -46,7 +46,7 @@ static void tx39h_flush_icache_all(void)
 	unsigned long flags, config;
 
 	/* disable icache (set ICE#) */
-	__save_and_cli(flags);
+	local_irq_save(flags);
 	config = read_c0_conf();
 
 	/* invalidate icache */
@@ -56,7 +56,7 @@ static void tx39h_flush_icache_all(void)
 	}
 
 	write_c0_conf(config);
-	__restore_flags(flags);
+	local_irq_restore(flags);
 }
 
 static void tx39h_dma_cache_wback_inv(unsigned long addr, unsigned long size)
@@ -79,14 +79,14 @@ static inline void tx39_flush_cache_all(void)
 {
 	unsigned long flags, config;
 
-	__save_and_cli(flags);
+	local_irq_save(flags);
 	blast_dcache16_wayLSB();
 	/* disable icache (set ICE#) */
 	config = read_c0_conf();
 	write_c0_conf(config & ~TX39_CONF_ICE);
 	blast_icache16_wayLSB();
 	write_c0_conf(config);
-	__restore_flags(flags);
+	local_irq_restore(flags);
 }
 
 static void tx39_flush_cache_mm(struct mm_struct *mm)
@@ -109,14 +109,14 @@ static void tx39_flush_cache_range(struct mm_struct *mm,
 #ifdef DEBUG_CACHE
 		printk("crange[%d,%08lx,%08lx]", (int)mm->context, start, end);
 #endif
-		__save_and_cli(flags);
+		local_irq_save(flags);
 		blast_dcache16_wayLSB();
 		/* disable icache (set ICE#) */
 		config = read_c0_conf();
 		write_c0_conf(config & ~TX39_CONF_ICE);
 		blast_icache16_wayLSB();
 		write_c0_conf(config);
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -231,7 +231,7 @@ static void tx39_flush_cache_sigtramp(unsigned long addr)
 	unsigned long config;
 	unsigned int flags;
 
-	__save_and_cli(flags);
+	local_irq_save(flags);
 	protected_writeback_dcache_line(addr & ~(dcache_lsize - 1));
 
 	/* disable icache (set ICE#) */
@@ -239,7 +239,7 @@ static void tx39_flush_cache_sigtramp(unsigned long addr)
 	write_c0_conf(config & ~TX39_CONF_ICE);
 	protected_flush_icache_line(addr & ~(icache_lsize - 1));
 	write_c0_conf(config);
-	__restore_flags(flags);
+	local_irq_restore(flags);
 }
 
 static __init void tx39_probe_cache(void)

@@ -62,28 +62,28 @@ static inline void r49_flush_cache_all_d16i32(void)
 {
 	unsigned long flags, config;
 
-	__save_and_cli(flags);
+	local_irq_save(flags);
 	blast_dcache16_wayLSB();
 	/* disable icache (set ICE#) */
 	config = read_c0_config();
 	write_c0_config(config | TX49_CONF_IC);
 	blast_icache32_wayLSB();
 	write_c0_config(config);
-	__restore_flags(flags);
+	local_irq_restore(flags);
 }
 
 static inline void r49_flush_cache_all_d32i32(void)
 {
 	unsigned long flags, config;
 
-	__save_and_cli(flags);
+	local_irq_save(flags);
 	blast_dcache32_wayLSB();
 	/* disable icache (set ICE#) */
 	config = read_c0_config();
 	write_c0_config(config | TX49_CONF_IC);
 	blast_icache32_wayLSB();
 	write_c0_config(config);
-	__restore_flags(flags);
+	local_irq_restore(flags);
 }
 
 static void r49_flush_cache_range_d16i32(struct mm_struct *mm,
@@ -96,14 +96,14 @@ static void r49_flush_cache_range_d16i32(struct mm_struct *mm,
 #ifdef DEBUG_CACHE
 		printk("crange[%d,%08lx,%08lx]", (int)mm->context, start, end);
 #endif
-		__save_and_cli(flags);
+		local_irq_save(flags);
 		blast_dcache16_wayLSB();
 		/* disable icache (set ICE#) */
 		config = read_c0_config();
 		write_c0_config(config | TX49_CONF_IC);
 		blast_icache32_wayLSB();
 		write_c0_config(config);
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -117,14 +117,14 @@ static void r49_flush_cache_range_d32i32(struct mm_struct *mm,
 #ifdef DEBUG_CACHE
 		printk("crange[%d,%08lx,%08lx]", (int)mm->context, start, end);
 #endif
-		__save_and_cli(flags);
+		local_irq_save(flags);
 		blast_dcache32_wayLSB();
 		/* disable icache (set ICE#) */
 		config = read_c0_config();
 		write_c0_config(config | TX49_CONF_IC);
 		blast_icache32_wayLSB();
 		write_c0_config(config);
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -302,7 +302,7 @@ r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
 	if (size >= dcache_size) {
 		flush_cache_all();
 	} else {
-		__save_and_cli(flags);
+		local_irq_save(flags);
 
 		a = addr & ~(dc_lsize - 1);
 		end = (addr + size - 1) & ~(dc_lsize - 1);
@@ -311,7 +311,7 @@ r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
 			if (a == end) break;
 			a += dc_lsize;
 		}
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -324,7 +324,7 @@ r4k_dma_cache_inv(unsigned long addr, unsigned long size)
 	if (size >= dcache_size) {
 		flush_cache_all();
 	} else {
-		__save_and_cli(flags);
+		local_irq_save(flags);
 
 		a = addr & ~(dc_lsize - 1);
 		end = (addr + size - 1) & ~(dc_lsize - 1);
@@ -333,7 +333,7 @@ r4k_dma_cache_inv(unsigned long addr, unsigned long size)
 			if (a == end) break;
 			a += dc_lsize;
 		}
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 }
 

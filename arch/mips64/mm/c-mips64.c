@@ -68,18 +68,18 @@ static inline void mips64_flush_cache_all_sc(void)
 {
 	unsigned long flags;
 
-	__save_and_cli(flags);
+	local_irq_save(flags);
 	blast_dcache(); blast_icache(); blast_scache();
-	__restore_flags(flags);
+	local_irq_restore(flags);
 }
 
 static inline void mips64_flush_cache_all_pc(void)
 {
 	unsigned long flags;
 
-	__save_and_cli(flags);
+	local_irq_save(flags);
 	blast_dcache(); blast_icache();
-	__restore_flags(flags);
+	local_irq_restore(flags);
 }
 
 static void
@@ -106,7 +106,7 @@ mips64_flush_cache_range_sc(struct mm_struct *mm,
 			pmd_t *pmd;
 			pte_t *pte;
 
-			__save_and_cli(flags);
+			local_irq_save(flags);
 			while(start < end) {
 				pgd = pgd_offset(mm, start);
 				pmd = pmd_offset(pgd, start);
@@ -116,7 +116,7 @@ mips64_flush_cache_range_sc(struct mm_struct *mm,
 					blast_scache_page(start);
 				start += PAGE_SIZE;
 			}
-			__restore_flags(flags);
+			local_irq_restore(flags);
 		}
 	}
 }
@@ -131,9 +131,9 @@ static void mips64_flush_cache_range_pc(struct mm_struct *mm,
 #ifdef DEBUG_CACHE
 		printk("crange[%d,%08lx,%08lx]", (int)mm->context, start, end);
 #endif
-		__save_and_cli(flags);
+		local_irq_save(flags);
 		blast_dcache(); blast_icache();
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -321,7 +321,7 @@ mips64_dma_cache_wback_inv_pc(unsigned long addr, unsigned long size)
 	if (size >= (unsigned long)dcache_size) {
 		blast_dcache();
 	} else {
-	        __save_and_cli(flags);
+	        local_irq_save(flags);
 		a = addr & ~(dc_lsize - 1);
 		end = (addr + size - 1) & ~((unsigned long)dc_lsize - 1);
 		while (1) {
@@ -329,7 +329,7 @@ mips64_dma_cache_wback_inv_pc(unsigned long addr, unsigned long size)
 			if (a == end) break;
 			a += dc_lsize;
 		}
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 	bc_wback_inv(addr, size);
 }
@@ -362,7 +362,7 @@ mips64_dma_cache_inv_pc(unsigned long addr, unsigned long size)
 	if (size >= (unsigned long)dcache_size) {
 		blast_dcache();
 	} else {
-	        __save_and_cli(flags);
+	        local_irq_save(flags);
 		a = addr & ~((unsigned long)dc_lsize - 1);
 		end = (addr + size - 1) & ~((unsigned long)dc_lsize - 1);
 		while (1) {
@@ -370,7 +370,7 @@ mips64_dma_cache_inv_pc(unsigned long addr, unsigned long size)
 			if (a == end) break;
 			a += (unsigned long)dc_lsize;
 		}
-		__restore_flags(flags);
+		local_irq_restore(flags);
 	}
 
 	bc_inv(addr, size);
@@ -553,7 +553,7 @@ static int __init probe_scache(unsigned long config)
 	/* This is such a bitch, you'd think they would make it
 	 * easy to do this.  Away you daemons of stupidity!
 	 */
-	__save_and_cli(flags);
+	local_irq_save(flags);
 
 	/* Fill each size-multiple cache line with a valid tag. */
 	pow2 = (64 * 1024);
@@ -589,7 +589,7 @@ static int __init probe_scache(unsigned long config)
 			break;
 		pow2 <<= 1;
 	}
-	__restore_flags(flags);
+	local_irq_restore(flags);
 	addr -= begin;
 	printk("Secondary cache sized at %dK linesize %d bytes.\n",
 	       (int) (addr >> 10), sc_lsize);
