@@ -103,7 +103,7 @@ GCCFLAGS	+= $(call set_gccflags,r5000,mips4,r8000,mips4)
 endif
 ifdef CONFIG_CPU_NEVADA
 GCCFLAGS	+= $(call set_gccflags,rm5200,mips4,r8000,mips4)
-GCCFLAGS	+= $(call check_gcc,-mmad,)
+#GCCFLAGS	+= $(call check_gcc,-mmad,)
 endif
 ifdef CONFIG_CPU_RM7000
 GCCFLAGS	+= $(call set_gccflags,rm7000,mips4,r5000,mips4)
