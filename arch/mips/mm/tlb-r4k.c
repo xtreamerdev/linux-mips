@@ -125,6 +125,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 				BARRIER;
 				/* Make sure all entries differ. */
 				set_entryhi(KSEG0+idx*0x2000);
+				BARRIER;
 				tlb_write_indexed();
 				BARRIER;
 			}
