@@ -39,6 +39,7 @@
 #include <linux/sched.h>
 #include <linux/spinlock.h>
 
+#include <asm/compiler.h>
 #include <asm/mipsregs.h>
 #include <asm/ptrace.h>
 #include <asm/time.h>
@@ -347,9 +348,9 @@ static unsigned long do_fast_cp0_gettimeoffset(void)
 
 	__asm__("multu\t%1,%2\n\t"
 		"mfhi\t%0"
-		:"=r" (res)
-		:"r" (count),
-		 "r" (quotient));
+		: "=r" (res)
+		: "r" (count), "r" (quotient)
+		: "hi", "lo", GCC_REG_ACCUM);
 
 	/*
  	 * Due to possible jiffies inconsistencies, we need to check 
