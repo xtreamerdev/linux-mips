@@ -112,6 +112,16 @@ LOADADDR	:= 0x80040000
 endif
 
 #
+# Galileo EV64120 Board
+#
+ifdef CONFIG_MIPS_EV64120
+LIBS		+= arch/mips/gt64120/common/gt64120.o \
+		   arch/mips/gt64120/ev64120/ev64120.o
+SUBDIRS		+= arch/mips/gt64120/common arch/mips/gt64120/ev64120
+LOADADDR	:= 0x80100000
+endif
+
+#
 # MIPS Atlas board
 #
 ifdef CONFIG_MIPS_ATLAS
@@ -138,6 +148,18 @@ ifdef CONFIG_MIPS_SEAD
 LIBS		+= arch/mips/mips-boards/sead/sead.o \
 		   arch/mips/mips-boards/generic/mipsboards.o
 SUBDIRS		+= arch/mips/mips-boards/generic arch/mips/mips-boards/sead
+LOADADDR	:= 0x80100000
+endif
+
+#
+# Momentum Ocelot board
+#
+ifdef CONFIG_MOMENCO_OCELOT
+# The Ocelot setup.o must be linked early - it does the ioremap() for the
+# mips_io_port_base.
+CORE_FILES      += arch/mips/gt64120/common/gt64120.o \
+		   arch/mips/gt64120/momenco_ocelot/momenco_ocelot.o
+SUBDIRS		+= arch/mips/gt64120/common arch/mips/gt64120/momenco_ocelot
 LOADADDR	:= 0x80100000
 endif
 
