@@ -11,7 +11,7 @@
 #define __ASM_MIPS_BITOPS_H
 
 #include <linux/types.h>
-#include <linux/byteorder/swab.h>		/* sigh ... */
+#include <asm/byteorder.h>
 
 #ifdef __KERNEL__
 
