@@ -157,7 +157,6 @@ static void r49_flush_cache_page_d16i32(struct vm_area_struct *vma,
 					unsigned long page)
 {
 	struct mm_struct *mm = vma->vm_mm;
-	unsigned long flags;
 	pgd_t *pgdp;
 	pmd_t *pmdp;
 	pte_t *ptep;
@@ -206,7 +205,6 @@ static void r49_flush_cache_page_d32i32(struct vm_area_struct *vma,
 					      unsigned long page)
 {
 	struct mm_struct *mm = vma->vm_mm;
-	unsigned long flags;
 	pgd_t *pgdp;
 	pmd_t *pmdp;
 	pte_t *ptep;
@@ -277,7 +275,7 @@ static void r4k_flush_dcache_page(struct page *page)
 	 * case is for exec env/arg pages and those are %99 certainly going to
 	 * get faulted into the tlb (and thus flushed) anyways.
 	 */
-	flush_dcache_page_impl(page);
+	tx49_flush_dcache_page_impl(page);
 }
 
 static void
@@ -372,7 +370,7 @@ void __update_cache(struct vm_area_struct *vma, unsigned long address,
 
 	if (VALID_PAGE(page) && page->mapping &&
 	    ((pg_flags = page->flags) & (1UL << PG_dcache_dirty))) {
-		flush_dcache_page_impl(page);
+		tx49_flush_dcache_page_impl(page);
 
 		ClearPageDcacheDirty(page);
 	}
