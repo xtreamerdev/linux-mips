@@ -291,6 +291,14 @@ SUBDIRS       += arch/mips/au1000/mtx-1 arch/mips/au1000/common
 LOADADDR      += 0x80100000
 endif
 
+ifdef CONFIG_MIPS_PB1550
+LIBS          += arch/mips/au1000/pb1550/pb1550.o \
+                 arch/mips/au1000/common/au1000.o
+SUBDIRS       += arch/mips/au1000/pb1550 arch/mips/au1000/common
+LOADADDR      += 0x80100000
+endif
+
+
 #
 # Cogent CSB250
 #

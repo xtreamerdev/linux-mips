@@ -1099,22 +1099,32 @@ static int __init au1000_init_module(void)
 	struct net_device *dev;
 	int i, found_one = 0;
 
-	iflist[0].irq = AU1000_ETH0_IRQ;
-	iflist[1].irq = AU1000_ETH1_IRQ;
 	switch (c->cputype) {
 	case CPU_AU1000:
 		num_ifs = 2 - ni;
 		iflist[0].base_addr = AU1000_ETH0_BASE;
 		iflist[1].base_addr = AU1000_ETH1_BASE;
+		iflist[0].irq = AU1000_ETH0_IRQ;
+		iflist[1].irq = AU1000_ETH1_IRQ;
 		break;
 	case CPU_AU1100:
 		num_ifs = 1 - ni;
 		iflist[0].base_addr = AU1000_ETH0_BASE;
+		iflist[0].irq = AU1000_ETH0_IRQ;
 		break;
 	case CPU_AU1500:
 		num_ifs = 2 - ni;
 		iflist[0].base_addr = AU1500_ETH0_BASE;
 		iflist[1].base_addr = AU1500_ETH1_BASE;
+		iflist[0].irq = AU1000_ETH0_IRQ;
+		iflist[1].irq = AU1000_ETH1_IRQ;
+		break;
+	case CPU_AU1550:
+		num_ifs = 2 - ni;
+		iflist[0].base_addr = AU1550_ETH0_BASE;
+		iflist[1].base_addr = AU1550_ETH1_BASE;
+		iflist[0].irq 		= AU1550_ETH0_IRQ;
+		iflist[1].irq 		= AU1550_ETH1_IRQ;
 		break;
 	default:
 		num_ifs = 0;

@@ -32,6 +32,7 @@ fi
 dep_bool 'Support for Alchemy PB1100 board' CONFIG_MIPS_PB1100 $CONFIG_MIPS32
 dep_bool 'Support for Alchemy PB1500 board' CONFIG_MIPS_PB1500 $CONFIG_MIPS32
 dep_bool 'Support for Alchemy Hydrogen3 board' CONFIG_MIPS_HYDROGEN3 $CONFIG_MIPS32
+dep_bool 'Support for Alchemy PB1550 board' CONFIG_MIPS_PB1550 $CONFIG_MIPS32
 dep_bool 'Support for MyCable XXS1500 board' CONFIG_MIPS_XXS1500 $CONFIG_MIPS32
 dep_bool 'Support for 4G Systems MTX-1 board' CONFIG_MIPS_MTX1 $CONFIG_MIPS32
 dep_bool 'Support for Cogent CSB250 board' CONFIG_COGENT_CSB250 $CONFIG_MIPS32
@@ -374,6 +375,16 @@ if [ "$CONFIG_COGENT_CSB250" = "y" ]; then
    define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NONCOHERENT_IO y
+   define_bool CONFIG_PC_KEYB y
+fi
+if [ "$CONFIG_MIPS_PB1550" = "y" ]; then
+   define_bool CONFIG_SOC_AU1X00 y
+   define_bool CONFIG_SOC_AU1550 y
+   define_bool CONFIG_NEW_TIME_C y
+   define_bool CONFIG_PCI y
+   define_bool CONFIG_NEW_PCI y
+   define_bool CONFIG_PCI_AUTO y
+   define_bool CONFIG_NONCOHERENT_IO n
    define_bool CONFIG_PC_KEYB y
 fi
 if [ "$CONFIG_MIPS_COBALT" = "y" ]; then
