@@ -738,6 +738,7 @@ static void __init probe_pcache(void)
 		icache_size = c->icache.sets *
 		              c->icache.ways *
 		              c->icache.linesz;
+		c->icache.waybit = ffs(icache_size/c->icache.ways) - 1;
 
 		/*
 		 * Now probe the MIPS32 / MIPS64 data cache.
@@ -754,6 +755,7 @@ static void __init probe_pcache(void)
 		dcache_size = c->dcache.sets *
 		              c->dcache.ways *
 		              c->dcache.linesz;
+		c->dcache.waybit = ffs(dcache_size/c->dcache.ways) - 1;
 		break;
 	}
 
