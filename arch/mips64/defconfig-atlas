@@ -115,8 +115,9 @@ CONFIG_BLK_DEV_RAM_SIZE=4096
 #
 # Networking options
 #
-# CONFIG_PACKET is not set
-# CONFIG_NETLINK_DEV is not set
+CONFIG_PACKET=y
+# CONFIG_PACKET_MMAP is not set
+CONFIG_NETLINK_DEV=y
 # CONFIG_NETFILTER is not set
 # CONFIG_FILTER is not set
 CONFIG_UNIX=y
