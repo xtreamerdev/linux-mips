@@ -89,13 +89,6 @@ EXPORT_SYMBOL(_flush_cache_all);
 EXPORT_SYMBOL(invalid_pte_table);
 
 /*
- * Semaphore stuff
- */
-EXPORT_SYMBOL(__down);
-EXPORT_SYMBOL(__down_interruptible);
-EXPORT_SYMBOL(__down_trylock);
-
-/*
  * Kernel hacking ...
  */
 #include <asm/branch.h>
