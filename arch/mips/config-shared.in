@@ -693,6 +693,7 @@ if [ "$CONFIG_CPU_RM7000" = "y" ]; then
 fi
 
 if [ "$CONFIG_CPU_SB1" = "y" ]; then
+   bool '  Use DMA to clear/copy pages' CONFIG_SIBYTE_DMA_PAGEOPS
    # SB1 Pass-specific options
    if [ "$CONFIG_CPU_SB1_PASS_1" = "y" ]; then
       define_bool CONFIG_SB1_PASS_1_WORKAROUNDS y

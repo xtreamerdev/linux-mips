@@ -2178,6 +2178,12 @@ CONFIG_SB1XXX_CORELIS
   Select compile flags that produce code that can be processed by the
   Corelis mksym utility and UDB Emulator.
 
+DMA for page clear and copy
+CONFIG_SIBYTE_DMA_PAGEOPS
+  Instead of using the CPU to zero and copy pages, use a Data Mover
+  channel.  These DMA channels are otherwise unused by the standard
+  SiByte Linux port.  Seems to give a small performance benefit.
+
 Support for Galileo Evaluation board or CoSine Orion
 CONFIG_ORION
   Say Y if configuring for the Galileo evaluation board
