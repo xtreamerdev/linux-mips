@@ -161,6 +161,7 @@ static inline int down_trylock(struct semaphore * sem)
 	"	li	%0, 1			# ret = 1		\n"
 	"2:	scd	%1, %4						\n"
 	"	beqz	%1, 0b						\n"
+	"	sync							\n"
 	"	.set	mips0						\n"
 	: "=&r"(ret), "=&r"(tmp), "=&r"(tmp2), "=&r"(sub)
 	: "m"(*sem)
