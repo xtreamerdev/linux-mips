@@ -282,7 +282,7 @@ void flush_tlb_mm(struct mm_struct *mm)
 		int i;
 		for (i = 0; i < smp_num_cpus; i++)
 			if (smp_processor_id() != i)
-				CPU_CONTEXT(i, mm) = 0;
+				cpu_context(i, mm) = 0;
 	}
 	local_flush_tlb_mm(mm);
 }
@@ -314,7 +314,7 @@ void flush_tlb_range(struct mm_struct *mm, unsigned long start, unsigned long en
 		int i;
 		for (i = 0; i < smp_num_cpus; i++)
 			if (smp_processor_id() != i)
-				CPU_CONTEXT(i, mm) = 0;
+				cpu_context(i, mm) = 0;
 	}
 	local_flush_tlb_range(mm, start, end);
 }
@@ -338,7 +338,7 @@ void flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 		int i;
 		for (i = 0; i < smp_num_cpus; i++)
 			if (smp_processor_id() != i)
-				CPU_CONTEXT(i, vma->vm_mm) = 0;
+				cpu_context(i, vma->vm_mm) = 0;
 	}
 	local_flush_tlb_page(vma, page);
 }

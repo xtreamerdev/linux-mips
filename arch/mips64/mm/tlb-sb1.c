@@ -153,13 +153,13 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 
 	__save_and_cli(flags);
 	cpu = smp_processor_id();
-	if(CPU_CONTEXT(cpu, mm) != 0) {
+	if(cpu_context(cpu, mm) != 0) {
 		int size;
 		size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
 		size = (size + 1) >> 1;
 		if(size <= (mips_cpu.tlbsize/2)) {
 			int oldpid = (get_entryhi() & 0xff);
-			int newpid = (CPU_CONTEXT(cpu, mm) & 0xff);
+			int newpid = (cpu_context(cpu, mm) & 0xff);
 
 			start &= (PAGE_MASK << 1);
 			end += ((PAGE_SIZE << 1) - 1);
@@ -182,7 +182,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 		} else {
 			get_new_mmu_context(mm, cpu);
 			if (mm == current->active_mm)
-				set_entryhi(CPU_CONTEXT(cpu, mm) & 0xff);
+				set_entryhi(cpu_context(cpu, mm) & 0xff);
 		}
 	}
 	__restore_flags(flags);
@@ -194,7 +194,7 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 
 #ifdef CONFIG_SMP
 	/*
-	 * This variable is eliminated from CPU_CONTEXT() if SMP isn't defined,
+	 * This variable is eliminated from cpu_context() if SMP isn't defined,
 	 * so conditional it to get rid of silly "unused variable" compiler
 	 * complaints
 	 */
@@ -202,12 +202,12 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 #endif
 
 	__save_and_cli(flags);
-	if (CPU_CONTEXT(cpu, vma->vm_mm) != 0) {
+	if (cpu_context(cpu, vma->vm_mm) != 0) {
 		int oldpid, newpid, idx;
 #ifdef DEBUG_TLB
-		printk("[tlbpage<%d,%08lx>]", CPU_CONTEXT(cpu, vma->vm_mm), page);
+		printk("[tlbpage<%d,%08lx>]", cpu_context(cpu, vma->vm_mm), page);
 #endif
-		newpid = (CPU_CONTEXT(cpu, vma->vm_mm) & 0xff);
+		newpid = (cpu_context(cpu, vma->vm_mm) & 0xff);
 		page &= (PAGE_MASK << 1);
 		oldpid = (get_entryhi() & 0xff);
 		set_entryhi	(page | newpid);
@@ -235,10 +235,10 @@ void local_flush_tlb_mm(struct mm_struct *mm)
 	int cpu;
 	__save_and_cli(flags);
 	cpu = smp_processor_id();
-	if (CPU_CONTEXT(cpu, mm) != 0) {
+	if (cpu_context(cpu, mm) != 0) {
 		get_new_mmu_context(mm, smp_processor_id());
 		if (mm == current->active_mm) {
-			set_entryhi(CPU_CONTEXT(cpu, mm) & 0xff);
+			set_entryhi(cpu_context(cpu, mm) & 0xff);
 		}
 	}
 	__restore_flags(flags);
@@ -267,9 +267,9 @@ void sb1_update_mmu_cache(struct vm_area_struct *vma, unsigned long address,
 	pid = get_entryhi() & 0xff;
 
 #ifdef DEBUG_TLB
-	if((pid != (CPU_CONTEXT(cpu, vma->vm_mm) & 0xff)) || (CPU_CONTEXT(cpu, vma->vm_mm) == 0)) {
+	if((pid != (cpu_context(cpu, vma->vm_mm) & 0xff)) || (cpu_context(cpu, vma->vm_mm) == 0)) {
 		printk("update_mmu_cache: Wheee, bogus tlbpid mmpid=%d tlbpid=%d\n",
-		       (int) (CPU_CONTEXT(cpu, vma->vm_mm) & 0xff), pid);
+		       (int) (cpu_context(cpu, vma->vm_mm) & 0xff), pid);
 	}
 #endif
 

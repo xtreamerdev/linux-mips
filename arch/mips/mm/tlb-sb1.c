@@ -93,7 +93,7 @@ void local_flush_tlb_all(void)
 
 	__save_and_cli(flags);
 	/* Save old context and create impossible VPN2 value */
-	old_ctx = (get_entryhi() & 0xff);
+	old_ctx = get_entryhi() & 0xff;
 	set_entrylo0(0);
 	set_entrylo1(0);
 	for (entry = 0; entry < mips_cpu.tlbsize; entry++) {
@@ -145,18 +145,18 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 
 	__save_and_cli(flags);
 	cpu = smp_processor_id();
-	if(CPU_CONTEXT(cpu, mm) != 0) {
+	if (cpu_context(cpu, mm) != 0) {
 		int size;
 		size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
 		size = (size + 1) >> 1;
-		if(size <= (mips_cpu.tlbsize/2)) {
-			int oldpid = (get_entryhi() & 0xff);
-			int newpid = (CPU_CONTEXT(cpu, mm) & 0xff);
+		if (size <= (mips_cpu.tlbsize/2)) {
+			int oldpid = get_entryhi() & 0xff;
+			int newpid = cpu_context(cpu, mm) & 0xff;
 
 			start &= (PAGE_MASK << 1);
 			end += ((PAGE_SIZE << 1) - 1);
 			end &= (PAGE_MASK << 1);
-			while(start < end) {
+			while (start < end) {
 				int idx;
 
 				set_entryhi(start | newpid);
@@ -166,7 +166,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 				set_entrylo0(0);
 				set_entrylo1(0);
 				set_entryhi(KSEG0 + (idx << (PAGE_SHIFT+1)));
-				if(idx < 0)
+				if (idx < 0)
 					continue;
 				tlb_write_indexed();
 			}
@@ -174,7 +174,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 		} else {
 			get_new_mmu_context(mm, cpu);
 			if (mm == current->active_mm)
-				set_entryhi(CPU_CONTEXT(cpu, mm) & 0xff);
+				set_entryhi(cpu_context(cpu, mm) & 0xff);
 		}
 	}
 	__restore_flags(flags);
@@ -191,10 +191,10 @@ void __flush_tlb_one(unsigned long page)
 
 	__save_and_cli(flags);
 #ifdef DEBUG_TLB
-	printk("[tlbpage<%d,%08lx>]", CPU_CONTEXT(cpu, vma->vm_mm), page);
+	printk("[tlbpage<%d,%08lx>]", cpu_context(cpu, vma->vm_mm), page);
 #endif
 	page &= (PAGE_MASK << 1);
-	oldpid = (get_entryhi() & 0xff);
+	oldpid = get_entryhi() & 0xff;
 	set_entryhi(page);
 	tlb_probe();
 	idx = get_index();
@@ -216,7 +216,7 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 
 #ifdef CONFIG_SMP
 	/*
-	 * This variable is eliminated from CPU_CONTEXT() if SMP isn't defined,
+	 * This variable is eliminated from cpu_context() if SMP isn't defined,
 	 * so conditional it to get rid of silly "unused variable" compiler
 	 * complaints
 	 */
@@ -224,20 +224,20 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 #endif
 
 	__save_and_cli(flags);
-	if (CPU_CONTEXT(cpu, vma->vm_mm) != 0) {
+	if (cpu_context(cpu, vma->vm_mm) != 0) {
 		int oldpid, newpid, idx;
 #ifdef DEBUG_TLB
-		printk("[tlbpage<%d,%08lx>]", CPU_CONTEXT(cpu, vma->vm_mm), page);
+		printk("[tlbpage<%d,%08lx>]", cpu_context(cpu, vma->vm_mm), page);
 #endif
-		newpid = (CPU_CONTEXT(cpu, vma->vm_mm) & 0xff);
+		newpid = cpu_context(cpu, vma->vm_mm) & 0xff;
 		page &= (PAGE_MASK << 1);
-		oldpid = (get_entryhi() & 0xff);
-		set_entryhi	(page | newpid);
+		oldpid = get_entryhi() & 0xff;
+		set_entryhi(page | newpid);
 		tlb_probe();
 		idx = get_index();
 		set_entrylo0(0);
 		set_entrylo1(0);
-		if(idx < 0)
+		if (idx < 0)
 			goto finish;
 		/* Make sure all entries differ. */
 		set_entryhi(KSEG0+(idx<<(PAGE_SHIFT+1)));
@@ -257,10 +257,10 @@ void local_flush_tlb_mm(struct mm_struct *mm)
 	int cpu;
 	__save_and_cli(flags);
 	cpu = smp_processor_id();
-	if (CPU_CONTEXT(cpu, mm) != 0) {
+	if (cpu_context(cpu, mm) != 0) {
 		get_new_mmu_context(mm, smp_processor_id());
 		if (mm == current->active_mm) {
-			set_entryhi(CPU_CONTEXT(cpu, mm) & 0xff);
+			set_entryhi(cpu_context(cpu, mm) & 0xff);
 		}
 	}
 	__restore_flags(flags);
@@ -289,9 +289,9 @@ void update_mmu_cache(struct vm_area_struct *vma, unsigned long address,
 	pid = get_entryhi() & 0xff;
 
 #ifdef DEBUG_TLB
-	if((pid != (CPU_CONTEXT(cpu, vma->vm_mm) & 0xff)) || (CPU_CONTEXT(cpu, vma->vm_mm) == 0)) {
+	if ((pid != (cpu_context(cpu, vma->vm_mm) & 0xff)) || (cpu_context(cpu, vma->vm_mm) == 0)) {
 		printk("update_mmu_cache: Wheee, bogus tlbpid mmpid=%d tlbpid=%d\n",
-		       (int) (CPU_CONTEXT(cpu, vma->vm_mm) & 0xff), pid);
+		       (int) (cpu_context(cpu, vma->vm_mm) & 0xff), pid);
 	}
 #endif
 
@@ -305,7 +305,7 @@ void update_mmu_cache(struct vm_area_struct *vma, unsigned long address,
 	set_entrylo0(pte_val(*ptep++) >> 6);
 	set_entrylo1(pte_val(*ptep) >> 6);
 	set_entryhi(address | (pid));
-	if(idx < 0) {
+	if (idx < 0) {
 		tlb_write_random();
 	} else {
 		tlb_write_indexed();
