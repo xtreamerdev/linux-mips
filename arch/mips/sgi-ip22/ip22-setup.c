@@ -137,9 +137,7 @@ void __init ip22_setup(void)
 	/* Now enable boardcaches, if any. */
 	indy_sc_init();
 #endif
-#ifdef CONFIG_VT
-	conswitchp = NULL;
-#endif
+
 	/* Set the IO space to some sane value */
 	set_io_port_base (KSEG1ADDR (0x00080000));
 
@@ -186,10 +184,12 @@ void __init ip22_setup(void)
 #endif
 
 #ifdef CONFIG_VT
+	conswitchp = &dummy_con;
 #ifdef CONFIG_SGI_NEWPORT_CONSOLE
 	if (ctype && *ctype == 'g'){
 		unsigned long *gfxinfo;
-		long (*__vec)(void) = (void *) *(long *)((PROMBLOCK)->pvector + 0x20);
+		long (*__vec)(void) =
+			(void *) *(long *)((PROMBLOCK)->pvector + 0x20);
 
 		gfxinfo = (unsigned long *)__vec();
 		sgi_gfxaddr = ((gfxinfo[1] >= 0xa0000000
@@ -201,28 +201,20 @@ void __init ip22_setup(void)
 			conswitchp = &newport_con;
 
 			screen_info = (struct screen_info) {
-				0, 0,		/* orig-x, orig-y */
-				0,		/* unused */
-				0,		/* orig_video_page */
-				0,		/* orig_video_mode */
-				160,		/* orig_video_cols */
-				0, 0, 0,	/* unused, ega_bx, unused */
-				64,		/* orig_video_lines */
-				0,		/* orig_video_isVGA */
-				16		/* orig_video_points */
+				.orig_x			= 0,
+				.orig_y 		= 0,
+				.orig_video_page	= 0,
+				.orig_video_mode	= 0,
+				.orig_video_cols	= 160,
+				.orig_video_ega_bx	= 0,
+				.orig_video_lines	= 64,
+				.orig_video_isVGA	= 0,
+				.orig_video_points	= 16,
 			};
 		}
 	}
 #endif
-#ifdef CONFIG_DUMMY_CONSOLE
-	/* Either if newport console wasn't used or failed to initialize. */
-#ifdef CONFIG_SGI_NEWPORT_CONSOLE
-	if(conswitchp != &newport_con)
 #endif
-		conswitchp = &dummy_con;
-#endif
-#endif
-
 	rtc_ops = &ip22_rtc_ops;
 	kbd_ops = &ip22_kbd_ops;
 #ifdef CONFIG_PSMOUSE
