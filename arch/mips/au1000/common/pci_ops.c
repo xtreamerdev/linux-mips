@@ -205,9 +205,8 @@ static int config_access(unsigned char access_type, struct pci_dev *dev,
 		last_entryLo0  = last_entryLo1 = 0xffffffff;
 	}
 
-	/* Since the Au1xxx doesn't do the idsel timing exactly to spec,
-	 * many board vendors implement their own off-chip idsel, so call
-	 * it now.  If it doesn't succeed, may as well bail out at this point.
+	/* Allow board vendors to implement their own off-chip idsel.  
+	 * If it doesn't succeed, may as well bail out at this point.
 	 */
 	if (board_pci_idsel) {
 		if (board_pci_idsel(device, 1) == 0) {
