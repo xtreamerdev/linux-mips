@@ -215,9 +215,16 @@ static int __init rtc_init(void)
 	    (KL_CONFIG_CH_CONS_INFO(nid)->memory_base + IOC3_BYTEBUS_DEV0);
 
 	printk(KERN_INFO "Real Time Clock Driver v%s\n", RTC_VERSION);
-	if (misc_register(&rtc_dev))
+	if (misc_register(&rtc_dev)) {
+		printk(KERN_ERR "rtc: cannot register misc device.\n");
 		return -ENODEV;
-	create_proc_read_entry("driver/rtc", 0, NULL, rtc_read_proc, NULL);
+	}
+	if (!create_proc_read_entry("driver/rtc", 0, NULL, rtc_read_proc, NULL)) {
+		printk(KERN_ERR "rtc: cannot create /proc/rtc.\n");
+		misc_deregister(&rtc_dev);
+		return -ENOENT;
+	}
+
 
 	rtc_freq = 1024;
 	return 0;
