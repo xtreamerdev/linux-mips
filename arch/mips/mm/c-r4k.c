@@ -540,7 +540,9 @@ static void r4k_flush_icache_page(struct vm_area_struct *vma,
 	 */
 	if (cpu_has_subset_pcaches) {
 		unsigned long addr = (unsigned long) page_address(page);
+
 		r4k_blast_scache_page(addr);
+		ClearPageDcacheDirty(page);
 
 		return;
 	}
@@ -548,6 +550,7 @@ static void r4k_flush_icache_page(struct vm_area_struct *vma,
 	if (!cpu_has_ic_fills_f_dc) {
 		unsigned long addr = (unsigned long) page_address(page);
 		r4k_blast_dcache_page(addr);
+		ClearPageDcacheDirty(page);
 	}
 
 	/*
