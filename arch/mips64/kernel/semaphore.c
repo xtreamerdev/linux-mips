@@ -67,7 +67,7 @@ void __down(struct semaphore * sem)
 	wait_queue_t wait;
 	init_waitqueue_entry(&wait, tsk);
 
-	tsk->state = TASK_UNINTERRUPTIBLE;
+	__set_current_state(TASK_UNINTERRUPTIBLE);
 	add_wait_queue_exclusive(&sem->wait, &wait);
 
 	/*
@@ -89,9 +89,9 @@ void __down(struct semaphore * sem)
 		if (waking_non_zero(sem))
 			break;
 		schedule();
-		tsk->state = TASK_UNINTERRUPTIBLE;
+		__set_current_state(TASK_UNINTERRUPTIBLE);
 	}
-	tsk->state = TASK_RUNNING;
+	__set_current_state(TASK_RUNNING);
 	remove_wait_queue(&sem->wait, &wait);
 }
 
@@ -104,7 +104,7 @@ int __down_interruptible(struct semaphore * sem)
 	wait_queue_t wait;
 	init_waitqueue_entry(&wait, tsk);
 
-	tsk->state = TASK_INTERRUPTIBLE;
+	__set_current_state(TASK_INTERRUPTIBLE);
 	add_wait_queue_exclusive(&sem->wait, &wait);
 
 	/*
@@ -131,9 +131,9 @@ int __down_interruptible(struct semaphore * sem)
 			break;
 		}
 		schedule();
-		tsk->state = TASK_INTERRUPTIBLE;
+		__set_current_state(TASK_INTERRUPTIBLE);
 	}
-	tsk->state = TASK_RUNNING;
+	__set_current_state(TASK_RUNNING);
 	remove_wait_queue(&sem->wait, &wait);
 
 	return ret;
