@@ -2,9 +2,6 @@
  * BRIEF MODULE DESCRIPTION
  *	Au1xxx irq map table
  *
- * Copyright 2003 Embedded Edge, LLC
- *		dan@embeddededge.com
- *
  *  This program is free software; you can redistribute	 it and/or modify it
  *  under  the terms of	 the GNU General  Public License as published by the
  *  Free Software Foundation;  either version 2 of the	License, or (at your
@@ -46,40 +43,19 @@
 #include <asm/mipsregs.h>
 #include <asm/system.h>
 #include <asm/au1000.h>
+#include <asm/ficmmp.h>
 
 au1xxx_irq_map_t au1xxx_irq_map[] = {
-	{ AU1000_GPIO_0, INTC_INT_LOW_LEVEL, 0 },
-	{ AU1000_GPIO_1, INTC_INT_LOW_LEVEL, 0 },
-#ifdef CONFIG_AU1XXX_SMC91111
-	{ AU1000_GPIO_3, INTC_INT_LOW_LEVEL, 0 },
-#endif
+	{ FICMMP_IDE_INT, INTC_INT_HIGH_LEVEL, 0 },
+	{ AU1XXX_SMC91111_IRQ, INTC_INT_HIGH_LEVEL, 0 },
+	{ AU1000_GPIO_1 , INTC_INT_FALL_EDGE, 0 },		// main button
+	{ AU1000_GPIO_6 , INTC_INT_RISE_EDGE, 0 },		// select button
+	{ AU1000_GPIO_12, INTC_INT_FALL_EDGE, 0 },		// guide button
+	{ AU1000_GPIO_17, INTC_INT_RISE_EDGE, 0 },		// down button
+	{ AU1000_GPIO_19, INTC_INT_RISE_EDGE, 0 },		// left button
+	{ AU1000_GPIO_26, INTC_INT_RISE_EDGE, 0 },		// right button
+	{ AU1000_GPIO_28, INTC_INT_RISE_EDGE, 0 },		// up button
 };
 
 int au1xxx_nr_irqs = sizeof(au1xxx_irq_map)/sizeof(au1xxx_irq_map_t);
-
-
-#ifdef CONFIG_PCI
-
-#define INTA AU1550_PCI_INTA
-#define INTB AU1550_PCI_INTB
-#define INTC AU1550_PCI_INTC
-#define INTD AU1550_PCI_INTD
-#define INTX 0xFF /* invalid */
-
-int __init
-au1xxx_pci_irqmap(struct pci_dev *dev, unsigned char idsel, unsigned char pin)
-{
-	static char pci_irq_table[][4] =
-	/*
-	 *	PCI IDSEL/INTPIN->INTLINE
-	 *	A       B       C       D
-	 */
-    {
-		{INTB, INTC, INTD, INTA},   /* IDSEL 12 - PCI slot 2 (left)  */
-		{INTA, INTB, INTC, INTD},   /* IDSEL 13 - PCI slot 1 (right) */
-	};
-	const long min_idsel = 12, max_idsel = 13, irqs_per_slot = 4;
-	return PCI_IRQ_TABLE_LOOKUP;
-};
-#endif
 

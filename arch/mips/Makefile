@@ -211,7 +211,7 @@ LOADADDR	:= 0x80080000
 endif
 
 #
-# Au1000 (Alchemy Semi PB1000) eval board
+# Au1x AMD Alchemy eval boards
 #
 ifdef CONFIG_MIPS_PB1000
 LIBS		+= arch/mips/au1000/pb1000/pb1000.o \
@@ -220,9 +220,6 @@ SUBDIRS		+= arch/mips/au1000/pb1000 arch/mips/au1000/common
 LOADADDR	:= 0x80100000
 endif
 
-#
-# Au1100 (Alchemy Semi PB1100) eval board
-#
 ifdef CONFIG_MIPS_PB1100
 LIBS          += arch/mips/au1000/pb1100/pb1100.o \
                  arch/mips/au1000/common/au1000.o
@@ -230,9 +227,6 @@ SUBDIRS       += arch/mips/au1000/pb1100 arch/mips/au1000/common
 LOADADDR      += 0x80100000
 endif
 
-#
-# Au1500 (Alchemy Semi PB1500) eval board
-#
 ifdef CONFIG_MIPS_PB1500
 LIBS		+= arch/mips/au1000/pb1500/pb1500.o \
 		   arch/mips/au1000/common/au1000.o
@@ -240,9 +234,6 @@ SUBDIRS		+= arch/mips/au1000/pb1500 arch/mips/au1000/common
 LOADADDR	:= 0x80100000
 endif
 
-#
-# Au1x00 (AMD/Alchemy) eval boards
-#
 ifdef CONFIG_MIPS_DB1000
 LIBS          += arch/mips/au1000/db1x00/db1x00.o \
                  arch/mips/au1000/common/au1000.o
@@ -310,6 +301,27 @@ ifdef CONFIG_MIPS_PB1550
 LIBS          += arch/mips/au1000/pb1550/pb1550.o \
                  arch/mips/au1000/common/au1000.o
 SUBDIRS       += arch/mips/au1000/pb1550 arch/mips/au1000/common
+LOADADDR      += 0x80100000
+endif
+
+ifdef CONFIG_MIPS_PB1200
+LIBS          += arch/mips/au1000/pb1200/pb1200.o \
+                 arch/mips/au1000/common/au1000.o
+SUBDIRS       += arch/mips/au1000/pb1200 arch/mips/au1000/common
+LOADADDR      += 0x80100000
+endif
+
+ifdef CONFIG_MIPS_DB1200
+LIBS          += arch/mips/au1000/pb1200/pb1200.o \
+                 arch/mips/au1000/common/au1000.o
+SUBDIRS       += arch/mips/au1000/pb1200 arch/mips/au1000/common
+LOADADDR      += 0x80100000
+endif
+
+ifdef CONFIG_MIPS_FICMMP
+LIBS          += arch/mips/au1000/ficmmp/ficmmp.o \
+                 arch/mips/au1000/common/au1000.o
+SUBDIRS       += arch/mips/au1000/ficmmp arch/mips/au1000/common
 LOADADDR      += 0x80100000
 endif
 

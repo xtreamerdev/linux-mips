@@ -105,6 +105,7 @@ static inline void check_wait(void)
 	case CPU_AU1100:
 	case CPU_AU1500:
 	case CPU_AU1550:
+	case CPU_AU1200:
 		if (au1k_wait_ptr != NULL) {
 			cpu_wait = au1k_wait_ptr;
 			printk(" available.\n");

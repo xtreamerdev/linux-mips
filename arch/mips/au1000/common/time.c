@@ -437,9 +437,6 @@ void __init au1xxx_timer_setup(void)
 		au_writel(0, SYS_TOYWRITE);
 		while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_C0S);
 
-		au_writel(au_readl(SYS_WAKEMSK) | (1<<8), SYS_WAKEMSK);
-		au_writel(~0, SYS_WAKESRC);
-		au_sync();
 		while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_M20);
 
 		/* setup match20 to interrupt once every 10ms */

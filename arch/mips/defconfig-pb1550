@@ -883,6 +883,7 @@ CONFIG_DUMMY_CONSOLE=y
 # CONFIG_FB_ATY128 is not set
 # CONFIG_FB_INTEL is not set
 # CONFIG_FB_SIS is not set
+CONFIG_FB_SMI501=y
 # CONFIG_FB_NEOMAGIC is not set
 # CONFIG_FB_3DFX is not set
 # CONFIG_FB_VOODOO1 is not set
@@ -964,7 +965,7 @@ CONFIG_USB=y
 # CONFIG_USB_UHCI is not set
 # CONFIG_USB_UHCI_ALT is not set
 CONFIG_USB_OHCI=y
-
+CONFIG_USB_NON_PCI_OHCI=y
 #
 # USB Device Class drivers
 #

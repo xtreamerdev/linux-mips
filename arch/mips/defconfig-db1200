@@ -22,16 +22,19 @@ CONFIG_KMOD=y
 #
 # CONFIG_ACER_PICA_61 is not set
 # CONFIG_MIPS_BOSPORUS is not set
+# CONFIG_MIPS_FICMMP is not set
 # CONFIG_MIPS_MIRAGE is not set
-CONFIG_MIPS_DB1000=y
+# CONFIG_MIPS_DB1000 is not set
 # CONFIG_MIPS_DB1100 is not set
 # CONFIG_MIPS_DB1500 is not set
 # CONFIG_MIPS_DB1550 is not set
+CONFIG_MIPS_DB1200=y
 # CONFIG_MIPS_PB1000 is not set
 # CONFIG_MIPS_PB1100 is not set
 # CONFIG_MIPS_PB1500 is not set
-# CONFIG_MIPS_HYDROGEN3 is not set
 # CONFIG_MIPS_PB1550 is not set
+# CONFIG_MIPS_PB1200 is not set
+# CONFIG_MIPS_HYDROGEN3 is not set
 # CONFIG_MIPS_XXS1500 is not set
 # CONFIG_MIPS_MTX1 is not set
 # CONFIG_COGENT_CSB250 is not set
@@ -78,10 +81,9 @@ CONFIG_MIPS_DB1000=y
 CONFIG_RWSEM_GENERIC_SPINLOCK=y
 # CONFIG_RWSEM_XCHGADD_ALGORITHM is not set
 CONFIG_SOC_AU1X00=y
-CONFIG_SOC_AU1000=y
+CONFIG_SOC_AU1200=y
 CONFIG_NONCOHERENT_IO=y
 CONFIG_PC_KEYB=y
-CONFIG_SWAP_IO_SPACE=y
 # CONFIG_MIPS_AU1000 is not set
 
 #
@@ -124,8 +126,8 @@ CONFIG_CPU_LITTLE_ENDIAN=y
 CONFIG_NET=y
 CONFIG_PCI=y
 CONFIG_PCI_NEW=y
-# CONFIG_PCI_AUTO is not set
-CONFIG_PCI_NAMES=y
+CONFIG_PCI_AUTO=y
+# CONFIG_PCI_NAMES is not set
 # CONFIG_ISA is not set
 # CONFIG_TC is not set
 # CONFIG_MCA is not set
@@ -165,87 +167,14 @@ CONFIG_BINFMT_ELF=y
 # CONFIG_BINFMT_ELF32 is not set
 # CONFIG_BINFMT_MISC is not set
 # CONFIG_OOM_KILLER is not set
-# CONFIG_CMDLINE_BOOL is not set
+CONFIG_CMDLINE_BOOL=y
+CONFIG_CMDLINE="mem=96M"
 # CONFIG_PM is not set
 
 #
 # Memory Technology Devices (MTD)
 #
-CONFIG_MTD=y
-# CONFIG_MTD_DEBUG is not set
-CONFIG_MTD_PARTITIONS=y
-# CONFIG_MTD_CONCAT is not set
-# CONFIG_MTD_REDBOOT_PARTS is not set
-# CONFIG_MTD_CMDLINE_PARTS is not set
-
-#
-# User Modules And Translation Layers
-#
-CONFIG_MTD_CHAR=y
-CONFIG_MTD_BLOCK=y
-# CONFIG_FTL is not set
-# CONFIG_NFTL is not set
-
-#
-# RAM/ROM/Flash chip drivers
-#
-CONFIG_MTD_CFI=y
-# CONFIG_MTD_JEDECPROBE is not set
-CONFIG_MTD_GEN_PROBE=y
-# CONFIG_MTD_CFI_ADV_OPTIONS is not set
-CONFIG_MTD_CFI_INTELEXT=y
-CONFIG_MTD_CFI_AMDSTD=y
-# CONFIG_MTD_CFI_STAA is not set
-# CONFIG_MTD_RAM is not set
-# CONFIG_MTD_ROM is not set
-# CONFIG_MTD_ABSENT is not set
-# CONFIG_MTD_OBSOLETE_CHIPS is not set
-# CONFIG_MTD_AMDSTD is not set
-# CONFIG_MTD_SHARP is not set
-# CONFIG_MTD_JEDEC is not set
-
-#
-# Mapping drivers for chip access
-#
-# CONFIG_MTD_PHYSMAP is not set
-# CONFIG_MTD_PB1000 is not set
-# CONFIG_MTD_PB1500 is not set
-# CONFIG_MTD_PB1100 is not set
-# CONFIG_MTD_BOSPORUS is not set
-# CONFIG_MTD_XXS1500 is not set
-# CONFIG_MTD_MTX1 is not set
-CONFIG_MTD_DB1X00=y
-CONFIG_MTD_DB1X00_BOOT=y
-CONFIG_MTD_DB1X00_USER=y
-# CONFIG_MTD_PB1550 is not set
-# CONFIG_MTD_HYDROGEN3 is not set
-# CONFIG_MTD_MIRAGE is not set
-# CONFIG_MTD_CSTM_MIPS_IXX is not set
-# CONFIG_MTD_OCELOT is not set
-# CONFIG_MTD_LASAT is not set
-# CONFIG_MTD_PCI is not set
-# CONFIG_MTD_PCMCIA is not set
-
-#
-# Self-contained MTD device drivers
-#
-# CONFIG_MTD_PMC551 is not set
-# CONFIG_MTD_SLRAM is not set
-# CONFIG_MTD_MTDRAM is not set
-# CONFIG_MTD_BLKMTD is not set
-
-#
-# Disk-On-Chip Device Drivers
-#
-# CONFIG_MTD_DOC1000 is not set
-# CONFIG_MTD_DOC2000 is not set
-# CONFIG_MTD_DOC2001 is not set
-# CONFIG_MTD_DOCPROBE is not set
-
-#
-# NAND Flash Device Drivers
-#
-# CONFIG_MTD_NAND is not set
+# CONFIG_MTD is not set
 
 #
 # Parallel port support
@@ -387,8 +316,8 @@ CONFIG_BLK_DEV_IDE=y
 # CONFIG_BLK_DEV_HD is not set
 # CONFIG_BLK_DEV_IDE_SATA is not set
 CONFIG_BLK_DEV_IDEDISK=y
-# CONFIG_IDEDISK_MULTI_MODE is not set
-# CONFIG_IDEDISK_STROKE is not set
+CONFIG_IDEDISK_MULTI_MODE=y
+CONFIG_IDEDISK_STROKE=y
 CONFIG_BLK_DEV_IDECS=m
 # CONFIG_BLK_DEV_DELKIN is not set
 # CONFIG_BLK_DEV_IDECD is not set
@@ -416,7 +345,96 @@ CONFIG_BLK_DEV_IDECS=m
 #
 # SCSI support
 #
-# CONFIG_SCSI is not set
+CONFIG_SCSI=y
+
+#
+# SCSI support type (disk, tape, CD-ROM)
+#
+CONFIG_BLK_DEV_SD=y
+CONFIG_SD_EXTRA_DEVS=40
+CONFIG_CHR_DEV_ST=y
+# CONFIG_CHR_DEV_OSST is not set
+CONFIG_BLK_DEV_SR=y
+# CONFIG_BLK_DEV_SR_VENDOR is not set
+CONFIG_SR_EXTRA_DEVS=2
+# CONFIG_CHR_DEV_SG is not set
+
+#
+# Some SCSI devices (e.g. CD jukebox) support multiple LUNs
+#
+# CONFIG_SCSI_DEBUG_QUEUES is not set
+# CONFIG_SCSI_MULTI_LUN is not set
+CONFIG_SCSI_CONSTANTS=y
+# CONFIG_SCSI_LOGGING is not set
+
+#
+# SCSI low-level drivers
+#
+# CONFIG_BLK_DEV_3W_XXXX_RAID is not set
+# CONFIG_SCSI_7000FASST is not set
+# CONFIG_SCSI_ACARD is not set
+# CONFIG_SCSI_AHA152X is not set
+# CONFIG_SCSI_AHA1542 is not set
+# CONFIG_SCSI_AHA1740 is not set
+# CONFIG_SCSI_AACRAID is not set
+# CONFIG_SCSI_AIC7XXX is not set
+# CONFIG_SCSI_AIC79XX is not set
+# CONFIG_SCSI_AIC7XXX_OLD is not set
+# CONFIG_SCSI_DPT_I2O is not set
+# CONFIG_SCSI_ADVANSYS is not set
+# CONFIG_SCSI_IN2000 is not set
+# CONFIG_SCSI_AM53C974 is not set
+# CONFIG_SCSI_MEGARAID is not set
+# CONFIG_SCSI_MEGARAID2 is not set
+# CONFIG_SCSI_SATA is not set
+# CONFIG_SCSI_SATA_AHCI is not set
+# CONFIG_SCSI_SATA_SVW is not set
+# CONFIG_SCSI_ATA_PIIX is not set
+# CONFIG_SCSI_SATA_NV is not set
+# CONFIG_SCSI_SATA_PROMISE is not set
+# CONFIG_SCSI_SATA_SX4 is not set
+# CONFIG_SCSI_SATA_SIL is not set
+# CONFIG_SCSI_SATA_SIS is not set
+# CONFIG_SCSI_SATA_ULI is not set
+# CONFIG_SCSI_SATA_VIA is not set
+# CONFIG_SCSI_SATA_VITESSE is not set
+# CONFIG_SCSI_BUSLOGIC is not set
+# CONFIG_SCSI_CPQFCTS is not set
+# CONFIG_SCSI_DMX3191D is not set
+# CONFIG_SCSI_DTC3280 is not set
+# CONFIG_SCSI_EATA is not set
+# CONFIG_SCSI_EATA_DMA is not set
+# CONFIG_SCSI_EATA_PIO is not set
+# CONFIG_SCSI_FUTURE_DOMAIN is not set
+# CONFIG_SCSI_GDTH is not set
+# CONFIG_SCSI_GENERIC_NCR5380 is not set
+# CONFIG_SCSI_INITIO is not set
+# CONFIG_SCSI_INIA100 is not set
+# CONFIG_SCSI_NCR53C406A is not set
+# CONFIG_SCSI_NCR53C7xx is not set
+# CONFIG_SCSI_SYM53C8XX_2 is not set
+# CONFIG_SCSI_NCR53C8XX is not set
+# CONFIG_SCSI_SYM53C8XX is not set
+# CONFIG_SCSI_PAS16 is not set
+# CONFIG_SCSI_PCI2000 is not set
+# CONFIG_SCSI_PCI2220I is not set
+# CONFIG_SCSI_PSI240I is not set
+# CONFIG_SCSI_QLOGIC_FAS is not set
+# CONFIG_SCSI_QLOGIC_ISP is not set
+# CONFIG_SCSI_QLOGIC_FC is not set
+# CONFIG_SCSI_QLOGIC_1280 is not set
+# CONFIG_SCSI_SIM710 is not set
+# CONFIG_SCSI_SYM53C416 is not set
+# CONFIG_SCSI_DC390T is not set
+# CONFIG_SCSI_T128 is not set
+# CONFIG_SCSI_U14_34F is not set
+# CONFIG_SCSI_NSP32 is not set
+# CONFIG_SCSI_DEBUG is not set
+
+#
+# PCMCIA SCSI adapter support
+#
+# CONFIG_SCSI_PCMCIA is not set
 
 #
 # Fusion MPT device support
@@ -461,8 +479,7 @@ CONFIG_NETDEVICES=y
 # Ethernet (10 or 100Mbit)
 #
 CONFIG_NET_ETHERNET=y
-CONFIG_MIPS_AU1X00_ENET=y
-# CONFIG_BCM5222_DUAL_PHY is not set
+# CONFIG_MIPS_AU1X00_ENET is not set
 # CONFIG_SUNLANCE is not set
 # CONFIG_HAPPYMEAL is not set
 # CONFIG_SUNBMAC is not set
@@ -493,14 +510,7 @@ CONFIG_MIPS_AU1X00_ENET=y
 # CONFIG_FDDI is not set
 # CONFIG_HIPPI is not set
 # CONFIG_PLIP is not set
-CONFIG_PPP=m
-CONFIG_PPP_MULTILINK=y
-# CONFIG_PPP_FILTER is not set
-CONFIG_PPP_ASYNC=m
-# CONFIG_PPP_SYNC_TTY is not set
-CONFIG_PPP_DEFLATE=m
-# CONFIG_PPP_BSDCOMP is not set
-CONFIG_PPPOE=m
+# CONFIG_PPP is not set
 # CONFIG_SLIP is not set
 
 #
@@ -534,51 +544,7 @@ CONFIG_PPPOE=m
 #
 # IrDA (infrared) support
 #
-CONFIG_IRDA=y
-
-#
-# IrDA protocols
-#
-CONFIG_IRLAN=m
-# CONFIG_IRNET is not set
-CONFIG_IRCOMM=m
-# CONFIG_IRDA_ULTRA is not set
-
-#
-# IrDA options
-#
-CONFIG_IRDA_CACHE_LAST_LSAP=y
-CONFIG_IRDA_FAST_RR=y
-# CONFIG_IRDA_DEBUG is not set
-
-#
-# Infrared-port device drivers
-#
-
-#
-# SIR device drivers
-#
-# CONFIG_IRTTY_SIR is not set
-# CONFIG_IRPORT_SIR is not set
-
-#
-# Dongle support
-#
-# CONFIG_DONGLE is not set
-
-#
-# FIR device drivers
-#
-# CONFIG_USB_IRDA is not set
-# CONFIG_NSC_FIR is not set
-# CONFIG_WINBOND_FIR is not set
-# CONFIG_TOSHIBA_OLD is not set
-# CONFIG_TOSHIBA_FIR is not set
-CONFIG_AU1000_FIR=m
-# CONFIG_SMC_IRCC_FIR is not set
-# CONFIG_ALI_FIR is not set
-# CONFIG_VLSI_FIR is not set
-# CONFIG_VIA_IRCC_FIR is not set
+# CONFIG_IRDA is not set
 
 #
 # ISDN subsystem
@@ -601,7 +567,7 @@ CONFIG_INPUT_EVDEV=y
 # Character devices
 #
 CONFIG_VT=y
-CONFIG_VT_CONSOLE=y
+# CONFIG_VT_CONSOLE is not set
 # CONFIG_SERIAL is not set
 # CONFIG_SERIAL_EXTENDED is not set
 CONFIG_SERIAL_NONSTANDARD=y
@@ -737,8 +703,8 @@ CONFIG_AUTOFS_FS=y
 # CONFIG_BEFS_FS is not set
 # CONFIG_BEFS_DEBUG is not set
 # CONFIG_BFS_FS is not set
-# CONFIG_EXT3_FS is not set
-# CONFIG_JBD is not set
+CONFIG_EXT3_FS=y
+CONFIG_JBD=y
 # CONFIG_JBD_DEBUG is not set
 CONFIG_FAT_FS=y
 CONFIG_MSDOS_FS=y
@@ -872,7 +838,52 @@ CONFIG_NLS_DEFAULT="iso8859-1"
 #
 # Frame-buffer support
 #
-# CONFIG_FB is not set
+CONFIG_FB=y
+CONFIG_DUMMY_CONSOLE=y
+# CONFIG_FB_RIVA is not set
+# CONFIG_FB_CLGEN is not set
+# CONFIG_FB_PM2 is not set
+# CONFIG_FB_PM3 is not set
+# CONFIG_FB_CYBER2000 is not set
+# CONFIG_FB_MATROX is not set
+# CONFIG_FB_ATY is not set
+# CONFIG_FB_RADEON is not set
+# CONFIG_FB_ATY128 is not set
+# CONFIG_FB_INTEL is not set
+# CONFIG_FB_SIS is not set
+# CONFIG_FB_NEOMAGIC is not set
+# CONFIG_FB_3DFX is not set
+# CONFIG_FB_VOODOO1 is not set
+# CONFIG_FB_TRIDENT is not set
+# CONFIG_FB_E1356 is not set
+# CONFIG_FB_IT8181 is not set
+# CONFIG_FB_VIRTUAL is not set
+CONFIG_FBCON_ADVANCED=y
+# CONFIG_FBCON_MFB is not set
+# CONFIG_FBCON_CFB2 is not set
+# CONFIG_FBCON_CFB4 is not set
+# CONFIG_FBCON_CFB8 is not set
+CONFIG_FBCON_CFB16=y
+# CONFIG_FBCON_CFB24 is not set
+CONFIG_FBCON_CFB32=y
+# CONFIG_FBCON_AFB is not set
+# CONFIG_FBCON_ILBM is not set
+# CONFIG_FBCON_IPLAN2P2 is not set
+# CONFIG_FBCON_IPLAN2P4 is not set
+# CONFIG_FBCON_IPLAN2P8 is not set
+# CONFIG_FBCON_MAC is not set
+# CONFIG_FBCON_VGA_PLANES is not set
+# CONFIG_FBCON_VGA is not set
+# CONFIG_FBCON_HGA is not set
+# CONFIG_FBCON_FONTWIDTH8_ONLY is not set
+CONFIG_FBCON_FONTS=y
+CONFIG_FONT_8x8=y
+CONFIG_FONT_8x16=y
+# CONFIG_FONT_SUN8x16 is not set
+# CONFIG_FONT_SUN12x22 is not set
+# CONFIG_FONT_6x11 is not set
+# CONFIG_FONT_PEARL_8x8 is not set
+# CONFIG_FONT_ACORN_8x8 is not set
 
 #
 # Sound
@@ -894,8 +905,8 @@ CONFIG_SOUND=y
 # CONFIG_SOUND_ICH is not set
 # CONFIG_SOUND_RME96XX is not set
 # CONFIG_SOUND_SONICVIBES is not set
-CONFIG_SOUND_AU1X00=y
-# CONFIG_SOUND_AU1550_PSC is not set
+# CONFIG_SOUND_AU1X00 is not set
+CONFIG_SOUND_AU1550_PSC=y
 # CONFIG_SOUND_AU1550_I2S is not set
 # CONFIG_SOUND_TRIDENT is not set
 # CONFIG_SOUND_MSNDCLAS is not set
@@ -916,7 +927,7 @@ CONFIG_USB=y
 #
 # Miscellaneous USB options
 #
-# CONFIG_USB_DEVICEFS is not set
+CONFIG_USB_DEVICEFS=y
 # CONFIG_USB_BANDWIDTH is not set
 
 #
@@ -926,7 +937,7 @@ CONFIG_USB=y
 # CONFIG_USB_UHCI is not set
 # CONFIG_USB_UHCI_ALT is not set
 CONFIG_USB_OHCI=y
-CONFIG_USB_NON_PCI_OHCI=y
+
 #
 # USB Device Class drivers
 #
@@ -934,11 +945,7 @@ CONFIG_USB_NON_PCI_OHCI=y
 # CONFIG_USB_EMI26 is not set
 # CONFIG_USB_BLUETOOTH is not set
 # CONFIG_USB_MIDI is not set
-
-#
-#   SCSI support is needed for USB Storage
-#
-# CONFIG_USB_STORAGE is not set
+CONFIG_USB_STORAGE=y
 # CONFIG_USB_STORAGE_DEBUG is not set
 # CONFIG_USB_STORAGE_DATAFAB is not set
 # CONFIG_USB_STORAGE_FREECOM is not set
@@ -956,7 +963,7 @@ CONFIG_USB_NON_PCI_OHCI=y
 #
 CONFIG_USB_HID=y
 CONFIG_USB_HIDINPUT=y
-# CONFIG_USB_HIDDEV is not set
+CONFIG_USB_HIDDEV=y
 # CONFIG_USB_AIPTEK is not set
 # CONFIG_USB_WACOM is not set
 # CONFIG_USB_KBTAB is not set
