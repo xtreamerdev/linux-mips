@@ -95,12 +95,6 @@ void mips_timer_interrupt(struct pt_regs *regs)
 	irq_enter(cpu, irq);
 	kstat.irqs[cpu][irq]++;
 
-#ifdef CONFIG_PM
-	printk(KERN_ERR "Unexpected CP0 interrupt\n");
-	regs->cp0_status &= ~IE_IRQ5; /* disable CP0 interrupt */
-	return;
-#endif
-
 	if (r4k_offset == 0)
 		goto null;
 
@@ -224,22 +218,31 @@ wakeup_counter0_set(int ticks)
 #endif
 
 /*
- * Figure out the r4k offset, the amount to increment the compare
- * register for each time tick.
- * Use the Programmable Counter 1 to do this.
+ * We read the real processor speed from the PLL.  This is important
+ * because it is more accurate than computing it from the 32KHz
+ * counter, if it exists.  If we don't have an accurate processor
+ * speed, all of the peripherals that derive their clocks based on
+ * this advertised speed will introduce error and sometimes not work
+ * properly.  This function is futher convoluted to still allow configurations
+ * to do that in case they have really, really old silicon with a
+ * write-only PLL register, that we need the 32KHz when power management
+ * "wait" is enabled, and we need to detect if the 32KHz isn't present
+ * but requested......got it? :-)		-- Dan
  */
 unsigned long cal_r4koff(void)
 {
 	unsigned long count;
 	unsigned long cpu_speed;
 	unsigned long flags;
+	unsigned long counter;
 
 	spin_lock_irqsave(&time_lock, flags);
-#ifdef CONFIG_AU1000_USE32K
+
+	/* Power management cares if we don't have a 32KHz counter.
+	*/
+	no_au1xxx_32khz = 0;
 	counter = au_readl(SYS_COUNTER_CNTRL);
 	if (counter & SYS_CNTRL_E0) {
-		unsigned long start, end;
-		unsigned long counter;
 		int trim_divide = 16;
 
 		au_writel(counter | SYS_CNTRL_EN1, SYS_COUNTER_CNTRL);
@@ -252,19 +255,33 @@ unsigned long cal_r4koff(void)
 		au_writel (0, SYS_TOYWRITE);
 		while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_C1S);
 
-		start = au_readl(SYS_RTCREAD);
-		start += 2;
-		/* wait for the beginning of a new tick */
-		while (au_readl(SYS_RTCREAD) < start);
+#if defined(CONFIG_AU1000_USE32K)
+		{
+			unsigned long start, end;
 
-		/* Start r4k counter. */
-		write_c0_count(0);
-		end = start + (32768 / trim_divide)/2; /* wait 0.5 seconds */
+			start = au_readl(SYS_RTCREAD);
+			start += 2;
+			/* wait for the beginning of a new tick
+			*/
+			while (au_readl(SYS_RTCREAD) < start);
 
-		while (end > au_readl(SYS_RTCREAD));
+			/* Start r4k counter.
+			*/
+			write_c0_count(0);
 
-		count = read_c0_count();
-		cpu_speed = count * 2;
+			/* Wait 0.5 seconds.
+			*/
+			end = start + (32768 / trim_divide)/2;
+
+			while (end > au_readl(SYS_RTCREAD));
+
+			count = read_c0_count();
+			cpu_speed = count * 2;
+		}
+#else
+		cpu_speed = (au_readl(SYS_CPUPLL) & 0x0000003f) * 1000000 * 12;
+		count = cpu_speed / 2;
+#endif
 	}
 	else {
 		/* The 32KHz oscillator isn't running, so assume there
@@ -275,17 +292,6 @@ unsigned long cal_r4koff(void)
 		count = cpu_speed / 2;
 		no_au1xxx_32khz = 1;
 	}
-#else
-	/* Always read the processor speed from the PLL.  Guessing this
-	 * value by using a 32KHz clock doesn't provide the accurate
-	 * clock speed.  This causes problems for peripheral clock dividers
-	 * because their clocks are not accurate, either.
-	 * NOTE: some old silicon doesn't allow reading the PLL.
-	 */
-	cpu_speed = (au_readl(SYS_CPUPLL) & 0x0000003f) * 1000000 * 12;
-	count = cpu_speed / 2;
-	no_au1xxx_32khz = 1;
-#endif
 	mips_hpt_frequency = count;
 	// Equation: Baudrate = CPU / (SD * 2 * CLKDIV * 16)
 	set_au1x00_uart_baud_base(cpu_speed / (2 * ((int)(au_readl(SYS_POWERCTRL)&0x03) + 2) * 16));
@@ -380,7 +386,7 @@ void __init au1xxx_timer_setup(void)
 {
         unsigned int est_freq;
 	extern unsigned long (*do_gettimeoffset)(void);
-	extern void r4k_wait(void);
+	extern void au1k_wait(void);
 
 	printk("calculating r4koff... ");
 	r4k_offset = cal_r4koff();
@@ -416,12 +422,16 @@ void __init au1xxx_timer_setup(void)
 	 * we do this.
 	 */
 	if (no_au1xxx_32khz) {
+		unsigned int c0_status;
+
 		printk("WARNING: no 32KHz clock found.\n");
 		do_gettimeoffset = do_fast_cp0_gettimeoffset;
 
 		/* Ensure we get CPO_COUNTER interrupts.
 		*/
-		change_cp0_status(IE_IRQ5, IE_IRQ5);
+		c0_status = read_c0_status();
+		c0_status |= IE_IRQ5;
+		write_c0_status(c0_status);
 	}
 	else {
 		while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_C0S);
@@ -444,7 +454,7 @@ void __init au1xxx_timer_setup(void)
 
 		/* We can use the real 'wait' instruction.
 		*/
-		au1k_wait_ptr = r4k_wait;
+		au1k_wait_ptr = au1k_wait;
 	}
 
 #else

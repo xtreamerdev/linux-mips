@@ -34,6 +34,12 @@ static void r4k_wait(void)
 		".set\tmips0");
 }
 
+/* The Au1xxx wait is available only if we run CONFIG_PM and
+ * the timer setup found we had a 32KHz counter available.
+ * There are still problems with functions that may call au1k_wait
+ * directly, but that will be discovered pretty quickly.
+ */
+extern void (*au1k_wait_ptr)(void);
 void au1k_wait(void)
 {
 #ifdef CONFIG_PM
@@ -84,12 +90,19 @@ static inline void check_wait(void)
 		cpu_wait = r4k_wait;
 		printk(" available.\n");
 		break;
+#ifdef CONFIG_PM
 	case CPU_AU1000:
 	case CPU_AU1100:
 	case CPU_AU1500:
-		cpu_wait = au1k_wait;
-		printk(" available.\n");
+		if (au1k_wait_ptr != NULL) {
+			cpu_wait = au1k_wait_ptr;
+			printk(" available.\n");
+		}
+		else {
+			printk(" unavailable.\n");
+		}
 		break;
+#endif
 	default:
 		printk(" unavailable.\n");
 		break;
