@@ -35,6 +35,9 @@ if [ "$CONFIG_PCMCIA" != "n" ]; then
         bool '  Pb1x00 board support' CONFIG_PCMCIA_PB1X00
         bool '  Db1x00 board support' CONFIG_PCMCIA_DB1X00
       fi
+      if [ "$CONFIG_PCMCIA_AU1000" != "n" ]; then
+        bool '  Titanium board support' CONFIG_PCMCIA_TITANIUM
+      fi
    fi
    if [ "$CONFIG_VRC4173" != "n" ]; then
       dep_tristate '  NEC VRC4173 CARDU support' CONFIG_PCMCIA_VRC4173 $CONFIG_PCMCIA

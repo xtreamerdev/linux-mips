@@ -2,7 +2,7 @@
  *
  * Alchemy Au1x00 ethernet driver
  *
- * Copyright 2001,2002 MontaVista Software Inc.
+ * Copyright 2001,2002,2003 MontaVista Software Inc.
  * Copyright 2002 TimeSys Corp.
  * Author: MontaVista Software, Inc.
  *         	ppopov@mvista.com or source@mvista.com
@@ -57,7 +57,7 @@
 #include "au1000_eth.h"
 
 #ifdef AU1000_ETH_DEBUG
-static int au1000_debug = 10;
+static int au1000_debug = 5;
 #else
 static int au1000_debug = 3;
 #endif
@@ -131,7 +131,7 @@ static struct au1if {
 #define NUM_INTERFACES (sizeof(au1x00_iflist) / sizeof(struct au1if))
 
 static char version[] __devinitdata =
-    "au1000eth.c:1.1 ppopov@mvista.com\n";
+    "au1000eth.c:1.2 ppopov@mvista.com\n";
 
 /* These addresses are only used if yamon doesn't tell us what
  * the mac address is, and the mac address is not passed on the
@@ -148,6 +148,7 @@ static unsigned char au1000_mac_addr[6] __devinitdata = {
 #define cpu_to_dma32 cpu_to_be32
 #define dma32_to_cpu be32_to_cpu
 
+struct au1000_private *au_macs[NUM_INTERFACES];
 
 /* FIXME 
  * All of the PHY code really should be detached from the MAC 
@@ -681,14 +682,16 @@ static struct mii_chip_info {
 	u16 phy_id0;
 	u16 phy_id1;
 	struct phy_ops *phy_ops;	
+	int dual_phy;
 } mii_chip_table[] = {
-	{"Broadcom BCM5201 10/100 BaseT PHY",  0x0040, 0x6212, &bcm_5201_ops },
-	{"Broadcom BCM5221 10/100 BaseT PHY",  0x0040, 0x61e4, &bcm_5201_ops },
-	{"AMD 79C901 HomePNA PHY",  0x0000, 0x35c8, &am79c901_ops },
-	{"AMD 79C874 10/100 BaseT PHY",  0x0022, 0x561b, &am79c874_ops },
-	{"LSI 80227 10/100 BaseT PHY", 0x0016, 0xf840, &lsi_80227_ops },
-	{"Intel LXT971A Dual Speed PHY", 0x0013, 0x78e2, &lxt971a_ops },
-	{"Kendin KS8995M 10/100 BaseT PHY",0x0022, 0x1450, &ks8995m_ops },
+	{"Broadcom BCM5201 10/100 BaseT PHY",0x0040,0x6212, &bcm_5201_ops,0},
+	{"Broadcom BCM5221 10/100 BaseT PHY",0x0040,0x61e4, &bcm_5201_ops,0},
+	{"Broadcom BCM5222 10/100 BaseT PHY",0x0040,0x6322, &bcm_5201_ops,1},
+	{"AMD 79C901 HomePNA PHY",0x0000,0x35c8, &am79c901_ops,0},
+	{"AMD 79C874 10/100 BaseT PHY",0x0022,0x561b, &am79c874_ops,0},
+	{"LSI 80227 10/100 BaseT PHY",0x0016,0xf840, &lsi_80227_ops,0},
+	{"Intel LXT971A Dual Speed PHY",0x0013,0x78e2, &lxt971a_ops,0},
+	{"Kendin KS8995M 10/100 BaseT PHY",0x0022,0x1450, &ks8995m_ops,0},
 #ifdef CONFIG_MIPS_BOSPORUS
 	{"Stub", 0x1234, 0x5678, &stub_ops },
 #endif
@@ -698,10 +701,38 @@ static struct mii_chip_info {
 static int mdio_read(struct net_device *dev, int phy_id, int reg)
 {
 	struct au1000_private *aup = (struct au1000_private *) dev->priv;
+	volatile u32 *mii_control_reg;
+	volatile u32 *mii_data_reg;
 	u32 timedout = 20;
 	u32 mii_control;
 
-	while (aup->mac->mii_control & MAC_MII_BUSY) {
+	#ifdef CONFIG_BCM5222_DUAL_PHY
+	/* First time we probe, it's for the mac0 phy.
+	 * Since we haven't determined yet that we have a dual phy,
+	 * aup->mii->mii_control_reg won't be setup and we'll
+	 * default to the else statement.
+	 * By the time we probe for the mac1 phy, the mii_control_reg
+	 * will be setup to be the address of the mac0 phy control since
+	 * both phys are controlled through mac0.
+	 */
+	if (aup->mii && aup->mii->mii_control_reg) {
+		mii_control_reg = aup->mii->mii_control_reg;
+		mii_data_reg = aup->mii->mii_data_reg;
+	}
+	else if (au_macs[0]->mii && au_macs[0]->mii->mii_control_reg) {
+		/* assume both phys are controlled through mac0 */
+		mii_control_reg = au_macs[0]->mii->mii_control_reg;
+		mii_data_reg = au_macs[0]->mii->mii_data_reg;
+	}
+	else 
+	#endif
+	{
+		/* default control and data reg addresses */
+		mii_control_reg = &aup->mac->mii_control;
+		mii_data_reg = &aup->mac->mii_data;
+	}
+
+	while (*mii_control_reg & MAC_MII_BUSY) {
 		mdelay(1);
 		if (--timedout == 0) {
 			printk(KERN_ERR "%s: read_MII busy timeout!!\n", 
@@ -713,10 +744,10 @@ static int mdio_read(struct net_device *dev, int phy_id, int reg)
 	mii_control = MAC_SET_MII_SELECT_REG(reg) | 
 		MAC_SET_MII_SELECT_PHY(phy_id) | MAC_MII_READ;
 
-	aup->mac->mii_control = mii_control;
+	*mii_control_reg = mii_control;
 
 	timedout = 20;
-	while (aup->mac->mii_control & MAC_MII_BUSY) {
+	while (*mii_control_reg & MAC_MII_BUSY) {
 		mdelay(1);
 		if (--timedout == 0) {
 			printk(KERN_ERR "%s: mdio_read busy timeout!!\n", 
@@ -724,16 +755,36 @@ static int mdio_read(struct net_device *dev, int phy_id, int reg)
 			return -1;
 		}
 	}
-	return (int)aup->mac->mii_data;
+	return (int)*mii_data_reg;
 }
 
 static void mdio_write(struct net_device *dev, int phy_id, int reg, u16 value)
 {
 	struct au1000_private *aup = (struct au1000_private *) dev->priv;
+	volatile u32 *mii_control_reg;
+	volatile u32 *mii_data_reg;
 	u32 timedout = 20;
 	u32 mii_control;
 
-	while (aup->mac->mii_control & MAC_MII_BUSY) {
+	#ifdef CONFIG_BCM5222_DUAL_PHY
+	if (aup->mii && aup->mii->mii_control_reg) {
+		mii_control_reg = aup->mii->mii_control_reg;
+		mii_data_reg = aup->mii->mii_data_reg;
+	}
+	else if (au_macs[0]->mii && au_macs[0]->mii->mii_control_reg) {
+		/* assume both phys are controlled through mac0 */
+		mii_control_reg = au_macs[0]->mii->mii_control_reg;
+		mii_data_reg = au_macs[0]->mii->mii_data_reg;
+	}
+	else 
+	#endif
+	{
+		/* default control and data reg addresses */
+		mii_control_reg = &aup->mac->mii_control;
+		mii_data_reg = &aup->mac->mii_data;
+	}
+
+	while (*mii_control_reg & MAC_MII_BUSY) {
 		mdelay(1);
 		if (--timedout == 0) {
 			printk(KERN_ERR "%s: mdio_write busy timeout!!\n", 
@@ -745,8 +796,8 @@ static void mdio_write(struct net_device *dev, int phy_id, int reg, u16 value)
 	mii_control = MAC_SET_MII_SELECT_REG(reg) | 
 		MAC_SET_MII_SELECT_PHY(phy_id) | MAC_MII_WRITE;
 
-	aup->mac->mii_data = value;
-	aup->mac->mii_control = mii_control;
+	*mii_data_reg = value;
+	*mii_control_reg = mii_control;
 }
 
 
@@ -772,13 +823,19 @@ static int __init mii_probe (struct net_device * dev)
 	int phy_found=0;
 #endif
 
-	aup->mii = NULL;
-
 	/* search for total of 32 possible mii phy addresses */
 	for (phy_addr = 0; phy_addr < 32; phy_addr++) {
 		u16 mii_status;
 		u16 phy_id0, phy_id1;
 		int i;
+
+		#ifdef CONFIG_BCM5222_DUAL_PHY
+		/* Mask the already found phy, try next one */
+		if (au_macs[0]->mii && au_macs[0]->mii->mii_control_reg) {
+			if (au_macs[0]->phy_addr == phy_addr)
+				continue;
+		}
+		#endif
 
 		mii_status = mdio_read(dev, phy_addr, MII_STATUS);
 		if (mii_status == 0xffff || mii_status == 0x0000)
@@ -792,7 +849,7 @@ static int __init mii_probe (struct net_device * dev)
 		for (i = 0; mii_chip_table[i].phy_id1; i++) {
 			if (phy_id0 == mii_chip_table[i].phy_id0 &&
 			    phy_id1 == mii_chip_table[i].phy_id1) {
-				struct mii_phy * mii_phy;
+				struct mii_phy * mii_phy = aup->mii;
 
 				printk(KERN_INFO "%s: %s at phy address %d\n",
 				       dev->name, mii_chip_table[i].name, 
@@ -800,27 +857,35 @@ static int __init mii_probe (struct net_device * dev)
 #ifdef CONFIG_MIPS_BOSPORUS
 				phy_found = 1;
 #endif
-				mii_phy = kmalloc(sizeof(struct mii_phy), 
-						GFP_KERNEL);
-				if (mii_phy) {
-					mii_phy->chip_info = mii_chip_table+i;
-					mii_phy->phy_addr = phy_addr;
-					mii_phy->next = aup->mii;
-					aup->phy_ops = 
-						mii_chip_table[i].phy_ops;
-					aup->mii = mii_phy;
-					aup->phy_ops->phy_init(dev,phy_addr);
-				} else {
-					printk(KERN_ERR "%s: out of memory\n",
-							dev->name);
-					return -1;
+				mii_phy->chip_info = mii_chip_table+i;
+				aup->phy_addr = phy_addr;
+				aup->phy_ops = mii_chip_table[i].phy_ops;
+				aup->phy_ops->phy_init(dev,phy_addr);
+
+				// Check for dual-phy and then store required 
+				// values and set indicators. We need to do 
+				// this now since mdio_{read,write} need the 
+				// control and data register addresses.
+				#ifdef CONFIG_BCM5222_DUAL_PHY
+				if ( mii_chip_table[i].dual_phy) {
+
+					/* assume both phys are controlled 
+					 * through MAC0. Board specific? */
+					
+					/* sanity check */
+					if (!au_macs[0] || !au_macs[0]->mii)
+						return -1;
+					aup->mii->mii_control_reg = (u32 *)
+						&au_macs[0]->mac->mii_control;
+					aup->mii->mii_data_reg = (u32 *)
+						&au_macs[0]->mac->mii_data;
 				}
-				/* the current mii is on our mii_info_table,
-				   try next address */
-				break;
+				#endif
+				goto found;
 			}
 		}
 	}
+found:
 
 #ifdef CONFIG_MIPS_BOSPORUS
 	/* This is a workaround for the Micrel/Kendin 5 port switch
@@ -852,7 +917,7 @@ static int __init mii_probe (struct net_device * dev)
 						GFP_KERNEL);
 				if (mii_phy) {
 					mii_phy->chip_info = mii_chip_table+i;
-					mii_phy->phy_addr = phy_addr;
+					aup->phy_addr = phy_addr;
 					mii_phy->next = aup->mii;
 					aup->phy_ops = 
 						mii_chip_table[i].phy_ops;
@@ -863,8 +928,10 @@ static int __init mii_probe (struct net_device * dev)
 							dev->name);
 					return -1;
 				}
-				/* the current mii is on our mii_info_table,
-				   try next address */
+				mii_phy->chip_info = mii_chip_table+i;
+				aup->phy_addr = phy_addr;
+				aup->phy_ops = mii_chip_table[i].phy_ops;
+				aup->phy_ops->phy_init(dev,phy_addr);
 				break;
 			}
 		}
@@ -876,8 +943,6 @@ static int __init mii_probe (struct net_device * dev)
 		return -1;
 	}
 
-	/* use last PHY */
-	aup->phy_addr = aup->mii->phy_addr;
 	printk(KERN_INFO "%s: Using %s as default\n", 
 			dev->name, aup->mii->chip_info->name);
 
@@ -974,10 +1039,16 @@ static void reset_mac(struct net_device *dev)
 	spin_lock_irqsave(&aup->lock, flags);
 	del_timer(&aup->timer);
 	hard_stop(dev);
-	*aup->enable = MAC_EN_CLOCK_ENABLE;
-	au_sync_delay(2);
-       	*aup->enable = 0;
-	au_sync_delay(2);
+	#ifndef CONFIG_BCM5222_DUAL_PHY
+	if (aup->mac_id != 0) {
+		/* If BCM5222, we can't leave MAC0 in reset because then 
+		 * we can't access the dual phy for ETH1 */
+		*aup->enable = MAC_EN_CLOCK_ENABLE;
+		au_sync_delay(2);
+		*aup->enable = 0;
+		au_sync_delay(2);
+	}
+	#endif
 	aup->tx_full = 0;
 	spin_unlock_irqrestore(&aup->lock, flags);
 }
@@ -1098,6 +1169,8 @@ au1000_probe1(struct net_device *dev, long ioaddr, int irq, int port_num)
 				((unsigned long)AU1500_MAC0_ENABLE);
 		memcpy(dev->dev_addr, au1000_mac_addr, sizeof(dev->dev_addr));
 		setup_hw_rings(aup, MAC0_RX_DMA_ADDR, MAC0_TX_DMA_ADDR);
+		aup->mac_id = 0;
+		au_macs[0] = aup;
 			break;
 	case AU1000_ETH1_BASE:
 	case AU1500_ETH1_BASE:
@@ -1110,14 +1183,14 @@ au1000_probe1(struct net_device *dev, long ioaddr, int irq, int port_num)
 		memcpy(dev->dev_addr, au1000_mac_addr, sizeof(dev->dev_addr));
 		dev->dev_addr[4] += 0x10;
 		setup_hw_rings(aup, MAC1_RX_DMA_ADDR, MAC1_TX_DMA_ADDR);
+		aup->mac_id = 1;
+		au_macs[1] = aup;
 			break;
 	default:
 		printk(KERN_ERR "%s: bad ioaddr\n", dev->name);
 		break;
 
 	}
-
-	aup->phy_addr = PHY_ADDRESS;
 
 	/* bring the device out of reset, otherwise probing the mii
 	 * will hang */
@@ -1126,6 +1199,14 @@ au1000_probe1(struct net_device *dev, long ioaddr, int irq, int port_num)
 	*aup->enable = MAC_EN_RESET0 | MAC_EN_RESET1 | 
 		MAC_EN_RESET2 | MAC_EN_CLOCK_ENABLE;
 	au_sync_delay(2);
+
+	aup->mii = kmalloc(sizeof(struct mii_phy), GFP_KERNEL);
+	if (!aup->mii) {
+		printk(KERN_ERR "%s: out of memory\n", dev->name);
+		return -1;
+	}
+	aup->mii->mii_control_reg = 0;
+	aup->mii->mii_data_reg = 0;
 
 	if (mii_probe(dev) != 0) {
 		 goto free_region;
@@ -1182,6 +1263,7 @@ au1000_probe1(struct net_device *dev, long ioaddr, int irq, int port_num)
 	return 0;
 
 free_region:
+	reset_mac(dev);
 	release_region(PHYSADDR(ioaddr), MAC_IOSIZE);
 	unregister_netdev(dev);
 	if (aup->vaddr) 
@@ -1189,6 +1271,7 @@ free_region:
 				MAX_BUF_SIZE * (NUM_TX_BUFFS+NUM_RX_BUFFS));
 	if (dev->priv != NULL)
 		kfree(dev->priv);
+	kfree(aup->mii);
 	kfree(dev);
 	printk(KERN_ERR "%s: au1000_probe1 failed.  Returns %d\n",
 	       dev->name, retval);
@@ -1442,7 +1525,7 @@ static int au1000_tx(struct sk_buff *skb, struct net_device *dev)
 	db_dest_t *pDB;
 	int i;
 
-	if (au1000_debug > 4)
+	if (au1000_debug > 5)
 		printk("%s: tx: aup %x len=%d, data=%p, head %d\n", 
 				dev->name, (unsigned)aup, skb->len, 
 				skb->data, aup->tx_head);
@@ -1521,7 +1604,7 @@ static int au1000_rx(struct net_device *dev)
 	u32 buff_stat, status;
 	db_dest_t *pDB;
 
-	if (au1000_debug > 4)
+	if (au1000_debug > 5)
 		printk("%s: au1000_rx head %d\n", dev->name, aup->rx_head);
 
 	prxd = aup->rx_dma_ring[aup->rx_head];
@@ -1671,12 +1754,12 @@ static void set_rx_mode(struct net_device *dev)
 
 static int au1000_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 {
-	u16 *data = (u16 *)&rq->ifr_data;
+	//u16 *data = (u16 *)&rq->ifr_data;
 
 	/* fixme */
 	switch(cmd) { 
 		case SIOCDEVPRIVATE:	/* Get the address of the PHY in use. */
-		data[0] = PHY_ADDRESS;
+		//data[0] = PHY_ADDRESS;
 		case SIOCDEVPRIVATE+1:	/* Read the specified MII register. */
 		//data[3] = mdio_read(ioaddr, data[0], data[1]); 
 		return 0;

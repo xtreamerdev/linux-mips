@@ -38,11 +38,6 @@
 #define ETH_TX_TIMEOUT HZ/4
 #define MAC_MIN_PKT_SIZE 64
 
-/* add an ifdef for any new board that has different defaults */
-#define PHY_ADDRESS              0
-#define PHY_CONTROL_DEFAULT 0x3000
-#define PHY_CONTROL_REG_ADDR     0
-
 #define MULTICAST_FILTER_LIMIT 64
 
 /* FIXME 
@@ -148,8 +143,9 @@
 typedef struct mii_phy {
 	struct mii_phy * next;
 	struct mii_chip_info * chip_info;
-	int phy_addr;
 	u16 status;
+	u32 *mii_control_reg;
+	u32 *mii_data_reg;
 } mii_phy_t;
 
 struct phy_ops {
@@ -216,6 +212,7 @@ struct au1000_private {
 	u32 tx_tail;
 	u32 tx_full;
 
+	int mac_id;
 	mii_phy_t *mii;
 	struct phy_ops *phy_ops;
 	
@@ -229,7 +226,7 @@ struct au1000_private {
 	u8 *hash_table;
 	u32 hash_mode;
 	u32 intr_work_done; /* number of Rx and Tx pkts processed in the isr */
-	u32 phy_addr;          /* PHY address */
+	int phy_addr;          /* phy address */
 	u32 options;           /* User-settable misc. driver options. */
 	u32 drv_flags;
 	struct net_device_stats stats;

@@ -60,6 +60,9 @@ if [ "$CONFIG_NET_ETHERNET" = "y" ]; then
    fi
    if [ "$CONFIG_SOC_AU1X00" = "y" ]; then
       bool '  MIPS Au1x00 Ethernet support' CONFIG_MIPS_AU1X00_ENET
+      if [ "$CONFIG_MIPS_AU1X00_ENET" = "y" ]; then
+         bool '   Broadcom 5222 Dual Phy Support' CONFIG_BCM5222_DUAL_PHY
+      fi
    fi
    if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
       tristate '  SB1250 Ethernet support' CONFIG_NET_SB1250_MAC

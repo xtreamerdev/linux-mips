@@ -892,9 +892,9 @@ extern au1xxx_irq_map_t au1xxx_irq_map[];
 /* GPIO2, Au1500 only */
 #define GPIO2_BASE                0xB1700000
 #define GPIO2_DIR                 (GPIO2_BASE + 0)
-#define GPIO2_DATA_EN             (GPIO2_BASE + 8)
-#define GPIO2_PIN_STATE           (GPIO2_BASE + 0xC)
-#define GPIO2_INT_ENABLE          (GPIO2_BASE + 0x10)
+#define GPIO2_OUTPUT              (GPIO2_BASE + 8)
+#define GPIO2_PINSTATE            (GPIO2_BASE + 0xC)
+#define GPIO2_INTENABLE           (GPIO2_BASE + 0x10)
 #define GPIO2_ENABLE              (GPIO2_BASE + 0x14)
 
 /* Power Management */

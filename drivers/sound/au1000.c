@@ -2154,6 +2154,24 @@ static int __devinit au1000_probe(void)
 					     ac97_read_proc, &s->codec);
 #endif
 
+#ifdef CONFIG_MIPS_TITANIUM
+	/* deassert eapd */
+	wrcodec(&s->codec, AC97_POWER_CONTROL, 
+			rdcodec(&s->codec, AC97_POWER_CONTROL) & ~0x8000);
+	/* mute a number of signals which seem to be causing problems
+	 * if not muted.
+	 */
+	wrcodec(&s->codec, AC97_PCBEEP_VOL, 0x8000);
+	wrcodec(&s->codec, AC97_PHONE_VOL, 0x8008);
+	wrcodec(&s->codec, AC97_MIC_VOL, 0x8008);
+	wrcodec(&s->codec, AC97_LINEIN_VOL, 0x8808);
+	wrcodec(&s->codec, AC97_CD_VOL, 0x8808);
+	wrcodec(&s->codec, AC97_VIDEO_VOL, 0x8808);
+	wrcodec(&s->codec, AC97_AUX_VOL, 0x8808);
+	wrcodec(&s->codec, AC97_PCMOUT_VOL, 0x0808);
+	wrcodec(&s->codec, AC97_GENERAL_PURPOSE, 0x2000);
+#endif
+
 	return 0;
 
  err_dev3:

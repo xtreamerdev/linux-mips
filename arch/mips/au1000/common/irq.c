@@ -62,6 +62,8 @@
 #include <asm/db1x00.h>
 #elif defined(CONFIG_MIPS_BOSPORUS)
 #include <asm/db1x00.h>
+#elif defined(CONFIG_MIPS_TITANIUM)
+#include <asm/titanium.h>
 #else
 #error unsupported Alchemy board
 #endif
