@@ -210,7 +210,7 @@
 #define MIPS_CPU_CACHE_CDEX_S	0x00001000 /* ... same for seconary cache ... */
 #define MIPS_CPU_MCHECK		0x00002000 /* Machine check exception */
 #define MIPS_CPU_EJTAG		0x00004000 /* EJTAG exception */
-#define MIPS_CPU_NOFPUEX	0x00008000 /* no FPU exception */
+#define MIPS_CPU_NOFPUEX	0x00000000 /* no FPU exception; never set */
 #define MIPS_CPU_LLSC		0x00010000 /* CPU has ll/sc instructions */
 #define MIPS_CPU_SUBSET_CACHES	0x00020000 /* P-cache subset enforced */
 #define MIPS_CPU_PREFETCH	0x00040000 /* CPU has usable prefetch */
