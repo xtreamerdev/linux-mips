@@ -28,6 +28,7 @@
 #include <asm/reboot.h>
 #include <asm/io.h>
 #include <asm/pgtable.h>
+#include <asm/traps.h>
 
 /*
  * Initial irq handlers.
@@ -79,6 +80,10 @@ static void __init jazz_irq_setup(void)
 	request_region(0xa0, 0x20, "pic2");
 	i8259_setup_irq(2, &irq2);
 }
+
+
+void __init bus_error_init(void) { /* nothing */ }
+
 
 void __init jazz_setup(void)
 {

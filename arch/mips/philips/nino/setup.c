@@ -19,6 +19,7 @@
 #include <asm/irq.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
+#include <asm/traps.h>
 #include <asm/tx3912.h>
 
 static void nino_machine_restart(char *command)
@@ -80,6 +81,10 @@ static __init void nino_timer_setup(struct irqaction *irq)
 	irq->dev_id = (void *) irq;
 	setup_irq(0, irq);
 }
+
+
+void __init bus_error_init(void) { /* nothing */ }
+
 
 void __init nino_setup(void)
 {

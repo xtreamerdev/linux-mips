@@ -10,6 +10,7 @@
  *
  * Kevin D. Kissell, kevink@mips.com and Carsten Langgaard, carstenl@mips.com
  * Copyright (C) 2000, 01 MIPS Technologies, Inc.
+ * Copyright (C) 2002  Maciej W. Rozycki
  */
 #include <linux/config.h>
 #include <linux/init.h>
@@ -32,6 +33,7 @@
 #include <asm/siginfo.h>
 #include <asm/watch.h>
 #include <asm/system.h>
+#include <asm/traps.h>
 #include <asm/uaccess.h>
 #include <asm/mmu_context.h>
 
@@ -66,8 +68,7 @@ extern int fpu_emulator_cop1Handler(struct pt_regs *);
 
 char watch_available = 0;
 
-void (*ibe_board_handler)(struct pt_regs *regs);
-void (*dbe_board_handler)(struct pt_regs *regs);
+int (*be_board_handler)(struct pt_regs *regs, int is_fixup);
 
 int kstack_depth_to_print = 24;
 
@@ -417,20 +418,35 @@ search_dbe_table(unsigned long addr)
 #endif
 }
 
-static void default_be_board_handler(struct pt_regs *regs)
+asmlinkage void do_be(struct pt_regs *regs)
 {
 	unsigned long new_epc;
-	unsigned long fixup;
+	unsigned long fixup = 0;
 	int data = regs->cp0_cause & 4;
+	int action = MIPS_BE_FATAL;
 
-	if (data && !user_mode(regs)) {
+	if (data && !user_mode(regs))
 		fixup = search_dbe_table(regs->cp0_epc);
+
+	if (fixup)
+		action = MIPS_BE_FIXUP;
+
+	if (be_board_handler)
+		action = be_board_handler(regs, fixup != 0);
+
+	switch (action) {
+	case MIPS_BE_DISCARD:
+		return;
+	case MIPS_BE_FIXUP:
 		if (fixup) {
 			new_epc = fixup_exception(dpf_reg, fixup,
 						  regs->cp0_epc);
 			regs->cp0_epc = new_epc;
 			return;
 		}
+		break;
+	default:
+		break;
 	}
 
 	/*
@@ -441,16 +457,6 @@ static void default_be_board_handler(struct pt_regs *regs)
 	       regs->cp0_epc, regs->regs[31]);
 	die_if_kernel("Oops", regs);
 	force_sig(SIGBUS, current);
-}
-
-asmlinkage void do_ibe(struct pt_regs *regs)
-{
-	ibe_board_handler(regs);
-}
-
-asmlinkage void do_dbe(struct pt_regs *regs)
-{
-	dbe_board_handler(regs);
 }
 
 asmlinkage void do_ov(struct pt_regs *regs)
@@ -950,6 +956,13 @@ void __init trap_init(void)
 	 */
 	parity_protection_init();
 
+	/*
+	 * The Data Bus Errors / Instruction Bus Errors are signaled
+	 * by external hardware.  Therefore these two exceptions
+	 * may have board specific handlers.
+	 */
+	bus_error_init();
+
 	set_except_vector(1, handle_mod);
 	set_except_vector(2, handle_tlbl);
 	set_except_vector(3, handle_tlbs);
@@ -958,13 +971,11 @@ void __init trap_init(void)
 
 	/*
 	 * The Data Bus Error/ Instruction Bus Errors are signaled
-	 * by external hardware.  Therefore these two expection have
-	 * board specific handlers.
+	 * by external hardware.  Therefore these two exceptions
+	 * may have board specific handlers.
 	 */
 	set_except_vector(6, handle_ibe);
 	set_except_vector(7, handle_dbe);
-	ibe_board_handler = default_be_board_handler;
-	dbe_board_handler = default_be_board_handler;
 
 	set_except_vector(8, handle_sys);
 	set_except_vector(9, handle_bp);
