@@ -457,6 +457,18 @@ CONFIG_BLK_DEV_INITRD
   "real" root file system, etc. See <file:Documentation/initrd.txt>
   for details.
 
+Embed root filesystem ramdisk into the kernel
+CONFIG_EMBEDDED_RAMDISK
+  Select this option if you want to build the ramdisk image into the
+  the final kernel binary.
+
+Filename of gziped ramdisk image
+CONFIG_EMBEDDED_RAMDISK_IMAGE
+  This is the filename of the ramdisk image to be built into the
+  kernel.  Relative pathnames are relative to arch/mips/ramdisk/.
+  The ramdisk image is not part of the kernel distribution; you must
+  provide one yourself.
+
 Loopback device support
 CONFIG_BLK_DEV_LOOP
   Saying Y here will allow you to use a regular file as a block
