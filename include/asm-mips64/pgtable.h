@@ -67,6 +67,10 @@
 #define PGDIR_SIZE	(1UL << PGDIR_SHIFT)
 #define PGDIR_MASK	(~(PGDIR_SIZE-1))
 
+#define PGD_T_LOG2	ffz(~sizeof(pgd_t))
+#define PMD_T_LOG2	ffz(~sizeof(pmd_t))
+#define PTE_T_LOG2	ffz(~sizeof(pte_t))
+
 /*
  * For 4kB page size we use a 3 level page tree and a 8kB pmd and pgds which
  * permits us mapping 40 bits of virtual address space.
