@@ -18,6 +18,7 @@
 #include <linux/delay.h>
 #include <linux/pci.h>
 #include <linux/videodev.h>
+#include <linux/video_decoder.h>
 #include <linux/i2c.h>
 #include <linux/i2c-algo-sgi.h>
 
@@ -71,8 +72,8 @@ struct vino_device {
 	unsigned int left, right, top, bottom;
 	/* decimation used */
 	unsigned int decimation;
-	/* palette used... */
-	unsigned int palette;
+	/* palette used, picture hue, etc */
+	struct video_picture picture;
 	/* VINO_INPUT_COMP, VINO_INPUT_SVIDEO or VINO_INPUT_CAMERA */
 	unsigned int input;
 	/* bytes per line */
@@ -230,16 +231,30 @@ static int vino_i2c_del_bus(void)
 	return i2c_sgi_del_bus(&vino_i2c_adapter);
 }
 
+static int i2c_camera_command(unsigned int cmd, void *arg)
+{
+	return Vino->camera.driver->driver->command(Vino->camera.driver,
+						    cmd, arg);
+}
+
+static int i2c_decoder_command(unsigned int cmd, void *arg)
+{
+	return Vino->decoder.driver->driver->command(Vino->decoder.driver,
+						     cmd, arg);
+}
+
 /* --- */
 
 static int bytes_per_pixel(struct vino_device *v)
 {
-	if (v->palette == VIDEO_PALETTE_GREY)
+	switch (v->picture.palette) {
+	case VIDEO_PALETTE_GREY:
 		return 1;
-	if (v->palette == VIDEO_PALETTE_YUV422)
+	case VIDEO_PALETTE_YUV422:
 		return 2;
-	/* VIDEO_PALETTE_RGB32 */
-	return 4;
+	default: /* VIDEO_PALETTE_RGB32 */
+		return 4;
+	}
 }
 
 static int get_capture_norm(struct vino_device *v)
@@ -424,7 +439,7 @@ static int dma_setup(struct vino_device *v)
 			  VINO_CTRL_B_DITHER);
 	}
 	/* set palette */
-	switch (v->palette) {
+	switch (v->picture.palette) {
 		case VIDEO_PALETTE_GREY:
 			ctrl |= (v->chan == VINO_CHAN_A) ? 
 				VINO_CTRL_A_LUMA_ONLY : VINO_CTRL_B_LUMA_ONLY;
@@ -673,7 +688,9 @@ static int vino_open(struct inode *inode, struct file *file)
 		err =  -EBUSY;
 		goto out;
 	}
-	/* Check for input device (IndyCam, saa7191) availability */
+	/* Check for input device (IndyCam, saa7191) availability.
+	 * Both DMA channels can run from the same source, but only
+	 * source owner is allowed to change its parameters */
 	spin_lock(&Vino->input_lock);
 	if (Vino->camera.driver) {
 		v->input = VINO_INPUT_CAMERA;
@@ -681,9 +698,15 @@ static int vino_open(struct inode *inode, struct file *file)
 			Vino->camera.owner = v->chan;
 	}
 	if (Vino->decoder.driver && Vino->camera.owner != v->chan) {
-		v->input = VINO_INPUT_COMP;
-		if (!Vino->decoder.owner)
+		/* There are two inputs (Composite and SVideo) but only
+		 * one output available to VINO DMA engine */
+		if (!Vino->decoder.owner) {
 			Vino->decoder.owner = v->chan;
+			v->input = VINO_INPUT_COMP;
+			i2c_decoder_command(DECODER_SET_INPUT, &v->input);
+		} else
+			v->input = (v->chan == VINO_CHAN_A) ?
+				   Vino->chB.input : Vino->chA.input;
 	}
 	if (v->input == -1)
 		err = -ENODEV;
@@ -787,14 +810,12 @@ static int vino_do_ioctl(struct inode *inode, struct file *file,
 		ch->tuners = 0;
 		switch (ch->channel) {
 		case VINO_INPUT_COMP:
-			ch->norm = VIDEO_MODE_PAL | VIDEO_MODE_NTSC |
-				   VIDEO_MODE_AUTO;
+			ch->norm = VIDEO_MODE_PAL | VIDEO_MODE_NTSC;
 			ch->type = VIDEO_TYPE_TV;
 			strcpy(ch->name, "Composite");
 			break;
 		case VINO_INPUT_SVIDEO:
-			ch->norm = VIDEO_MODE_PAL | VIDEO_MODE_NTSC |
-				   VIDEO_MODE_AUTO;
+			ch->norm = VIDEO_MODE_PAL | VIDEO_MODE_NTSC;
 			ch->type = VIDEO_TYPE_TV;
 			strcpy(ch->name, "S-Video");
 			break;
@@ -822,25 +843,33 @@ static int vino_do_ioctl(struct inode *inode, struct file *file,
 				err = -ENODEV;
 				break;
 			}
+			if (!Vino->decoder.owner)
+				Vino->decoder.owner = v->chan;
+			if (Vino->decoder.owner == v->chan)
+				i2c_decoder_command(DECODER_SET_INPUT,
+						    &ch->channel);
+			else
+				if (ch->channel != w->input) {
+					err = -EBUSY;
+					break;
+				}
 			if (Vino->camera.owner == v->chan)
 				Vino->camera.owner =
 					(w->input == VINO_INPUT_CAMERA) ?
 					w->chan : 0;
-			if (!Vino->decoder.owner)
-				Vino->decoder.owner = v->chan;
 			break;
 		case VINO_INPUT_CAMERA:
 			if (!Vino->camera.driver) {
 				err = -ENODEV;
 				break;
 			}
+			if (!Vino->camera.owner)
+				Vino->camera.owner = v->chan;
 			if (Vino->decoder.owner == v->chan)
 				Vino->decoder.owner =
 					(w->input == VINO_INPUT_COMP ||
 					 w->input == VINO_INPUT_SVIDEO) ?
 					w->chan : 0;
-			if (!Vino->camera.owner)
-				Vino->camera.owner = v->chan;
 			break;
 		default:
 			err = -EINVAL;
@@ -851,31 +880,51 @@ static int vino_do_ioctl(struct inode *inode, struct file *file,
 
 		return err;
 	}
-	case VIDIOCGPICT: {	/* TODO */
+	case VIDIOCGPICT: {
 		struct video_picture *pic = arg;
 
-		pic->brightness = 0x8000;
-		pic->hue = 0x8000;
-		pic->colour = 0x8000;
-		pic->contrast = 0x8000;
-		pic->whiteness = 0x8000;
-		pic->palette = v->palette;
-		if (pic->palette == VIDEO_PALETTE_GREY)
-			pic->depth = 8;
-		else if (pic->palette == VIDEO_PALETTE_YUV422)
-			pic->depth = 16;
-		else
-			pic->depth = 24;
+		memcpy(pic, &v->picture, sizeof(*pic));
 		break;
 	}
-	case VIDIOCSPICT: {	/* TODO */
+	case VIDIOCSPICT: {
 		struct video_picture *pic = arg;
 
-		if (pic->palette != VIDEO_PALETTE_GREY &&
-		    pic->palette != VIDEO_PALETTE_RGB32 &&
-		    pic->palette != VIDEO_PALETTE_YUV422)
+		switch (pic->palette) {
+		case VIDEO_PALETTE_GREY:
+			pic->depth = 8;
+			break;
+		case VIDEO_PALETTE_YUV422:
+			pic->depth = 16;
+			break;
+		case VIDEO_PALETTE_RGB32:
+			pic->depth = 24;
+			break;
+		default:
 			return -EINVAL;
-		v->palette = pic->palette;
+		}
+		if (v->picture.palette != pic->palette) {
+			v->picture.palette = pic->palette;
+			v->picture.depth = pic->depth;
+			/* TODO: we need to change line size */
+		}
+		spin_lock(&Vino->input_lock);
+		if (v->input == VINO_INPUT_CAMERA) {
+			if (Vino->camera.owner == v->chan) {
+				spin_unlock(&Vino->input_lock);
+				memcpy(&v->picture, pic, sizeof(*pic));
+				i2c_camera_command(DECODER_SET_PICTURE, pic);
+				goto out_unlocked;
+			}
+		} else {
+			if (Vino->decoder.owner == v->chan) {
+				spin_unlock(&Vino->input_lock);
+				memcpy(&v->picture, pic, sizeof(*pic));
+				i2c_decoder_command(DECODER_SET_PICTURE, pic);
+				goto out_unlocked;
+			}
+		}
+		spin_unlock(&Vino->input_lock);
+out_unlocked:
 		break;
 	}
 	/* get cropping */
@@ -901,7 +950,7 @@ static int vino_do_ioctl(struct inode *inode, struct file *file,
 	case VIDIOCGWIN: {
 		struct video_window *win = arg;
 
-		memset(win, 0, sizeof(struct video_window));
+		memset(win, 0, sizeof(*win));
 		win->width = (v->right - v->left) / v->decimation;
 		win->height = (v->bottom - v->top) / v->decimation;
 		break;
@@ -927,7 +976,7 @@ static int vino_do_ioctl(struct inode *inode, struct file *file,
 
 		if (mmap->width != v->right - v->left ||
 		    mmap->height != v->bottom - v->top ||
-		    mmap->format != v->palette ||
+		    mmap->format != v->picture.palette ||
 		    mmap->frame != 0)
 			return -EINVAL;
 
@@ -982,7 +1031,8 @@ static void init_channel_data(struct vino_device *v, int channel)
 	v->vdev.priv = v;
 	v->chan = channel;
 	v->input = -1;
-	v->palette = VIDEO_PALETTE_RGB32;
+	v->picture.palette = VIDEO_PALETTE_RGB32;
+	v->picture.depth = 24;
 	v->buffer_state = VINO_BUF_UNUSED;
 	v->users = 0;
 	set_clipping(v, 0, 0, VINO_NTSC_WIDTH, VINO_NTSC_HEIGHT, 1);

@@ -32,7 +32,6 @@ struct saa7191 {
 	unsigned char reg[25];
 	unsigned char norm;
 	unsigned char input;
-	unsigned char enable;
 	unsigned char bright;
 	unsigned char contrast;
 	unsigned char hue;
@@ -97,7 +96,6 @@ static int saa7191_attach(struct i2c_adapter *adap, int addr, int kind)
 	decoder->norm = VIDEO_DECODER_PAL | VIDEO_MODE_NTSC |
 			VIDEO_DECODER_AUTO;
 	decoder->input = 0;
-	decoder->enable = 1;
 	/* Registers are 8bit wide and we are storing shifted values */
 	decoder->bright = 128;
 	decoder->contrast = 128;
@@ -237,18 +235,13 @@ static int saa7191_command(struct i2c_client *client, unsigned int cmd,
 	}
 	case DECODER_SET_INPUT:	{
 		int *iarg = arg;
-		int err;
 
 		switch (client->adapter->id) {
 		case VINO_ADAPTER:
-			err = vino_set_input(client, *iarg);
-			if (err)
-				return err;
-			break;
+			return vino_set_input(client, *iarg);
 		default:
 			if (*iarg != 0)
 				return -EINVAL;
-			break;
 		}
 		break;
 	}
@@ -261,11 +254,7 @@ static int saa7191_command(struct i2c_client *client, unsigned int cmd,
 		break;
 	}
 	case DECODER_ENABLE_OUTPUT: {
-		int *iarg = arg;
-		unsigned enable = (*iarg != 0);
-
-		if (decoder->enable != enable)
-			decoder->enable = enable;
+		/* Always enabled */
 		break;
 	}
 	case DECODER_SET_PICTURE: {

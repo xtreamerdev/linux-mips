@@ -20,6 +20,8 @@
 #include <linux/sched.h>
 
 #include <linux/videodev.h>
+/* IndyCam decodes stream of photons into digital image representation ;-) */
+#include <linux/video_decoder.h>
 #include <linux/i2c.h>
 
 #include "indycam.h"
@@ -72,14 +74,15 @@ static int indycam_attach(struct i2c_adapter *adap, int addr, int kind)
 	if (err)
 		goto out_free_camera;
 
-	err = i2c_smbus_read_byte_data(client, INDYCAM_VERSION);
-	if (err != CAMERA_VERSION_INDY && err != CAMERA_VERSION_MOOSE) {
+	camera->version = i2c_smbus_read_byte_data(client, INDYCAM_VERSION);
+	if (camera->version != CAMERA_VERSION_INDY &&
+	    camera->version != CAMERA_VERSION_MOOSE) {
 		err = -ENODEV;
 		goto out_detach_client;
 	}
 	printk(KERN_INFO "Indycam v%d.%d detected.\n",
-	       INDYCAM_VERSION_MAJOR(err),
-	       INDYCAM_VERSION_MINOR(err));
+	       INDYCAM_VERSION_MAJOR(camera->version),
+	       INDYCAM_VERSION_MINOR(camera->version));
 
 	err = 0;
 	for (i = 0; i < ARRAY_SIZE(initseq); i++)
@@ -127,6 +130,63 @@ static int indycam_command(struct i2c_client *client, unsigned int cmd,
 
 	switch (cmd) {
 
+	case DECODER_GET_CAPABILITIES: {
+		struct video_decoder_capability *cap = arg;
+
+		cap->flags  = VIDEO_DECODER_NTSC;
+		cap->inputs = 1;
+		cap->outputs = 1;
+		break;
+	}
+#if 0
+	case DECODER_GET_VERSION: {
+		int *iarg = arg;
+
+		*iarg = camera->version;
+		break;
+	}
+#endif
+	case DECODER_GET_STATUS: {
+		int *iarg = arg;
+
+		*iarg = DECODER_STATUS_GOOD | DECODER_STATUS_NTSC |
+			DECODER_STATUS_COLOR;
+		break;
+	}
+	case DECODER_SET_NORM: {
+		int *iarg = arg;
+
+		switch (*iarg) {
+		case VIDEO_MODE_NTSC:
+			break;
+		default:
+			return -EINVAL;
+		}
+		break;
+	}
+	case DECODER_SET_INPUT:	{
+		int *iarg = arg;
+
+		if (*iarg != 0)
+			return -EINVAL;
+		break;
+	}
+	case DECODER_SET_OUTPUT: {
+		int *iarg = arg;
+
+		if (*iarg != 0)
+			return -EINVAL;
+		break;
+	}
+	case DECODER_ENABLE_OUTPUT: {
+		/* Always enabled */
+		break;
+	}
+	case DECODER_SET_PICTURE: {
+		struct video_picture *pic = arg;
+		/* TODO */
+		break;
+	}
 	default:
 		return -EINVAL;
 	}
