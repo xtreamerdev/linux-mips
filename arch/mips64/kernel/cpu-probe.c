@@ -113,7 +113,7 @@ static inline void check_wait(void)
 	}
 }
 
-static inline void align_mod(int align, int mod)
+static inline void align_mod(const int align, const int mod)
 {
 	asm volatile(
 		".set	push\n\t"
@@ -124,11 +124,11 @@ static inline void align_mod(int align, int mod)
 		".endr\n\t"
 		".set	pop"
 		:
-		: "i" (align), "i" (mod));
+		: "n" (align), "n" (mod));
 }
 
 static inline void mult_sh_align_mod(long *v1, long *v2, long *w,
-				     int align, int mod)
+				     const int align, const int mod)
 {
 	unsigned long flags;
 	int m1, m2;
