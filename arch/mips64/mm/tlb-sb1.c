@@ -101,7 +101,7 @@ void local_flush_tlb_all(void)
 
 	local_irq_save(flags);
 	/* Save old context and create impossible VPN2 value */
-	old_ctx = (read_c0_entryhi() & 0xff);
+	old_ctx = read_c0_entryhi() & ASID_MASK;
 	write_c0_entrylo0(0);
 	write_c0_entrylo1(0);
 	for (entry = 0; entry < mips_cpu.tlbsize; entry++) {
@@ -159,7 +159,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 		size = (size + 1) >> 1;
 		if(size <= (mips_cpu.tlbsize/2)) {
 			int oldpid = read_c0_entryhi() & ASID_MASK;
-			int newpid = cpu_asid(cpu, mm) & ASID_MASK;
+			int newpid = cpu_asid(cpu, mm);
 
 			start &= (PAGE_MASK << 1);
 			end += ((PAGE_SIZE << 1) - 1);
@@ -251,7 +251,7 @@ void sb1_update_mmu_cache(struct vm_area_struct *vma, unsigned long address,
 
 	local_irq_save(flags);
 
-	pid = read_c0_entryhi() & 0xff;
+	pid = read_c0_entryhi() & ASID_MASK;
 	address &= (PAGE_MASK << 1);
 	write_c0_entryhi(address | (pid));
 	pgdp = pgd_offset(vma->vm_mm, address);
