@@ -45,6 +45,10 @@
 #include <asm/db1x00.h>
 #endif
 
+#ifdef CONFIG_MIPS_PB1200
+#include <asm/pb1200.h>
+#endif
+
 /* This is just a simple programmed I/O SPI interface on the PSC of the 1550.
  * We support open, close, write, and ioctl.  The SPI is a full duplex
  * interface, you can't read without writing.  So, the write system call
@@ -71,6 +75,25 @@ static	int	inuse;
  * and we have to load it with the bits to go in a single transfer.
  */
 static	uint	spi_datalen;
+
+static int
+au1550spi_master_done( int ms )
+{
+	int timeout=ms;
+	volatile psc_spi_t *sp;
+
+	sp = (volatile psc_spi_t *)SPI_PSC_BASE;
+
+	/* Loop until MD is set or timeout has expired */
+	while(!(sp->psc_spievent & PSC_SPIEVNT_MD) &&  timeout--) udelay(1000);
+
+	if ( !timeout )
+		return 0;
+	else
+		sp->psc_spievent |= PSC_SPIEVNT_MD;
+
+	return 1;
+}
 
 static int
 au1550spi_open(struct inode *inode, struct file *file)
@@ -199,6 +222,9 @@ au1550spi_write(struct file *fp, const char *bp, size_t count, loff_t *ppos)
 			rcount -= bytelen;
 		}
 	}
+
+	/* Wait for MasterDone event. 30ms timeout */
+	if (!au1550spi_master_done(30) ) retval = -EFAULT;
 	return retval;
 }
 
