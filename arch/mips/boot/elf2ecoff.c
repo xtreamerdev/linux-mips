@@ -76,8 +76,8 @@ static void copy(int out, int in, off_t offset, off_t size)
 	remaining = size;
 	while (remaining) {
 		cur = remaining;
-		if (cur > sizeof ibuf)
-			cur = sizeof ibuf;
+		if (cur > sizeof(ibuf))
+			cur = sizeof(ibuf);
 		remaining -= cur;
 		if ((count = read(in, ibuf, cur)) != cur) {
 			fprintf(stderr, "copy: read: %s\n",
@@ -302,10 +302,9 @@ int main(int argc, char *argv[])
 	}
 
 	/* Read the header, which is at the beginning of the file... */
-	i = read(infile, &ex, sizeof ex);
-	if (i != sizeof ex) {
-		fprintf(stderr, "ex: %s: %s.\n",
-			argv[1],
+	i = read(infile, &ex, sizeof(ex));
+	if (i != sizeof(ex)) {
+		fprintf(stderr, "ex: %s: %s.\n", argv[1],
 			i ? strerror(errno) : "End of file reached");
 		exit(1);
 	}
@@ -325,8 +324,7 @@ int main(int argc, char *argv[])
 
 	/* Read the program headers... */
 	ph = (Elf32_Phdr *) saveRead(infile, ex.e_phoff,
-				     ex.e_phnum * sizeof(Elf32_Phdr),
-				     "ph");
+				     ex.e_phnum * sizeof(Elf32_Phdr), "ph");
 	if (must_convert_endian)
 		convert_elf_phdrs(ph, ex.e_phnum);
 	/* Read the section headers... */
@@ -393,20 +391,23 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	/* If there's a data section but no text section, then the loader
-	   combined everything into one section.   That needs to be the
-	   text section, so just make the data section zero length following
-	   text. */
+	/*
+	 * If there's a data section but no text section, then the loader
+	 * combined everything into one section.   That needs to be the text
+	 * section, so just make the data section zero length following text.
+	 */
 	if (data.len && !text.len) {
 		text = data;
 		data.vaddr = text.vaddr + text.len;
 		data.len = 0;
 	}
 
-	/* If there is a gap between text and data, we'll fill it when we copy
-	   the data, so update the length of the text segment as represented in
-	   a.out to reflect that, since a.out doesn't allow gaps in the program
-	   address space. */
+	/*
+	 * If there is a gap between text and data, we'll fill it when we copy
+	 * the data, so update the length of the text segment as represented in
+	 * a.out to reflect that, since a.out doesn't allow gaps in the program
+	 * address space.
+	 */
 	if (text.vaddr + text.len < data.vaddr)
 		text.len = data.vaddr - text.vaddr;
 
@@ -421,7 +422,7 @@ int main(int argc, char *argv[])
 	eah.data_start = data.vaddr;
 	eah.bss_start = bss.vaddr;
 	eah.gprmask = 0xf3fffffe;
-	memset(&eah.cprmask, '\0', sizeof eah.cprmask);
+	memset(&eah.cprmask, '\0', sizeof(eah.cprmask));
 	eah.gp_value = 0;	/* unused. */
 
 	if (format_bigendian)
@@ -436,10 +437,10 @@ int main(int argc, char *argv[])
 	efh.f_timdat = 0;	/* bogus */
 	efh.f_symptr = 0;
 	efh.f_nsyms = 0;
-	efh.f_opthdr = sizeof eah;
+	efh.f_opthdr = sizeof(eah);
 	efh.f_flags = 0x100f;	/* Stripped, not sharable. */
 
-	memset(esecs, 0, sizeof esecs);
+	memset(esecs, 0, sizeof(esecs));
 	strcpy(esecs[0].s_name, ".text");
 	strcpy(esecs[1].s_name, ".data");
 	strcpy(esecs[2].s_name, ".bss");
@@ -507,24 +508,23 @@ int main(int argc, char *argv[])
 	if (must_convert_endian)
 		convert_ecoff_filehdr(&efh);
 	/* Write the headers... */
-	i = write(outfile, &efh, sizeof efh);
+	i = write(outfile, &efh, sizeof(efh));
 	if (i != sizeof efh) {
 		perror("efh: write");
 		exit(1);
+	}
 
-		for (i = 0; i < nosecs; i++) {
-			printf
-			    ("Section %d: %s phys %lx  size %lx  file offset %lx\n",
-			     i, esecs[i].s_name, esecs[i].s_paddr,
-			     esecs[i].s_size, esecs[i].s_scnptr);
-		}
+	for (i = 0; i < nosecs; i++) {
+		printf("Section %d: %s phys %lx  size %lx  file offset %lx\n",
+		       i, esecs[i].s_name, esecs[i].s_paddr,
+		       esecs[i].s_size, esecs[i].s_scnptr);
 	}
 	fprintf(stderr, "wrote %d byte file header.\n", i);
 
 	if (must_convert_endian)
 		convert_ecoff_aouthdr(&eah);
-	i = write(outfile, &eah, sizeof eah);
-	if (i != sizeof eah) {
+	i = write(outfile, &eah, sizeof(eah));
+	if (i != sizeof(eah)) {
 		perror("eah: write");
 		exit(1);
 	}
@@ -556,44 +556,40 @@ int main(int argc, char *argv[])
 	 * more than 64k.
 	 */
 	for (i = 0; i < ex.e_phnum; i++) {
-		/* Unprocessable sections were handled above, so just verify that
-		   the section can be loaded before copying. */
-		if (ph[i].p_type == PT_LOAD && ph[i].p_filesz) {
-			if (cur_vma != ph[i].p_vaddr) {
-				unsigned long gap =
-				    ph[i].p_vaddr - cur_vma;
-				char obuf[1024];
-				if (gap > 65536) {
+		/*
+		 * Unprocessable sections were handled above, so just verify
+		 * that the section can be loaded before copying.
+		 */
+		if (ph[i].p_type != PT_LOAD || ph[i].p_filesz == 0)
+			continue;
+
+		if (cur_vma != ph[i].p_vaddr) {
+			unsigned long gap = ph[i].p_vaddr - cur_vma;
+			char obuf[1024];
+
+			if (gap > 65536) {
+				fprintf(stderr, "Intersegment gap (%ld "
+				        "bytes) too large.\n", gap);
+				exit(1);
+			}
+			fprintf(stderr, "Warning: %ld byte intersegment gap.\n",
+					gap);
+			memset(obuf, 0, sizeof(obuf));
+			while (gap) {
+				int count = write(outfile, obuf,
+				   gap > sizeof(obuf) ?  sizeof(obuf) : gap);
+				if (count < 0) {
 					fprintf(stderr,
-						"Intersegment gap (%ld bytes) too large.\n",
-						gap);
+						"Error writing gap: %s\n",
+						strerror(errno));
 					exit(1);
 				}
-				fprintf(stderr,
-					"Warning: %ld byte intersegment gap.\n",
-					gap);
-				memset(obuf, 0, sizeof obuf);
-				while (gap) {
-					int count =
-					    write(outfile, obuf,
-						  (gap >
-						   sizeof obuf ? sizeof
-						   obuf : gap));
-					if (count < 0) {
-						fprintf(stderr,
-							"Error writing gap: %s\n",
-							strerror(errno));
-						exit(1);
-					}
-					gap -= count;
-				}
+				gap -= count;
 			}
-			fprintf(stderr, "writing %d bytes...\n",
-				ph[i].p_filesz);
-			copy(outfile, infile, ph[i].p_offset,
-			     ph[i].p_filesz);
-			cur_vma = ph[i].p_vaddr + ph[i].p_filesz;
 		}
+		fprintf(stderr, "writing %d bytes...\n", ph[i].p_filesz);
+		copy(outfile, infile, ph[i].p_offset, ph[i].p_filesz);
+		cur_vma = ph[i].p_vaddr + ph[i].p_filesz;
 	}
 
 	/*
@@ -603,7 +599,7 @@ int main(int argc, char *argv[])
 	 */
 	{
 		char obuf[4096];
-		memset(obuf, 0, sizeof obuf);
+		memset(obuf, 0, sizeof(obuf));
 		if (write(outfile, obuf, sizeof(obuf)) != sizeof(obuf)) {
 			fprintf(stderr, "Error writing PROM padding: %s\n",
 				strerror(errno));
