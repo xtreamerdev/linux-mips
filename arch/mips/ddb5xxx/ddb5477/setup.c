@@ -45,10 +45,8 @@
 
 // #define	USE_CPU_COUNTER_TIMER	/* whether we use cpu counter */
 
-#ifndef USE_CPU_COUNTER_TIMER
 #define	SP_TIMER_BASE			DDB_SPT1CTRL_L
 #define	SP_TIMER_IRQ			VRC5477_IRQ_SPT1
-#endif
 
 static int bus_frequency = CONFIG_DDB5477_BUS_FREQUENCY*1000;
 
