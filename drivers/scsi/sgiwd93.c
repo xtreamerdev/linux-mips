@@ -142,10 +142,10 @@ static int dma_setup(Scsi_Cmnd *cmd, int datainp)
 	/* Start up the HPC. */
 	hregs->ndptr = PHYSADDR(hdata->dma_bounce_buffer);
 	if(datainp) {
-		dma_cache_wback_inv((unsigned long) cmd->SCp.ptr, cmd->SCp.this_residual);
+		dma_cache_inv((unsigned long) cmd->SCp.ptr, cmd->SCp.this_residual);
 		hregs->ctrl = (HPC3_SCTRL_ACTIVE);
 	} else {
-		dma_cache_inv((unsigned long) cmd->SCp.ptr, cmd->SCp.this_residual);
+		dma_cache_wback_inv((unsigned long) cmd->SCp.ptr, cmd->SCp.this_residual);
 		hregs->ctrl = (HPC3_SCTRL_ACTIVE | HPC3_SCTRL_DIR);
 	}
 
