@@ -64,8 +64,8 @@
 #include <linux/bootmem.h>
 #include <linux/blk.h>
 #include <linux/console.h>
-#ifdef CONFIG_RTC_DS1742
-#include <asm/rtc_ds1742.h>
+#ifdef CONFIG_DS1742
+#include <asm/mc146818rtc.h>
 #endif
 #ifdef CONFIG_TOSHIBA_FPCIB0
 #include <asm/smsc_fdc37m81x.h>
@@ -1188,21 +1188,23 @@ void __init toshiba_rbtx4927_setup(void)
 void __init
 toshiba_rbtx4927_time_init(void)
 {
-#ifdef CONFIG_RTC_DS1742
+#ifdef CONFIG_DS1742
+	extern void rtc_ds1742_init(unsigned long base);
+	extern void rtc_ds1742_wait(void);
+	extern struct rtc_ops ds1742_rtc_ops;
 	u32 c1;
 	u32 c2;
 #endif
 
 	TOSHIBA_RBTX4927_SETUP_DPRINTK(TOSHIBA_RBTX4927_SETUP_TIME_INIT, "-\n");
 
-#ifdef CONFIG_RTC_DS1742
-
-	rtc_get_time = rtc_ds1742_get_time;
-	rtc_set_time = rtc_ds1742_set_time;
+#ifdef CONFIG_DS1742
 
 	TOSHIBA_RBTX4927_SETUP_DPRINTK(TOSHIBA_RBTX4927_SETUP_TIME_INIT,
 				       ":rtc_ds1742_init()-\n");
-	rtc_ds1742_init(0xbc010000);
+	rtc_ds1742_init(RBTX4927_IOC_NVRAMB_ADDR);
+	rtc_ops = &ds1742_rtc_ops;
+
 	TOSHIBA_RBTX4927_SETUP_DPRINTK(TOSHIBA_RBTX4927_SETUP_TIME_INIT,
 				       ":rtc_ds1742_init()+\n");
 

@@ -18,5 +18,6 @@ obj-y	+= toshiba_rbtx4927_nmi.o
 
 obj-$(CONFIG_PCI)	+= toshiba_rbtx4927_pci_fixup.o 
 obj-$(CONFIG_PCI)	+= toshiba_rbtx4927_pci_ops.o 
+obj-$(CONFIG_DS1742)	+= toshiba_rbtx4927_rtc.o
 
 include $(TOPDIR)/Rules.make

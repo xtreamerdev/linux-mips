@@ -3579,6 +3579,24 @@ CONFIG_SGI_DS1286
   via the file /proc/rtc and its behaviour is set by various ioctls on
   /dev/rtc.
 
+Dallas DS1742 RTC Support
+CONFIG_DS1742
+  If you say Y here and create a character special file /dev/rtc with
+  major number 10 and minor number 135 using mknod ("man mknod"), you
+  will get access to the real time clock present on various Toshiba
+  MIPS-based boards. It reports status information via the file
+  /proc/driver/rtc and its behaviour is set by various ioctls on
+  /dev/rtc or /dev/misc/rtc if using devfs.
+
+  For technical information and application notes, please see the
+  Dallas Semiconductor website:
+  <http://www.dalsemi.com/quick_view2.cfm?qv_pk=2768>.
+
+  This driver is also available as a module ( = code which can be
+  inserted in and removed from the running kernel whenever you want).
+  The module is called ds1742.o. If you want to compile it as a module,
+  say M here and read <file:Documentation/modules.txt>.
+
 Indy/I2 Hardware Watchdog
 CONFIG_INDYDOG
   Hardwaredriver for the Indy's/I2's watchdog. This is a

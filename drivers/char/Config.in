@@ -298,6 +298,9 @@ fi
 if [ "$CONFIG_SGI_IP27" = "y" ]; then
    bool 'SGI M48T35 RTC support' CONFIG_SGI_IP27_RTC
 fi
+if [ "$CONFIG_TOSHIBA_RBTX4927" = "y" -o "$CONFIG_TOSHIBA_JMR3927" ]; then
+   tristate 'Dallas DS1742 RTC support' CONFIG_DS1742
+fi
 
 tristate 'Double Talk PC internal speech card support' CONFIG_DTLK
 tristate 'Siemens R3964 line discipline' CONFIG_R3964
