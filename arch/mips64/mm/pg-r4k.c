@@ -49,7 +49,7 @@ void clear_page(void * page) __attribute__((alias("clear_page_array")));
  * R4600 v2.0:				0x07c bytes
  * With prefetching, 16 byte strides	0x0b8 bytes
  */
-static unsigned int copy_page_array[0x130 / 4];
+static unsigned int copy_page_array[0x148 / 4];
 
 void copy_page(void *to, void *from) __attribute__((alias("copy_page_array")));
 
