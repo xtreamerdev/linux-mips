@@ -122,9 +122,6 @@ struct sgi_serial {
 	/* Current write register values */
 	unsigned char curregs[NUM_ZSREGS];
 
-	/* Values we need to set next opportunity */
-	unsigned char pendregs[NUM_ZSREGS];
-
 	char change_needed;
 
 	int			magic;

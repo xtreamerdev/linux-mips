@@ -49,8 +49,8 @@
 #define NUM_SERIAL 1     /* One chip on board. */
 #define NUM_CHANNELS (NUM_SERIAL * 2)
 
-struct sgi_zslayout *zs_chips[NUM_SERIAL] = { 0, };
-struct sgi_zschannel *zs_channels[NUM_CHANNELS] = { 0, 0, };
+struct sgi_zslayout *zs_chips[NUM_SERIAL];
+struct sgi_zschannel *zs_channels[NUM_CHANNELS];
 struct sgi_zschannel *zs_conschan;
 struct sgi_zschannel *zs_kgdbchan;
 
@@ -108,27 +108,13 @@ static int serial_refcount;
 /* number of characters left in xmit buffer before we ask for more */
 #define WAKEUP_CHARS 256
 
-/* Debugging... DEBUG_INTR is bad to use when one of the zs
- * lines is your console ;(
- */
-#undef SERIAL_DEBUG_INTR
 #undef SERIAL_DEBUG_OPEN
-#undef SERIAL_DEBUG_FLOW
-
-#define RS_STROBE_TIME 10
-#define RS_ISR_PASS_LIMIT 256
-
-#define _INLINE_ inline
 
 static void change_speed(struct sgi_serial *info);
 
 static struct tty_struct *serial_table[NUM_CHANNELS];
 static struct termios *serial_termios[NUM_CHANNELS];
 static struct termios *serial_termios_locked[NUM_CHANNELS];
-
-#ifndef MIN
-#define MIN(a,b)	((a) < (b) ? (a) : (b))
-#endif
 
 /*
  * tmp_buf is used as a temporary buffer by serial_write.  We need to
@@ -237,11 +223,9 @@ static inline void zs_rtsdtr(struct sgi_serial *ss, int set)
 {
 	if(set) {
 		ss->curregs[5] |= (RTS | DTR);
-		ss->pendregs[5] = ss->curregs[5];
 		write_zsreg(ss->zs_channel, 5, ss->curregs[5]);
 	} else {
 		ss->curregs[5] &= ~(RTS | DTR);
-		ss->pendregs[5] = ss->curregs[5];
 		write_zsreg(ss->zs_channel, 5, ss->curregs[5]);
 	}
 	return;
@@ -299,7 +283,6 @@ static void rs_stop(struct tty_struct *tty)
 	save_flags(flags); cli();
 	if (info->curregs[5] & TxENAB) {
 		info->curregs[5] &= ~TxENAB;
-		info->pendregs[5] &= ~TxENAB;
 		write_zsreg(info->zs_channel, 5, info->curregs[5]);
 	}
 	restore_flags(flags);
@@ -316,7 +299,6 @@ static void rs_start(struct tty_struct *tty)
 	save_flags(flags); cli();
 	if (info->xmit_cnt && info->xmit_buf && !(info->curregs[5] & TxENAB)) {
 		info->curregs[5] |= TxENAB;
-		info->pendregs[5] = info->curregs[5];
 		write_zsreg(info->zs_channel, 5, info->curregs[5]);
 	}
 	restore_flags(flags);
@@ -387,7 +369,7 @@ static inline void rs_recv_clear(struct sgi_zschannel *zsc)
  * This routine is used by the interrupt handler to schedule
  * processing in the software interrupt portion of the driver.
  */
-static _INLINE_ void rs_sched_event(struct sgi_serial *info,
+static inline void rs_sched_event(struct sgi_serial *info,
 				    int event)
 {
 	info->event |= 1 << event;
@@ -399,7 +381,7 @@ static _INLINE_ void rs_sched_event(struct sgi_serial *info,
 extern void set_async_breakpoint(unsigned int epc);
 #endif
 
-static _INLINE_ void receive_chars(struct sgi_serial *info, struct pt_regs *regs)
+static inline void receive_chars(struct sgi_serial *info, struct pt_regs *regs)
 {
 	struct tty_struct *tty = info->tty;
 	volatile unsigned char junk;
@@ -460,7 +442,7 @@ clear_and_exit:
 	return;
 }
 
-static _INLINE_ void transmit_chars(struct sgi_serial *info)
+static inline void transmit_chars(struct sgi_serial *info)
 {
 	volatile unsigned char junk;
 
@@ -518,7 +500,7 @@ clear_and_return:
 	return;
 }
 
-static _INLINE_ void status_handle(struct sgi_serial *info)
+static inline void status_handle(struct sgi_serial *info)
 {
 	volatile unsigned char junk;
 	unsigned char status;
@@ -541,13 +523,11 @@ static _INLINE_ void status_handle(struct sgi_serial *info)
 		if((info->tty->termios->c_cflag & CRTSCTS) &&
 		   ((info->curregs[3] & AUTO_ENAB)==0)) {
 			info->curregs[3] |= AUTO_ENAB;
-			info->pendregs[3] |= AUTO_ENAB;
 			write_zsreg(info->zs_channel, 3, info->curregs[3]);
 		}
 	} else {
 		if((info->curregs[3] & AUTO_ENAB)) {
 			info->curregs[3] &= ~AUTO_ENAB;
-			info->pendregs[3] &= ~AUTO_ENAB;
 			write_zsreg(info->zs_channel, 3, info->curregs[3]);
 		}
 	}
@@ -713,14 +693,10 @@ static int startup(struct sgi_serial * info)
 	 * Finally, enable sequencing and interrupts
 	 */
 	info->curregs[1] |= (info->curregs[1] & ~0x18) | (EXT_INT_ENAB|INT_ALL_Rx);
-	info->pendregs[1] = info->curregs[1];
 	info->curregs[3] |= (RxENABLE | Rx8);
-	info->pendregs[3] = info->curregs[3];
 	/* We enable Tx interrupts as needed. */
 	info->curregs[5] |= (TxENAB | Tx8);
-	info->pendregs[5] = info->curregs[5];
 	info->curregs[9] |= (NV | MIE);
-	info->pendregs[9] = info->curregs[9];
 	write_zsreg(info->zs_channel, 3, info->curregs[3]);
 	write_zsreg(info->zs_channel, 5, info->curregs[5]);
 	write_zsreg(info->zs_channel, 9, info->curregs[9]);
@@ -822,58 +798,44 @@ static void change_speed(struct sgi_serial *info)
 	case CS5:
 		info->curregs[3] &= ~(0xc0);
 		info->curregs[3] |= Rx5;
-		info->pendregs[3] = info->curregs[3];
 		info->curregs[5] &= ~(0xe0);
 		info->curregs[5] |= Tx5;
-		info->pendregs[5] = info->curregs[5];
 		break;
 	case CS6:
 		info->curregs[3] &= ~(0xc0);
 		info->curregs[3] |= Rx6;
-		info->pendregs[3] = info->curregs[3];
 		info->curregs[5] &= ~(0xe0);
 		info->curregs[5] |= Tx6;
-		info->pendregs[5] = info->curregs[5];
 		break;
 	case CS7:
 		info->curregs[3] &= ~(0xc0);
 		info->curregs[3] |= Rx7;
-		info->pendregs[3] = info->curregs[3];
 		info->curregs[5] &= ~(0xe0);
 		info->curregs[5] |= Tx7;
-		info->pendregs[5] = info->curregs[5];
 		break;
 	case CS8:
 	default: /* defaults to 8 bits */
 		info->curregs[3] &= ~(0xc0);
 		info->curregs[3] |= Rx8;
-		info->pendregs[3] = info->curregs[3];
 		info->curregs[5] &= ~(0xe0);
 		info->curregs[5] |= Tx8;
-		info->pendregs[5] = info->curregs[5];
 		break;
 	}
 	info->curregs[4] &= ~(0x0c);
-	if (cflag & CSTOPB) {
+	if (cflag & CSTOPB)
 		info->curregs[4] |= SB2;
-	} else {
+	else
 		info->curregs[4] |= SB1;
-	}
-	info->pendregs[4] = info->curregs[4];
-	if (cflag & PARENB) {
+
+	if (cflag & PARENB)
 		info->curregs[4] |= PAR_ENA;
-		info->pendregs[4] |= PAR_ENA;
-	} else {
+	else
 		info->curregs[4] &= ~PAR_ENA;
-		info->pendregs[4] &= ~PAR_ENA;
-	}
-	if (!(cflag & PARODD)) {
+
+	if (!(cflag & PARODD))
 		info->curregs[4] |= PAR_EVEN;
-		info->pendregs[4] |= PAR_EVEN;
-	} else {
+	else
 		info->curregs[4] &= ~PAR_EVEN;
-		info->pendregs[4] &= ~PAR_EVEN;
-	}
 
 	/* Load up the new values */
 	load_zsregs(info->zs_channel, info->curregs);
@@ -886,7 +848,8 @@ static void zs_cons_put_char(char ch)
 {
 	struct sgi_zschannel *chan = zs_conschan;
 	volatile unsigned char junk;
-	int flags, loops = 0;
+	unsigned long flags;
+	int loops = 0;
 
 	save_flags(flags); cli();
 	while(((junk = chan->control) & Tx_BUF_EMP)==0 && loops < 10000) {
@@ -911,7 +874,8 @@ static void rs_put_char(struct tty_struct *tty, char ch)
 	struct sgi_zschannel *chan =
 		((struct sgi_serial *)tty->driver_data)->zs_channel;
 	volatile unsigned char junk;
-	int flags, loops = 0;
+	unsigned long flags;
+	int loops = 0;
 
 	save_flags(flags); cli();
 	while(((junk = chan->control) & Tx_BUF_EMP)==0 && loops < 10000) {
@@ -985,7 +949,7 @@ static void rs_fair_output(void)
 		zs_cons_put_char(c);
 
 		save_flags(flags);  cli();
-		left = MIN(info->xmit_cnt, left-1);
+		left = min(info->xmit_cnt, left-1);
 	}
 
 	/* Last character is being transmitted now (hopefully). */
@@ -1014,7 +978,7 @@ static int rs_write(struct tty_struct * tty, int from_user,
 	save_flags(flags);
 	while (1) {
 		cli();
-		c = MIN(count, MIN(SERIAL_XMIT_SIZE - info->xmit_cnt - 1,
+		c = min(count, min(SERIAL_XMIT_SIZE - info->xmit_cnt - 1,
 				   SERIAL_XMIT_SIZE - info->xmit_head));
 		if (c <= 0)
 			break;
@@ -1022,7 +986,7 @@ static int rs_write(struct tty_struct * tty, int from_user,
 		if (from_user) {
 			down(&tmp_buf_sem);
 			copy_from_user(tmp_buf, buf, c);
-			c = MIN(c, MIN(SERIAL_XMIT_SIZE - info->xmit_cnt - 1,
+			c = min(c, min(SERIAL_XMIT_SIZE - info->xmit_cnt - 1,
 				       SERIAL_XMIT_SIZE - info->xmit_head));
 			memcpy(info->xmit_buf + info->xmit_head, tmp_buf, c);
 			up(&tmp_buf_sem);
@@ -1049,10 +1013,8 @@ static int rs_write(struct tty_struct * tty, int from_user,
 	 */
 		/* Enable transmitter */
 		info->curregs[1] |= TxINT_ENAB|EXT_INT_ENAB;
-		info->pendregs[1] |= TxINT_ENAB|EXT_INT_ENAB;
 		write_zsreg(info->zs_channel, 1, info->curregs[1]);
 		info->curregs[5] |= TxENAB;
-		info->pendregs[5] |= TxENAB;
 		write_zsreg(info->zs_channel, 5, info->curregs[5]);
 
 	/*
@@ -1125,10 +1087,8 @@ static void rs_flush_chars(struct tty_struct *tty)
 	/* Enable transmitter */
 	save_flags(flags); cli();
 	info->curregs[1] |= TxINT_ENAB|EXT_INT_ENAB;
-	info->pendregs[1] |= TxINT_ENAB|EXT_INT_ENAB;
 	write_zsreg(info->zs_channel, 1, info->curregs[1]);
 	info->curregs[5] |= TxENAB;
-	info->pendregs[5] |= TxENAB;
 	write_zsreg(info->zs_channel, 5, info->curregs[5]);
 
 	/*
@@ -1178,7 +1138,6 @@ static void rs_throttle(struct tty_struct * tty)
 	/* Turn off RTS line */
 	cli();
 	info->curregs[5] &= ~RTS;
-	info->pendregs[5] &= ~RTS;
 	write_zsreg(info->zs_channel, 5, info->curregs[5]);
 	sti();
 }
@@ -1206,7 +1165,6 @@ static void rs_unthrottle(struct tty_struct * tty)
 	/* Assert RTS line */
 	cli();
 	info->curregs[5] |= RTS;
-	info->pendregs[5] |= RTS;
 	write_zsreg(info->zs_channel, 5, info->curregs[5]);
 	sti();
 }
@@ -1533,10 +1491,8 @@ static void rs_close(struct tty_struct *tty, struct file * filp)
 	 */
 	/** if (!info->iscons) ... **/
 	info->curregs[3] &= ~RxENABLE;
-	info->pendregs[3] = info->curregs[3];
 	write_zsreg(info->zs_channel, 3, info->curregs[3]);
 	info->curregs[1] &= ~(0x18);
-	info->pendregs[1] = info->curregs[1];
 	write_zsreg(info->zs_channel, 1, info->curregs[1]);
 	ZS_CLEARFIFO(info->zs_channel);
 
@@ -1849,12 +1805,11 @@ rs_cons_check(struct sgi_serial *ss, int channel)
 	}
 }
 
-volatile int test_done;
-
 /* rs_init inits the driver */
 int rs_init(void)
 {
-	int chip, channel, i, flags;
+	unsigned long flags;
+	int chip, channel, i;
 	struct sgi_serial *info;
 
 
@@ -2258,7 +2213,6 @@ static int __init zs_console_setup(struct console *con, char *options)
 	zscons_regs[12] = brg & 0xff;
 	zscons_regs[13] = (brg >> 8) & 0xff;
 	memcpy(info->curregs, zscons_regs, sizeof(zscons_regs));
-	memcpy(info->pendregs, zscons_regs, sizeof(zscons_regs));
 	load_zsregs(info->zs_channel, zscons_regs);
 	ZS_CLEARERR(info->zs_channel);
 	ZS_CLEARFIFO(info->zs_channel);
