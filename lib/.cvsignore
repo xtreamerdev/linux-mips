@@ -1,2 +1,4 @@
 .depend
 .*.flags
+crc32table.h
+gen_crc32table
