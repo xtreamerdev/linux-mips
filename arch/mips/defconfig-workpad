@@ -42,6 +42,7 @@ CONFIG_KMOD=y
 # CONFIG_MIPS_IVR is not set
 # CONFIG_HP_LASERJET is not set
 CONFIG_IBM_WORKPAD=y
+# CONFIG_VRC4171 is not set
 # CONFIG_LASAT is not set
 # CONFIG_MIPS_ITE8172 is not set
 # CONFIG_MIPS_ATLAS is not set
