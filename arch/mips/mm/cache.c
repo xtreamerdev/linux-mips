@@ -19,64 +19,6 @@ asmlinkage int sys_cacheflush(void *addr, int bytes, int cache)
 	return 0;
 }
 
-#if 0
-
-void flush_cache_all(void)
-{
-	if (!cpu_has_dc_aliases)
-		return;
-
-	zap_dcache_all();
-	zap_icache_all();
-}
-
-void flush_cache_mm(struct mm_struct *mm)
-{
-	if (!cpu_has_dc_aliases)
-		return;
-
-	if (!cpu_context(smp_processor_id(), mm) != 0)
-		return;
-
-	zap_dcache_all();
-	zap_icache_all();
-}
-
-void flush_cache_page(struct vm_area_struct *vma, unsigned long addr)
-{
-	if (cpu_has_dc_aliases) {
-		zap_dcache_page(addr);
-	}
-
-	if (vma->vm_flags & VM_EXEC) {
-		zap_icache_page(addr);
-	}
-}
-
-void flush_cache_range(struct mm_struct *mm, unsigned long start,
-	unsigned long end)
-{
-	if (!cpu_has_dc_aliases)
-		return;
-
-	zap_dcache_all();
-	zap_icache_all();	/* Needed in this cache-op? */
-}
-
-void flush_icache_range(unsigned long start, unsigned long end)
-{
-	/* XXX */
-}
-
-void flush_icache_all(void)
-{
-	if (!cpu_has_vtag_icache)
-		return;
-
-	zap_icache_all();
-}
-#endif
-
 void flush_dcache_page(struct page *page)
 {
 	unsigned long addr;
