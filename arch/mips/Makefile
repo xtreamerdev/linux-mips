@@ -28,6 +28,8 @@ ifdef CONFIG_CROSSCOMPILE
 CROSS_COMPILE	= $(tool-prefix)
 endif
 
+MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
+
 check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
 
 #
@@ -722,8 +724,6 @@ ifdef CONFIG_LASAT
 rom.bin rom.sw: vmlinux
 	$(MAKE) -C arch/$(ARCH)/lasat/image $@
 endif
-
-MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
 
 vmlinux.ecoff: vmlinux
 	@$(MAKEBOOT) $@
