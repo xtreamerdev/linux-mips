@@ -59,11 +59,11 @@ static int full_duplex[MAX_UNITS] = {-1, -1, -1};
 #include <linux/timer.h>
 #include <linux/errno.h>
 #include <linux/ioport.h>
-#include <linux/malloc.h>
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
+#include <linux/slab.h>
 #include <linux/init.h>
 #include <linux/config.h>
 #include <asm/processor.h>		/* Processor type for cache alignment. */
