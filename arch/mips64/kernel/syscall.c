@@ -34,7 +34,7 @@
 
 extern asmlinkage void syscall_trace(void);
 
-asmlinkage int sys_pipe(abi64_no_regargs, struct pt_regs regs)
+asmlinkage int sys_pipe(abi64_no_regargs, volatile struct pt_regs regs)
 {
 	int fd[2];
 	int error, res;
