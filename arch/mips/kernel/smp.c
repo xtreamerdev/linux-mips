@@ -61,26 +61,6 @@ cycles_t cacheflush_time;
  */
 void core_send_ipi(int cpu, unsigned int action);
 
-/*
- * Clear all undefined state in the cpu, set up sp and gp to the passed
- * values, and kick the cpu into smp_bootstrap();
- */
-void prom_boot_secondary(int cpu, unsigned long sp, unsigned long gp);
-
-/*
- *  After we've done initial boot, this function is called to allow the
- *  board code to clean up state, if needed
- */
-void prom_init_secondary(void);
-
-/*
- * Do whatever setup needs to be done for SMP at the board level.  Return
- * the number of cpus in the system, including this one
- */
-int prom_setup_smp(void);
-
-void prom_smp_finish(void);
-
 void __init smp_callin(void)
 {
 #if 0
