@@ -22,7 +22,6 @@
 #include <asm/mipsregs.h>
 #include <asm/io.h>
 #include <asm/irq.h>
-#include <asm/ddb5074.h>
 
 #include <linux/mc146818rtc.h>
 #include <linux/timex.h>
