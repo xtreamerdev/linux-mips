@@ -60,8 +60,8 @@ extern unsigned long ldt_eoi_space;
 #endif
 
 #ifdef CONFIG_KGDB
+#include <asm/gdb-stub.h>
 extern void breakpoint(void);
-extern void set_debug_traps(void);
 static int kgdb_irq;
 #ifdef CONFIG_GDB_CONSOLE
 extern void register_gdb_console(void);
@@ -416,8 +416,6 @@ void __init init_IRQ(void)
 #ifdef CONFIG_KGDB
 
 #include <linux/delay.h>
-
-extern void set_async_breakpoint(unsigned long *epc);
 
 #define duart_out(reg, val)     csr_out32(val, KSEG1 + A_DUART_CHANREG(kgdb_port,reg))
 #define duart_in(reg)           csr_in32(KSEG1 + A_DUART_CHANREG(kgdb_port,reg))
