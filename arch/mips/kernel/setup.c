@@ -577,7 +577,8 @@ static void __init print_memory_map(void)
 
 	for (i = 0; i < boot_mem_map.nr_map; i++) {
 		printk(" memory: %08Lx @ %08Lx ",
-			boot_mem_map.map[i].size, boot_mem_map.map[i].addr);
+			(unsigned long long) boot_mem_map.map[i].size,
+			(unsigned long long) boot_mem_map.map[i].addr);
 		switch (boot_mem_map.map[i].type) {
 		case BOOT_MEM_RAM:
 			printk("(usable)\n");
