@@ -970,7 +970,7 @@ static void r4k_dma_cache_wback_inv_pc(unsigned long addr, unsigned long size)
 #endif
 
 		a = addr & ~(dc_lsize - 1);
-		end = (addr + size) & ~(dc_lsize - 1);
+		end = (addr + size - 1) & ~(dc_lsize - 1);
 		while (1) {
 			flush_dcache_line(a); /* Hit_Writeback_Inv_D */
 			if (a == end) break;
@@ -993,7 +993,7 @@ static void r4k_dma_cache_wback_inv_sc(unsigned long addr, unsigned long size)
 	}
 
 	a = addr & ~(sc_lsize - 1);
-	end = (addr + size) & ~(sc_lsize - 1);
+	end = (addr + size - 1) & ~(sc_lsize - 1);
 	while (1) {
 		flush_scache_line(a);	/* Hit_Writeback_Inv_SD */
 		if (a == end) break;
@@ -1016,7 +1016,7 @@ static void r4k_dma_cache_inv_pc(unsigned long addr, unsigned long size)
 #endif
 
 		a = addr & ~(dc_lsize - 1);
-		end = (addr + size) & ~(dc_lsize - 1);
+		end = (addr + size - 1) & ~(dc_lsize - 1);
 		while (1) {
 			flush_dcache_line(a); /* Hit_Writeback_Inv_D */
 			if (a == end) break;
@@ -1040,7 +1040,7 @@ static void r4k_dma_cache_inv_sc(unsigned long addr, unsigned long size)
 	}
 
 	a = addr & ~(sc_lsize - 1);
-	end = (addr + size) & ~(sc_lsize - 1);
+	end = (addr + size - 1) & ~(sc_lsize - 1);
 	while (1) {
 		flush_scache_line(a); /* Hit_Writeback_Inv_SD */
 		if (a == end) break;
