@@ -30,6 +30,7 @@
 #include <asm/io.h>
 #include <asm/elf.h>
 #include <asm/cpu.h>
+#include <asm/fpu.h>
 
 ATTRIB_NORET void cpu_idle(void)
 {
@@ -46,32 +47,30 @@ ATTRIB_NORET void cpu_idle(void)
 	}
 }
 
-struct task_struct *last_task_used_math = NULL;
-
 asmlinkage void ret_from_fork(void);
+
+void start_thread(struct pt_regs * regs, unsigned long pc, unsigned long sp)
+{
+	unsigned long status;
+
+	/* New thread looses kernel privileges. */
+	status = regs->cp0_status & ~(ST0_CU0|ST0_FR|ST0_KSU);
+	status |= KSU_USER;
+	status |= (current->thread.mflags & MF_32BIT) ? 0 : ST0_FR;
+	regs->cp0_status = status;
+	current->used_math = 0;
+	loose_fpu();
+	regs->cp0_epc = pc;
+	regs->regs[29] = sp;
+	current->thread.current_ds = USER_DS;
+}
 
 void exit_thread(void)
 {
-	/* Forget lazy fpu state */
-	if (IS_FPU_OWNER()) {
-		if (mips_cpu.options & MIPS_CPU_FPU) {
-			__enable_fpu();
-			__asm__ __volatile__("cfc1\t$0,$31");
-		}
-		CLEAR_FPU_OWNER();
-	}
 }
 
 void flush_thread(void)
 {
-	/* Forget lazy fpu state */
-	if (IS_FPU_OWNER()) {
-		if (mips_cpu.options & MIPS_CPU_FPU) {
-			__enable_fpu();
-			__asm__ __volatile__("cfc1\t$0,$31");
-		}
-		CLEAR_FPU_OWNER();
-	}
 }
 
 int copy_thread(int nr, unsigned long clone_flags, unsigned long usp,
@@ -83,10 +82,10 @@ int copy_thread(int nr, unsigned long clone_flags, unsigned long usp,
 
 	childksp = (unsigned long)p + KERNEL_STACK_SIZE - 32;
 
-	if (IS_FPU_OWNER()) {
-		if (mips_cpu.options & MIPS_CPU_FPU)
-			save_fp(p);
+	if (is_fpu_owner()) {
+		save_fp(p);
 	}
+
 	/* set up new TSS. */
 	childregs = (struct pt_regs *) childksp - 1;
 	*childregs = *regs;
