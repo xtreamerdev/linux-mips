@@ -347,18 +347,18 @@ sys_call_table:
 	PTR	sys_ni_syscall
 	PTR	sys_gettid				/* 5215 */
 	PTR	sys_readahead
-	PTR	sys_ni_syscall			/* reserved for setxattr */
-	PTR	sys_ni_syscall			/* reserved for lsetxattr */
-	PTR	sys_ni_syscall			/* reserved for fsetxattr */
-	PTR	sys_ni_syscall			/* 5220 res. for getxattr */
-	PTR	sys_ni_syscall			/* reserved for lgetxattr */
-	PTR	sys_ni_syscall			/* reserved for fgetxattr */
-	PTR	sys_ni_syscall			/* reserved for listxattr */
-	PTR	sys_ni_syscall			/* reserved for llistxattr */
-	PTR	sys_ni_syscall			/* 5225 res. for flistxattr */
-	PTR	sys_ni_syscall			/* reserved for removexattr */
-	PTR	sys_ni_syscall			/* reserved for lremovexattr */
-	PTR	sys_ni_syscall			/* reserved for fremovexattr */
+	PTR	sys_setxattr
+	PTR	sys_lsetxattr
+	PTR	sys_fsetxattr
+	PTR	sys_getxattr				/* 5220 */
+	PTR	sys_lgetxattr
+	PTR	sys_fgetxattr
+	PTR	sys_listxattr
+	PTR	sys_llistxattr
+	PTR	sys_flistxattr				/* 5225 */
+	PTR	sys_removexattr
+	PTR	sys_lremovexattr
+	PTR	sys_fremovexattr
 	PTR	sys_tkill, 2
 	PTR	sys_ni_syscall, 0		/* 5230 res. for sendfile64 */
 	PTR	sys_ni_syscall, 0		/* res. for futex */

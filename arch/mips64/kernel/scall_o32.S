@@ -536,18 +536,18 @@ out:	jr	ra
 	sys	sys_ni_syscall	0
 	sys	sys_gettid	0
 	sys	sys32_readahead	5
-	sys	sys_ni_syscall	0		/* reserved for setxattr */
-	sys	sys_ni_syscall	0		/* 4225 res. for lsetxattr */
-	sys	sys_ni_syscall	0		/* reserved for fsetxattr */
-	sys	sys_ni_syscall	0		/* reserved for getxattr */
-	sys	sys_ni_syscall	0		/* reserved for lgetxattr */
-	sys	sys_ni_syscall	0		/* reserved for fgetxattr */
-	sys	sys_ni_syscall	0		/* 4230 res. for listxattr */
-	sys	sys_ni_syscall	0		/* reserved for llistxattr */
-	sys	sys_ni_syscall	0		/* reserved for flistxattr */
-	sys	sys_ni_syscall	0		/* reserved for removexattr */
-	sys	sys_ni_syscall	0		/* reserved for lremovexattr */
-	sys	sys_ni_syscall	0		/* 4235 res. for fremovexattr */
+	sys	sys_setxattr	5
+	sys	sys_lsetxattr	5		/* 4225 */
+	sys	sys_fsetxattr	5
+	sys	sys_getxattr	4
+	sys	sys_lgetxattr	4
+	sys	sys_fgetxattr	4
+	sys	sys_listxattr	3		/* 4230 */
+	sys	sys_llistxattr	3
+	sys	sys_flistxattr	3
+	sys	sys_removexattr	2
+	sys	sys_lremovexattr 2
+	sys	sys_fremovexattr 2		/* 4235 */
 	sys	sys_tkill, 2
 	sys	sys_ni_syscall, 0		/* res. for sendfile64 */
 	sys	sys_ni_syscall, 0		/* res. for futex */
