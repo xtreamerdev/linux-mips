@@ -89,7 +89,7 @@ static int      vra = 1;
 MODULE_PARM(vra, "i");
 MODULE_PARM_DESC(vra, "if 1 use VRA if codec supports it");
 
-struct au1550_state {
+static struct au1550_state {
 	/* soundcore stuff */
 	int             dev_audio;
 

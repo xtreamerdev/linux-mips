@@ -14,6 +14,7 @@
 #include <linux/delay.h>
 
 #include <asm/au1000.h>
+#include <asm/pb1550.h>
 #include <asm/au1xxx_psc.h>
 
 #include <linux/i2c.h>

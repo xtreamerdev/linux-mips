@@ -28,6 +28,7 @@
 #include <linux/errno.h>
 
 #include <asm/au1000.h>
+#include <asm/pb1550.h>
 #include <asm/au1xxx_psc.h>
 
 #include <linux/i2c.h>
@@ -91,6 +92,28 @@ i2c_pb1550_init(void)
                 return -ENODEV;
 
 	return 0;
+}
+
+/* BIG hack to support the control interface on the Wolfson WM8731
+ * audio codec on the Pb1550 board.  We get an address and two data
+ * bytes to write, create an i2c message, and send it across the
+ * i2c transfer function.  We do this here because we have access to
+ * the i2c adapter structure.
+ */
+static struct i2c_msg wm_i2c_msg;  /* We don't want this stuff on the stack */
+static	u8 i2cbuf[2];
+
+int
+pb1550_wm_codec_write(u8 addr, u8 reg, u8 val)
+{
+	wm_i2c_msg.addr = addr;
+	wm_i2c_msg.flags = 0;
+	wm_i2c_msg.buf = i2cbuf;
+	wm_i2c_msg.len = 2;
+	i2cbuf[0] = reg;
+	i2cbuf[1] = val;
+
+	return pb1550_board_adapter.algo->master_xfer(&pb1550_board_adapter, &wm_i2c_msg, 1);
 }
 
 

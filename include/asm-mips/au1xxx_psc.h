@@ -225,7 +225,7 @@ typedef struct	psc_i2s {
 
 #define PSC_I2SCFG_DD_DISABLE	(1 << 27)
 #define PSC_I2SCFG_DE_ENABLE	(1 << 26)
-#define PSC_I2SCDC_SET_WS(x)	(((x) & 0xff) << 16)
+#define PSC_I2SCFG_SET_WS(x)	(((((x) / 2) - 1) & 0x7f) << 16)
 #define PSC_I2SCFG_WI		(1 << 15)
 
 #define PSC_I2SCFG_DIV_MASK	(3 << 13)

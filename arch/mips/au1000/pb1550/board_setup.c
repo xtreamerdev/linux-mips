@@ -67,6 +67,14 @@ void __init board_setup(void)
 	pin_func |= SYS_PF_MUST_BE_SET | SYS_PF_PSC1_S1;
 	au_writel(pin_func, SYS_PINFUNC);
 
+	/* Do some more for PSC3 I2S audio.
+	*/
+	pin_func = au_readl(SYS_PINFUNC);
+	au_sync();
+	pin_func &= ~SYS_PF_PSC3_MASK;
+	pin_func |= SYS_PF_PSC3_I2S | SYS_PF_EX0;
+	au_writel(pin_func, SYS_PINFUNC);
+
 	au_writel(0, (u32)bcsr|0x10); /* turn off pcmcia power */
 	au_sync();
 
