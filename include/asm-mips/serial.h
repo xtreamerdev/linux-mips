@@ -200,6 +200,14 @@
       .flags = STD_COM_FLAGS, .type = 1 },
 #endif
 
+#ifdef CONFIG_SOC_AU1200
+#define AU1000_SERIAL_PORT_DEFNS                              \
+    { .baud_base = 0, .port = UART0_ADDR, .irq = AU1200_UART0_INT,  \
+      .flags = STD_COM_FLAGS, .type = 1 },                        \
+    { .baud_base = 0, .port = UART1_ADDR, .irq = AU1200_UART1_INT,  \
+      .flags = STD_COM_FLAGS, .type = 1 },
+#endif
+
 #else
 #define AU1000_SERIAL_PORT_DEFNS
 #endif
