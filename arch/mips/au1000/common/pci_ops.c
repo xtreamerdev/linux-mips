@@ -196,7 +196,7 @@ static int config_access(unsigned char access_type, struct pci_dev *dev,
 	if (first_cfg) {
 		/* reserve a wired entry for pci config accesses */
 		first_cfg = 0;
-		pci_cfg_vm = get_vm_area(0x1000, 0);
+		pci_cfg_vm = get_vm_area(0x2000, 0);
 		if (!pci_cfg_vm) 
 			panic (KERN_ERR "PCI unable to get vm area\n");
 		pci_cfg_wired_entry = read_c0_wired();
@@ -223,10 +223,14 @@ static int config_access(unsigned char access_type, struct pci_dev *dev,
         } else {
                 cfg_base = 0x80000000 | (bus<<16) | (device<<11);
         }
-	cfg_base &= ~0xfff;
 
         /* setup the lower bits of the 36 bit address */
         offset = (function << 8) | (where & ~0x3);
+	/* pick up any address that falls below the page mask */
+	offset |= cfg_base & ~PAGE_MASK;
+
+	/* page boundary */
+	cfg_base = cfg_base & PAGE_MASK;
 
 	entryLo0 = (6 << 26)  | (cfg_base >> 6) | (2 << 3) | 7;
 	entryLo1 = (6 << 26)  | (cfg_base >> 6) | (0x1000 >> 6) | (2 << 3) | 7;
