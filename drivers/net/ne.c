@@ -693,9 +693,9 @@ retry:
 
 	outb_p(E8390_RWRITE+E8390_START, nic_base + NE_CMD);
 	if (ei_status.word16) {
-		outsw(NE_BASE + NE_DATAPORT, (void *) buf, count>>1);
+		outsw(NE_BASE + NE_DATAPORT, buf, count>>1);
 	} else {
-		outsb(NE_BASE + NE_DATAPORT, (void *) buf, count);
+		outsb(NE_BASE + NE_DATAPORT, buf, count);
 	}
 
 	dma_start = jiffies;
