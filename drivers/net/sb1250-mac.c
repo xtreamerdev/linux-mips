@@ -53,6 +53,7 @@ static int full_duplex[MAX_UNITS] = {-1, -1, -1};
 #error  You must compile this driver with "-O".
 #endif
 
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/string.h>
@@ -65,8 +66,8 @@ static int full_duplex[MAX_UNITS] = {-1, -1, -1};
 #include <linux/skbuff.h>
 #include <linux/slab.h>
 #include <linux/init.h>
-#include <linux/config.h>
-#include <asm/processor.h>		/* Processor type for cache alignment. */
+#include <linux/compiler.h>
+#include <asm/processor.h>
 #include <asm/bitops.h>
 #include <asm/io.h>
 #include <asm/sibyte/sb1250.h>
@@ -1863,9 +1864,10 @@ static int sbmac_start_tx(struct sk_buff *skb, struct net_device *dev)
 	 * Put the buffer on the transmit ring.  If we 
 	 * don't have room, stop the queue.
 	 */
-	if (sbdma_add_txbuffer(&sc->sbm_txdma, skb)) {
+	if (unlikely(sbdma_add_txbuffer(&sc->sbm_txdma, skb))) {
 		netif_stop_queue(dev);
-		spin_unlock(&sc->sbm_lock);
+		spin_unlock_irq(&sc->sbm_lock);
+
 		return 1;
 	}
 
