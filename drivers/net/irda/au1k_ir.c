@@ -795,15 +795,15 @@ au1k_irda_set_speed(struct net_device *dev, int speed)
 	}
 	else {
 		if (control & (1<<11))
-			printk(KERN_INFO "%s Valid SIR config\n", dev->name);
+			printk(KERN_DEBUG "%s Valid SIR config\n", dev->name);
 		if (control & (1<<12))
-			printk(KERN_INFO "%s Valid MIR config\n", dev->name);
+			printk(KERN_DEBUG "%s Valid MIR config\n", dev->name);
 		if (control & (1<<13))
-			printk(KERN_INFO "%s Valid FIR config\n", dev->name);
+			printk(KERN_DEBUG "%s Valid FIR config\n", dev->name);
 		if (control & (1<<10))
-			printk(KERN_INFO "%s TX enabled\n", dev->name);
+			printk(KERN_DEBUG "%s TX enabled\n", dev->name);
 		if (control & (1<<9))
-			printk(KERN_INFO "%s RX enabled\n", dev->name);
+			printk(KERN_DEBUG "%s RX enabled\n", dev->name);
 	}
 
 	spin_unlock_irqrestore(&ir_lock, flags);
