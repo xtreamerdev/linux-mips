@@ -134,7 +134,7 @@ void __init board_setup(void)
 
 #ifdef CONFIG_FB_AU1200
 	argptr = prom_getcmdline();
-	strcat(argptr, " video=au1200fb:panel:s11");
+	strcat(argptr, " video=au1200fb:");
 #endif
 
 #if defined(CONFIG_BLK_DEV_IDE_AU1XXX)
@@ -187,5 +187,36 @@ void __init board_setup(void)
 	au1xxx_gpio_tristate(5);
 	printk("B1900100: %X\n", *((volatile u32*)0xB1900100));
 	printk("B190002C: %X\n", *((volatile u32*)0xB190002C));
+}
+
+int
+board_au1200fb_panel (void)
+{
+	au1xxx_gpio_tristate(6);
+
+	if (au1xxx_gpio_read(12) == 0)
+		return 9; /* FS453_640x480 (Composite/S-Video) */
+	else
+		return 7; /* Sharp 320x240 TFT */
+}
+
+int
+board_au1200fb_panel_init (void)
+{
+	/*Enable data buffers*/
+	ficmmp_config_clear(FICMMP_CONFIG_LCMDATAOUT);
+	/*Take LCD out of reset*/
+	ficmmp_config_set(FICMMP_CONFIG_LCMPWREN | FICMMP_CONFIG_LCMEN);
+	return 0;
+}
+
+int 
+board_au1200fb_panel_shutdown (void)
+{
+	/*Disable data buffers*/
+	ficmmp_config_set(FICMMP_CONFIG_LCMDATAOUT);
+	/*Put LCD in reset, remove power*/
+	ficmmp_config_clear(FICMMP_CONFIG_LCMEN | FICMMP_CONFIG_LCMPWREN);
+	return 0;
 }
 

@@ -139,12 +139,7 @@ void __init board_setup(void)
 
 #ifdef CONFIG_FB_AU1200
 	argptr = prom_getcmdline();
-#ifdef CONFIG_MIPS_PB1200
-	strcat(argptr, " video=au1200fb:panel:s11");
-#endif
-#ifdef CONFIG_MIPS_DB1200
-	strcat(argptr, " video=au1200fb:panel:s7");
-#endif
+	strcat(argptr, " video=au1200fb:");
 #endif
 
 #if defined(CONFIG_BLK_DEV_IDE_AU1XXX)
@@ -188,3 +183,34 @@ void __init board_setup(void)
 		board_init_irq = _board_init_irq;
 	}
 }
+
+int
+board_au1200fb_panel (void)
+{
+	BCSR *bcsr = (BCSR *)BCSR_KSEG1_ADDR;
+	int p;
+
+	p = bcsr->switches;
+	p >>= 8;
+	p &= 0x0F;
+	return p;
+}
+
+int
+board_au1200fb_panel_init (void)
+{
+	/* Apply power */
+    BCSR *bcsr = (BCSR *)BCSR_KSEG1_ADDR;
+	bcsr->board |= (BCSR_BOARD_LCDVEE | BCSR_BOARD_LCDVDD | BCSR_BOARD_LCDBL);
+	return 0;
+}
+
+int
+board_au1200fb_panel_shutdown (void)
+{
+	/* Remove power */
+    BCSR *bcsr = (BCSR *)BCSR_KSEG1_ADDR;
+	bcsr->board &= ~(BCSR_BOARD_LCDVEE | BCSR_BOARD_LCDVDD | BCSR_BOARD_LCDBL);
+	return 0;
+}
+

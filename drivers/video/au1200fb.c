@@ -51,18 +51,6 @@
 #include <video/fbcon-cfb32.h>
 #define CMAPSIZE 16
 
-#ifdef CONFIG_MIPS_PB1200
-#include <asm/pb1200.h>
-#endif
-
-#ifdef CONFIG_MIPS_DB1200
-#include <asm/db1200.h>
-#endif
-
-#ifdef CONFIG_MIPS_FICMMP
-#include <asm/ficmmp.h>
-#endif
-
 #define AU1200_LCD_GET_WINENABLE	1
 #define AU1200_LCD_SET_WINENABLE	2
 #define AU1200_LCD_GET_WINLOCATION	3
@@ -105,7 +93,7 @@ typedef struct au1200_lcd_getset_t
 
 AU1200_LCD *lcd = (AU1200_LCD *)AU1200_LCD_ADDR;
 static int window_index = 0; /* default is zero */
-static int panel_index = 0; /* default is zero */
+static int panel_index = -1; /* default is call board_au1200fb_panel */
 
 struct window_settings
 {
@@ -152,15 +140,15 @@ struct panel_settings
 #define LCD_WINCTRL1_PO_16BPP LCD_WINCTRL1_PO_01
 #endif
 
-static int panel_init (void);
-static int panel_shutdown (void);
-
+extern int board_au1200fb_panel (void);
+extern int board_au1200fb_panel_init (void);
+extern int board_au1200fb_panel_shutdown (void);
 
 #if defined(CONFIG_FOCUS_ENHANCEMENTS)
-extern int focus_init_hdtv(void);
-extern int focus_init_component(void);
-extern int focus_init_cvsv(void);
-extern int focus_shutdown(void);
+extern int board_au1200fb_focus_init_hdtv(void);
+extern int board_au1200fb_focus_init_component(void);
+extern int board_au1200fb_focus_init_cvsv(void);
+extern int board_au1200fb_focus_shutdown(void);
 #endif
 
 /*
@@ -340,8 +328,8 @@ static struct panel_settings panels[] =
 		/* mode_toyclksrc   */ 0x00000004, /* 96MHz AUXPLL directly */
 		/* mode_backlight   */ 0x00000000,
 		/* mode_auxpll		*/ 8, /* 96MHz AUXPLL */
-		/* device_init		*/ panel_init,
-		/* device_shutdown	*/ panel_shutdown,
+		/* device_init		*/ board_au1200fb_panel_init,
+		/* device_shutdown	*/ board_au1200fb_panel_shutdown,
 	},
 
 	{ /* Index 6: Toshiba 640x480 TFT */
@@ -358,8 +346,8 @@ static struct panel_settings panels[] =
 		/* mode_toyclksrc   */ 0x00000004, /* 96MHz AUXPLL directly */
 		/* mode_backlight   */ 0x00000000,
 		/* mode_auxpll		*/ 8, /* 96MHz AUXPLL */
-		/* device_init		*/ panel_init,
-		/* device_shutdown	*/ panel_shutdown,
+		/* device_init		*/ board_au1200fb_panel_init,
+		/* device_shutdown	*/ board_au1200fb_panel_shutdown,
 	},
 
 	{ /* Index 7: Sharp 320x240 TFT */
@@ -376,11 +364,28 @@ static struct panel_settings panels[] =
 		/* mode_toyclksrc   */ 0x00000004, /* 96MHz AUXPLL directly */
 		/* mode_backlight   */ 0x00000000,
 		/* mode_auxpll		*/ 8, /* 96MHz AUXPLL */
-		/* device_init		*/ panel_init,
-		/* device_shutdown	*/ panel_shutdown,
+		/* device_init		*/ board_au1200fb_panel_init,
+		/* device_shutdown	*/ board_au1200fb_panel_shutdown,
+	},
+	{ /* Index 8: Toppoly TD070WGCB2 7" 854x480 TFT */
+		"Toppoly_TD070WGCB2",
+		854, 480,
+		/* mode_screen 		*/ LCD_SCREEN_SX_N(854) | LCD_SCREEN_SY_N(480),
+		/* mode_horztiming	*/ LCD_HORZTIMING_HND2_N(44) | LCD_HORZTIMING_HND1_N(44) | LCD_HORZTIMING_HPW_N(114),
+		/* mode_verttiming	*/ LCD_VERTTIMING_VND2_N(20) | LCD_VERTTIMING_VND1_N(21) | LCD_VERTTIMING_VPW_N(4),
+		/* mode_clkcontrol	*/ 0x00020001, /* /4=24Mhz */
+		/* mode_pwmdiv		*/ 0x8000063f,
+		/* mode_pwmhi		*/ 0x03400000,
+		/* mode_outmask		*/ 0x00FCFCFC,
+		/* mode_fifoctrl	*/ 0x2f2f2f2f,
+		/* mode_toyclksrc   */ 0x00000004, /* AUXPLL directly */
+		/* mode_backlight   */ 0x00000000,
+		/* mode_auxpll		*/ 8, /* 96MHz AUXPLL */
+		/* device_init		*/ board_au1200fb_panel_init,
+		/* device_shutdown	*/ board_au1200fb_panel_shutdown,
 	},
 #if defined(CONFIG_FOCUS_ENHANCEMENTS)
-	{ /* Index 8: Focus FS453 TV-Out 640x480 */
+	{ /* Index 9: Focus FS453 TV-Out 640x480 */
 		"FS453_640x480 (Composite/S-Video)",
 		640, 480,
 		/* mode_screen 		*/ LCD_SCREEN_SX_N(640) | LCD_SCREEN_SY_N(480),
@@ -394,11 +399,11 @@ static struct panel_settings panels[] =
 		/* mode_toyclksrc   */ 0x00000000,
 		/* mode_backlight   */ 0x00000000,
 		/* mode_auxpll		*/ 8, /* 96MHz AUXPLL */
-		/* device_init		*/ focus_init_cvsv,
-		/* device_shutdown	*/ focus_shutdown,
+		/* device_init		*/ board_au1200fb_focus_init_cvsv,
+		/* device_shutdown	*/ board_au1200fb_focus_shutdown,
 	},
 	
-	{ /* Index 9: Focus FS453 TV-Out 640x480 */
+	{ /* Index 10: Focus FS453 TV-Out 640x480 */
 		"FS453_640x480 (Component Video)",
 		640, 480,
 		/* mode_screen 		*/ LCD_SCREEN_SX_N(640) | LCD_SCREEN_SY_N(480),
@@ -412,11 +417,11 @@ static struct panel_settings panels[] =
 		/* mode_toyclksrc   */ 0x00000000,
 		/* mode_backlight   */ 0x00000000,
 		/* mode_auxpll		*/ 8, /* 96MHz AUXPLL */
-		/* device_init		*/ focus_init_component,
-		/* device_shutdown	*/ focus_shutdown,
+		/* device_init		*/ board_au1200fb_focus_init_component,
+		/* device_shutdown	*/ board_au1200fb_focus_shutdown,
 	},
 	
-	{ /* Index 10: Focus FS453 TV-Out 640x480 */
+	{ /* Index 11: Focus FS453 TV-Out 640x480 */
 		"FS453_640x480 (HDTV)",
 		720, 480,
 		/* mode_screen 		*/ LCD_SCREEN_SX_N(720) | LCD_SCREEN_SY_N(480),
@@ -430,8 +435,8 @@ static struct panel_settings panels[] =
 		/* mode_toyclksrc   */ 0x00000000,
 		/* mode_backlight   */ 0x00000000,
 		/* mode_auxpll		*/ 8, /* 96MHz AUXPLL */
-		/* device_init		*/ focus_init_hdtv,
-		/* device_shutdown	*/ focus_shutdown,
+		/* device_init		*/ board_au1200fb_focus_init_hdtv,
+		/* device_shutdown	*/ board_au1200fb_focus_shutdown,
 	},
 #endif
 };
@@ -503,36 +508,6 @@ static struct fb_ops au1200fb_ops = {
 	fb_mmap:        au1200fb_mmap,
 };
 
-
-static int panel_init (void)
-{
-#if defined(CONFIG_MIPS_PB1200) || defined(CONFIG_MIPS_DB1200)
-	/* Apply power */
-    BCSR *bcsr = (BCSR *)BCSR_KSEG1_ADDR;
-	bcsr->board |= (BCSR_BOARD_LCDVEE | BCSR_BOARD_LCDVDD | BCSR_BOARD_LCDBL);
-	/*printk("panel_init(%s)\n", panel->name); */
-#elif defined(CONFIG_MIPS_FICMMP)
-	/*Enable data buffers*/
-	ficmmp_config_clear(FICMMP_CONFIG_LCMDATAOUT);
-	/*Take LCD out of reset*/
-	ficmmp_config_set(FICMMP_CONFIG_LCMPWREN | FICMMP_CONFIG_LCMEN);
-#endif
-}
-
-static int panel_shutdown (void)
-{
-#if defined(CONFIG_MIPS_PB1200) || defined(CONFIG_MIPS_DB1200)
-	/* Remove power */
-    BCSR *bcsr = (BCSR *)BCSR_KSEG1_ADDR;
-	bcsr->board &= ~(BCSR_BOARD_LCDVEE | BCSR_BOARD_LCDVDD | BCSR_BOARD_LCDBL);
-	/*printk("panel_shutdown(%s)\n", panel->name);*/
-#elif defined(CONFIG_MIPS_FICMMP)
-	/*Disable data buffers*/
-	ficmmp_config_set(FICMMP_CONFIG_LCMDATAOUT);
-	/*Put LCD in reset, remove power*/
-	ficmmp_config_clear(FICMMP_CONFIG_LCMEN | FICMMP_CONFIG_LCMPWREN);
-#endif
-}
 
 static int
 winbpp (unsigned int winctrl1)
@@ -909,21 +884,14 @@ static int  au1200_blank(int blank_mode, struct fb_info_gen *_info)
 	switch (blank_mode) {
 	case VESA_NO_BLANKING:
 		/* printk("turn on panel\n"); */
-		if (panel->device_init) panel->device_init();
-        lcd->screen |= LCD_SCREEN_SEN;
-		/* FIX!!! Need panel poweron callback */
+		au1200_setpanel(panel);
 		break;
 
 	case VESA_VSYNC_SUSPEND:
 	case VESA_HSYNC_SUSPEND:
 	case VESA_POWERDOWN:
 		/* printk("turn off panel\n"); */
-		/* FIX!!! Need panel poweroff callback */
-		if (panel->device_shutdown) panel->device_shutdown();
-        lcd->screen &= ~LCD_SCREEN_SEN;
-		while ((lcd->intstatus & LCD_INT_SD) == 0)
-			;
-		lcd->intstatus = LCD_INT_SD;
+		au1200_setpanel(NULL);
         break;
 	default: 
 		break;
@@ -1156,6 +1124,9 @@ static void au1200_setpanel (struct panel_settings *newpanel)
 		if (panel->device_shutdown != NULL) panel->device_shutdown();
 	}
 
+	/* Check if only needing to turn off panel */
+	if (panel == NULL) return;
+
 	panel = newpanel;
 	
 	printk("Panel(%s), %dx%d\n", panel->name, panel->Xres, panel->Yres);
@@ -1163,9 +1134,11 @@ static void au1200_setpanel (struct panel_settings *newpanel)
 	/*
 	 * Setup clocking if internal LCD clock source (assumes sys_auxpll valid)
 	 */
-	/* FIX!!! if (!(panel->mode_clkcontrol & LCD_CLKCONTROL_EXT)) */
+	if (!(panel->mode_clkcontrol & LCD_CLKCONTROL_EXT))
 	{
 		uint32 sys_clksrc;
+		/* WARNING! This should really be a check since other peripherals can 
+		   be affected by changins sys_auxpll  */
 		au_writel(panel->mode_auxpll, SYS_AUXPLL);
 		sys_clksrc = au_readl(SYS_CLKSRC) & ~0x0000001f; 
 		sys_clksrc |= panel->mode_toyclksrc;
@@ -1409,6 +1382,7 @@ au1200fb_alloc_fbmem (unsigned long size)
 
 int __init au1200fb_init(void)
 {
+	int num_panels = sizeof(panels)/sizeof(struct panel_settings);
 	struct au1200fb_info *fb_info;
 	struct display *disp;
 	struct au1200fb_par *par;
@@ -1418,6 +1392,12 @@ int __init au1200fb_init(void)
     /*
 	* Get the panel information/display mode
 	*/
+	if (panel_index < 0)
+		panel_index = board_au1200fb_panel();
+	if ((panel_index < 0) || (panel_index >= num_panels)) {
+		printk("ERROR: INVALID PANEL %d\n", panel_index);
+		return -EINVAL;
+	}
 	panel = &panels[panel_index];
 	win = &windows[window_index];
 
@@ -1535,37 +1515,22 @@ void au1200fb_setup(char *options, int *ints)
 	for(this_opt=strtok(options, ","); this_opt;
 	    this_opt=strtok(NULL, ",")) {
 		if (!strncmp(this_opt, "panel:", 6)) {
-#if defined(CONFIG_MIPS_PB1200) || defined(CONFIG_MIPS_DB1200)
-			/* Read Pb1200 Rotary Switch S11 to obtain default panel */
-#ifdef CONFIG_MIPS_PB1200
-			if (!strncmp(this_opt+6, "s11", 3))
-#endif
-#ifdef CONFIG_MIPS_DB1200
-			if (!strncmp(this_opt+6, "s7", 3))
-#endif
-			{
-				BCSR *bcsr = (BCSR *)BCSR_KSEG1_ADDR;
-				int p;
+			int i;
+			long int li;
+			char *endptr;
+			this_opt += 6;
 
-				p = bcsr->switches;
-				p >>= 8;
-				p &= 0x0F;
-				if (p >= num_panels) p = 0;
-				panel_index = p;
+			/* Panel name can be name, "bs" for board-switch, or number/index */
+			li = simple_strtol(this_opt, &endptr, 0);
+			if (*endptr == '\0') {
+				panel_index = (int)li;
+			}
+			else if (strcmp(this_opt, "bs") == 0) {
+				panel_index = board_au1200fb_panel();
 			}
 			else
-#elif defined(CONFIG_MIPS_FICMMP)
-	au1xxx_gpio_tristate(6);
-	
-	if(au1xxx_gpio_read(12) == 0)
-		panel_index = 8;
-	else
-		panel_index = 7;
-#endif
-			/* Get the panel name, everything else if fixed */
 			for (i=0; i<num_panels; i++) {
-				if (!strncmp(this_opt+6, panels[i].name, 
-							strlen(this_opt))) {
+				if (!strcmp(this_opt, panels[i].name)) {
 					panel_index = i;
 					break;
 				}
