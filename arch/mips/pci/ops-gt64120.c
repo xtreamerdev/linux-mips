@@ -70,9 +70,9 @@ static int gt64120_config_access(unsigned int access_type,
 			 * The Galileo system controller is acting
 			 * differently than other devices.
 			 */
-			GT_WRITE(GT_PCI0_CFGDATA_OFS, ret);
+			GT_WRITE(GT_PCI0_CFGDATA_OFS, *data);
 		} else
-			__GT_WRITE(GT_PCI0_CFGDATA_OFS, ret);
+			__GT_WRITE(GT_PCI0_CFGDATA_OFS, *data);
 	} else {
 		if (bus == 0 && PCI_SLOT(dev_fn) == 0) {
 			/*
