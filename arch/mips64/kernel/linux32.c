@@ -3309,7 +3309,6 @@ qm_symbols(struct module *mod, char *buf, size_t bufsize, __kernel_size_t32 *ret
 			return 0;
 
 	space = mod->nsyms * 2*sizeof(u32);
-printk("qm_symbols: sapce = %d\n", space);
 
 	i = len = 0;
 	s = mod->syms;
@@ -3387,7 +3386,6 @@ asmlinkage int sys32_query_module(char *name_user, int which, char *buf, __kerne
 {
 	struct module *mod;
 	int err;
-printk("sys32_query_module\n");
 
 	lock_kernel();
 	if (name_user == 0) {
