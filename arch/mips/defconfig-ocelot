@@ -134,7 +134,82 @@ CONFIG_BINFMT_ELF=y
 #
 # Memory Technology Devices (MTD)
 #
-# CONFIG_MTD is not set
+CONFIG_MTD=y
+# CONFIG_MTD_DEBUG is not set
+CONFIG_MTD_PARTITIONS=y
+# CONFIG_MTD_CONCAT is not set
+CONFIG_MTD_REDBOOT_PARTS=y
+# CONFIG_MTD_CMDLINE_PARTS is not set
+
+#
+# User Modules And Translation Layers
+#
+CONFIG_MTD_CHAR=y
+# CONFIG_MTD_BLOCK is not set
+# CONFIG_MTD_BLOCK_RO is not set
+# CONFIG_FTL is not set
+CONFIG_NFTL=y
+CONFIG_NFTL_RW=y
+
+#
+# RAM/ROM/Flash chip drivers
+#
+# CONFIG_MTD_CFI is not set
+# CONFIG_MTD_JEDECPROBE is not set
+# CONFIG_MTD_GEN_PROBE is not set
+# CONFIG_MTD_CFI_INTELEXT is not set
+# CONFIG_MTD_CFI_AMDSTD is not set
+# CONFIG_MTD_CFI_STAA is not set
+CONFIG_MTD_RAM=y
+# CONFIG_MTD_ROM is not set
+# CONFIG_MTD_ABSENT is not set
+CONFIG_MTD_OBSOLETE_CHIPS=y
+# CONFIG_MTD_AMDSTD is not set
+# CONFIG_MTD_SHARP is not set
+CONFIG_MTD_JEDEC=y
+
+#
+# Mapping drivers for chip access
+#
+# CONFIG_MTD_PHYSMAP is not set
+# CONFIG_MTD_PB1000 is not set
+# CONFIG_MTD_PB1500 is not set
+# CONFIG_MTD_PB1100 is not set
+# CONFIG_MTD_BOSPORUS is not set
+# CONFIG_MTD_XXS1500 is not set
+# CONFIG_MTD_MTX1 is not set
+# CONFIG_MTD_DB1X00 is not set
+# CONFIG_MTD_CSTM_MIPS_IXX is not set
+CONFIG_MTD_OCELOT=y
+# CONFIG_MTD_LASAT is not set
+# CONFIG_MTD_PCI is not set
+# CONFIG_MTD_PCMCIA is not set
+
+#
+# Self-contained MTD device drivers
+#
+# CONFIG_MTD_PMC551 is not set
+# CONFIG_MTD_SLRAM is not set
+# CONFIG_MTD_MTDRAM is not set
+# CONFIG_MTD_BLKMTD is not set
+
+#
+# Disk-On-Chip Device Drivers
+#
+# CONFIG_MTD_DOC1000 is not set
+CONFIG_MTD_DOC2000=y
+# CONFIG_MTD_DOC2001 is not set
+CONFIG_MTD_DOCPROBE=y
+# CONFIG_MTD_DOCPROBE_ADVANCED is not set
+CONFIG_MTD_DOCPROBE_ADDRESS=0
+# CONFIG_MTD_DOCPROBE_HIGH is not set
+# CONFIG_MTD_DOCPROBE_55AA is not set
+
+#
+# NAND Flash Device Drivers
+#
+# CONFIG_MTD_NAND is not set
+CONFIG_MTD_NAND_IDS=y
 
 #
 # Parallel port support
