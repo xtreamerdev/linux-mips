@@ -2023,7 +2023,7 @@ CONFIG_ACER_PICA_61
   This is a machine with a R4400 133/150 MHz CPU. To compile a Linux
   kernel that runs on these, say Y here. For details about Linux on
   the MIPS architecture, check out the Linux/MIPS FAQ on the WWW at
-  <http://oss.sgi.com/mips/>.
+  <http://www.linux-mips.org/>.
 
 Support for Algorithmics P4032 (EXPERIMENTAL)
 CONFIG_ALGOR_P4032
@@ -2035,7 +2035,7 @@ Support for BAGET MIPS series
 CONFIG_BAGET_MIPS
   This enables support for the Baget, a Russian embedded system.  For
   more details about the Baget see the Linux/MIPS FAQ on
-  <http://oss.sgi.com/mips/>.
+  <http://www.linux-mips.org/>.
 
 Baget AMD LANCE support
 CONFIG_BAGETLANCE
@@ -2046,7 +2046,7 @@ CONFIG_BAGETLANCE
 Support for DECstations
 CONFIG_DECSTATION
   This enables support for DEC's MIPS based workstations.  For details
-  see the Linux/MIPS FAQ on <http://oss.sgi.com/mips/> and the
+  see the Linux/MIPS FAQ on <http://www.linux-mips.org/> and the
   DECstation porting pages on <http://decstation.unix-ag.org/>.
 
   If you have one of the following DECstation Models you definitely
@@ -2197,7 +2197,7 @@ CONFIG_MIPS_MAGNUM_4000
   This is a machine with a R4000 100 MHz CPU. To compile a Linux
   kernel that runs on these, say Y here. For details about Linux on
   the MIPS architecture, check out the Linux/MIPS FAQ on the WWW at
-  <http://oss.sgi.com/mips/>.
+  <http://www.linux-mips.org/>.
 
 Enable Qtronix 990P Keyboard Support
 CONFIG_QTRONIX_KEYBOARD
@@ -2209,7 +2209,7 @@ CONFIG_OLIVETTI_M700
   This is a machine with a R4000 100 MHz CPU. To compile a Linux
   kernel that runs on these, say Y here. For details about Linux on
   the MIPS architecture, check out the Linux/MIPS FAQ on the WWW at
-  <http://oss.sgi.com/mips/>.
+  <http://www.linux-mips.org/>.
 
 Support for SNI RM200 PCI
 CONFIG_SNI_RM200_PCI
@@ -18129,7 +18129,7 @@ CONFIG_SOUND_IT8172
   Say Y here to support the on-board sound generator on the Integrated
   Technology Express, Inc. ITE8172 SBC.  Vendor page at
   <http://www.ite.com.tw/ia/brief_it8172bsp.htm>; picture of the
-  board at <http://www.mvista.com/allies/semiconductor/ite.html>.
+  board at <http://www.mvista.com/partners/semiconductor/ite.html>.
 
 I2C support
 CONFIG_I2C
@@ -21054,14 +21054,14 @@ CONFIG_MIPS_EV64120
   This is an evaluation board based on the Galileo GT-64120
   single-chip system controller that contains a MIPS R5000 compatible
   core running at 75/100MHz.  Their website is located at
-  <http://www.galileot.com/>.  Say Y here if you wish to build a
+  <http://www.marvell.com/>.  Say Y here if you wish to build a
   kernel for this platform.
 
 Galileo EV96100 Evaluation board
 CONFIG_MIPS_EV96100
   This is an evaluation board based on the Galielo GT-96100 LAN/WAN
   communications controllers containing a MIPS R5000 compatible core
-  running at 83MHz. Their website is <http://www.galileot.com/>. Say Y
+  running at 83MHz. Their website is <http://www.marvell.com/>. Say Y
   here if you wish to build a kernel for this platform.
 
 Support for ITE 8172G board
@@ -21077,8 +21077,8 @@ CONFIG_MIPS_IVR
   This is an evaluation board built by Globespan to showcase their
   iVR (Internet Video Recorder) design. It utilizes a QED RM5231
   R5000 MIPS core. More information can be found out their website
-  located at <http://www.globespan.net/products/product4.html>P. Say Y
-  here if you wish to build a kernel for this platform.
+  located at <http://www.globespan.net/>. Say Y here if you wish to
+  build a kernel for this platform.
 
 Support for Alchemy Semi PB1000 board
 CONFIG_MIPS_PB1000
@@ -26994,7 +26994,7 @@ CONFIG_BLK_DEV_IT8172
   Say Y here to support the on-board IDE controller on the Integrated
   Technology Express, Inc. ITE8172 SBC.  Vendor page at
   <http://www.ite.com.tw/ia/brief_it8172bsp.htm>; picture of the
-  board at <http://www.mvista.com/allies/semiconductor/ite.html>.
+  board at <http://www.mvista.com/partners/semiconductor/ite.html>.
 
 Support ARM926T processor
 CONFIG_CPU_ARM926T
@@ -27162,21 +27162,21 @@ CONFIG_IT8172_REVC
   Say Y here to support the older, Revision C version of the Integrated
   Technology Express, Inc. ITE8172 SBC.  Vendor page at
   <http://www.ite.com.tw/ia/brief_it8172bsp.htm>; picture of the
-  board at <http://www.mvista.com/allies/semiconductor/ite.html>.
+  board at <http://www.mvista.com/partners/semiconductor/ite.html>.
 
 Enable Smart Card Reader 0 Support
 CONFIG_IT8172_SCR0
   Say Y here to support smart-card reader 0 (SCR0) on the Integrated
   Technology Express, Inc. ITE8172 SBC.  Vendor page at
   <http://www.ite.com.tw/ia/brief_it8172bsp.htm>; picture of the
-  board at <http://www.mvista.com/allies/semiconductor/ite.html>.
+  board at <http://www.mvista.com/partners/semiconductor/ite.html>.
 
 Enable Smart Card Reader 1 Support
 CONFIG_IT8172_SCR1
   Say Y here to support smart-card reader 1 (SCR1) on the Integrated
   Technology Express, Inc. ITE8172 SBC.  Vendor page at
   <http://www.ite.com.tw/ia/brief_it8172bsp.htm>; picture of the
-  board at <http://www.mvista.com/allies/semiconductor/ite.html>.
+  board at <http://www.mvista.com/partners/semiconductor/ite.html>.
 
 IT8172 IDE Tuning support
 CONFIG_IT8172_TUNING
