@@ -58,8 +58,8 @@ typedef struct siginfo {
 		struct {
 			pid_t _pid;		/* which child */
 			uid_t _uid;		/* sender's uid */
-			clock_t _utime;
 			int _status;		/* exit code */
+			clock_t _utime;
 			clock_t _stime;
 		} _sigchld;
 
@@ -118,8 +118,8 @@ typedef struct siginfo32 {
 		struct {
 			__kernel_pid_t32 _pid;	/* which child */
 			__kernel_uid_t32 _uid;	/* sender's uid */
-			__kernel_clock_t32 _utime;
 			int _status;		/* exit code */
+			__kernel_clock_t32 _utime;
 			__kernel_clock_t32 _stime;
 		} _sigchld;
 
