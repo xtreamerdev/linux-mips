@@ -34,7 +34,6 @@
 #include <linux/pm.h>
 #include <linux/slab.h>
 #include <linux/sysctl.h>
-#include <linux/acpi.h>
 
 #include <asm/string.h>
 #include <asm/uaccess.h>
