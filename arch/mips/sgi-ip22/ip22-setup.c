@@ -22,6 +22,7 @@
 #include <asm/irq.h>
 #include <asm/reboot.h>
 #include <asm/ds1286.h>
+#include <asm/floppy.h>
 #include <asm/time.h>
 #include <asm/gdb-stub.h>
 #include <asm/io.h>
@@ -37,6 +38,9 @@ extern void breakpoint(void);
 static int remote_debug = 0;
 #endif
 
+#ifdef CONFIG_EISA
+extern struct fd_ops std_fd_ops;
+#endif
 extern struct rtc_ops ip22_rtc_ops;
 
 unsigned long sgi_gfxaddr;
@@ -207,6 +211,14 @@ void __init ip22_setup(void)
 		}
 	}
 #endif
+#endif
+
+/*
+ * Warning: this is broken, means it has to be known at kernel compile time
+ * if a floppy module might ever be loaded
+ */
+#if defined(CONFIG_EISA) && defined(CONFIG_BLK_DEV_FD)
+	fd_ops = &std_fd_ops;
 #endif
 	rtc_ops = &ip22_rtc_ops;
 	kbd_ops = &ip22_kbd_ops;

@@ -110,7 +110,6 @@ CONFIG_CPU_LITTLE_ENDIAN=y
 # CONFIG_NET is not set
 # CONFIG_PCI is not set
 # CONFIG_ISA is not set
-# CONFIG_EISA is not set
 # CONFIG_TC is not set
 # CONFIG_MCA is not set
 # CONFIG_SBUS is not set

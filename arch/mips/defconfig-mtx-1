@@ -114,7 +114,6 @@ CONFIG_CPU_LITTLE_ENDIAN=y
 CONFIG_NET=y
 CONFIG_PCI_NAMES=y
 # CONFIG_ISA is not set
-# CONFIG_EISA is not set
 # CONFIG_TC is not set
 # CONFIG_MCA is not set
 # CONFIG_SBUS is not set
