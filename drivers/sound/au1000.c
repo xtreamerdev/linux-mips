@@ -77,7 +77,7 @@
 /* --------------------------------------------------------------------- */
 
 #undef OSS_DOCUMENTED_MIXER_SEMANTICS
-#define AU1000_DEBUG
+#undef AU1000_DEBUG
 #undef AU1000_VERBOSE_DEBUG
 
 #define USE_COHERENT_DMA
