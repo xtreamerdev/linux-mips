@@ -44,6 +44,7 @@
 #include <linux/blkpg.h>
 #include <linux/blk.h>
 #include <linux/elevator.h>
+#include <linux/file.h>
 #include <linux/rtc.h>
 #include <linux/pci.h>
 #if defined(CONFIG_BLK_DEV_LVM) || defined(CONFIG_BLK_DEV_LVM_MODULE)
