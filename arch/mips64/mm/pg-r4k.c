@@ -14,318 +14,259 @@
 #include <linux/mm.h>
 
 #include <asm/cacheops.h>
+#include <asm/inst.h>
 #include <asm/io.h>
 #include <asm/page.h>
 #include <asm/pgtable.h>
+#include <asm/prefetch.h>
 #include <asm/system.h>
 #include <asm/bootinfo.h>
+#include <asm/mipsregs.h>
 #include <asm/mmu_context.h>
 #include <asm/cpu.h>
+#include <asm/war.h>
 
 /*
- * Zero an entire page.  Basically a simple unrolled loop should do the
- * job but we want more performance by saving memory bus bandwidth.  We
- * have five flavours of the routine available for:
+ * Maximum sizes:
  *
- * - 16byte cachelines and no second level cache
- * - 32byte cachelines second level cache
- * - a version which handles the buggy R4600 v1.x
- * - a version which handles the buggy R4600 v2.0
- * - Finally a last version without fancy cache games for the SC and MC
- *   versions of R4000 and R4400.
+ * R4000 16 bytes D-cache, 128 bytes S-cache:		0x78 bytes
+ * R4600 v1.7:						0x5c bytes
+ * R4600 v2.0:						0x60 bytes
+ * With prefetching, 16 byte strides			0xa0 bytes
  */
 
-void r4k_clear_page_d16(void * page)
-{
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%2\n"
-		"1:\tcache\t%3,(%0)\n\t"
-		"sd\t$0,(%0)\n\t"
-		"sd\t$0,8(%0)\n\t"
-		"cache\t%3,16(%0)\n\t"
-		"sd\t$0,16(%0)\n\t"
-		"sd\t$0,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"cache\t%3,-32(%0)\n\t"
-		"sd\t$0,-32(%0)\n\t"
-		"sd\t$0,-24(%0)\n\t"
-		"cache\t%3,-16(%0)\n\t"
-		"sd\t$0,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		"sd\t$0,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		: "=r" (page)
-		: "0" (page), "I" (PAGE_SIZE), "i" (Create_Dirty_Excl_D)
-		: "memory");
-}
+static unsigned int clear_page_array[0xa0 / 4];
 
-void r4k_clear_page_d32(void * page)
-{
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%2\n"
-		"1:\tcache\t%3,(%0)\n\t"
-		"sd\t$0,(%0)\n\t"
-		"sd\t$0,8(%0)\n\t"
-		"sd\t$0,16(%0)\n\t"
-		"sd\t$0,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"cache\t%3,-32(%0)\n\t"
-		"sd\t$0,-32(%0)\n\t"
-		"sd\t$0,-24(%0)\n\t"
-		"sd\t$0,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		"sd\t$0,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		: "=r" (page)
-		: "0" (page), "I" (PAGE_SIZE), "i" (Create_Dirty_Excl_D)
-		: "memory");
-}
-
+void clear_page(void * page) __attribute__((alias("clear_page_array")));
 
 /*
- * This flavour of r4k_clear_page is for the R4600 V1.x.  Cite from the
- * IDT R4600 V1.7 errata:
- *
- *  18. The CACHE instructions Hit_Writeback_Invalidate_D, Hit_Writeback_D,
- *      Hit_Invalidate_D and Create_Dirty_Excl_D should only be
- *      executed if there is no other dcache activity. If the dcache is
- *      accessed for another instruction immeidately preceding when these
- *      cache instructions are executing, it is possible that the dcache
- *      tag match outputs used by these cache instructions will be
- *      incorrect. These cache instructions should be preceded by at least
- *      four instructions that are not any kind of load or store
- *      instruction.
- *
- *      This is not allowed:    lw
- *                              nop
- *                              nop
- *                              nop
- *                              cache       Hit_Writeback_Invalidate_D
- *
- *      This is allowed:        lw
- *                              nop
- *                              nop
- *                              nop
- *                              nop
- *                              cache       Hit_Writeback_Invalidate_D
+ * This is suboptimal for 32-bit kernels; we assume that R10000 is only used
+ * with 64-bit kernels.  The prefetch offsets have been experimentally tuned
+ * an Origin 200.
  */
-void r4k_clear_page_r4600_v1(void * page)
+static int pref_offset __initdata = 512;
+static unsigned int pref_mode __initdata;
+
+static int has_scache __initdata = 0;
+static int store_offset __initdata = 0;
+static unsigned int __initdata *dest, *epc;
+
+static inline void build_pref(void)
 {
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%2\n"
-		"1:\tnop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"cache\t%3,(%0)\n\t"
-		"sd\t$0,(%0)\n\t"
-		"sd\t$0,8(%0)\n\t"
-		"sd\t$0,16(%0)\n\t"
-		"sd\t$0,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"cache\t%3,-32(%0)\n\t"
-		"sd\t$0,-32(%0)\n\t"
-		"sd\t$0,-24(%0)\n\t"
-		"sd\t$0,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		"sd\t$0,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		: "=r" (page)
-		: "0" (page), "I" (PAGE_SIZE), "i" (Create_Dirty_Excl_D)
-		: "memory");
+	if (!(store_offset & (cpu_dcache_line_size() - 1))) {
+		union mips_instruction mi;
+
+		mi.i_format.opcode     = pref_op;
+		mi.i_format.rs         = 4;		/* $a0 */
+		mi.i_format.rt         = pref_mode;
+		mi.i_format.simmediate = store_offset;
+
+		*epc++ = mi.word;
+	}
 }
 
-/*
- * And this one is for the R4600 V2.0
- */
-void r4k_clear_page_r4600_v2(void * page)
+static inline void build_cdex(void)
 {
-	unsigned long flags;
+	union mips_instruction mi;
 
-	local_irq_save(flags);
-	*(volatile unsigned int *)KSEG1;
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%2\n"
-		"1:\tcache\t%3,(%0)\n\t"
-		"sd\t$0,(%0)\n\t"
-		"sd\t$0,8(%0)\n\t"
-		"sd\t$0,16(%0)\n\t"
-		"sd\t$0,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"cache\t%3,-32(%0)\n\t"
-		"sd\t$0,-32(%0)\n\t"
-		"sd\t$0,-24(%0)\n\t"
-		"sd\t$0,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		"sd\t$0,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		: "=r" (page)
-		: "0" (page), "I" (PAGE_SIZE), "i" (Create_Dirty_Excl_D)
-		: "memory");
-	local_irq_restore(flags);
+	if (has_scache && !(store_offset & (cpu_scache_line_size() - 1))) {
+
+		mi.c_format.opcode     = cache_op;
+		mi.c_format.rs         = 4;	/* $a0 */
+		mi.c_format.c_op       = 3;	/* Create Dirty Exclusive */
+		mi.c_format.cache      = 3;	/* Secondary Data Cache */
+		mi.c_format.simmediate = store_offset;
+
+		*epc++ = mi.word;
+	}
+
+	if (store_offset & (cpu_dcache_line_size() - 1))
+		return;
+
+	if (R4600_V1_HIT_CACHEOP_WAR && ((read_c0_prid() & 0xfff0) == 0x2010)) {
+		*epc++ = 0;			/* nop */
+		*epc++ = 0;			/* nop */
+		*epc++ = 0;			/* nop */
+		*epc++ = 0;			/* nop */
+	}
+
+	mi.c_format.opcode     = cache_op;
+	mi.c_format.rs         = 4;		/* $a0 */
+	mi.c_format.c_op       = 3;		/* Create Dirty Exclusive */
+	mi.c_format.cache      = 1;		/* Data Cache */
+	mi.c_format.simmediate = store_offset;
+
+	*epc++ = mi.word;
 }
 
-/*
- * The next 4 versions are optimized for all possible scache configurations
- * of the SC / MC versions of R4000 and R4400 ...
- *
- * Todo: For even better performance we should have a routine optimized for
- * every legal combination of dcache / scache linesize.  When I (Ralf) tried
- * this the kernel crashed shortly after mounting the root filesystem.  CPU
- * bug?  Weirdo cache instruction semantics?
- */
-void r4k_clear_page_s16(void * page)
+static inline void __build_store_zero_reg(void)
 {
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%2\n"
-		"1:\tcache\t%3,(%0)\n\t"
-		"sd\t$0,(%0)\n\t"
-		"sd\t$0,8(%0)\n\t"
-		"cache\t%3,16(%0)\n\t"
-		"sd\t$0,16(%0)\n\t"
-		"sd\t$0,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"cache\t%3,-32(%0)\n\t"
-		"sd\t$0,-32(%0)\n\t"
-		"sd\t$0,-24(%0)\n\t"
-		"cache\t%3,-16(%0)\n\t"
-		"sd\t$0,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		"sd\t$0,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		: "=r" (page)
-		: "0" (page), "I" (PAGE_SIZE), "i" (Create_Dirty_Excl_SD)
-		: "memory");
+	union mips_instruction mi;
+
+	if (cpu_has_64bits)
+		mi.i_format.opcode     = sd_op;
+	else
+		mi.i_format.opcode     = sw_op;
+	mi.i_format.rs         = 4;		/* $a0 */
+	mi.i_format.rt         = 0;		/* $zero */
+	mi.i_format.simmediate = store_offset;
+
+	store_offset += (cpu_has_64bits ? 8 : 4);
+
+	*epc++ = mi.word;
 }
 
-void r4k_clear_page_s32(void * page)
+static inline void build_store_zero_reg(void)
 {
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%2\n"
-		"1:\tcache\t%3,(%0)\n\t"
-		"sd\t$0,(%0)\n\t"
-		"sd\t$0,8(%0)\n\t"
-		"sd\t$0,16(%0)\n\t"
-		"sd\t$0,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"cache\t%3,-32(%0)\n\t"
-		"sd\t$0,-32(%0)\n\t"
-		"sd\t$0,-24(%0)\n\t"
-		"sd\t$0,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		"sd\t$0,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		: "=r" (page)
-		: "0" (page), "I" (PAGE_SIZE), "i" (Create_Dirty_Excl_SD)
-		: "memory");
+	if (cpu_has_prefetch)
+		build_pref();
+	else if (cpu_has_cache_cdex)
+		build_cdex();
+
+	__build_store_zero_reg();
 }
 
-void r4k_clear_page_s64(void * page)
+static inline void build_addiu_at_a0(unsigned long offset)
 {
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%2\n"
-		"1:\tcache\t%3,(%0)\n\t"
-		"sd\t$0,(%0)\n\t"
-		"sd\t$0,8(%0)\n\t"
-		"sd\t$0,16(%0)\n\t"
-		"sd\t$0,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"sd\t$0,-32(%0)\n\t"
-		"sd\t$0,-24(%0)\n\t"
-		"sd\t$0,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		"sd\t$0,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		: "=r" (page)
-		: "0" (page), "I" (PAGE_SIZE), "i" (Create_Dirty_Excl_SD)
-		: "memory");
+	union mips_instruction mi;
+
+	BUG_ON(offset > 0x7fff);
+
+	mi.i_format.opcode     = cpu_has_64bit_addresses ? daddiu_op : addiu_op;
+	mi.i_format.rs         = 4;		/* $a0 */
+	mi.i_format.rt         = 1;		/* $at */
+	mi.i_format.simmediate = offset;
+
+	*epc++ = mi.word;
 }
 
-void r4k_clear_page_s128(void * page)
+static inline void build_addiu_a0(unsigned long offset)
 {
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%2\n"
-		"1:\tcache\t%3,(%0)\n\t"
-		"sd\t$0,(%0)\n\t"
-		"sd\t$0,8(%0)\n\t"
-		"sd\t$0,16(%0)\n\t"
-		"sd\t$0,24(%0)\n\t"
-		"sd\t$0,32(%0)\n\t"
-		"sd\t$0,40(%0)\n\t"
-		"sd\t$0,48(%0)\n\t"
-		"sd\t$0,56(%0)\n\t"
-		"daddiu\t%0,128\n\t"
-		"sd\t$0,-64(%0)\n\t"
-		"sd\t$0,-56(%0)\n\t"
-		"sd\t$0,-48(%0)\n\t"
-		"sd\t$0,-40(%0)\n\t"
-		"sd\t$0,-32(%0)\n\t"
-		"sd\t$0,-24(%0)\n\t"
-		"sd\t$0,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		"sd\t$0,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		: "=r" (page)
-		: "0" (page), "I" (PAGE_SIZE), "i" (Create_Dirty_Excl_SD)
-		: "memory");
+	union mips_instruction mi;
+
+	BUG_ON(offset > 0x7fff);
+
+	mi.i_format.opcode     = cpu_has_64bit_addresses ? daddiu_op : addiu_op;
+	mi.i_format.rs         = 4;		/* $a0 */
+	mi.i_format.rt         = 4;		/* $at */
+	mi.i_format.simmediate = offset;
+
+	store_offset -= offset;
+
+	*epc++ = mi.word;
 }
 
-/*
- * This version has been tuned on an Origin.  For other machines the arguments
- * of the pref instructin may have to be tuned differently.
- */
-void andes_clear_page(void * page)
+static inline void build_bne(unsigned int *dest)
 {
-	__asm__ __volatile__(
-		".set\tpush\n\t"
-		".set\tmips4\n\t"
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%2\n"
-		"1:\tpref 7,512(%0)\n\t"
-		"sd\t$0,(%0)\n\t"
-		"sd\t$0,8(%0)\n\t"
-		"sd\t$0,16(%0)\n\t"
-		"sd\t$0,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"sd\t$0,-32(%0)\n\t"
-		"sd\t$0,-24(%0)\n\t"
-		"sd\t$0,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		"sd\t$0,-8(%0)\n\t"
-		".set\tpop"
-		: "=r" (page)
-		: "0" (page), "I" (PAGE_SIZE)
-		: "memory");
+	union mips_instruction mi;
+
+	mi.i_format.opcode = bne_op;
+	mi.i_format.rs     = 1;			/* $at */
+	mi.i_format.rt     = 4;			/* $a0 */
+	mi.i_format.simmediate = dest - epc - 1;
+
+	*epc++ = mi.word;
 }
 
+static inline void build_nop(void)
+{
+	*epc++ = 0;
+}
+
+static inline void build_jr_ra(void)
+{
+	union mips_instruction mi;
+
+	mi.r_format.opcode = spec_op;
+	mi.r_format.rs     = 31;
+	mi.r_format.rt     = 0;
+	mi.r_format.rd     = 0;
+	mi.r_format.re     = 0;
+	mi.r_format.func   = jr_op;
+
+	*epc++ = mi.word;
+}
+
+void __init build_clear_page(void)
+{
+	epc = (unsigned int *) &clear_page_array;
+
+	if (cpu_has_prefetch) {
+		switch (current_cpu_data.cputype) {
+		case CPU_R10000:
+		case CPU_R12000:
+			pref_mode = Pref_StoreRetained;
+			break;
+		default:
+			pref_mode = Pref_PrepareForStore;
+			break;
+		}
+	}
+
+	build_addiu_at_a0(PAGE_SIZE - (cpu_has_prefetch ? pref_offset : 0));
+
+	if (R4600_V2_HIT_CACHEOP_WAR && ((read_c0_prid() & 0xfff0) == 0x2020)) {
+		*epc++ = 0x40026000;		/* mfc0    $v0, $12	*/
+		*epc++ = 0x34410001;		/* ori     $at, v0, 0x1	*/
+		*epc++ = 0x38210001;		/* xori    $at, at, 0x1	*/
+		*epc++ = 0x40816000;		/* mtc0    $at, $12	*/
+		*epc++ = 0x00000000;		/* nop			*/
+		*epc++ = 0x00000000;		/* nop			*/
+		*epc++ = 0x00000000;		/* nop			*/
+		*epc++ = 0x3c01a000;		/* lui     $at, 0xa000  */
+		*epc++ = 0x8c200000;		/* lw      $zero, ($at) */
+	}
+
+dest = epc;
+	build_store_zero_reg();
+	build_store_zero_reg();
+	build_store_zero_reg();
+	build_store_zero_reg();
+	if (has_scache && cpu_scache_line_size() == 128) {
+		build_store_zero_reg();
+		build_store_zero_reg();
+		build_store_zero_reg();
+		build_store_zero_reg();
+	}
+	build_addiu_a0(2 * store_offset);
+	build_store_zero_reg();
+	build_store_zero_reg();
+	if (has_scache && cpu_scache_line_size() == 128) {
+		build_store_zero_reg();
+		build_store_zero_reg();
+		build_store_zero_reg();
+		build_store_zero_reg();
+	}
+	build_store_zero_reg();
+	build_bne(dest);
+	 build_store_zero_reg();
+
+	if (cpu_has_prefetch && pref_offset) {
+		build_addiu_at_a0(pref_offset);
+	dest = epc;
+		__build_store_zero_reg();
+		__build_store_zero_reg();
+		__build_store_zero_reg();
+		__build_store_zero_reg();
+		build_addiu_a0(2 * store_offset);
+		__build_store_zero_reg();
+		__build_store_zero_reg();
+		__build_store_zero_reg();
+		build_bne(dest);
+		 __build_store_zero_reg();
+	}
+
+	build_jr_ra();
+	if (R4600_V2_HIT_CACHEOP_WAR && ((read_c0_prid() & 0xfff0) == 0x2020))
+		*epc++ = 0x40826000;		/* mtc0    $v0, $12	*/
+	else
+		build_nop();
+
+	flush_icache_range((unsigned long)&clear_page_array,
+	                   (unsigned long) epc);
+
+	BUG_ON(epc >= clear_page_array + ARRAY_SIZE(clear_page_array));
+}
 
 /*
  * This is still inefficient.  We only can do better if we know the

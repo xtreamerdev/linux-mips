@@ -23,7 +23,6 @@
 #include <asm/system.h>
 
 /* memory functions */
-void (*_clear_page)(void * page);
 void (*_copy_page)(void * to, void * from);
 
 /* Cache operations. */

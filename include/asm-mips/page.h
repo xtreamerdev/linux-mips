@@ -41,10 +41,9 @@ do {									\
 
 #define PAGE_BUG(page) do {  BUG(); } while (0)
 
-extern void (*_clear_page)(void * page);
-extern void (*_copy_page)(void * to, void * from);
+extern void clear_page(void * page);
 
-#define clear_page(page)	_clear_page(page)
+extern void (*_copy_page)(void * to, void * from);
 #define copy_page(to, from)	_copy_page(to, from)
 
 extern unsigned long shm_align_mask;
