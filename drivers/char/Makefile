@@ -213,6 +213,7 @@ obj-$(CONFIG_SERIAL_TX3912) += generic_serial.o serial_tx3912.o
 obj-$(CONFIG_TXX927_SERIAL) += serial_txx927.o
 obj-$(CONFIG_SERIAL_TXX9) += generic_serial.o serial_txx9.o
 obj-$(CONFIG_IP22_SERIAL) += sgiserial.o
+obj-$(CONFIG_AU1X00_UART) += au1x00-serial.o
 
 subdir-$(CONFIG_RIO) += rio
 subdir-$(CONFIG_INPUT) += joystick
