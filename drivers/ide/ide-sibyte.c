@@ -26,40 +26,39 @@
 
 #include <asm/sibyte/board.h>
 
-ide_hwif_t *sb_ide_hwif = NULL;
-
-static unsigned long ide_base;
-#define SIBYTE_IDE_BASE        (KSEG1ADDR(ide_base)-mips_io_port_base)
-#define SIBYTE_IDE_REG(pcaddr) (SIBYTE_IDE_BASE + ((pcaddr)<<5))
+#define SIBYTE_IDE_BASE        (IO_SPACE_BASE + IDE_PHYS - mips_io_port_base)
+#define SIBYTE_IDE_REG(pcaddr) (SIBYTE_IDE_BASE + ((pcaddr) << 5))
 
 extern void sibyte_set_ideops(ide_hwif_t *hwif);
 
 void __init sibyte_ide_probe(void)
 {
 	int i;
-	ide_hwif_t *hwif;
+	ide_hwif_t *hwif = NULL;
+
 	/* 
-	 * Find the first untaken slot in hwifs 
+	 * Find the first untaken slot in hwifs.  Also set the io ops
+	 * to the non-swapping SiByte versions.  XXXKW It would be
+	 * nice to find a safe place to do this outside of
+	 * ide-sibyte.c so PCI-IDE would work without the SiByte
+	 * driver.
 	 */
 	for (i = 0; i < MAX_HWIFS; i++) {
 		sibyte_set_ideops(&ide_hwifs[i]);
-		if (!ide_hwifs[i].io_ports[IDE_DATA_OFFSET]) {
-			break;
+		if (!ide_hwifs[i].io_ports[IDE_DATA_OFFSET] && (hwif == NULL)) {
+			hwif = &ide_hwifs[i];
 		}
 	}
-	if (i == MAX_HWIFS) {
+	if (hwif == NULL) {
 		printk("No space for SiByte onboard IDE driver in ide_hwifs[].  Not enabled.\n");
 		return;
 	}
-
-	ide_base = IDE_PHYS|IO_SPACE_BASE;
 
 	/*
 	 * Set up our stuff; we're a little odd because our io_ports
 	 * aren't in the usual place, and byte-swapping isn't
 	 * necessary.
 	 */
-	hwif = &ide_hwifs[i];
 	hwif->hw.io_ports[IDE_DATA_OFFSET]    = SIBYTE_IDE_REG(0x1f0);
 	hwif->hw.io_ports[IDE_ERROR_OFFSET]   = SIBYTE_IDE_REG(0x1f1);
 	hwif->hw.io_ports[IDE_NSECTOR_OFFSET] = SIBYTE_IDE_REG(0x1f2);
@@ -70,13 +69,11 @@ void __init sibyte_ide_probe(void)
 	hwif->hw.io_ports[IDE_STATUS_OFFSET]  = SIBYTE_IDE_REG(0x1f7);
 	hwif->hw.io_ports[IDE_CONTROL_OFFSET] = SIBYTE_IDE_REG(0x3f6);
 	hwif->hw.irq                          = K_INT_GB_IDE;
-	hwif->irq                             = K_INT_GB_IDE;
+	hwif->irq                             = hwif->hw.irq;
 	hwif->noprobe                         = 0;
 	hwif->hw.ack_intr                     = NULL;
-	/* Override options here, prevent region-checking */
 	hwif->mmio                            = 2;
 
 	memcpy(hwif->io_ports, hwif->hw.io_ports, sizeof(hwif->io_ports));
-	printk("SiByte onboard IDE configured as device %i\n", i);
-	sb_ide_hwif = hwif;
+	printk("SiByte onboard IDE configured as device %i\n", hwif-ide_hwifs);
 }
