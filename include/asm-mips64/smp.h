@@ -93,5 +93,7 @@ extern struct call_data_struct *call_data;
 
 extern cpumask_t cpu_online_map;
 
+extern void asmlinkage smp_bootstrap(void);
+
 #endif /* CONFIG_SMP */
 #endif /* _ASM_SMP_H */

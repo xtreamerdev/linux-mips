@@ -26,7 +26,6 @@
 #include <asm/trace.h>
 
 extern void smp_call_function_interrupt(void);
-extern void asmlinkage smp_bootstrap(void);
 
 /*
  * Send inter-processor interrupt
