@@ -98,7 +98,7 @@ int get_irq_list(char *buf)
 			p += sprintf(p, ", %s", action->name);
 		*p++ = '\n';
 	}
-	p += sprintf(p, "ERR: %10lu\n", irq_err_count);
+	p += sprintf(p, "ERR: %10lu\n", atomic_read(&irq_err_count));
 	return p - buf;
 }
 
