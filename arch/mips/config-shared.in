@@ -429,7 +429,6 @@ if [ "$CONFIG_IBM_WORKPAD" = "y" ]; then
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_ISA y
-   define_bool CONFIG_DUMMY_KEYB y
    define_bool CONFIG_SCSI n
 fi
 if [ "$CONFIG_LASAT" = "y" ]; then

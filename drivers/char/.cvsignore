@@ -2,4 +2,5 @@
 .*.flags
 conmakehash
 consolemap_deftbl.c
+ibm_workpad_keymap.c
 uni_hash.tbl
