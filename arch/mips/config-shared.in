@@ -249,7 +249,6 @@ if [ "$CONFIG_MIPS_PB1000" = "y" ]; then
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
-   define_bool CONFIG_AU1X00_USB_DEVICE y
 fi
 if [ "$CONFIG_MIPS_PB1100" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
@@ -261,7 +260,6 @@ if [ "$CONFIG_MIPS_PB1100" = "y" ]; then
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
-   define_bool CONFIG_AU1X00_USB_DEVICE y
 fi
 if [ "$CONFIG_MIPS_PB1500" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
@@ -271,7 +269,6 @@ if [ "$CONFIG_MIPS_PB1500" = "y" ]; then
    define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
-   define_bool CONFIG_AU1X00_USB_DEVICE y
 fi
 if [ "$CONFIG_MIPS_DB1000" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
