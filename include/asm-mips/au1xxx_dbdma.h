@@ -43,10 +43,12 @@
 #define DDMA_GLOBAL_BASE	0xb4003000
 #define DDMA_CHANNEL_BASE	0xb4002000
 
-#define DDMA_CONFIG		(DDMA_GLOBAL BASE + 0x0000)
-#define DDMA_INTSTAT		(DDMA_GLOBAL BASE + 0x0004)
-#define DDMA_THROTTLE		(DDMA_GLOBAL BASE + 0x0008)
-#define DDMA_INTEN		(DDMA_GLOBAL BASE + 0x000c)
+typedef struct dbdma_global {
+	u32	ddma_config;
+	u32	ddma_intstat;
+	u32	ddma_throttle;
+	u32	ddma_inten;
+} dbdma_global_t;
 
 /* General Configuration.
 */
@@ -78,7 +80,7 @@ typedef struct au1xxx_dma_channel {
 #define DDMA_CFG_PPR	(1 << 4)	/* PCI posted read/write control */
 #define DDMA_CFG_DFN	(1 << 3)	/* Descriptor fetch non-coherent */
 #define DDMA_CFG_SBE	(1 << 2)	/* Source big endian */
-#define DDMA_CFG_DBE	(1 << 1)	/* Destinatino big endian */
+#define DDMA_CFG_DBE	(1 << 1)	/* Destination big endian */
 #define DDMA_CFG_EN	(1 << 0)	/* Channel enable */
 
 /* Always set when descriptor processing done, regardless of
@@ -235,6 +237,7 @@ typedef struct au1xxx_ddma_desc {
 */
 #define DSCR_NXTPTR_MASK	(0x07ffffff)
 #define DSCR_NXTPTR(x)		((x) >> 5)
+#define DSCR_GET_NXTPTR(x)	((x) << 5)
 #define DSCR_NXTPTR_MS		(1 << 27)
 
 /* The number of DBDMA channels.
@@ -260,11 +263,30 @@ u32 au1xxx_dbdma_chan_alloc(u32 srcid, u32 destid,
 #define DBDMA_AC97_RX_CHAN DSCR_CMD0_PSC1_RX
 #endif
 
+/* Set the device width of a in/out fifo.
+*/
+u32 au1xxx_dbdma_set_devwidth(u32 chanid, int bits);
+
 /* Allocate a ring of descriptors for dbdma.
 */
 u32 au1xxx_dbdma_ring_alloc(u32 chanid, int entries);
 
+/* Put buffers on source/destination descriptors.
+*/
+u32 au1xxx_dbdma_put_source(u32 chanid, void *buf, int nbytes);
+u32 au1xxx_dbdma_put_dest(u32 chanid, void *buf, int nbytes);
+
+/* Get a buffer from the destination descriptor.
+*/
+u32 au1xxx_dbdma_get_dest(u32 chanid, void **buf, int *nbytes);
+
+void au1xxx_dbdma_stop(u32 chanid);
+void au1xxx_dbdma_start(u32 chanid);
+void au1xxx_dbdma_reset(u32 chanid);
+u32 au1xxx_get_dma_residue(u32 chanid);
+
 void au1xxx_dbdma_chan_free(u32 chanid);
+void au1xxx_dbdma_dump(u32 chanid);
 
 #endif /* _LANGUAGE_ASSEMBLY */
 #endif /* _AU1000_DBDMA_H_ */
