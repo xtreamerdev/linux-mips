@@ -67,10 +67,11 @@ ifdef CONFIG_CPU_SB1
 CFLAGS		+= -mcpu=r8000 -mips4
 endif
 
-ifdef CONFIG_MIPS_FPU_EMULATOR
-CORE_FILES	+= arch/mips64/math-emu/fpu_emulator.o
-SUBDIRS		+= arch/mips64/math-emu
-endif
+#
+# We unconditionally build the math emulator
+#
+CORE_FILES	+= arch/mips/math-emu/fpu_emulator.o
+SUBDIRS		+= arch/mips/math-emu
 
 #
 # Board-dependent options and extra files
