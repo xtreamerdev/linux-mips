@@ -135,7 +135,7 @@ asmlinkage int sys32_ptrace(int request, int pid, int addr, int data)
 			tmp = regs->lo;
 			break;
 		case FPC_CSR:
-			if (current_cpu_data.options & MIPS_CPU_FPU)
+			if (cpu_has_fpu)
 				tmp = child->thread.fpu.hard.control;
 			else
 				tmp = child->thread.fpu.soft.sr;
@@ -196,7 +196,7 @@ asmlinkage int sys32_ptrace(int request, int pid, int addr, int data)
 			regs->lo = data;
 			break;
 		case FPC_CSR:
-			if (current_cpu_data.options & MIPS_CPU_FPU)
+			if (cpu_has_fpu)
 				child->thread.fpu.hard.control = data;
 			else
 				child->thread.fpu.soft.sr = data;
@@ -356,7 +356,7 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 			tmp = regs->lo;
 			break;
 		case FPC_CSR:
-			if (current_cpu_data.options & MIPS_CPU_FPU)
+			if (cpu_has_fpu)
 				tmp = child->thread.fpu.hard.control;
 			else
 				tmp = child->thread.fpu.soft.sr;
@@ -417,7 +417,7 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 			regs->lo = data;
 			break;
 		case FPC_CSR:
-			if (current_cpu_data.options & MIPS_CPU_FPU)
+			if (cpu_has_fpu)
 				child->thread.fpu.hard.control = data;
 			else
 				child->thread.fpu.soft.sr = data;
