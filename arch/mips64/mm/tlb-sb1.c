@@ -22,7 +22,7 @@
 #include <asm/bootinfo.h>
 #include <asm/cpu.h>
 
-extern void except_vec1_r4k(void);
+extern void except_vec1_sb1(void);
 
 /* Dump the current entry* and pagemask registers */
 static inline void dump_cur_tlb_regs(void)
