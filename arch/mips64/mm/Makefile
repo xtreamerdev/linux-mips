@@ -12,11 +12,13 @@ obj-y				:= extable.o init.o fault.o loadmmu.o \
 
 obj-$(CONFIG_CPU_R4300)		+= c-r4k.o pg-r4k.o tlb-r4k.o
 obj-$(CONFIG_CPU_R4X00)		+= c-r4k.o pg-r4k.o tlb-r4k.o
-obj-$(CONFIG_CPU_R5000)		+= c-r4k.o pg-r4k.o tlb-r4k.o r5k-sc.o
-obj-$(CONFIG_CPU_NEVADA)	+= c-r4k.o pg-r4k.o tlb-r4k.o r5k-sc.o
+obj-$(CONFIG_CPU_R5000)		+= c-r4k.o pg-r4k.o tlb-r4k.o
+obj-$(CONFIG_CPU_NEVADA)	+= c-r4k.o pg-r4k.o tlb-r4k.o
 obj-$(CONFIG_CPU_R10000)	+= c-andes.o pg-andes.o tlb-andes.o
 obj-$(CONFIG_CPU_SB1)		+= c-sb1.o pg-sb1.o tlb-sb1.o
 obj-$(CONFIG_CPU_MIPS64)	+= c-mips64.o pg-mips64.o tlb-r4k.o
+
+obj-$(CONFIG_R5000_CPU_SCACHE)	+= r5k-sc.o
 
 #
 # Debug TLB exception handler, currently unused
