@@ -46,17 +46,13 @@ check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1
 GCCFLAGS	:= -I $(TOPDIR)/include/asm/gcc
 GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe
 GCCFLAGS	+= $(call check_gcc, -finline-limit=100000,)
-LINKFLAGS	+= -G 0 -static -m $(ld-emul) -n
+LINKFLAGS	+= -G 0 -static -n
 MODFLAGS	+= -mlong-calls
 
 ifdef CONFIG_DEBUG_INFO
 GCCFLAGS	+= -g
 ifdef CONFIG_SB1XXX_CORELIS
 GCCFLAGS	+= -mno-sched-prolog -fno-omit-frame-pointer
-endif
-ifdef CONFIG_PMC_STRETCH
-GCCFLAGS	+= -mabi=32
-LD		+= -m elf32btsmip
 endif
 endif
 
@@ -179,7 +175,8 @@ endif
 
 AFLAGS		+= $(GCCFLAGS)
 CFLAGS		+= $(GCCFLAGS)
-LDFLAGS		+= -m $(ld-emul)
+
+LD		+= -m $(ld-emul)
 
 
 #

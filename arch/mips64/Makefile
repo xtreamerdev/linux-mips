@@ -349,22 +349,26 @@ endif
 ifdef CONFIG_CPU_LITTLE_ENDIAN
 32bit-bfd = elf32-tradlittlemips
 64bit-bfd = elf64-tradlittlemips
+32bit-emul = elf32ltsmip
+64bit-emul = elf64ltsmip
 else
 32bit-bfd = elf32-tradbigmips
 64bit-bfd = elf64-tradbigmips
+32bit-emul = elf32btsmip
+64bit-emul = elf64btsmip
 endif
 
 ifdef CONFIG_BUILD_ELF64
 GCCFLAGS += -Wa,-64
 LOADSCRIPT = arch/mips64/ld.script.elf64
-build-bfd = $(64bit-bfd)
+ld-emul = $(64bit-emul)
 vmlinux-32 = vmlinux.32
 vmlinux-64 = vmlinux
 else
 GCCFLAGS += $(call check_gcc,-mno-explicit-relocs,)
 GCCFLAGS += -Wa,-32 $(call check_gas,-Wa$(comma)-mgp64,)
 LOADSCRIPT = arch/mips64/ld.script.elf32
-build-bfd = $(32bit-bfd)
+ld-emul = $(32bit-emul)
 vmlinux-32 = vmlinux
 vmlinux-64 = vmlinux.64
 endif
@@ -373,7 +377,7 @@ endif
 AFLAGS		+= $(GCCFLAGS)
 CFLAGS		+= $(GCCFLAGS)
 
-LD		+= --oformat $(build-bfd)
+LD		+= -m $(ld-emul)
 
 
 LINKFLAGS += -T $(LOADSCRIPT) -Ttext $(LOADADDR)
