@@ -20,6 +20,7 @@ endmenu
 mainmenu_option next_comment
 comment 'Machine selection'
 dep_bool 'Support for Acer PICA 1 chipset (EXPERIMENTAL)' CONFIG_ACER_PICA_61 $CONFIG_EXPERIMENTAL
+dep_bool 'Support for Alchemy Bosporus board' CONFIG_MIPS_BOSPORUS $CONFIG_MIPS32
 dep_bool 'Support for Alchemy Db1000 board' CONFIG_MIPS_DB1000 $CONFIG_MIPS32
 dep_bool 'Support for Alchemy Db1100 board' CONFIG_MIPS_DB1100 $CONFIG_MIPS32
 dep_bool 'Support for Alchemy Db1500 board' CONFIG_MIPS_DB1500 $CONFIG_MIPS32
@@ -228,6 +229,16 @@ if [ "$CONFIG_CASIO_E55" = "y" ]; then
    define_bool CONFIG_ISA y
    define_bool CONFIG_DUMMY_KEYB y
    define_bool CONFIG_SCSI n
+fi
+if [ "$CONFIG_MIPS_BOSPORUS" = "y" ]; then
+   define_bool CONFIG_SOC_AU1X00 y
+   define_bool CONFIG_SOC_AU1500 y
+   define_bool CONFIG_NEW_IRQ y
+   define_bool CONFIG_PC_KEYB y
+   define_bool CONFIG_PCI y
+   define_bool CONFIG_NEW_PCI y
+   define_bool CONFIG_PCI_AUTO y
+   define_bool CONFIG_NONCOHERENT_IO y
 fi
 if [ "$CONFIG_MIPS_PB1000" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y

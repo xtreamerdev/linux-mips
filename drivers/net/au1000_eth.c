@@ -522,6 +522,116 @@ lxt971a_status(struct net_device *dev, int phy_addr, u16 *link, u16 *speed)
 	return 0;
 }
 
+int ks8995m_init(struct net_device *dev, int phy_addr)
+{
+	s16 data;
+	
+//	printk("ks8995m_init\n");
+	/* Stop auto-negotiation */
+	data = mdio_read(dev, phy_addr, MII_CONTROL);
+	mdio_write(dev, phy_addr, MII_CONTROL, data & ~MII_CNTL_AUTO);
+
+	/* Set advertisement to 10/100 and Half/Full duplex
+	 * (full capabilities) */
+	data = mdio_read(dev, phy_addr, MII_ANADV);
+	data |= MII_NWAY_TX | MII_NWAY_TX_FDX | MII_NWAY_T_FDX | MII_NWAY_T;
+	mdio_write(dev, phy_addr, MII_ANADV, data);
+	
+	/* Restart auto-negotiation */
+	data = mdio_read(dev, phy_addr, MII_CONTROL);
+	data |= MII_CNTL_RST_AUTO | MII_CNTL_AUTO;
+	mdio_write(dev, phy_addr, MII_CONTROL, data);
+
+	if (au1000_debug > 4) dump_mii(dev, phy_addr);
+
+	return 0;
+}
+
+int ks8995m_reset(struct net_device *dev, int phy_addr)
+{
+	s16 mii_control, timeout;
+	
+//	printk("ks8995m_reset\n");
+	mii_control = mdio_read(dev, phy_addr, MII_CONTROL);
+	mdio_write(dev, phy_addr, MII_CONTROL, mii_control | MII_CNTL_RESET);
+	mdelay(1);
+	for (timeout = 100; timeout > 0; --timeout) {
+		mii_control = mdio_read(dev, phy_addr, MII_CONTROL);
+		if ((mii_control & MII_CNTL_RESET) == 0)
+			break;
+		mdelay(1);
+	}
+	if (mii_control & MII_CNTL_RESET) {
+		printk(KERN_ERR "%s PHY reset timeout !\n", dev->name);
+		return -1;
+	}
+	return 0;
+}
+
+int ks8995m_status(struct net_device *dev, int phy_addr, u16 *link, u16 *speed)
+{
+	u16 mii_data;
+	struct au1000_private *aup;
+
+	if (!dev) {
+		printk(KERN_ERR "ks8995m_status error: NULL dev\n");
+		return -1;
+	}
+	aup = (struct au1000_private *) dev->priv;
+
+	mii_data = mdio_read(dev, aup->phy_addr, MII_STATUS);
+	if (mii_data & MII_STAT_LINK) {
+		*link = 1;
+		mii_data = mdio_read(dev, aup->phy_addr, MII_AUX_CNTRL);
+		if (mii_data & MII_AUX_100) {
+			if (mii_data & MII_AUX_FDX) {
+				*speed = IF_PORT_100BASEFX;
+				dev->if_port = IF_PORT_100BASEFX;
+			}
+			else {
+				*speed = IF_PORT_100BASETX;
+				dev->if_port = IF_PORT_100BASETX;
+			}
+		}
+		else  {											
+			*speed = IF_PORT_10BASET;
+			dev->if_port = IF_PORT_10BASET;
+		}
+
+	}
+	else {
+		*link = 0;
+		*speed = 0;
+		dev->if_port = IF_PORT_UNKNOWN;
+	}
+	return 0;
+}
+
+#ifdef CONFIG_MIPS_BOSPORUS
+int stub_init(struct net_device *dev, int phy_addr)
+{
+	//printk("PHY stub_init\n");
+	return 0;
+}
+
+int stub_reset(struct net_device *dev, int phy_addr)
+{
+	//printk("PHY stub_reset\n");
+	return 0;
+}
+
+int 
+stub_status(struct net_device *dev, int phy_addr, u16 *link, u16 *speed)
+{
+	//printk("PHY stub_status\n");
+	*link = 1;
+	/* hmmm, revisit */
+	*speed = IF_PORT_100BASEFX;
+	dev->if_port = IF_PORT_100BASEFX;
+	return 0;
+}
+#endif
+
 struct phy_ops bcm_5201_ops = {
 	bcm_5201_init,
 	bcm_5201_reset,
@@ -552,6 +662,20 @@ struct phy_ops lxt971a_ops = {
 	lxt971a_status,
 };
 
+struct phy_ops ks8995m_ops = {
+	ks8995m_init,
+	ks8995m_reset,
+	ks8995m_status,
+};
+
+#ifdef CONFIG_MIPS_BOSPORUS
+struct phy_ops stub_ops = {
+	stub_init,
+	stub_reset,
+	stub_status,
+};
+#endif
+
 static struct mii_chip_info {
 	const char * name;
 	u16 phy_id0;
@@ -564,6 +688,10 @@ static struct mii_chip_info {
 	{"AMD 79C874 10/100 BaseT PHY",  0x0022, 0x561b, &am79c874_ops },
 	{"LSI 80227 10/100 BaseT PHY", 0x0016, 0xf840, &lsi_80227_ops },
 	{"Intel LXT971A Dual Speed PHY", 0x0013, 0x78e2, &lxt971a_ops },
+	{"Kendin KS8995M 10/100 BaseT PHY",0x0022, 0x1450, &ks8995m_ops },
+#ifdef CONFIG_MIPS_BOSPORUS
+	{"Stub", 0x1234, 0x5678, &stub_ops },
+#endif
 	{0,},
 };
 
@@ -640,6 +768,9 @@ static int __init mii_probe (struct net_device * dev)
 {
 	struct au1000_private *aup = (struct au1000_private *) dev->priv;
 	int phy_addr;
+#ifdef CONFIG_MIPS_BOSPORUS
+	int phy_found=0;
+#endif
 
 	aup->mii = NULL;
 
@@ -656,6 +787,57 @@ static int __init mii_probe (struct net_device * dev)
 
 		phy_id0 = mdio_read(dev, phy_addr, MII_PHY_ID0);
 		phy_id1 = mdio_read(dev, phy_addr, MII_PHY_ID1);
+
+		/* search our mii table for the current mii */ 
+		for (i = 0; mii_chip_table[i].phy_id1; i++) {
+			if (phy_id0 == mii_chip_table[i].phy_id0 &&
+			    phy_id1 == mii_chip_table[i].phy_id1) {
+				struct mii_phy * mii_phy;
+
+				printk(KERN_INFO "%s: %s at phy address %d\n",
+				       dev->name, mii_chip_table[i].name, 
+				       phy_addr);
+#ifdef CONFIG_MIPS_BOSPORUS
+				phy_found = 1;
+#endif
+				mii_phy = kmalloc(sizeof(struct mii_phy), 
+						GFP_KERNEL);
+				if (mii_phy) {
+					mii_phy->chip_info = mii_chip_table+i;
+					mii_phy->phy_addr = phy_addr;
+					mii_phy->next = aup->mii;
+					aup->phy_ops = 
+						mii_chip_table[i].phy_ops;
+					aup->mii = mii_phy;
+					aup->phy_ops->phy_init(dev,phy_addr);
+				} else {
+					printk(KERN_ERR "%s: out of memory\n",
+							dev->name);
+					return -1;
+				}
+				/* the current mii is on our mii_info_table,
+				   try next address */
+				break;
+			}
+		}
+	}
+
+#ifdef CONFIG_MIPS_BOSPORUS
+	/* This is a workaround for the Micrel/Kendin 5 port switch
+	   The second MAC doesn't see a PHY connected... so we need to
+	   trick it into thinking we have one.
+		
+	   If this kernel is run on another Au1500 development board
+	   the stub will be found as well as the actual PHY. However,
+	   the last found PHY will be used... usually at Addr 31 (Db1500).	
+	*/
+	if ( (!phy_found) )
+	{
+		u16 phy_id0, phy_id1;
+		int i;
+
+		phy_id0 = 0x1234;
+		phy_id1 = 0x5678;
 
 		/* search our mii table for the current mii */ 
 		for (i = 0; mii_chip_table[i].phy_id1; i++) {
@@ -687,6 +869,7 @@ static int __init mii_probe (struct net_device * dev)
 			}
 		}
 	}
+#endif
 
 	if (aup->mii == NULL) {
 		printk(KERN_ERR "%s: No MII transceivers found!\n", dev->name);

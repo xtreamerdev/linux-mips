@@ -51,6 +51,7 @@ if [ "$CONFIG_MIPS" = "y" ]; then
    dep_tristate '  Pb1000 MTD support' CONFIG_MTD_PB1000 $CONFIG_MIPS_PB1000
    dep_tristate '  Pb1500 MTD support' CONFIG_MTD_PB1500 $CONFIG_MIPS_PB1500
    dep_tristate '  Pb1100 MTD support' CONFIG_MTD_PB1100 $CONFIG_MIPS_PB1100
+   dep_tristate '  Bosporus MTD support' CONFIG_MTD_BOSPORUS $CONFIG_MIPS_BOSPORUS
    if [ "$CONFIG_MTD_PB1500" = "y" -o "$CONFIG_MTD_PB1500" = "m" \
 	-o "$CONFIG_MTD_PB1100" = "y" -o "$CONFIG_MTD_PB1100" = "m" ]; then
       bool '  Pb[15]00 boot flash device' CONFIG_MTD_PB1500_BOOT 

@@ -46,7 +46,11 @@ extern char *prom_getenv(char *envname);
 
 const char *get_system_type(void)
 {
+#ifdef CONFIG_MIPS_BOSPORUS
+	return "Alchemy Bosporus Gateway Reference";
+#else
 	return "Alchemy Db1x00";
+#endif
 }
 
 int __init prom_init(int argc, char **argv, char **envp, int *prom_vec)

@@ -72,6 +72,14 @@ void __init pcibios_fixup(void)
 		return;
 	}
 
+#ifdef CONFIG_NONCOHERENT_IO
+	/* 
+	 *  Set the NC bit in controller for pre-AC silicon
+	 */
+	au_writel( 1<<16 | au_readl(Au1500_PCI_CFG), Au1500_PCI_CFG);
+	printk("Non-coherent PCI accesses enabled\n");
+#endif
+
 	set_io_port_base(virt_io_addr);
 #endif
 
@@ -106,6 +114,7 @@ void __init pcibios_fixup_irqs(void)
 		switch (slot) {
 			case 12:
 			case 13:
+			default:
 				dev->irq = AU1000_PCI_INTA;
 				break;
 
