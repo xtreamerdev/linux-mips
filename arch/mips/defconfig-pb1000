@@ -2,6 +2,7 @@
 # Automatically generated make config: don't edit
 #
 CONFIG_MIPS=y
+CONFIG_MIPS32=y
 
 #
 # Code maturity level options
@@ -77,6 +78,7 @@ CONFIG_KMOD=y
 # CONFIG_CPU_SB1 is not set
 CONFIG_CPU_MIPS32=y
 # CONFIG_CPU_MIPS64 is not set
+CONFIG_CPU_HAS_PREFETCH=y
 # CONFIG_64BIT_PHYS_ADDR is not set
 CONFIG_CPU_ADVANCED=y
 CONFIG_CPU_HAS_LLSC=y
@@ -543,6 +545,8 @@ CONFIG_SOUND=y
 # CONFIG_SOUND_ICH is not set
 # CONFIG_SOUND_RME96XX is not set
 # CONFIG_SOUND_SONICVIBES is not set
+# CONFIG_SOUND_VWSND is not set
+# CONFIG_SOUND_HAL2 is not set
 CONFIG_SOUND_AU1000=y
 # CONFIG_SOUND_TRIDENT is not set
 # CONFIG_SOUND_MSNDCLAS is not set

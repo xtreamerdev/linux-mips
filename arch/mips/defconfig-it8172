@@ -2,6 +2,7 @@
 # Automatically generated make config: don't edit
 #
 CONFIG_MIPS=y
+CONFIG_MIPS32=y
 
 #
 # Code maturity level options
@@ -647,6 +648,8 @@ CONFIG_SOUND=y
 CONFIG_SOUND_IT8172=y
 # CONFIG_SOUND_RME96XX is not set
 # CONFIG_SOUND_SONICVIBES is not set
+# CONFIG_SOUND_VWSND is not set
+# CONFIG_SOUND_HAL2 is not set
 CONFIG_SOUND_IT8172=y
 # CONFIG_SOUND_TRIDENT is not set
 # CONFIG_SOUND_MSNDCLAS is not set
