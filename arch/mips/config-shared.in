@@ -876,10 +876,6 @@ else
    fi
 fi
 
-if [ "$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
-   bool 'DS1742 BRAM/RTC support' CONFIG_RTC_DS1742
-fi
-
 if [ "$CONFIG_CPU_LITTLE_ENDIAN" = "n" ]; then
    bool 'Include IRIX binary compatibility' CONFIG_BINFMT_IRIX
 fi
