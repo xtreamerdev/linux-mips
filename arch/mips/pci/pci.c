@@ -1,15 +1,142 @@
 /*
- * Copyright 2001 MontaVista Software Inc.
- * Author: Jun Sun, jsun@mvista.com or jsun@junsun.net
- *
- * Modified to be mips generic, ppopov@mvista.com
- * arch/mips/kernl/pci.c
- *     Common MIPS PCI routines.
- *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of  the GNU General  Public License as published by the
  * Free Software Foundation;  either version 2 of the  License, or (at your
  * option) any later version.
+ */
+#include <linux/config.h>
+#include <linux/kernel.h>
+#include <linux/init.h>
+#include <linux/types.h>
+#include <linux/pci.h>
+
+#include <asm/pci_channel.h>
+
+void
+pcibios_update_resource(struct pci_dev *dev, struct resource *root,
+			struct resource *res, int resource)
+{
+	u32 new, check;
+	int reg;
+
+	new = res->start | (res->flags & PCI_REGION_FLAG_MASK);
+	if (resource < 6) {
+		reg = PCI_BASE_ADDRESS_0 + 4*resource;
+	} else if (resource == PCI_ROM_RESOURCE) {
+		res->flags |= PCI_ROM_ADDRESS_ENABLE;
+		new |= PCI_ROM_ADDRESS_ENABLE;
+		reg = dev->rom_base_reg;
+	} else {
+		/* Somebody might have asked allocation of a non-standard resource */
+		return;
+	}
+	
+	pci_write_config_dword(dev, reg, new);
+	pci_read_config_dword(dev, reg, &check);
+	if ((new ^ check) & ((new & PCI_BASE_ADDRESS_SPACE_IO) ? PCI_BASE_ADDRESS_IO_MASK : PCI_BASE_ADDRESS_MEM_MASK)) {
+		printk(KERN_ERR "PCI: Error while updating region "
+		       "%s/%d (%08x != %08x)\n", dev->slot_name, resource,
+		       new, check);
+	}
+}
+
+/*
+ * We need to avoid collisions with `mirrored' VGA ports
+ * and other strange ISA hardware, so we always want the
+ * addresses to be allocated in the 0x000-0x0ff region
+ * modulo 0x400.
+ *
+ * Why? Because some silly external IO cards only decode
+ * the low 10 bits of the IO address. The 0x00-0xff region
+ * is reserved for motherboard devices that decode all 16
+ * bits, so it's ok to allocate at, say, 0x2800-0x28ff,
+ * but we want to try to avoid allocating at 0x2900-0x2bff
+ * which might have be mirrored at 0x0100-0x03ff..
+ */
+void
+pcibios_align_resource(void *data, struct resource *res,
+		       unsigned long size, unsigned long align)
+{
+	if (res->flags & IORESOURCE_IO) {
+		unsigned long start = res->start;
+
+		if (start & 0x300) {
+			start = (start + 0x3ff) & ~0x3ff;
+			res->start = start;
+		}
+	}
+}
+
+/*
+ *  If we set up a device for bus mastering, we need to check the latency
+ *  timer as certain crappy BIOSes forget to set it properly.
+ */
+unsigned int pcibios_max_latency = 255;
+
+void pcibios_set_master(struct pci_dev *dev)
+{
+	u8 lat;
+	pci_read_config_byte(dev, PCI_LATENCY_TIMER, &lat);
+	if (lat < 16)
+		lat = (64 <= pcibios_max_latency) ? 64 : pcibios_max_latency;
+	else if (lat > pcibios_max_latency)
+		lat = pcibios_max_latency;
+	else
+		return;
+	printk(KERN_DEBUG "PCI: Setting latency timer of device %s to %d\n", dev->slot_name, lat);
+	pci_write_config_byte(dev, PCI_LATENCY_TIMER, lat);
+}
+
+char * __devinit pcibios_setup(char *str)
+{
+	return str;
+}
+
+static int pcibios_enable_resources(struct pci_dev *dev, int mask)
+{
+	u16 cmd, old_cmd;
+	int idx;
+	struct resource *r;
+
+	pci_read_config_word(dev, PCI_COMMAND, &cmd);
+	old_cmd = cmd;
+	for(idx=0; idx<6; idx++) {
+		/* Only set up the requested stuff */
+		if (!(mask & (1<<idx)))
+			continue;
+			
+		r = &dev->resource[idx];
+		if (!r->start && r->end) {
+			printk(KERN_ERR "PCI: Device %s not available because of resource collisions\n", dev->slot_name);
+			return -EINVAL;
+		}
+		if (r->flags & IORESOURCE_IO)
+			cmd |= PCI_COMMAND_IO;
+		if (r->flags & IORESOURCE_MEM)
+			cmd |= PCI_COMMAND_MEMORY;
+	}
+	if (dev->resource[PCI_ROM_RESOURCE].start)
+		cmd |= PCI_COMMAND_MEMORY;
+	if (cmd != old_cmd) {
+		printk("PCI: Enabling device %s (%04x -> %04x)\n", dev->slot_name, old_cmd, cmd);
+		pci_write_config_word(dev, PCI_COMMAND, cmd);
+	}
+	return 0;
+}
+
+int pcibios_enable_device(struct pci_dev *dev, int mask)
+{
+	return pcibios_enable_resources(dev, mask);
+}
+
+#ifdef CONFIG_NEW_PCI
+/*
+ * Named PCI new and about to die before it's old :-)
+ *
+ * Copyright 2001 MontaVista Software Inc.
+ * Author: Jun Sun, jsun@mvista.com or jsun@junsun.net
+ *
+ * Modified to be mips generic, ppopov@mvista.com
  */
 
 /*
@@ -55,13 +182,6 @@
  *		Dave Rusling david.rusling@reo.mts.dec.com
  *		David Mosberger davidm@cs.arizona.edu
  */
-#include <linux/config.h>
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/types.h>
-#include <linux/pci.h>
-
-#include <asm/pci_channel.h>
 
 extern void pcibios_fixup(void);
 extern void pcibios_fixup_irqs(void);
@@ -98,12 +218,6 @@ void __init pcibios_init(void)
 	pcibios_fixup();
 	/* fixup irqs (board specific routines) */
 	pcibios_fixup_irqs();
-}
-
-int pcibios_enable_device(struct pci_dev *dev, int mask)
-{
-	/* pciauto_assign_resources() will enable all devices found */
-	return 0;
 }
 
 unsigned long __init pci_bridge_check_io(struct pci_dev *bridge)
@@ -155,22 +269,4 @@ void __init pcibios_fixup_bus(struct pci_bus *bus)
 		bus->resource[2]->end = bus->resource[2]->start - 1;
 	}
 }
-
-char *pcibios_setup(char *str)
-{
-	return str;
-}
-
-void
-pcibios_align_resource(void *data, struct resource *res, unsigned long size,
-		       unsigned long align)
-{
-	/* this should not be called */
-}
-
-void
-pcibios_update_resource(struct pci_dev *dev, struct resource *root,
-			struct resource *res, int resource)
-{
-	/* this should not be called */
-}
+#endif

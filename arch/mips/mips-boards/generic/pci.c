@@ -485,40 +485,9 @@ void __init pcibios_init(void)
 #endif
 }
 
-int pcibios_enable_device(struct pci_dev *dev, int mask)
-{
-	/* Not needed, since we enable all devices at startup.  */
-	return 0;
-}
-
-void pcibios_align_resource(void *data, struct resource *res,
-	unsigned long size, unsigned long align)
-{
-}
-
-char * __init pcibios_setup(char *str)
-{
-	/* Nothing to do for now.  */
-
-	return str;
-}
-
 struct pci_fixup pcibios_fixups[] = {
 	{ 0 }
 };
-
-void pcibios_update_resource(struct pci_dev *dev, struct resource *root,
-	struct resource *res, int resource)
-{
-	unsigned long where, size;
-	u32 reg;
-
-	where = PCI_BASE_ADDRESS_0 + (resource * 4);
-	size = res->end - res->start;
-	pci_read_config_dword(dev, where, &reg);
-	reg = (reg & size) | (((u32)(res->start - root->start)) & ~size);
-	pci_write_config_dword(dev, where, reg);
-}
 
 /*
  *  Called after each bus is probed, but before its children

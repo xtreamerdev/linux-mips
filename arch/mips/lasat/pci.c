@@ -295,11 +295,6 @@ struct pci_ops lasat_pci_ops = {
 	lasat_pcibios_write_config_dword
 };
 
-char * __init pcibios_setup(char *str)
-{
-	return str;
-}
-
 void __init pcibios_init(void)
 {
 	switch (mips_machtype) {
@@ -320,22 +315,6 @@ void __init pcibios_init(void)
 void __init pcibios_fixup_bus(struct pci_bus *b)
 {
 	Dprintk("pcibios_fixup_bus()\n");
-}
-
-void pcibios_update_resource(struct pci_dev *dev, struct resource *root,
-			     struct resource *res, int resource)
-{
-}
-
-int __init pcibios_enable_device(struct pci_dev *dev, int mask)
-{
-	/* Not needed, since we enable all devices at startup.  */
-	return 0;
-}
-
-void __init pcibios_align_resource(void *data, struct resource *res,
-	unsigned long size, unsigned long align)
-{
 }
 
 unsigned __init int pcibios_assign_all_busses(void)

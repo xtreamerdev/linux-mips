@@ -397,37 +397,6 @@ void __init pcibios_init(void)
 	pci_scan_bus(0, &qube_pci_ops, NULL);
 }
 
-char *pcibios_setup(char *str)
-{
-	return str;
-}
-
-int pcibios_enable_device(struct pci_dev *dev, int mask)
-{
-	u16 cmd, status;
-
-	pci_read_config_word(dev, PCI_COMMAND, &cmd);
-	pci_read_config_word(dev, PCI_STATUS, &status);
-	printk("PCI: Enabling device %s (%04x  %04x)\n", dev->slot_name, cmd, status);
-	/* We'll sort this out when we know it isn't enabled ;) */
-
-	return 0;
-}
-
-void pcibios_align_resource(void *data, struct resource *res,
-		unsigned long size, unsigned long align)
-{
-
-	panic("Uhhoh called pcibios_align_resource\n");
-}
-
-void pcibios_update_resource(struct pci_dev *dev, struct resource *root,
-	struct resource *res, int resource)
-{
-
-	panic("Uhhoh called pcibios_update_resource\n");
-}
-
 void __init pcibios_fixup_bus(struct pci_bus *bus)
 {
 	/* We don't have sub-busses to fixup here */

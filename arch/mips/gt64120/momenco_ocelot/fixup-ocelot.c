@@ -17,6 +17,18 @@
 #include <linux/init.h>
 #include <asm/pci.h>
 
+static __inline__ int pci_range_ck(unsigned char bus, unsigned char dev)
+{
+	/*
+	 * We don't even pretend to handle other busses than bus 0 correctly.
+	 * Accessing device 31 crashes the CP7000 for some reason.
+	 */
+	if ((bus == 0) && (dev != 31))
+		return 0;
+
+	return -1;
+}
+
 
 void __init gt64120_board_pcibios_fixup_bus(struct pci_bus *bus)
 {

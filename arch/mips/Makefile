@@ -218,7 +218,10 @@ SUBDIRS       += arch/mips/au1000/mtx-1 arch/mips/au1000/common
 LOADADDR      += 0x80100000
 endif
 
-
+ifdef CONFIG_PCI
+CORE_FILES    += arch/mips/pci/pci-mips.o
+SUBDIRS       += arch/mips/pci
+endif
 
 #
 # Algorithmics P4032

@@ -36,10 +36,6 @@
 #include <linux/types.h>
 #include <linux/pci.h>
 #include <linux/kernel.h>
-#include <linux/slab.h>
-#include <linux/version.h>
-#include <asm/pci.h>
-#include <asm/io.h>
 #include <asm/gt64120/gt64120.h>
 
 #define SELF 0
@@ -369,128 +365,6 @@ static int galileo_pcibios_write_config_byte(struct pci_dev *device,
 	return PCIBIOS_SUCCESSFUL;
 }
 
-void pcibios_set_master(struct pci_dev *dev)
-{
-	u16 cmd;
-
-	galileo_pcibios_read_config_word(dev, PCI_COMMAND, &cmd);
-	cmd |= PCI_COMMAND_MASTER;
-	galileo_pcibios_write_config_word(dev, PCI_COMMAND, cmd);
-}
-
-/*  Externally-expected functions.  Do not change function names  */
-
-int pcibios_enable_resources(struct pci_dev *dev)
-{
-	u16 cmd, old_cmd;
-	u8 tmp1;
-	int idx;
-	struct resource *r;
-
-	galileo_pcibios_read_config_word(dev, PCI_COMMAND, &cmd);
-	old_cmd = cmd;
-	for (idx = 0; idx < 6; idx++) {
-		r = &dev->resource[idx];
-		if (!r->start && r->end) {
-			printk(KERN_ERR "PCI: Device %s not available because "
-			       "of resource collisions\n", dev->slot_name);
-			return -EINVAL;
-		}
-		if (r->flags & IORESOURCE_IO)
-			cmd |= PCI_COMMAND_IO;
-		if (r->flags & IORESOURCE_MEM)
-			cmd |= PCI_COMMAND_MEMORY;
-	}
-	if (cmd != old_cmd) {
-		galileo_pcibios_write_config_word(dev, PCI_COMMAND, cmd);
-	}
-
-	/*
-	 * Let's fix up the latency timer and cache line size here.  Cache line
-	 * size = 32 bytes / sizeof dword (4) = 8.  Latency timer must be > 8.
-	 * 32 is random but appears to work.
-	 */
-	galileo_pcibios_read_config_byte(dev, PCI_CACHE_LINE_SIZE, &tmp1);
-	if (tmp1 != 8) {
-		printk(KERN_WARNING
-		       "PCI setting cache line size to 8 from " "%d\n", tmp1);
-		galileo_pcibios_write_config_byte(dev, PCI_CACHE_LINE_SIZE, 8);
-	}
-	galileo_pcibios_read_config_byte(dev, PCI_LATENCY_TIMER, &tmp1);
-	if (tmp1 < 32) {
-		printk(KERN_WARNING
-		       "PCI setting latency timer to 32 from %d\n", tmp1);
-		galileo_pcibios_write_config_byte(dev, PCI_LATENCY_TIMER, 32);
-	}
-
-	return 0;
-}
-
-int pcibios_enable_device(struct pci_dev *dev, int mask)
-{
-	return pcibios_enable_resources(dev);
-}
-
-void pcibios_update_resource(struct pci_dev *dev, struct resource *root,
-			     struct resource *res, int resource)
-{
-	u32 new, check;
-	int reg;
-
-	return;
-
-	new = res->start | (res->flags & PCI_REGION_FLAG_MASK);
-	if (resource < 6) {
-		reg = PCI_BASE_ADDRESS_0 + 4 * resource;
-	} else if (resource == PCI_ROM_RESOURCE) {
-		res->flags |= PCI_ROM_ADDRESS_ENABLE;
-		reg = dev->rom_base_reg;
-	} else {
-		/*
-		 * Somebody might have asked allocation of a non-standard
-		 * resource
-		 */
-		return;
-	}
-
-	pci_write_config_dword(dev, reg, new);
-	pci_read_config_dword(dev, reg, &check);
-	if ((new ^ check) &
-	    ((new & PCI_BASE_ADDRESS_SPACE_IO) ? PCI_BASE_ADDRESS_IO_MASK :
-	     PCI_BASE_ADDRESS_MEM_MASK)) {
-		printk(KERN_ERR "PCI: Error while updating region "
-		       "%s/%d (%08x != %08x)\n", dev->slot_name, resource,
-		       new, check);
-	}
-}
-
-/*
- * We need to avoid collisions with `mirrored' VGA ports
- * and other strange ISA hardware, so we always want the
- * addresses to be allocated in the 0x000-0x0ff region
- * modulo 0x400.
- *
- * Why? Because some silly external IO cards only decode
- * the low 10 bits of the IO address. The 0x00-0xff region
- * is reserved for motherboard devices that decode all 16
- * bits, so it's ok to allocate at, say, 0x2800-0x28ff,
- * but we want to try to avoid allocating at 0x2900-0x2bff
- * which might have be mirrored at 0x0100-0x03ff..
- */
-void
-pcibios_align_resource(void *data, struct resource *res,
-		       unsigned long size, unsigned long align)
-{
-	if (res->flags & IORESOURCE_IO) {
-		unsigned long start = res->start;
-
-		if (start & 0x300) {
-			start = (start + 0x3ff) & ~0x3ff;
-			res->start = start;
-		}
-	}
-}
-
 /*
  * structure galileo_pci_ops
  *
@@ -714,14 +588,6 @@ void __init pcibios_init(void)
 	iomem_resource.end	= GT_PCI_MEM_BASE + GT_PCI_MEM_SIZE - 1;
 
 	pci_scan_bus(0, &galileo_pci_ops, NULL);
-}
-
-char *pcibios_setup(char *str)
-{
-	printk(KERN_INFO "rr: pcibios_setup\n");
-	/* Nothing to do for now.  */
-
-	return str;
 }
 
 unsigned __init int pcibios_assign_all_busses(void)

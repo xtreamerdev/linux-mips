@@ -27,10 +27,6 @@
  *  with this program; if not, write  to the Free Software Foundation, Inc.,
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
-#include <linux/config.h>
-
-#ifdef CONFIG_PCI
-
 #include <linux/types.h>
 #include <linux/pci.h>
 #include <linux/kernel.h>
@@ -93,4 +89,3 @@ unsigned int pcibios_assign_all_busses(void)
 {
 	return 0;
 }
-#endif

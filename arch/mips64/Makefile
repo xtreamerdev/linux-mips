@@ -185,6 +185,11 @@ SUBDIRS		+= arch/mips/momentum/ocelot_c
 LOADADDR	:= 0x80100000
 endif
 
+ifdef CONFIG_PCI
+CORE_FILES    += arch/mips/pci/pci-mips.o
+SUBDIRS       += arch/mips/pci
+endif
+
 #
 # SGI IP22 (Indy/Indigo2)
 #
