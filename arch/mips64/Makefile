@@ -251,9 +251,19 @@ LINKFLAGS += -T arch/mips64/ld.script.elf32
 #LINKFLAGS += -T arch/mips64/ld.script.elf64
 endif
 
+ifdef CONFIG_CPU_LITTLE_ENDIAN
+32bit-bfd = elf32-tradlittlemips
+64bit-bfd = elf64-tradlittlemips
+else
+32bit-bfd = elf32-tradbigmips
+64bit-bfd = elf64-tradbigmips
+endif
+
 
 AFLAGS		+= $(GCCFLAGS)
 CFLAGS		+= $(GCCFLAGS)
+
+LD		+= --oformat $(32bit-bfd)
 
 
 LINKFLAGS += -Ttext $(LOADADDR)
@@ -265,12 +275,6 @@ CORE_FILES := arch/mips64/kernel/kernel.o arch/mips64/mm/mm.o $(CORE_FILES)
 LIBS := arch/mips64/lib/lib.a $(LIBS)
 
 MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
-
-ifdef CONFIG_CPU_LITTLE_ENDIAN
-64bit-bfd = elf64-tradlittlemips
-else
-64bit-bfd = elf64-tradbigmips
-endif
 
 vmlinux: arch/mips64/ld.script.elf32
 arch/mips64/ld.script.elf32: arch/mips64/ld.script.elf32.S
