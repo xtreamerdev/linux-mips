@@ -836,6 +836,12 @@ static int ret_einval(unsigned int fd, unsigned int cmd, unsigned long arg)
 	return -EINVAL;
 }
 
+static int broken_blkgetsize(unsigned int fd, unsigned int cmd, unsigned long arg)
+{
+	/* The mkswap binary hard codes it to Intel value :-((( */
+	return w_long(fd, BLKGETSIZE, arg);
+}
+
 struct blkpg_ioctl_arg32 {
 	int op;
 	int flags;
@@ -871,6 +877,39 @@ static int blkpg_ioctl_trans(unsigned int fd, unsigned int cmd,
 		return -EINVAL;
 	}
 	return err;
+}
+
+/* Fix sizeof(sizeof()) breakage */
+#define BLKELVGET_32	_IOR(0x12,106,int)
+#define BLKELVSET_32	_IOW(0x12,107,int)
+#define BLKBSZGET_32	_IOR(0x12,112,int)
+#define BLKBSZSET_32	_IOW(0x12,113,int)
+#define BLKGETSIZE64_32	_IOR(0x12,114,int)
+
+static int do_blkelvget(unsigned int fd, unsigned int cmd, unsigned long arg)
+{
+	return sys_ioctl(fd, BLKELVGET, arg);
+}
+
+static int do_blkelvset(unsigned int fd, unsigned int cmd, unsigned long arg)
+{
+	return sys_ioctl(fd, BLKELVSET, arg);
+}
+
+static int do_blkbszget(unsigned int fd, unsigned int cmd, unsigned long arg)
+{
+	return sys_ioctl(fd, BLKBSZGET, arg);
+}
+
+static int do_blkbszset(unsigned int fd, unsigned int cmd, unsigned long arg)
+{
+	return sys_ioctl(fd, BLKBSZSET, arg);
+}
+
+static int do_blkgetsize64(unsigned int fd, unsigned int cmd,
+			   unsigned long arg)
+{
+	return sys_ioctl(fd, BLKGETSIZE64, arg);
 }
 
 struct mtget32 {
@@ -2154,6 +2193,13 @@ static struct ioctl32_list ioctl32_handler_table[] = {
 
 #endif /* CONFIG_NET */
 
+	IOCTL32_HANDLER(BLKRAGET, w_long),
+	IOCTL32_HANDLER(BLKGETSIZE, w_long),
+	// IOCTL32_HANDLER(0x1260, broken_blkgetsize),
+	IOCTL32_HANDLER(BLKFRAGET, w_long),
+	IOCTL32_HANDLER(BLKSECTGET, w_long),
+	IOCTL32_HANDLER(BLKPG, blkpg_ioctl_trans),
+
 	IOCTL32_HANDLER(EXT2_IOC32_GETFLAGS, do_ext2_ioctl),
 	IOCTL32_HANDLER(EXT2_IOC32_SETFLAGS, do_ext2_ioctl),
 	IOCTL32_HANDLER(EXT2_IOC32_GETVERSION, do_ext2_ioctl),
@@ -2185,6 +2231,15 @@ static struct ioctl32_list ioctl32_handler_table[] = {
 	IOCTL32_HANDLER(PV_STATUS, do_lvm_ioctl),
 #endif /* LVM */
 
+	/* take care of sizeof(sizeof()) breakage */
+	/* elevator */
+	IOCTL32_HANDLER(BLKELVGET_32, do_blkelvget),
+	IOCTL32_HANDLER(BLKELVSET_32, do_blkelvset),
+	/* block stuff */
+	IOCTL32_HANDLER(BLKBSZGET_32, do_blkbszget),
+	IOCTL32_HANDLER(BLKBSZSET_32, do_blkbszset),
+	IOCTL32_HANDLER(BLKGETSIZE64_32, do_blkgetsize64),
+
 	IOCTL32_HANDLER(HDIO_GETGEO, hdio_getgeo),	/* hdreg.h ioctls  */
 	IOCTL32_HANDLER(HDIO_GET_UNMASKINTR, hdio_ioctl_trans),
 	IOCTL32_HANDLER(HDIO_GET_MULTCOUNT, hdio_ioctl_trans),
@@ -2213,21 +2268,11 @@ static struct ioctl32_list ioctl32_handler_table[] = {
 	IOCTL32_DEFAULT(BLKROSET),			/* fs.h ioctls  */
 	IOCTL32_DEFAULT(BLKROGET),
 	IOCTL32_DEFAULT(BLKRRPART),
-	IOCTL32_HANDLER(BLKGETSIZE, w_long),
-
 	IOCTL32_DEFAULT(BLKFLSBUF),
 	IOCTL32_DEFAULT(BLKRASET),
-	IOCTL32_HANDLER(BLKRAGET, w_long),
 	IOCTL32_DEFAULT(BLKFRASET),
-	IOCTL32_HANDLER(BLKFRAGET, w_long),
 	IOCTL32_DEFAULT(BLKSECTSET),
-	IOCTL32_HANDLER(BLKSECTGET, w_long),
 	IOCTL32_DEFAULT(BLKSSZGET),
-	IOCTL32_HANDLER(BLKPG, blkpg_ioctl_trans),
-	IOCTL32_DEFAULT(BLKELVGET),
-	IOCTL32_DEFAULT(BLKELVSET),
-	IOCTL32_DEFAULT(BLKBSZGET),
-	IOCTL32_DEFAULT(BLKBSZSET),
 
 	/* RAID */
 	IOCTL32_DEFAULT(RAID_VERSION),
