@@ -95,6 +95,8 @@ void __down(struct semaphore * sem)
 	remove_wait_queue(&sem->wait, &wait);
 }
 
+EXPORT_SYMBOL(__down);
+
 int __down_interruptible(struct semaphore * sem)
 {
 	int ret = 0;
@@ -137,7 +139,11 @@ int __down_interruptible(struct semaphore * sem)
 	return ret;
 }
 
+EXPORT_SYMBOL(__down_interruptible);
+
 int __down_trylock(struct semaphore * sem)
 {
 	return waking_non_zero_trylock(sem);
 }
+
+EXPORT_SYMBOL(__down_trylock);
