@@ -317,6 +317,7 @@ CONFIG_SGIWD93_SCSI=y
 # CONFIG_SCSI_SYM53C416 is not set
 # CONFIG_SCSI_T128 is not set
 # CONFIG_SCSI_U14_34F is not set
+# CONFIG_SCSI_NSP32 is not set
 # CONFIG_SCSI_DEBUG is not set
 
 #
@@ -361,6 +362,7 @@ CONFIG_SGISEEQ=y
 # CONFIG_NS83820 is not set
 # CONFIG_HAMACHI is not set
 # CONFIG_YELLOWFIN is not set
+# CONFIG_R8169 is not set
 # CONFIG_SK98LIN is not set
 # CONFIG_TIGON3 is not set
 # CONFIG_FDDI is not set
@@ -468,6 +470,7 @@ CONFIG_WATCHDOG=y
 # CONFIG_MIXCOMWD is not set
 # CONFIG_60XX_WDT is not set
 # CONFIG_SC1200_WDT is not set
+# CONFIG_SCx200_WDT is not set
 # CONFIG_SOFT_WATCHDOG is not set
 # CONFIG_W83877F_WDT is not set
 # CONFIG_WDT is not set
@@ -475,6 +478,7 @@ CONFIG_WATCHDOG=y
 # CONFIG_MACHZ_WDT is not set
 CONFIG_INDYDOG=y
 # CONFIG_AMD7XX_TCO is not set
+# CONFIG_SCx200_GPIO is not set
 # CONFIG_AMD_PM768 is not set
 # CONFIG_NVRAM is not set
 # CONFIG_RTC is not set

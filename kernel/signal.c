@@ -29,6 +29,14 @@
 #define SIG_SLAB_DEBUG	0
 #endif
 
+#define DEBUG_SIG 0
+
+#if DEBUG_SIG
+#define SIG_SLAB_DEBUG	(SLAB_DEBUG_FREE | SLAB_RED_ZONE /* | SLAB_POISON */)
+#else
+#define SIG_SLAB_DEBUG	0
+#endif
+
 static kmem_cache_t *sigqueue_cachep;
 
 atomic_t nr_queued_signals;
@@ -271,6 +279,11 @@ printk("SIG dequeue (%s:%d): %d ", current->comm, current->pid,
 	signal_pending(current));
 #endif
 
+#if DEBUG_SIG
+printk("SIG dequeue (%s:%d): %d ", current->comm, current->pid,
+	signal_pending(current));
+#endif
+
 	sig = next_signal(current, mask);
 	if (sig) {
 		if (current->notifier) {
@@ -289,6 +302,10 @@ printk("SIG dequeue (%s:%d): %d ", current->comm, current->pid,
 		   we need to xchg out the timer overrun values.  */
 	}
 	recalc_sigpending(current);
+
+#if DEBUG_SIG
+printk(" %d -> %d\n", signal_pending(current), sig);
+#endif
 
 #if DEBUG_SIG
 printk(" %d -> %d\n", signal_pending(current), sig);
@@ -535,6 +552,11 @@ send_sig_info(int sig, struct siginfo *info, struct task_struct *t)
 {
 	unsigned long flags;
 	int ret;
+
+
+#if DEBUG_SIG
+printk("SIG queue (%s:%d): %d ", t->comm, t->pid, sig);
+#endif
 
 
 #if DEBUG_SIG

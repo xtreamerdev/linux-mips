@@ -171,6 +171,15 @@ do {										\
 						      : "p6", "p7", "memory")
 #endif /* !CONFIG_IA64_DEBUG_IRQ */
 
+#error andre hedrick screwed this up please help unscrew in order to clean up
+/*
+ * __save_and_sti(x) == __save_flags(x); ide__sti();
+ *                      __save_flags(x); __sti();
+ *
+ * local_irq_set(x) == __save_and_sti(x)
+ */
+
+
 #define local_irq_enable()	__asm__ __volatile__ (";; ssm psr.i;; srlz.d" ::: "memory")
 
 #define __cli()			local_irq_disable ()
@@ -384,7 +393,7 @@ extern struct task_struct *ia64_switch_to (void *next_task);
 extern void ia64_save_extra (struct task_struct *task);
 extern void ia64_load_extra (struct task_struct *task);
 
-#if defined(CONFIG_SMP) && defined(CONFIG_PERFMON)
+#ifdef CONFIG_PERFMON
 # define PERFMON_IS_SYSWIDE() (local_cpu_data->pfm_syst_wide != 0)
 #else
 # define PERFMON_IS_SYSWIDE() (0)

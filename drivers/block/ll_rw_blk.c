@@ -394,7 +394,7 @@ int blk_grow_request_list(request_queue_t *q, int nr_requests)
 	unsigned long flags;
 	/* Several broken drivers assume that this function doesn't sleep,
 	 * this causes system hangs during boot.
-	 * As a temporary fix, make the the function non-blocking.
+	 * As a temporary fix, make the function non-blocking.
 	 */
 	spin_lock_irqsave(&io_request_lock, flags);
 	while (q->nr_requests < nr_requests) {
@@ -1412,12 +1412,6 @@ int __init blk_dev_init(void)
 #endif
 #ifdef CONFIG_ISP16_CDI
 	isp16_init();
-#endif
-#if defined(CONFIG_IDE) && defined(CONFIG_BLK_DEV_IDE)
-	ide_init();		/* this MUST precede hd_init */
-#endif
-#if defined(CONFIG_IDE) && defined(CONFIG_BLK_DEV_HD)
-	hd_init();
 #endif
 #ifdef CONFIG_BLK_DEV_PS2
 	ps2esdi_init();

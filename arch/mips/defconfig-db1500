@@ -334,6 +334,7 @@ CONFIG_MIPS_AU1X00_ENET=y
 # CONFIG_NS83820 is not set
 # CONFIG_HAMACHI is not set
 # CONFIG_YELLOWFIN is not set
+# CONFIG_R8169 is not set
 # CONFIG_SK98LIN is not set
 # CONFIG_TIGON3 is not set
 # CONFIG_FDDI is not set
@@ -499,6 +500,7 @@ CONFIG_UNIX98_PTY_COUNT=256
 # Watchdog Cards
 #
 # CONFIG_WATCHDOG is not set
+# CONFIG_SCx200_GPIO is not set
 # CONFIG_AMD_PM768 is not set
 # CONFIG_NVRAM is not set
 CONFIG_RTC=y
@@ -665,7 +667,6 @@ CONFIG_USB=y
 #
 # CONFIG_USB_DEVICEFS is not set
 # CONFIG_USB_BANDWIDTH is not set
-# CONFIG_USB_LONG_TIMEOUT is not set
 
 #
 # USB Host Controller Drivers
@@ -707,6 +708,7 @@ CONFIG_USB_HID=y
 # CONFIG_USB_HIDDEV is not set
 # CONFIG_USB_AIPTEK is not set
 # CONFIG_USB_WACOM is not set
+# CONFIG_USB_POWERMATE is not set
 
 #
 # USB Imaging devices

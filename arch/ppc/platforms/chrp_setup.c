@@ -411,8 +411,6 @@ static void __init
 chrp_init_irq_openpic(unsigned long intack)
 {
 	int i;
-	unsigned char* chrp_int_ack_special = 0;
-	int nmi_irq = -1;
 	unsigned char init_senses[NR_IRQS - NUM_8259_INTERRUPTS];
 
 	chrp_find_openpic();
@@ -421,12 +419,14 @@ chrp_init_irq_openpic(unsigned long intack)
 	OpenPIC_InitSenses = init_senses;
 	OpenPIC_NumInitSenses = NR_IRQS - NUM_8259_INTERRUPTS;
 
-	if (intack)
-		chrp_int_ack_special = (unsigned char *) ioremap(intack, 1);
-	openpic_init(1, NUM_8259_INTERRUPTS, chrp_int_ack_special, nmi_irq);
+	openpic_init(NUM_8259_INTERRUPTS);
+	/* We have a cascade on OpenPIC IRQ 0, Linux IRQ 16 */
+	openpic_hookup_cascade(NUM_8259_INTERRUPTS, "82c59 cascade",
+			       i8259_irq);
+
 	for (i = 0; i < NUM_8259_INTERRUPTS; i++)
 		irq_desc[i].handler = &i8259_pic;
-	i8259_init(0);
+	i8259_init(intack);
 }
 
 static void __init
@@ -533,31 +533,6 @@ chrp_init2(void)
 }
 
 #if defined(CONFIG_BLK_DEV_IDE) || defined(CONFIG_BLK_DEV_IDE_MODULE)
-/*
- * IDE stuff.
- */
-
-static int __chrp
-chrp_ide_check_region(ide_ioreg_t from, unsigned int extent)
-{
-        return check_region(from, extent);
-}
-
-static void __chrp
-chrp_ide_request_region(ide_ioreg_t from,
-			unsigned int extent,
-			const char *name)
-{
-        request_region(from, extent, name);
-}
-
-static void __chrp
-chrp_ide_release_region(ide_ioreg_t from,
-			unsigned int extent)
-{
-        release_region(from, extent);
-}
-
 static void __chrp
 chrp_ide_init_hwif_ports(hw_regs_t *hw, ide_ioreg_t data_port, ide_ioreg_t ctrl_port, int *irq)
 {
@@ -657,9 +632,6 @@ chrp_init(unsigned long r3, unsigned long r4, unsigned long r5,
 #endif /* CONFIG_SMP */
 
 #if defined(CONFIG_BLK_DEV_IDE) || defined(CONFIG_BLK_DEV_IDE_MODULE)
-        ppc_ide_md.ide_check_region = chrp_ide_check_region;
-        ppc_ide_md.ide_request_region = chrp_ide_request_region;
-        ppc_ide_md.ide_release_region = chrp_ide_release_region;
         ppc_ide_md.ide_init_hwif = chrp_ide_init_hwif_ports;
 #endif
 
