@@ -173,6 +173,7 @@ static inline void simulate_sc(struct pt_regs *regs, unsigned int opcode)
 	}
 	if (ll_bit == 0 || ll_task != current) {
 		regs->regs[reg] = 0;
+		compute_return_epc(regs);
 		return;
 	}
 
