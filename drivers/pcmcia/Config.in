@@ -34,7 +34,7 @@ if [ "$CONFIG_PCMCIA" != "n" ]; then
       if [ "$CONFIG_PCMCIA_AU1X00" != "n" ]; then
         bool '  Pb1x00 board support' CONFIG_PCMCIA_PB1X00
         bool '  Db1x00 board support' CONFIG_PCMCIA_DB1X00
-        bool '  Titanium board support' CONFIG_PCMCIA_TITANIUM
+        bool '  XXS1500 board support' CONFIG_PCMCIA_XXS1500
       fi
    fi
    if [ "$CONFIG_VRC4173" != "n" ]; then

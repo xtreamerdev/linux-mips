@@ -2154,7 +2154,7 @@ static int __devinit au1000_probe(void)
 					     ac97_read_proc, &s->codec);
 #endif
 
-#ifdef CONFIG_MIPS_TITANIUM
+#ifdef CONFIG_MIPS_XXS1500
 	/* deassert eapd */
 	wrcodec(&s->codec, AC97_POWER_CONTROL, 
 			rdcodec(&s->codec, AC97_POWER_CONTROL) & ~0x8000);

@@ -161,8 +161,8 @@ static int __init au1000_pcmcia_driver_init(void)
 	pcmcia_low_level=&pb1x00_pcmcia_ops;
 #elif defined(CONFIG_MIPS_DB1000) || defined(CONFIG_MIPS_DB1100) || defined(CONFIG_MIPS_DB1500)
 	pcmcia_low_level=&db1x00_pcmcia_ops;
-#elif defined(CONFIG_MIPS_TITANIUM)
-	pcmcia_low_level=&titanium_pcmcia_ops;
+#elif defined(CONFIG_MIPS_XXS1500)
+	pcmcia_low_level=&xxs1500_pcmcia_ops;
 #else
 #error Unsupported AU1000 board.
 #endif
@@ -213,7 +213,7 @@ static int __init au1000_pcmcia_driver_init(void)
 			pcmcia_socket[i].phys_mem = 
 				(ioaddr_t)AU1X_SOCK0_PHYS_MEM;
 		}
-#ifndef CONFIG_MIPS_TITANIUM
+#ifndef CONFIG_MIPS_XXS1500
 		else  {
 			pcmcia_socket[i].virt_io = 
 				(u32)ioremap((ioaddr_t)AU1X_SOCK1_IO, 0x1000) -

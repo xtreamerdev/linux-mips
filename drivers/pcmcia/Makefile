@@ -63,7 +63,7 @@ obj-$(CONFIG_PCMCIA_AU1X00)			+= au1x00_ss.o
 au1000_ss-objs-y				:= au1000_generic.o
 au1000_ss-objs-$(CONFIG_PCMCIA_PB1X00)		+= au1000_pb1x00.o
 au1000_ss-objs-$(CONFIG_PCMCIA_DB1X00)		+= au1000_db1x00.o
-au1000_ss-objs-$(CONFIG_PCMCIA_TITANIUM)	+= au1000_titanium.o
+au1000_ss-objs-$(CONFIG_PCMCIA_XXS1500) 	+= au1000_xxs1500.o
 
 obj-$(CONFIG_PCMCIA_SA1100)	+= sa1100_cs.o
 obj-$(CONFIG_PCMCIA_M8XX)	+= m8xx_pcmcia.o
