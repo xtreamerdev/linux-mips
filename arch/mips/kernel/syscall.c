@@ -1,4 +1,4 @@
-/* $Id: syscall.c,v 1.9 1998/08/25 09:14:41 ralf Exp $
+/* $Id: syscall.c,v 1.10 1999/02/15 02:16:52 ralf Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
@@ -113,22 +113,22 @@ asmlinkage int sys_idle(void)
 	return 0;
 }
 
-asmlinkage int sys_fork(struct pt_regs regs)
+save_static_function(sys_fork);
+static unused int _sys_fork(struct pt_regs regs)
 {
 	int res;
 
-	save_static(&regs);
 	res = do_fork(SIGCHLD, regs.regs[29], &regs);
 	return res;
 }
 
-asmlinkage int sys_clone(struct pt_regs regs)
+save_static_function(sys_clone);
+static unused int _sys_clone(struct pt_regs regs)
 {
 	unsigned long clone_flags;
 	unsigned long newsp;
 	int res;
 
-	save_static(&regs);
 	clone_flags = regs.regs[4];
 	newsp = regs.regs[5];
 	if (!newsp)

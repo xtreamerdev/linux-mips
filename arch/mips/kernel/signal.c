@@ -1,4 +1,4 @@
-/* $Id: signal.c,v 1.18.2.2 1999/08/24 22:51:57 ralf Exp $
+/* $Id: signal.c,v 1.18.2.3 1999/08/25 23:52:33 ralf Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
@@ -40,12 +40,11 @@ extern asmlinkage int (*restore_fp_context)(struct sigcontext *sc);
 /*
  * Atomically swap in the new signal mask, and wait for a signal.
  */
-asmlinkage inline int
-sys_sigsuspend(struct pt_regs regs)
+save_static_function(sys_sigsuspend);
+static unused int _sys_sigsuspend(struct pt_regs regs)
 {
 	sigset_t *uset, saveset, newset;
 
-	save_static(&regs);
 	uset = (sigset_t *) regs.regs[4];
 	if (copy_from_user(&newset, uset, sizeof(sigset_t)))
 		return -EFAULT;
@@ -67,13 +66,11 @@ sys_sigsuspend(struct pt_regs regs)
 	}
 }
 
-asmlinkage int
-sys_rt_sigsuspend(struct pt_regs regs)
+save_static_function(sys_rt_sigsuspend);
+static unused int _sys_rt_sigsuspend(struct pt_regs regs)
 {
 	sigset_t *unewset, saveset, newset;
         size_t sigsetsize;
-
-	save_static(&regs);
 
 	/* XXX Don't preclude handling different sized sigset_t's.  */
 	sigsetsize = regs.regs[5];
