@@ -10,6 +10,8 @@
 #ifndef __ASM_TX3927_IRQ_H
 #define __ASM_TX3927_IRQ_H
 
+#include <linux/config.h>
+
 #ifndef _LANGUAGE_ASSEMBLY
 #include <asm/irq.h>
 

@@ -7,6 +7,7 @@
  * Copyright (C) 2000, 2001 Ralf Baechle
  * Copyright (C) 2000, 2001 Silicon Graphics, Inc.
  */
+#include <linux/config.h>
 #include <linux/delay.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>

@@ -37,7 +37,6 @@
 #include <linux/pci.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
-#include <linux/config.h>
 
 #include <asm/addrspace.h>
 #include <asm/pci_channel.h>

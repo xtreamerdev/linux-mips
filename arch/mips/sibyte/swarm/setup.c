@@ -19,7 +19,7 @@
 /*
  * Setup code for the SWARM board 
  */
-
+#include <linux/config.h>
 #include <linux/spinlock.h>
 #include <linux/mm.h>
 #include <linux/bootmem.h>
