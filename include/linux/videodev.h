@@ -405,6 +405,7 @@ struct video_code
 #define VID_HARDWARE_CPIA2	33
 #define VID_HARDWARE_VICAM	34	/* ViCam, 3Com Homeconnect */
 #define VID_HARDWARE_SF16FMR2	35
+#define VID_HARDWARE_SAA7114H	36
 
 #endif /* __LINUX_VIDEODEV_H */
 
