@@ -125,7 +125,7 @@ static void r4k_flush_cache_range_s16d16i16(struct mm_struct *mm,
 	vma = find_vma(mm, start);
 	if (vma) {
 		if (cpu_context(smp_processor_id(), mm) !=
-				cpu_context(smp_processor_id(), current->mm)) {
+		    cpu_context(smp_processor_id(), current->mm)) {
 			r4k_flush_cache_all_s16d16i16();
 		} else {
 			pgd_t *pgd;
@@ -157,7 +157,7 @@ static void r4k_flush_cache_range_s32d16i16(struct mm_struct *mm,
 	vma = find_vma(mm, start);
 	if (vma) {
 		if (cpu_context(smp_processor_id(), mm) !=
-				cpu_context(smp_processor_id(), current->mm)) {
+		    cpu_context(smp_processor_id(), current->mm)) {
 			r4k_flush_cache_all_s32d16i16();
 		} else {
 			pgd_t *pgd;
@@ -189,7 +189,7 @@ static void r4k_flush_cache_range_s64d16i16(struct mm_struct *mm,
 	vma = find_vma(mm, start);
 	if (vma) {
 		if (cpu_context(smp_processor_id(), mm) !=
-				cpu_context(smp_processor_id(), current->mm)) {
+		    cpu_context(smp_processor_id(), current->mm)) {
 			r4k_flush_cache_all_s64d16i16();
 		} else {
 			pgd_t *pgd;
@@ -221,7 +221,7 @@ static void r4k_flush_cache_range_s128d16i16(struct mm_struct *mm,
 	vma = find_vma(mm, start);
 	if (vma) {
 		if (cpu_context(smp_processor_id(), mm) !=
-				cpu_context(smp_processor_id(), current->mm)) {
+		    cpu_context(smp_processor_id(), current->mm)) {
 			r4k_flush_cache_all_s128d16i16();
 		} else {
 			pgd_t *pgd;
@@ -253,7 +253,7 @@ static void r4k_flush_cache_range_s32d32i32(struct mm_struct *mm,
 	vma = find_vma(mm, start);
 	if (vma) {
 		if (cpu_context(smp_processor_id(), mm) !=
-				cpu_context(smp_processor_id(), current->mm)) {
+		    cpu_context(smp_processor_id(), current->mm)) {
 			r4k_flush_cache_all_s32d32i32();
 		} else {
 			pgd_t *pgd;
@@ -285,7 +285,7 @@ static void r4k_flush_cache_range_s64d32i32(struct mm_struct *mm,
 	vma = find_vma(mm, start);
 	if (vma) {
 		if (cpu_context(smp_processor_id(), mm) !=
-				cpu_context(smp_processor_id(), current->mm)) {
+		    cpu_context(smp_processor_id(), current->mm)) {
 			r4k_flush_cache_all_s64d32i32();
 		} else {
 			pgd_t *pgd;
@@ -310,14 +310,14 @@ static void r4k_flush_cache_range_s128d32i32(struct mm_struct *mm,
 {
 	struct vm_area_struct *vma;
 
-	if (cpu_context(smp_processor_id(), mm) != 0)
+	if (cpu_context(smp_processor_id(), mm) == 0)
 		return;
 
 	start &= PAGE_MASK;
 	vma = find_vma(mm, start);
-	if(vma) {
+	if (vma) {
 		if (cpu_context(smp_processor_id(), mm) !=
-				cpu_context(smp_processor_id(), current->mm)) {
+		    cpu_context(smp_processor_id(), current->mm)) {
 			r4k_flush_cache_all_s128d32i32();
 		} else {
 			pgd_t *pgd;
@@ -948,12 +948,13 @@ static void r4k_flush_icache_page_p(struct vm_area_struct *vma,
 static void r4k_dma_cache_wback_inv_pc(unsigned long addr, unsigned long size)
 {
 	unsigned long end, a;
-	unsigned int flags;
 
 	if (size >= dcache_size) {
 		flush_cache_all();
 	} else {
 #ifdef R4600_V2_HIT_CACHEOP_WAR
+		unsigned long flags;
+
 		/* Workaround for R4600 bug.  See comment in <asm/war>. */
 		local_irq_save(flags);
 		*(volatile unsigned long *)KSEG1;
@@ -962,7 +963,7 @@ static void r4k_dma_cache_wback_inv_pc(unsigned long addr, unsigned long size)
 		a = addr & ~(dc_lsize - 1);
 		end = (addr + size - 1) & ~(dc_lsize - 1);
 		while (1) {
-			flush_dcache_line(a); /* Hit_Writeback_Inv_D */
+			flush_dcache_line(a);	/* Hit_Writeback_Inv_D */
 			if (a == end) break;
 			a += dc_lsize;
 		}
@@ -970,6 +971,7 @@ static void r4k_dma_cache_wback_inv_pc(unsigned long addr, unsigned long size)
 		local_irq_restore(flags);
 #endif
 	}
+
 	bc_wback_inv(addr, size);
 }
 
@@ -994,12 +996,13 @@ static void r4k_dma_cache_wback_inv_sc(unsigned long addr, unsigned long size)
 static void r4k_dma_cache_inv_pc(unsigned long addr, unsigned long size)
 {
 	unsigned long end, a;
-	unsigned int flags;
 
 	if (size >= dcache_size) {
 		flush_cache_all();
 	} else {
 #ifdef R4600_V2_HIT_CACHEOP_WAR
+		unsigned long flags;
+
 		/* Workaround for R4600 bug.  See comment in <asm/war>. */
 		local_irq_save(flags);
 		*(volatile unsigned long *)KSEG1;
@@ -1008,7 +1011,7 @@ static void r4k_dma_cache_inv_pc(unsigned long addr, unsigned long size)
 		a = addr & ~(dc_lsize - 1);
 		end = (addr + size - 1) & ~(dc_lsize - 1);
 		while (1) {
-			flush_dcache_line(a); /* Hit_Writeback_Inv_D */
+			flush_dcache_line(a);	/* Hit_Writeback_Inv_D */
 			if (a == end) break;
 			a += dc_lsize;
 		}
@@ -1016,6 +1019,7 @@ static void r4k_dma_cache_inv_pc(unsigned long addr, unsigned long size)
 		local_irq_restore(flags);
 #endif
 	}
+
 	bc_inv(addr, size);
 }
 
@@ -1031,7 +1035,7 @@ static void r4k_dma_cache_inv_sc(unsigned long addr, unsigned long size)
 	a = addr & ~(sc_lsize - 1);
 	end = (addr + size - 1) & ~(sc_lsize - 1);
 	while (1) {
-		flush_scache_line(a); /* Hit_Writeback_Inv_SD */
+		flush_scache_line(a);	/* Hit_Writeback_Inv_SD */
 		if (a == end) break;
 		a += sc_lsize;
 	}
@@ -1062,7 +1066,7 @@ static void r4k_flush_cache_sigtramp(unsigned long addr)
 static void r4600v20k_flush_cache_sigtramp(unsigned long addr)
 {
 #ifdef R4600_V2_HIT_CACHEOP_WAR
-	unsigned int flags;
+	unsigned long flags;
 
 	local_irq_save(flags);
 
@@ -1232,9 +1236,9 @@ static void __init setup_noscache_funcs(void)
 		_flush_cache_page = r4k_flush_cache_page_d32i32;
 		break;
 	}
-	___flush_cache_all = _flush_cache_all;
-
 	_flush_icache_page = r4k_flush_icache_page_p;
+
+	___flush_cache_all = _flush_cache_all;
 
 	_dma_cache_wback_inv = r4k_dma_cache_wback_inv_pc;
 	_dma_cache_wback = r4k_dma_cache_wback_inv_pc;
@@ -1317,8 +1321,10 @@ static void __init setup_scache_funcs(void)
 		_copy_page = r4k_copy_page_s128;
 		break;
 	}
-	___flush_cache_all = _flush_cache_all;
 	_flush_icache_page = r4k_flush_icache_page_s;
+
+	___flush_cache_all = _flush_cache_all;
+
 	_dma_cache_wback_inv = r4k_dma_cache_wback_inv_sc;
 	_dma_cache_wback = r4k_dma_cache_wback_inv_sc;
 	_dma_cache_inv = r4k_dma_cache_inv_sc;
@@ -1373,10 +1379,10 @@ void __init ld_mmu_r4xx0(void)
 	}
 
 	_flush_cache_sigtramp = r4k_flush_cache_sigtramp;
-	_flush_icache_range = r4k_flush_icache_range;	/* Ouch */
 	if ((read_c0_prid() & 0xfff0) == 0x2020) {
 		_flush_cache_sigtramp = r4600v20k_flush_cache_sigtramp;
 	}
+	_flush_icache_range = r4k_flush_icache_range;	/* Ouch */
 
 	__flush_cache_all();
 }
