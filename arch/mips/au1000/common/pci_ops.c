@@ -55,6 +55,8 @@
 #define	DBG(x...)	
 #endif
 
+int (*board_pci_idsel)(unsigned int devsel, int assert);
+
 /* TBD */
 static struct resource pci_io_resource = {
 	"pci IO space", 
@@ -199,8 +201,20 @@ static int config_access(unsigned char access_type, struct pci_dev *dev,
 			panic (KERN_ERR "PCI unable to get vm area\n");
 		pci_cfg_wired_entry = read_c0_wired();
 		add_wired_entry(0, 0, (unsigned long)pci_cfg_vm->addr, 
-				pci_cfg_wired_entry);
+				PM_4K);
 		last_entryLo0  = last_entryLo1 = 0xffffffff;
+	}
+
+	/* Since the Au1xxx doesn't do the idsel timing exactly to spec,
+	 * many board vendors implement their own off-chip idsel, so call
+	 * it now.  If it doesn't succeed, may as well bail out at this point.
+	 */
+	if (board_pci_idsel) {
+		if (board_pci_idsel(device, 1) == 0) {
+			*data = 0xffffffff;
+			local_irq_restore(flags);
+			return -1;
+		}
 	}
 
         /* setup the config window */
@@ -219,7 +233,7 @@ static int config_access(unsigned char access_type, struct pci_dev *dev,
 
 	if ((entryLo0 != last_entryLo0) || (entryLo1 != last_entryLo1)) {
 		mod_wired_entry(pci_cfg_wired_entry, entryLo0, entryLo1, 
-				(unsigned long)pci_cfg_vm->addr, 0);
+				(unsigned long)pci_cfg_vm->addr, PM_4K);
 		last_entryLo0 = entryLo0;
 		last_entryLo1 = entryLo1;
 	}
@@ -232,7 +246,7 @@ static int config_access(unsigned char access_type, struct pci_dev *dev,
 	au_sync_udelay(2);
 
 	DBG("config_access: %d bus %d device %d at %x *data %x, conf %x\n", 
-			access_type, bus, device, where, *data, config);
+			access_type, bus, device, where, *data, offset);
 
 	/* check master abort */
 	status = au_readl(Au1500_PCI_STATCMD);
@@ -245,6 +259,13 @@ static int config_access(unsigned char access_type, struct pci_dev *dev,
 		*data = 0xffffffff;
 		error = -1;
 	} 
+	
+	/* Take away the idsel.
+	*/
+	if (board_pci_idsel) {
+		(void)board_pci_idsel(device, 0);
+	}
+
 	local_irq_restore(flags);
 	return error;
 #endif
