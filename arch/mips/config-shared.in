@@ -84,7 +84,7 @@ if [ "$CONFIG_SGI_IP27" = "y" ]; then
    bool '  Mapped kernel support' CONFIG_MAPPED_KERNEL
    bool '  Kernel text replication support' CONFIG_REPLICATE_KTEXT
    bool '  Exception handler replication support' CONFIG_REPLICATE_EXHANDLERS
-   bool '  Multi-Processing support' CONFIG_SMP
+   define_bool CONFIG_SMP_CAPABLE y
    #bool '  IP27 XXL' CONFIG_SGI_SN0_XXL
 fi
 dep_bool 'Support for SGI-IP32 (O2) (EXPERIMENTAL)' CONFIG_SGI_IP32 $CONFIG_EXPERIMENTAL
@@ -106,15 +106,9 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
 
    if [ "$CONFIG_SIBYTE_SB1250" = "y" ]; then
       if [ "$CONFIG_SIBYTE_STANDALONE" != "y" ]; then
-	 bool '   Multi-Processing support' CONFIG_SMP
+	 define_bool CONFIG_SMP_CAPABLE y
       fi
-   fi
-
-   if [ "$CONFIG_SIBYTE_SB1250" = "y" ]; then
       bool '   Support for BCM1250/BCM112x onchip PCI controller' CONFIG_PCI
-   fi
-
-   if [ "$CONFIG_SIBYTE_SB1250" = "y" ]; then
       bool '   Support for SWARM board' CONFIG_SIBYTE_SWARM
    fi
 fi
@@ -481,6 +475,10 @@ choice 'CPU type' \
 	 R10000	CONFIG_CPU_R10000 \
 	 RM7000	CONFIG_CPU_RM7000 \
 	 SB1	CONFIG_CPU_SB1" R4x00
+
+if [ "$CONFIG_SMP_CAPABLE" = "y" ]; then
+   bool '  Multi-Processing support' CONFIG_SMP
+fi
 
 if [ "$CONFIG_CPU_R5000" = "y" ]; then
    define_bool CONFIG_BOARD_SCACHE y
