@@ -6,7 +6,7 @@ O_TARGET := i2c.o
 
 export-objs	:= i2c-core.o i2c-algo-bit.o i2c-algo-pcf.o \
 		   i2c-algo-ite.o i2c-algo-sibyte.o i2c-algo-sgi.o \
-		   i2c-algo-au1550.o i2c-proc.o
+		   i2c-algo-au1550.o i2c-proc.o i2c-au1550.o
 
 obj-$(CONFIG_I2C)		+= i2c-core.o
 obj-$(CONFIG_I2C_CHARDEV)	+= i2c-dev.o

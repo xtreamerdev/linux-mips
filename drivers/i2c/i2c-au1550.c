@@ -28,11 +28,24 @@
 #include <linux/errno.h>
 
 #include <asm/au1000.h>
-#include <asm/pb1550.h>
 #include <asm/au1xxx_psc.h>
+#if defined( CONFIG_MIPS_PB1550 )
+	#include <asm/pb1550.h>
+#endif
+#if defined( CONFIG_MIPS_PB1200 )
+	#include <asm/pb1200.h>
+#endif
+#if defined( CONFIG_MIPS_DB1200 )
+	#include <asm/db1200.h>
+#endif
+#if defined( CONFIG_MIPS_FICMMP )
+	#include <asm/ficmmp.h>
+#endif
 
 #include <linux/i2c.h>
 #include <linux/i2c-algo-au1550.h>
+
+
 
 static int
 pb1550_reg(struct i2c_client *client)
@@ -81,7 +94,6 @@ static struct i2c_adapter pb1550_board_adapter = {
 int __init
 i2c_pb1550_init(void)
 {
-
 	/* This is where we would set up a 50MHz clock source
 	 * and routing.  On the Pb1550, the SMBus is PSC2, which
 	 * uses a shared clock with USB.  This has been already
@@ -116,6 +128,14 @@ pb1550_wm_codec_write(u8 addr, u8 reg, u8 val)
 	return pb1550_board_adapter.algo->master_xfer(&pb1550_board_adapter, &wm_i2c_msg, 1);
 }
 
+/* the next function is needed by DVB driver. */
+int pb1550_i2c_xfer(struct i2c_msg msgs[], int num)
+{
+    return pb1550_board_adapter.algo->master_xfer(&pb1550_board_adapter, msgs, num);
+}
+
+EXPORT_SYMBOL(pb1550_wm_codec_write);
+EXPORT_SYMBOL(pb1550_i2c_xfer);
 
 MODULE_AUTHOR("Dan Malek, Embedded Edge, LLC.");
 MODULE_DESCRIPTION("SMBus adapter Alchemy pb1550");

@@ -14,7 +14,6 @@
 #include <linux/delay.h>
 
 #include <asm/au1000.h>
-#include <asm/pb1550.h>
 #include <asm/au1xxx_psc.h>
 
 #include <linux/i2c.h>
@@ -304,17 +303,17 @@ i2c_au1550_add_bus(struct i2c_adapter *i2c_adap)
 	/* Divide by 8 to get a 6.25 MHz clock.  The later protocol
 	 * timings are based on this clock.
 	 */
-	sp->psc_smbcfg |= PSC_SMBCFG_SET_DIV(PSC_SMBCFG_DIV8);
+	sp->psc_smbcfg |= PSC_SMBCFG_SET_DIV(PSC_SMBCFG_DIV2);
 	sp->psc_smbmsk = PSC_SMBMSK_ALLMASK;
 	au_sync();
 
 	/* Set the protocol timer values.  See Table 71 in the
 	 * Au1550 Data Book for standard timing values.
 	 */
-	sp->psc_smbtmr = PSC_SMBTMR_SET_TH(0) | PSC_SMBTMR_SET_PS(15) | \
-		PSC_SMBTMR_SET_PU(15) | PSC_SMBTMR_SET_SH(15) | \
-		PSC_SMBTMR_SET_SU(15) | PSC_SMBTMR_SET_CL(15) | \
-		PSC_SMBTMR_SET_CH(15);
+	sp->psc_smbtmr = PSC_SMBTMR_SET_TH(2) | PSC_SMBTMR_SET_PS(15) | \
+		PSC_SMBTMR_SET_PU(11) | PSC_SMBTMR_SET_SH(11) | \
+		PSC_SMBTMR_SET_SU(11) | PSC_SMBTMR_SET_CL(15) | \
+		PSC_SMBTMR_SET_CH(11);
 	au_sync();
 
 	sp->psc_smbcfg |= PSC_SMBCFG_DE_ENABLE;
