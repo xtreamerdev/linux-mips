@@ -116,26 +116,6 @@ if [ "$CONFIG_FOOTBRIDGE" = "y" ]; then
       fi
       bool '  Console on DC21285 serial port' CONFIG_SERIAL_21285_CONSOLE
    fi
-fi
-if [ "$CONFIG_EXPERIMENTAL" = "y" -a "$CONFIG_ZORRO" = "y" ]; then
-   tristate 'Commodore A2232 serial support (EXPERIMENTAL)' CONFIG_A2232
-fi
-if [ "$CONFIG_FOOTBRIDGE" = "y" ]; then
-   bool 'DC21285 serial port support' CONFIG_SERIAL_21285
-   if [ "$CONFIG_SERIAL_21285" = "y" ]; then
-      if [ "$CONFIG_OBSOLETE" = "y" ]; then
-         bool '  Use /dev/ttyS0 device (OBSOLETE)' CONFIG_SERIAL_21285_OLD
-      fi
-      bool '  Console on DC21285 serial port' CONFIG_SERIAL_21285_CONSOLE
-   fi
-   if [ "$CONFIG_MIPS" = "y" ]; then
-     bool '  TMPTX3912/PR31700 serial port support' CONFIG_SERIAL_TX3912
-     dep_bool '     Console on TMPTX3912/PR31700 serial port' CONFIG_SERIAL_TX3912_CONSOLE $CONFIG_SERIAL_TX3912
-     bool '  Enable Au1000 UART Support' CONFIG_AU1000_UART
-     if [ "$CONFIG_AU1000_UART" = "y" ]; then
-         bool '        Enable Au1000 serial console' CONFIG_AU1000_SERIAL_CONSOLE
-     fi
-   fi
    if [ "$CONFIG_PARISC" = "y" ]; then
      bool '  PDC software console support' CONFIG_PDC_CONSOLE
    fi
