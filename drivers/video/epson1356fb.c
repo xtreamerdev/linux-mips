@@ -75,9 +75,9 @@
 
 #include <linux/spinlock.h>
 
-#include <linux/e1356fb.h>
+#include <video/e1356fb.h>
 
-#ifdef CONFIG_MIPS_AU1000
+#ifdef CONFIG_CPU_AU1X00
 #include <asm/au1000.h>
 #endif
 
@@ -2296,9 +2296,9 @@ e1356fb_init(void)
 	 * Program the clocks
 	 */
 
-#ifdef CONFIG_MIPS_AU1000
+#ifdef CONFIG_CPU_AU1X00
 	if ((epfix->system == SYS_PB1000) || (epfix->system == SYS_PB1500))
-		epfix->busclk = get_au1000_lcd_clock();
+		epfix->busclk = get_au1x00_lcd_clock();
 #endif
 	
 	if (epfix->busclk > 80000) {
