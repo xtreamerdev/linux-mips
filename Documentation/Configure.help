@@ -5208,10 +5208,17 @@ CONFIG_FB_CT65550
   This is the frame buffer device driver for the Chips & Technologies
   65550 graphics chip in PowerBooks.
 
-TGA frame buffer support
+TGA/SFB+ frame buffer support
 CONFIG_FB_TGA
-  This is the frame buffer device driver for generic TGA graphic
-  cards. Say Y if you have one of those.
+  This is the frame buffer device driver for generic TGA and SFB+
+  graphic cards.  These include DEC ZLXp-E1, E2 and E3 PCI cards,
+  also known as PBXGA-A, B and C, and DEC ZLX-E2 and E3 TURBOchannel
+  cards, also known as PMAGD-B and C.  The DEC ZLX-E1 or PMAGD-A card
+  is currently unsupported.  Due to hardware limitations ZLX-E2 and
+  E3 cards are only supported for DECstation 5000/1xx and Personal
+  DECstation 5000/xx systems.
+
+  Say Y if you have one of those.
 
 VESA VGA graphics console
 CONFIG_FB_VESA
