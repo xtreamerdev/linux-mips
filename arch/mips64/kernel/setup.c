@@ -408,6 +408,7 @@ static inline void resource_init(void)
 
 void __init setup_arch(char **cmdline_p)
 {
+	extern void atlas_setup(void);
 	extern void decstation_setup(void);
 	extern void ip22_setup(void);
 	extern void ip27_setup(void);
@@ -415,10 +416,14 @@ void __init setup_arch(char **cmdline_p)
 	extern void momenco_ocelot_setup(void);
 	extern void momenco_ocelot_g_setup(void);
 	extern void momenco_ocelot_c_setup(void);
+	extern void sead_setup(void);
 	extern void swarm_setup(void);
 	extern void frame_info_init(void);
 
 	frame_info_init();
+#ifdef CONFIG_MIPS_ATLAS
+	atlas_setup();
+#endif
 #ifdef CONFIG_DECSTATION
 	decstation_setup();
 #endif
@@ -433,6 +438,9 @@ void __init setup_arch(char **cmdline_p)
 #endif
 #ifdef CONFIG_MIPS_MALTA
 	malta_setup();
+#endif
+#ifdef CONFIG_MIPS_SEAD
+	sead_setup();
 #endif
 #ifdef CONFIG_MOMENCO_OCELOT
 	momenco_ocelot_setup();
