@@ -75,11 +75,46 @@ extern void au1xxx_timer_setup(void);
 void __init au1x00_setup(void)
 {
 	char *argptr;
+	unsigned long prid, cpupll, bclk = 1;
 
 	/* Various early Au1000 Errata corrected by this */
 	set_c0_config(1<<19); /* Config[OD] */
 
 	board_setup();  /* board specific setup */
+
+	prid = read_c0_prid();
+	switch (prid)
+	{
+		case 0x00030100: printk("Au1000 DA "); bclk = 0; break;
+	 	case 0x00030201: printk("Au1000 HA "); bclk = 0; break;
+		case 0x00030202: printk("Au1000 HB "); bclk = 0; break;
+		case 0x00030203: printk("Au1000 HC "); break;
+		case 0x00030204: printk("Au1000 HD "); break;
+
+		case 0x01030200: printk("Au1500 AB "); break;
+		case 0x01030201: printk("Au1500 AC "); break;
+		case 0x01030202: printk("Au1500 AD "); break;
+
+		case 0x02030200: printk("Au1100 AB "); break;
+		case 0x02030201: printk("Au1100 BA "); break;
+		case 0x02030202: printk("Au1100 BC "); break;
+		case 0x02030203: printk("Au1100 BD "); break;
+		case 0x02030204: printk("Au1100 BE "); break;
+
+		case 0x03030200: printk("Au1550 AA "); break;
+
+		default: printk(L"Unknown Au1x00! "); bclk = 0; break;
+	}
+	cpupll = (au_readl(0xB1900060) & 0x3F) * 12;
+	printk("(PRId %08X) @ %dMHZ\n", prid, cpupll);
+
+	if (bclk)
+	{
+		/* Enable BCLK switching */
+		bclk = au_readl(0xB190003C);
+		au_writel(bclk | 0x60, 0xB190003C);
+		printk("BCLK switching enabled!\n");
+	}
 
 	argptr = prom_getcmdline();
 
