@@ -129,9 +129,6 @@ void __init smp_boot_cpus(void)
 		p->processor = i;
 		p->cpus_runnable = 1 << i; /* we schedule the first task manually */
 
-		/* Attach to the address space of init_task. */
-		atomic_inc(&init_mm.mm_count);
-		p->active_mm = &init_mm;
 		init_tasks[i] = p;
 
 		del_from_runqueue(p);

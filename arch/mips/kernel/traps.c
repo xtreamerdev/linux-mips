@@ -900,6 +900,9 @@ void __init per_cpu_trap_init(void)
 	/* Some firmware leaves the BEV flag set, clear it.  */
 	clear_cp0_status(ST0_CU1|ST0_CU2|ST0_CU3|ST0_BEV);
 
+	if (mips_cpu.isa_level == MIPS_CPU_ISA_IV)
+		set_cp0_status(ST0_XX);
+
 	/*
 	 * Some MIPS CPUs have a dedicated interrupt vector which reduces the
 	 * interrupt processing overhead.  Use it where available.
@@ -909,6 +912,12 @@ void __init per_cpu_trap_init(void)
 
 	cpu_data[cpu].asid_cache = ASID_FIRST_VERSION;
 	set_context(cpu << 23);
+
+	atomic_inc(&init_mm.mm_count);
+	current->active_mm = &init_mm;
+	if (current->mm)
+		BUG();
+	enter_lazy_tlb(&init_mm, current, cpu);
 }
 
 void __init trap_init(void)
@@ -1024,9 +1033,6 @@ void __init trap_init(void)
 	}
 
 	flush_icache_range(KSEG0, KSEG0 + 0x400);
-
-	if (mips_cpu.isa_level == MIPS_CPU_ISA_IV)
-		set_cp0_status(ST0_XX);
 
 	atomic_inc(&init_mm.mm_count);	/* XXX UP?  */
 	current->active_mm = &init_mm;

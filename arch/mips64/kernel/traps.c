@@ -676,6 +676,9 @@ void __init per_cpu_trap_init(void)
 	clear_cp0_status(ST0_CU1|ST0_CU2|ST0_CU3|ST0_BEV);
 	set_cp0_status(ST0_CU0|ST0_FR|ST0_KX|ST0_SX|ST0_UX);
 
+	if (mips_cpu.isa_level == MIPS_CPU_ISA_IV)
+		set_cp0_status(ST0_XX);
+
 	/*
 	 * Some MIPS CPUs have a dedicated interrupt vector which reduces the
 	 * interrupt processing overhead.  Use it where available.
@@ -686,6 +689,12 @@ void __init per_cpu_trap_init(void)
 	cpu_data[cpu].asid_cache = ASID_FIRST_VERSION;
 	set_context(((long)(&pgd_current[cpu])) << 23);
 	set_wired(0);
+
+	atomic_inc(&init_mm.mm_count);
+	current->active_mm = &init_mm;
+	if (current->mm)
+		BUG();
+	enter_lazy_tlb(&init_mm, current, cpu);
 }
 
 void __init trap_init(void)
@@ -791,9 +800,6 @@ void __init trap_init(void)
 	}
 
 	flush_icache_range(KSEG0, KSEG0 + 0x400);
-
-	if (mips_cpu.isa_level == MIPS_CPU_ISA_IV)
-		set_cp0_status(ST0_XX);
 
 	atomic_inc(&init_mm.mm_count);	/* XXX UP?  */
 	current->active_mm = &init_mm;
