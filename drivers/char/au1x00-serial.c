@@ -2554,10 +2554,6 @@ static void autoconfig(struct serial_state * state)
 int register_serial(struct serial_struct *req);
 void unregister_serial(int line);
 
-EXPORT_SYMBOL(register_serial);
-EXPORT_SYMBOL(unregister_serial);
-
-
 /*
  * The serial driver boot-time initialization code!
  */
