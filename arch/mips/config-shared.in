@@ -860,7 +860,7 @@ fi
 
 tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
 
-dep_bool 'Power Management support (EXPERIMENTAL)' CONFIG_PM $CONFIG_EXPERIMENTAL $CONFIG_MIPS_AU1000
+dep_bool 'Power Management support' CONFIG_PM $CONFIG_SOC_AU1X00
 endmenu
 
 source drivers/mtd/Config.in
