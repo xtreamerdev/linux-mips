@@ -2532,9 +2532,9 @@ CONFIG_PCMCIA_FDOMAIN
 
 # Choice: mipstype
 CPU type
-CONFIG_CPU_R3000
+CONFIG_CPU_MIPS32
   Please make sure to pick the right CPU type. Linux/MIPS is not
-  designed to be generic, i.e. Kernels compiled for R3000 CPUs will
+  designed to be generic, i.e. kernels compiled for R3000 CPUs will
   *not* work on R4000 machines and vice versa.  However, since most
   of the supported machines have an R4000 (or similar) CPU, R4x00
   might be a safe bet.  If the resulting kernel does not work,
