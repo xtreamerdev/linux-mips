@@ -87,7 +87,6 @@ extern spinlock_t semaphore_lock;
 
 asmlinkage void __down(struct semaphore * sem);
 asmlinkage int  __down_interruptible(struct semaphore * sem);
-asmlinkage int __down_trylock(struct semaphore * sem);
 extern void __up_wakeup(struct semaphore * sem);
 
 static inline void down(struct semaphore * sem)
@@ -218,9 +217,29 @@ static inline void up(struct semaphore * sem)
  */
 static inline int down_trylock(struct semaphore * sem)
 {
+	unsigned long flags;
+	int count, waking;
 	int ret = 0;
-	if (atomic_dec_return(&sem->count) < 0)
-		ret = __down_trylock(sem);
+
+#if WAITQUEUE_DEBUG
+	CHECK_MAGIC(sem->__magic);
+#endif
+
+	spin_lock_irqsave(&semaphore_lock, flags);
+	count = atomic_read(&sem->count) - 1;
+	atomic_set(&sem->count, count);
+	if (count < 0) {
+		waking = atomic_read(&sem->waking);
+		if (waking <= 0) {
+			atomic_set(&sem->count, count + 1);
+			ret = 1;
+		} else {
+			atomic_set(&sem->waking, waking - 1);
+			ret = 0;
+		}
+	}
+	spin_unlock_irqrestore(&semaphore_lock, flags);
+
 	return ret;
 }
 

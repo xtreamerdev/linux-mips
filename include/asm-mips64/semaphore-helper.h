@@ -119,20 +119,6 @@ waking_non_zero_interruptible(struct semaphore *sem, struct task_struct *tsk)
 	return ret;
 }
 
-/*
- * waking_non_zero_trylock is unused.  we do everything in
- * down_trylock and let non-ll/sc hosts bounce around.
- */
-
-static inline int waking_non_zero_trylock(struct semaphore *sem)
-{
-#if WAITQUEUE_DEBUG
-	CHECK_MAGIC(sem->__magic);
-#endif
-
-	return 0;
-}
-
 #else /* !CONFIG_CPU_HAS_LLDSCD */
 
 static inline int waking_non_zero_interruptible(struct semaphore *sem,
@@ -150,23 +136,6 @@ static inline int waking_non_zero_interruptible(struct semaphore *sem,
 		ret = -EINTR;
 	}
 	local_irq_restore(flags);
-	return ret;
-}
-
-static inline int waking_non_zero_trylock(struct semaphore *sem)
-{
-        int ret = 1;
-	unsigned long flags;
-
-	local_irq_save(flags);
-	if (sem_read(&sem->waking) <= 0)
-		sem_inc(&sem->count);
-	else {
-		sem_dec(&sem->waking);
-		ret = 0;
-	}
-	local_irq_restore(flags);
-
 	return ret;
 }
 

@@ -142,10 +142,3 @@ int __down_interruptible(struct semaphore * sem)
 }
 
 EXPORT_SYMBOL(__down_interruptible);
-
-int __down_trylock(struct semaphore * sem)
-{
-	return waking_non_zero_trylock(sem);
-}
-
-EXPORT_SYMBOL(__down_trylock);
