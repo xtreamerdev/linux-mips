@@ -69,6 +69,10 @@ extern void au1000_halt(void);
 extern void au1000_power_off(void);
 extern struct resource ioport_resource;
 extern struct resource iomem_resource;
+#if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_CPU_AU1500)
+extern phys_t (*fixup_bigphys_addr)(phys_t phys_addr, phys_t size);
+static phys_t db_fixup_bigphys_addr(phys_t phys_addr, phys_t size);
+#endif
 
 void __init bus_error_init(void) { /* nothing */ }
 
@@ -116,10 +120,18 @@ void __init au1x00_setup(void)
 	_machine_restart = au1000_restart;
 	_machine_halt = au1000_halt;
 	_machine_power_off = au1000_power_off;
+#if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_CPU_AU1500)
+	fixup_bigphys_addr = db_fixup_bigphys_addr;
+#endif
 
 	// IO/MEM resources. 
 	set_io_port_base(0);
+#ifdef CONFIG_CPU_AU1500
 	ioport_resource.start = 0x00000000;
+#else
+	/* don't allow any legacy ports probing */
+	ioport_resource.start = 0x10000000;
+#endif
 	ioport_resource.end = 0xffffffff;
 	iomem_resource.start = 0x10000000;
 	iomem_resource.end = 0xffffffff;
@@ -210,3 +222,21 @@ void __init au1x00_setup(void)
 #endif
 }
 
+#if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_CPU_AU1500)
+static phys_t db_fixup_bigphys_addr(phys_t phys_addr, phys_t size)
+{
+	u32 pci_start = (u32)Au1500_PCI_MEM_START;
+	u32 pci_end = (u32)Au1500_PCI_MEM_END;
+
+	/* Don't fixup 36 bit addresses */
+	if ((phys_addr >> 32) != 0) return phys_addr;
+
+	/* check for pci memory window */
+	if ((phys_addr >= pci_start) && ((phys_addr + size) < pci_end)) {
+		return (phys_t)((phys_addr - pci_start) +
+				     Au1500_PCI_MEM_START);
+	}
+	else 
+		return phys_addr;
+}
+#endif

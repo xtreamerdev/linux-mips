@@ -68,16 +68,6 @@ void __init pcibios_fixup(void)
 	}
 
 	set_io_port_base(virt_io_addr);
-
-#if 0
-	pci_for_each_dev(dev) {
-		for (i=0; i < DEVICE_COUNT_RESOURCE; i++) {
-			if (dev->resource[i].start) {
-				fixup_resource(i, dev);
-			}
-		}
-	}
-#endif
 #endif // CONFIG_CPU_AU1500
 }
 
@@ -113,17 +103,5 @@ unsigned int pcibios_assign_all_busses(void)
 
 static void fixup_resource(int r_num, struct pci_dev *dev) 
 {
-#ifdef CONFIG_CPU_AU1500
-	unsigned long start, size, new_start;
-
-	if (dev->resource[r_num].flags & IORESOURCE_IO) {
-		start = dev->resource[r_num].start;
-		size = dev->resource[r_num].end - start;
-		new_start = virt_io_addr + (start - Au1500_PCI_IO_START);
-		dev->resource[r_num].start = new_start;
-		dev->resource[r_num].end = new_start + size;
-	}
-#endif // CONFIG_CPU_AU1500
 }
-
 #endif
