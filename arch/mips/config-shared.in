@@ -100,10 +100,62 @@ fi
 dep_bool 'Support for SGI-IP32 (O2) (EXPERIMENTAL)' CONFIG_SGI_IP32 $CONFIG_EXPERIMENTAL
 dep_bool 'Support for Broadcom BCM1xxx SOCs (EXPERIMENTAL)' CONFIG_SIBYTE_SB1xxx_SOC $CONFIG_EXPERIMENTAL
 if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
-   choice '   BCM1xxx SOC Type' \
-	  "BCM1250          CONFIG_SIBYTE_SB1250" BCM1250
+   choice '   BCM1xxx SOC-based board' \
+          "BCM91250A-SWARM     CONFIG_SIBYTE_SWARM \
+           BCM91250E-Sentosa   CONFIG_SIBYTE_SENTOSA \
+           BCM91120C-CRhine    CONFIG_SIBYTE_CRHINE \
+           BCM91120x-Carmel    CONFIG_SIBYTE_CARMEL \
+           BCM91125C-CRhone    CONFIG_SIBYTE_CRHONE \
+           BCM91125E-Rhone     CONFIG_SIBYTE_RHONE \
+           Other               CONFIG_SIBYTE_UNKNOWN" CONFIG_SIBYTE_SWARM
 
-   bool '   Running under simulation' CONFIG_SIMULATION
+   if [ "$CONFIG_SIBYTE_UNKNOWN" = "y" ]; then
+      choice '   BCM1xxx SOC Type' \
+          "BCM91250     CONFIG_SIBYTE_SB1250 \
+           BCM91120     CONFIG_SIBYTE_BCM1120 \
+           BCM91125     CONFIG_SIBYTE_BCM1125 \
+           BCM91125H    CONFIG_SIBYTE_BCM1125H" CONFIG_SIBYTE_SB1250
+      unset CONFIG_SIBYTE_BOARD
+   else
+      define_bool CONFIG_SIBYTE_BOARD y
+      if [ "$CONFIG_SIBYTE_SWARM" = "y" -o \
+           "$CONFIG_SIBYTE_SENTOSA" = "y" ]; then
+         define_bool CONFIG_SIBYTE_SB1250 y
+         unset CONFIG_SIBYTE_BCM1120
+         unset CONFIG_SIBYTE_BCM1125
+         unset CONFIG_SIBYTE_BCM1125H
+      fi
+      if [ "$CONFIG_SIBYTE_CRHINE" = "y" -o \
+           "$CONFIG_SIBYTE_CARMEL" = "y" ]; then
+         define_bool CONFIG_SIBYTE_BCM1120 y
+         unset CONFIG_SIBYTE_SB1250
+         unset CONFIG_SIBYTE_BCM1125
+         unset CONFIG_SIBYTE_BCM1125H
+      fi
+      if [ "$CONFIG_SIBYTE_CRHONE" = "y" -o \
+           "$CONFIG_SIBYTE_RHONE" = "y" ]; then
+         define_bool CONFIG_SIBYTE_BCM1125H y
+         unset CONFIG_SIBYTE_SB1250
+         unset CONFIG_SIBYTE_BCM1120
+         unset CONFIG_SIBYTE_BCM1125
+      fi
+   fi
+
+   if [ "$CONFIG_SIBYTE_BCM1120" = "y" -o \
+        "$CONFIG_SIBYTE_BCM1125" = "y" -o \
+        "$CONFIG_SIBYTE_BCM1125H" = "y" ]; then
+      define_bool CONFIG_SIBYTE_BCM112X y
+      choice 'BCM1xxx Pass' \
+         "Hybrid CONFIG_CPU_SB1_PASS_2 \
+          A1-A2  CONFIG_CPU_SB1_PASS_3" A1-A2
+   else
+      unset CONFIG_SIBYTE_BCM112X
+      choice 'BCM1250 Pass' \
+         "Pass1   CONFIG_CPU_SB1_PASS_1 \
+          A3-A10  CONFIG_CPU_SB1_PASS_2 \
+          B0-B3   CONFIG_CPU_SB1_PASS_2_2" A3-A10
+   fi
+
    bool '   Booting from CFE' CONFIG_SIBYTE_CFE
    dep_bool '     Use firmware console' CONFIG_SIBYTE_CFE_CONSOLE $CONFIG_SIBYTE_CFE
    if [ "$CONFIG_SIBYTE_CFE" = "n" ]; then
@@ -114,12 +166,30 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    bool '   Support for SB1/SOC profiling - SB1/SCD perf counters' CONFIG_SIBYTE_SB1250_PROF
    bool '   Support for ZBbus profiling' CONFIG_BCM1250_TBPROF
 
+   if [ "$CONFIG_SIBYTE_SB1250" = "y" -o \
+        "$CONFIG_SIBYTE_BCM1125" = "y" -o \
+        "$CONFIG_SIBYTE_BCM1125H" = "y" ]; then
+      bool '   Support for BCM1250/BCM1125 onchip PCI controller' CONFIG_PCI
+   fi
+
+   if [ "$CONFIG_SIBYTE_SB1250" = "y" -o \
+        "$CONFIG_SIBYTE_BCM1125H" = "y" ]; then
+      if [ "$CONFIG_PCI" = "y" ]; then
+         define_bool CONFIG_SIBYTE_HAS_LDT y
+      fi
+   fi
+
+   if [ "$CONFIG_SIBYTE_SWARM" = "y" -o \
+        "$CONFIG_SIBYTE_CARMEL" = "y" ]; then
+      define_bool CONFIG_SIBYTE_GENBUS_IDE y
+   else
+      define_bool CONFIG_SIBYTE_GENBUS_IDE n
+   fi
+
    if [ "$CONFIG_SIBYTE_SB1250" = "y" ]; then
       if [ "$CONFIG_SIBYTE_STANDALONE" != "y" ]; then
 	 define_bool CONFIG_SMP_CAPABLE y
       fi
-      bool '   Support for BCM1250/BCM112x onchip PCI controller' CONFIG_PCI
-      bool '   Support for SWARM board' CONFIG_SIBYTE_SWARM
    fi
 fi
 bool 'Support for SNI RM200 PCI' CONFIG_SNI_RM200_PCI
@@ -449,7 +519,7 @@ if [ "$CONFIG_SGI_IP32" = "y" ]; then
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_PCI y
 fi
-if [ "$CONFIG_SIBYTE_SB1250" = "y" ]; then
+if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_DUMMY_KEYB y
    define_bool CONFIG_SWAP_IO_SPACE_W y
@@ -550,15 +620,13 @@ if [ "$CONFIG_CPU_RM7000" = "y" ]; then
 fi
 
 if [ "$CONFIG_CPU_SB1" = "y" ]; then
-   choice 'SB1 Pass' \
-	 "Pass1   CONFIG_CPU_SB1_PASS_1 \
-	  Pass2   CONFIG_CPU_SB1_PASS_2 \
-	  Pass2.2 CONFIG_CPU_SB1_PASS_2_2" Pass1
+   # SB1 Pass-specific options
    if [ "$CONFIG_CPU_SB1_PASS_1" = "y" ]; then
       define_bool CONFIG_SB1_PASS_1_WORKAROUNDS y
    fi
    if [ "$CONFIG_CPU_SB1_PASS_2" = "y" ]; then
       define_bool CONFIG_SB1_PASS_2_WORKAROUNDS y
+      define_bool CONFIG_SB1_PASS_2_1_WORKAROUNDS y
    else
       # Avoid prefetches on Pass 2 (before 2.2)
       bool '  Enable prefetches' CONFIG_CPU_HAS_PREFETCH
@@ -567,9 +635,7 @@ if [ "$CONFIG_CPU_SB1" = "y" ]; then
       # XXXKW for now, let 2.2 use same WORKAROUNDS flag as pre-2.2
       define_bool CONFIG_SB1_PASS_2_WORKAROUNDS y
    fi
-   bool '  Support for SB1 Cache Error handler' CONFIG_SB1_CACHE_ERROR
-   dep_bool '    Ignore recoverable cache errors' CONFIG_SB1_CERR_IGNORE_RECOVERABLE $CONFIG_SB1_CACHE_ERROR
-   dep_bool '    Spin instead of running handler' CONFIG_SB1_CERR_SPIN $CONFIG_SB1_CACHE_ERROR
+
    define_bool CONFIG_VTAG_ICACHE y
 fi
 
@@ -896,11 +962,14 @@ mainmenu_option next_comment
 comment 'Kernel hacking'
 
 bool 'Are you using a crosscompiler' CONFIG_CROSSCOMPILE
-if [ "$CONFIG_AU1X00_UART" = "y" -o "$CONFIG_ZS" = "y" ]; then
-   bool 'Remote GDB kernel debugging' CONFIG_REMOTE_DEBUG
-   dep_bool 'Console output to GDB' CONFIG_GDB_CONSOLE $CONFIG_REMOTE_DEBUG
-fi
 bool 'Enable run-time debugging' CONFIG_DEBUG
+if [ "$CONFIG_AU1X00_UART" = "y" -o "$CONFIG_ZS" = "y" -o "$CONFIG_SIBYTE_SB1xxx_SOC" = "y"]; then
+   dep_bool 'Remote GDB kernel debugging' CONFIG_REMOTE_DEBUG $CONFIG_DEBUG
+   dep_bool '  Console output to GDB' CONFIG_GDB_CONSOLE $CONFIG_REMOTE_DEBUG
+fi
+if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
+   dep_bool 'Compile for Corelis Debugger' CONFIG_SB1XXX_CORELIS $CONFIG_DEBUG
+fi
 bool 'Magic SysRq key' CONFIG_MAGIC_SYSRQ
 if [ "$CONFIG_SMP" != "y" ]; then
    bool 'Run uncached' CONFIG_MIPS_UNCACHED

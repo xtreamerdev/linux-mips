@@ -39,9 +39,14 @@ GCCFLAGS	+= -mabi=64 -G 0 -mno-abicalls -fno-pic -Wa,--trap -pipe
 LINKFLAGS	+= -G 0 -static # -N
 MODFLAGS	+= -mlong-calls
 
-ifdef CONFIG_REMOTE_DEBUG
-GCCFLAGS	+= -g
+ifdef CONFIG_DEBUG
+GCCFLAGS	+= -gstabs+
+ifdef CONFIG_SB1XXX_CORELIS
+GCCFLAGS	+= -mno-sched-prolog -fno-omit-frame-pointer
 endif
+endif
+
+check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
 
 #
 # CPU-dependent compiler/assembler options for optimization.
@@ -65,7 +70,10 @@ ifdef CONFIG_CPU_R10000
 GCCFLAGS	+= -mcpu=r8000 -mips4
 endif
 ifdef CONFIG_CPU_SB1
-GCCFLAGS	+= -mcpu=r8000 -mips4
+GCCFLAGS	+= $(call check_gcc, -mcpu=-sb1, -mcpu=r5000) -mips4
+ifdef CONFIG_SB1_PASS_1_WORKAROUNDS
+MODFLAGS	+= -msb1-pass1-workarounds
+endif
 endif
 ifdef CONFIG_CPU_MIPS64
 #CFLAGS		+= -mips64	# Should be used then we get a MIPS64 compiler
@@ -192,6 +200,11 @@ ifdef CONFIG_SIBYTE_SB1250
 # removed (as happens, even if they have __initcall/module_init)
 LIBS		+= arch/mips/sibyte/sb1250/sb1250.o
 SUBDIRS		+= arch/mips/sibyte/sb1250
+ifdef CONFIG_MIPS_UNCACHED
+LOADADDR	:= 0xa0100000
+else
+LOADADDR	:= 0x80100000
+endif
 endif
 
 #
@@ -200,7 +213,63 @@ endif
 ifdef CONFIG_SIBYTE_SWARM
 LIBS		+= arch/mips/sibyte/swarm/sbswarm.a
 SUBDIRS		+= arch/mips/sibyte/swarm
+endif
+ifdef CONFIG_SIBYTE_SENTOSA
+LIBS		+= arch/mips/sibyte/swarm/sbswarm.a
+SUBDIRS		+= arch/mips/sibyte/swarm
+endif
+
+#
+# Broadcom (SiByte) BCM112x SOCs
+# (In fact, this just uses the exact same support as the BCM1250.)
+#
+ifdef CONFIG_SIBYTE_BCM112X
+# This is a LIB so that it links at the end, and initcalls are later
+# the sequence; but it is built as an object so that modules don't get
+# removed (as happens, even if they have __initcall/module_init)
+LIBS		+= arch/mips/sibyte/sb1250/sb1250.o
+SUBDIRS		+= arch/mips/sibyte/sb1250
+ifdef CONFIG_MIPS_UNCACHED
+LOADADDR	:= 0xa0100000
+else
 LOADADDR	:= 0x80100000
+endif
+endif
+
+#
+# Sibyte BCM91120C (CRhine) board
+# (In fact, this just uses the exact same support as the BCM912500A (SWARM).)
+#
+ifdef CONFIG_SIBYTE_CRHINE
+LIBS          += arch/mips/sibyte/swarm/sbswarm.a
+SUBDIRS       += arch/mips/sibyte/swarm
+endif
+
+#
+# Sibyte BCM91120x (Carmel) board
+# (In fact, this just uses the exact same support as the BCM912500A (SWARM).)
+#
+ifdef CONFIG_SIBYTE_CARMEL
+LIBS          += arch/mips/sibyte/swarm/sbswarm.a
+SUBDIRS       += arch/mips/sibyte/swarm
+endif
+
+#
+# Sibyte BCM91125C (CRhone) board
+# (In fact, this just uses the exact same support as the BCM912500A (SWARM).)
+#
+ifdef CONFIG_SIBYTE_CRHONE
+LIBS          += arch/mips/sibyte/swarm/sbswarm.a
+SUBDIRS       += arch/mips/sibyte/swarm
+endif
+
+#
+# Sibyte BCM91125E (Rhone) board
+# (In fact, this just uses the exact same support as the BCM912500A (SWARM).)
+#
+ifdef CONFIG_SIBYTE_RHONE
+LIBS          += arch/mips/sibyte/swarm/sbswarm.a
+SUBDIRS       += arch/mips/sibyte/swarm
 endif
 
 #

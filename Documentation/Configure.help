@@ -2090,6 +2090,71 @@ CONFIG_MIPS_MALTA
   This enables support for the VR5000-based MIPS Malta evaluation
   board.
 
+# Choice: bcmboard
+Support for Broadcom SiByte boards
+CONFIG_SIBYTE_SWARM
+  Enable support for boards based on the Broadcom SiByte family:
+
+  BCM91250A-SWARM    BCM1250 ATX size Eval Board (BCM91250A-SWARM)
+
+  BCM91250E-Sentosa  BCM1250 PCI card Eval Board (BCM91250E-Sentosa)
+
+  BCM91125E-Rhone    BCM1125 PCI card Eval Board (BCM91125E-Rhone)
+
+  Other              Non-Broadcom SiByte-based platform
+
+# Choice: bcmsoc
+Support for Broadcom BCM1xxx SOCs
+CONFIG_SIBYTE_SB1250
+
+  BCM1250     Dual-CPU SB1 with PCI and HyperTransport.
+
+  BCM1120     Uniprocessor SB1.
+
+  BCM1125     Uniprocessor SB1 with PCI (and HyperTransport for 1125H).
+
+BCM1250 Pass
+CONFIG_CPU_SB1_PASS_1
+  Which pass of the SOC is supported (see the "system_revision"
+  register in the User Manual for more discussion of revisions):
+
+  Pass1    1250 "Pass 1"
+
+  A3-A10   1250 "Pass 2"
+
+  B0-B3    1250 "Pass 2.2"
+
+BCM1xxx Pass
+CONFIG_CPU_SB1_PASS_2
+  Which pass of the SOC is supported (see the "system_revision"
+  register in the User Manual for more discussion of revisions):
+
+  Hybrid   1250 "Pass 2"
+
+  A1-A2    112x A1-A2
+
+Booting from CFE
+CONFIG_SIBYTE_CFE
+  Make use of the CFE API for enumerating available memory,
+  controlling secondary CPUs, and possibly console output.
+
+Use firmware console
+CONFIG_SIBYTE_CFE_CONSOLE
+  Use the CFE API's console write routines during boot.  Other console
+  options (VT console, sb1250 duart console, etc.) should not be
+  configured.
+
+Support SWARM (BCM912500A) peripherals
+CONFIG_SIBYTE_SWARM 
+  Indicates that the target is a SWARM board.  Most devices (IDE,
+  video decoder, audio codec, etc) still require additional
+  configuration options under the appropriate sections.
+
+Corelis Debugger
+CONFIG_SB1XXX_CORELIS
+  Select compile flags that produce code that can be processed by the
+  Corelis mksym utility and UDB Emulator.
+
 Support for Galileo Evaluation board or CoSine Orion
 CONFIG_ORION
   Say Y if configuring for the Galileo evaluation board
@@ -2320,6 +2385,8 @@ CONFIG_CPU_R3000
 
   R10000   MIPS Technologies R10000-series processors.
 
+  SB1      Broadcom SiByte SB1 processor.
+
 R6000
 CONFIG_CPU_R6000
   MIPS Technologies R6000-series processors, including the 64474,
@@ -2349,6 +2416,10 @@ CONFIG_CPU_R8000
 R10000
 CONFIG_CPU_R10000
   MIPS Technologies R10000-series processors.
+
+SB1
+CONFIG_CPU_SB1
+  Broadcom SiByte SB1 processor.
 
 Discontiguous Memory Support
 CONFIG_DISCONTIGMEM

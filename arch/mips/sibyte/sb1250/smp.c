@@ -108,6 +108,8 @@ void __init smp_boot_cpus(void)
 	CPUMASK_SETB(cpu_online_map, 0);
 	atomic_set(&cpus_booted, 1);  /* Master CPU is already booted... */
 	init_idle();
+	__cpu_number_map[0] = 0;
+	__cpu_logical_map[0] = 0;
 	/* smp_tune_scheduling();  XXX */
 
 	/*
@@ -142,6 +144,8 @@ void __init smp_boot_cpus(void)
 					    (unsigned long)p);
 		} while (!retval && (cur_cpu < NR_CPUS));
 		if (retval) {
+			__cpu_number_map[cur_cpu] = i;
+			__cpu_logical_map[i] = cur_cpu;
 			i++;
 		} else {
 			panic("CPU discovery disaster");
