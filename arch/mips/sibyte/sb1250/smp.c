@@ -141,7 +141,6 @@ void __init smp_boot_cpus(void)
 	for (i = 1; i < smp_num_cpus; ) {
 		struct task_struct *p;
 		struct pt_regs regs;
-		int retval;
 		printk("Starting CPU %d... ", i);
 
 		/* Spawn a new process normally.  Grab a pointer to
@@ -161,17 +160,13 @@ void __init smp_boot_cpus(void)
 		do {
 			/* Iterate until we find a CPU that comes up */
 			cur_cpu++;
-			retval = prom_boot_secondary(cur_cpu,
+			prom_boot_secondary(cur_cpu,
 					    (unsigned long)p + KERNEL_STACK_SIZE - 32,
 					    (unsigned long)p);
-		} while (!retval && (cur_cpu < NR_CPUS));
-		if (retval) {
-			__cpu_number_map[cur_cpu] = i;
-			__cpu_logical_map[i] = cur_cpu;
-			i++;
-		} else {
-			panic("CPU discovery disaster");
-		}
+		} while (cur_cpu < NR_CPUS);
+		__cpu_number_map[cur_cpu] = i;
+		__cpu_logical_map[i] = cur_cpu;
+		i++;
 	}
 
 	/* Wait for everyone to come up */
