@@ -315,9 +315,6 @@ fi
 if [ "$CONFIG_OBSOLETE" = "y" -a "$CONFIG_ALPHA_BOOK1" = "y" ]; then
    bool 'Tadpole ANA H8 Support (OBSOLETE)'  CONFIG_H8
 fi
-if [ "$CONFIG_MIPS" = "y" ]; then
-   tristate 'Generic MIPS RTC Support' CONFIG_MIPS_RTC
-fi
 if [ "$CONFIG_SGI_IP22" = "y" ]; then
    tristate 'Dallas DS1286 RTC support' CONFIG_DS1286
 fi

@@ -60,6 +60,9 @@ if [ "$CONFIG_LASAT" = "y" ]; then
    tristate '  PICVUE LCD display driver' CONFIG_PICVUE
    dep_tristate '   PICVUE LCD display driver /proc interface' CONFIG_PICVUE_PROC $CONFIG_PICVUE
    bool '  DS1603 RTC driver' CONFIG_DS1603
+   if [ "$CONFIG_DS1603" = "y" ]; then
+      define_bool CONFIG_MIPS_RTC y
+   fi
    bool '  LASAT sysctl interface' CONFIG_LASAT_SYSCTL
 fi
 bool 'Support for ITE 8172G board' CONFIG_MIPS_ITE8172
