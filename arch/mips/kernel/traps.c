@@ -237,7 +237,7 @@ void show_regs(struct pt_regs *regs)
 	 */
 	printk("epc   : %08lx    %s\n", regs->cp0_epc, print_tainted());
 	printk("Status: %08lx\n", regs->cp0_status);
-	printk("epc   : %08lx\n", regs->cp0_cause);
+	printk("Cause : %08lx\n", regs->cp0_cause);
 	printk("PrId  : %08x\n", read_c0_prid());
 }
 
