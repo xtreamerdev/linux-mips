@@ -1030,9 +1030,12 @@ static int __init dec_lance_init(const int type, const int slot)
 	if (dec_lance_debug && version_printed++ == 0)
 		printk(version);
 
-	dev = init_etherdev(NULL, sizeof(struct lance_private));
-	if (!dev)
-		return -ENOMEM;
+	dev = alloc_etherdev(sizeof(struct lance_private));
+	if (!dev) {
+		printk(KERN_ERR "Sgiseeq: Etherdev alloc failed, aborting.\n");
+		ret = -ENOMEM;
+		goto err_out;
+	}
 	SET_MODULE_OWNER(dev);
 
 	/*
@@ -1153,7 +1156,7 @@ static int __init dec_lance_init(const int type, const int slot)
 	default:
 		printk("declance_init called with unknown type\n");
 		ret = -ENODEV;
-		goto err_out;
+		goto err_out_free_dev;
 	}
 
 	ll = (struct lance_regs *) dev->base_addr;
@@ -1165,7 +1168,7 @@ static int __init dec_lance_init(const int type, const int slot)
 	    esar[0x68] != 0x55 && esar[0x6c] != 0xaa) {
 		printk("Ethernet station address prom not found!\n");
 		ret = -ENODEV;
-		goto err_out;
+		goto err_out_free_dev;
 	}
 	/* Check the prom contents */
 	for (i = 0; i < 8; i++) {
@@ -1175,7 +1178,7 @@ static int __init dec_lance_init(const int type, const int slot)
 			printk("Something is wrong with the ethernet "
 			       "station address prom!\n");
 			ret = -ENODEV;
-			goto err_out;
+			goto err_out_free_dev;
 		}
 	}
 
@@ -1231,11 +1234,19 @@ static int __init dec_lance_init(const int type, const int slot)
 	lp->multicast_timer.data = (unsigned long) dev;
 	lp->multicast_timer.function = &lance_set_multicast_retry;
 
+	err = register_netdev(dev);
+	if (err) {
+		printk(KERN_ERR "declance: Cannot register net device, "
+		       "aborting.\n");
+		goto err_out_free_dev;
+	}
+
 	return 0;
 
-err_out:
-	unregister_netdev(dev);
+err_out_free_dev:
 	kfree(dev);
+
+err_out:
 	return ret;
 }
 
