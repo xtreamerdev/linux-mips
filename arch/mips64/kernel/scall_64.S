@@ -359,8 +359,8 @@ sys_call_table:
 	PTR	sys_removexattr
 	PTR	sys_lremovexattr
 	PTR	sys_fremovexattr
-	PTR	sys_tkill, 2
-	PTR	sys_ni_syscall, 0		/* 5230 res. for sendfile64 */
-	PTR	sys_ni_syscall, 0		/* res. for futex */
-	PTR	sys_ni_syscall, 0		/* res. for sched_setaffinity */
-	PTR	sys_ni_syscall, 0		/* res. for sched_getaffinity */
+	PTR	sys_tkill
+	PTR	sys_ni_syscall			/* 5230 res. for sendfile64 */
+	PTR	sys_ni_syscall			/* res. for futex */
+	PTR	sys_ni_syscall			/* res. for sched_setaffinity */
+	PTR	sys_ni_syscall			/* res. for sched_getaffinity */
