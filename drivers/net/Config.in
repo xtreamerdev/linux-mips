@@ -280,6 +280,10 @@ if [ "$CONFIG_MOMENCO_OCELOT_C" = "y" -o "$CONFIG_MOMENCO_JAGUAR_ATX" = "y" ]; t
    dep_bool '    MV-64340 Port 1' CONFIG_MV64340_ETH_1 $CONFIG_MV64340_ETH
    dep_bool '    MV-64340 Port 2' CONFIG_MV64340_ETH_2 $CONFIG_MV64340_ETH
 fi
+
+if [ "$CONFIG_PMC_YOSEMITE" = "y" ]; then
+   dep_tristate 'PMC-Sierra TITAN Gigabit Ethernet Support' CONFIG_TITAN_GE
+fi
 endmenu
 
 if [ "$CONFIG_PPC_ISERIES" = "y" ]; then
