@@ -1,10 +1,11 @@
 /*
- *  Generic semaphore code. Buyer beware. Do your own
- * specific changes in <asm/semaphore-helper.h>
+ * Copyright (C) 1999, 2001, 02, 03 Ralf Baechle
+ *
+ * Heavily inspired by the Alpha implementation
  */
+#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/sched.h>
-#include <asm/semaphore-helper.h>
 
 #ifdef CONFIG_CPU_HAS_LLDSCD
 /*
@@ -26,7 +27,7 @@ EXPORT_SYMBOL(semaphore_lock);
  * they need to do any extra work (up needs to do something only if count was
  * negative before the increment operation.
  *
- * waking_non_zero() (from asm/semaphore-helper.h) must execute atomically.
+ * waking_non_zero() must execute atomically.
  *
  * When __up() is called, the count was negative before incrementing it, and we
  * need to wake up somebody.
@@ -47,6 +48,46 @@ void __up_wakeup(struct semaphore *sem)
 }
 
 EXPORT_SYMBOL(__up_wakeup);
+
+#define sem_read(a) ((a)->counter)
+#define sem_inc(a) (((a)->counter)++)
+#define sem_dec(a) (((a)->counter)--)
+
+#ifdef CONFIG_CPU_HAS_LLSC
+
+static inline int waking_non_zero(struct semaphore *sem)
+{
+	int ret, tmp;
+
+	__asm__ __volatile__(
+	"1:\tll\t%1, %2\t\t\t# waking_non_zero\n\t"
+	"blez\t%1, 2f\n\t"
+	"subu\t%0, %1, 1\n\t"
+	"sc\t%0, %2\n\t"
+	"beqz\t%0, 1b\n"
+	"2:"
+	: "=r" (ret), "=r" (tmp), "+m" (sem->waking)
+	: "0" (0));
+
+	return ret;
+}
+
+#else /* !CONFIG_CPU_HAS_LLSC */
+
+static inline int waking_non_zero(struct semaphore *sem)
+{
+	unsigned long flags;
+	int ret = 0;
+
+	local_irq_save(flags);
+	if (sem_read(&sem->waking) > 0) {
+		sem_dec(&sem->waking);
+		ret = 1;
+	}
+	local_irq_restore(flags);
+	return ret;
+}
+#endif /* !CONFIG_CPU_HAS_LLSC */
 
 /*
  * Perform the "down" function.  Return zero for semaphore acquired, return
@@ -98,6 +139,89 @@ void __down(struct semaphore * sem)
 }
 
 EXPORT_SYMBOL(__down);
+
+#ifdef CONFIG_CPU_HAS_LLDSCD
+
+/*
+ * waking_non_zero_interruptible:
+ *	1	got the lock
+ *	0	go to sleep
+ *	-EINTR	interrupted
+ *
+ * We must undo the sem->count down_interruptible decrement
+ * simultaneously and atomically with the sem->waking adjustment,
+ * otherwise we can race with wake_one_more.
+ *
+ * This is accomplished by doing a 64-bit lld/scd on the 2 32-bit words.
+ *
+ * This is crazy.  Normally it's strictly forbidden to use 64-bit operations
+ * in the 32-bit MIPS kernel.  In this case it's however ok because if an
+ * interrupt has destroyed the upper half of registers sc will fail.
+ * Note also that this will not work for MIPS32 CPUs!
+ *
+ * Pseudocode:
+ *
+ * If(sem->waking > 0) {
+ *	Decrement(sem->waking)
+ *	Return(SUCCESS)
+ * } else If(signal_pending(tsk)) {
+ *	Increment(sem->count)
+ *	Return(-EINTR)
+ * } else {
+ *	Return(SLEEP)
+ * }
+ */
+
+static inline int
+waking_non_zero_interruptible(struct semaphore *sem, struct task_struct *tsk)
+{
+	long ret, tmp;
+
+	__asm__ __volatile__(
+	".set\tpush\t\t\t# waking_non_zero_interruptible\n\t"
+	".set\tmips3\n\t"
+	".set\tnoat\n"
+	"0:\tlld\t%1, %2\n\t"
+	"li\t%0, 0\n\t"
+	"sll\t$1, %1, 0\n\t"
+	"blez\t$1, 1f\n\t"
+	"daddiu\t%1, %1, -1\n\t"
+	"li\t%0, 1\n\t"
+	"b\t2f\n"
+	"1:\tbeqz\t%3, 2f\n\t"
+	"li\t%0, %4\n\t"
+	"dli\t$1, 0x0000000100000000\n\t"
+	"daddu\t%1, %1, $1\n"
+	"2:\tscd\t%1, %2\n\t"
+	"beqz\t%1, 0b\n\t"
+	".set\tpop"
+	: "=&r" (ret), "=&r" (tmp), "=m" (*sem)
+	: "r" (signal_pending(tsk)), "i" (-EINTR));
+
+	return ret;
+}
+
+#else /* !CONFIG_CPU_HAS_LLDSCD */
+
+static inline int waking_non_zero_interruptible(struct semaphore *sem,
+						struct task_struct *tsk)
+{
+	int ret = 0;
+	unsigned long flags;
+
+	local_irq_save(flags);
+	if (sem_read(&sem->waking) > 0) {
+		sem_dec(&sem->waking);
+		ret = 1;
+	} else if (signal_pending(tsk)) {
+		sem_inc(&sem->count);
+		ret = -EINTR;
+	}
+	local_irq_restore(flags);
+	return ret;
+}
+
+#endif /* !CONFIG_CPU_HAS_LLDSCD */
 
 int __down_interruptible(struct semaphore * sem)
 {
