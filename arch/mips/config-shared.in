@@ -774,19 +774,6 @@ source drivers/char/Config.in
 
 #source drivers/misc/Config.in
 
-if [ "$CONFIG_DECSTATION" = "y" ]; then
-   mainmenu_option next_comment
-   comment 'DECStation Character devices'
-
-   tristate 'Standard/generic (dumb) serial support' CONFIG_SERIAL
-   dep_bool '  DZ11 Serial Support' CONFIG_DZ $CONFIG_SERIAL
-   dep_bool '  Z85C30 Serial Support' CONFIG_ZS $CONFIG_SERIAL $CONFIG_TC
-   dep_bool '  Support for console on serial port' CONFIG_SERIAL_CONSOLE $CONFIG_SERIAL
-#   dep_bool 'MAXINE Access.Bus mouse (VSXXX-BB/GB) support' CONFIG_DTOP_MOUSE $CONFIG_ACCESSBUS
-   bool 'Enhanced Real Time Clock Support' CONFIG_RTC
-   endmenu
-fi
-
 if [ "$CONFIG_SGI_IP22" = "y" ]; then
    mainmenu_option next_comment
    comment 'SGI Character devices'

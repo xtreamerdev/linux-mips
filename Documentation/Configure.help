@@ -2148,6 +2148,27 @@ SGI PROM Console Support
 CONFIG_SGI_PROM_CONSOLE
   Say Y here to set up the boot console on serial port 0.
 
+DECstation serial support
+CONFIG_SERIAL_DEC
+  This selects whether you want to be asked about drivers for
+  DECstation serial ports.
+
+  Note that the answer to this question won't directly affect the
+  kernel: saying N will just cause the configurator to skip all
+  the questions about DECstation serial ports.
+
+  If unsure, say Y.
+
+Support for console on a DECstation serial port
+CONFIG_SERIAL_DEC_CONSOLE
+  If you say Y here, it will be possible to use a serial port as the
+  system console (the system console is the device which receives all
+  kernel messages and warnings and which allows logins in single user
+  mode).  Note that the firmware uses ttyS0 as the serial console on
+  the Maxine and ttyS2 on the others.
+
+  If unsure, say Y.
+
 DZ11 Serial Support
 CONFIG_DZ
   DZ11-family serial controllers for VAXstations, including the

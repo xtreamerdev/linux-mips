@@ -56,7 +56,7 @@
 #include <linux/delay.h>
 #include <linux/init.h>
 #include <linux/ioport.h>
-#ifdef CONFIG_SERIAL_CONSOLE
+#ifdef CONFIG_SERIAL_DEC_CONSOLE
 #include <linux/console.h>
 #endif
 
@@ -157,10 +157,10 @@ struct dec_serial *zs_chain;	/* list of all channels */
 
 struct tty_struct zs_ttys[NUM_CHANNELS];
 
-#ifdef CONFIG_SERIAL_CONSOLE
+#ifdef CONFIG_SERIAL_DEC_CONSOLE
 static struct console sercons;
 #endif
-#if defined(CONFIG_SERIAL_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) \
+#if defined(CONFIG_SERIAL_DEC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) \
     && !defined(MODULE)
 static unsigned long break_pressed; /* break, really ... */
 #endif
@@ -416,7 +416,7 @@ static _INLINE_ void receive_chars(struct dec_serial *info,
 
 		if (tty_break) {
 			tty_break = 0;
-#if defined(CONFIG_SERIAL_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && !defined(MODULE)
+#if defined(CONFIG_SERIAL_DEC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && !defined(MODULE)
 			if (info->line == sercons.index) {
 				if (!break_pressed) {
 					break_pressed = jiffies;
@@ -442,7 +442,7 @@ static _INLINE_ void receive_chars(struct dec_serial *info,
 				write_zsreg(info->zs_channel, R0, ERR_RES);
 		}
 
-#if defined(CONFIG_SERIAL_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && !defined(MODULE)
+#if defined(CONFIG_SERIAL_DEC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && !defined(MODULE)
 		if (break_pressed && info->line == sercons.index) {
 			if (ch != 0 &&
 			    time_before(jiffies, break_pressed + HZ*5)) {
@@ -473,7 +473,7 @@ static _INLINE_ void receive_chars(struct dec_serial *info,
 
 		*tty->flip.flag_buf_ptr++ = flag;
 		*tty->flip.char_buf_ptr++ = ch;
-#if defined(CONFIG_SERIAL_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && !defined(MODULE)
+#if defined(CONFIG_SERIAL_DEC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && !defined(MODULE)
 	ignore_char:
 #endif
 	}
@@ -1701,7 +1701,7 @@ int rs_open(struct tty_struct *tty, struct file * filp)
 			*tty->termios = info->callout_termios;
 		change_speed(info);
 	}
-#ifdef CONFIG_SERIAL_CONSOLE
+#ifdef CONFIG_SERIAL_DEC_CONSOLE
 	if (sercons.cflag && sercons.index == line) {
 		tty->termios->c_cflag = sercons.cflag;
 		sercons.cflag = 0;
@@ -1801,7 +1801,7 @@ static void __init probe_sccs(void)
 			zs_channels[n_channels].data =
 				zs_channels[n_channels].control + 4;
 
-#ifndef CONFIG_SERIAL_CONSOLE
+#ifndef CONFIG_SERIAL_DEC_CONSOLE
 			/*
 			 * We're called early and memory managment isn't up, yet.
 			 * Thus check_region would fail.
@@ -2111,7 +2111,7 @@ unsigned int unregister_zs_hook(unsigned int channel)
  * Serial console driver
  * ------------------------------------------------------------
  */
-#ifdef CONFIG_SERIAL_CONSOLE
+#ifdef CONFIG_SERIAL_DEC_CONSOLE
 
 
 /*
@@ -2279,7 +2279,7 @@ void __init zs_serial_console_init(void)
 {
 	register_console(&sercons);
 }
-#endif /* ifdef CONFIG_SERIAL_CONSOLE */
+#endif /* ifdef CONFIG_SERIAL_DEC_CONSOLE */
 
 #ifdef CONFIG_KGDB
 struct dec_zschannel *zs_kgdbchan;

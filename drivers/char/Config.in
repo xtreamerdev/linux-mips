@@ -104,7 +104,14 @@ if [ "$CONFIG_SERIAL_NONSTANDARD" = "y" ]; then
          fi
       fi
    fi
+   if [ "$CONFIG_DECSTATION" = "y" ]; then
+      bool '  DECstation serial support' CONFIG_SERIAL_DEC
+      dep_bool '    Support for console on a DECstation serial port' CONFIG_SERIAL_DEC_CONSOLE $CONFIG_SERIAL_DEC
+      dep_bool '    DZ11 serial support' CONFIG_DZ $CONFIG_SERIAL_DEC
+      dep_bool '    Z85C30 serial support' CONFIG_ZS $CONFIG_SERIAL_DEC $CONFIG_TC
+   fi
 fi
+
 if [ "$CONFIG_EXPERIMENTAL" = "y" -a "$CONFIG_ZORRO" = "y" ]; then
    tristate 'Commodore A2232 serial support (EXPERIMENTAL)' CONFIG_A2232
 fi
@@ -161,6 +168,9 @@ if [ "$CONFIG_BUSMOUSE" != "n" ]; then
    if [ "$CONFIG_ADB" = "y" -a "$CONFIG_ADB_KEYBOARD" = "y" ]; then
       dep_tristate '  Apple Desktop Bus mouse support (old driver)' CONFIG_ADBMOUSE $CONFIG_BUSMOUSE
    fi
+#   if [ "$CONFIG_DECSTATION" = "y" ]; then
+#      dep_bool '  MAXINE Access.Bus mouse (VSXXX-BB/GB) support' CONFIG_DTOP_MOUSE $CONFIG_ACCESSBUS
+#   fi
 fi
 
 tristate 'Mouse Support (not serial and bus mice)' CONFIG_MOUSE
