@@ -81,7 +81,6 @@ static unsigned int pci0GetIOspaceBase(void)
  * Inputs: N/A
  * Returns: PCI0 Memory 0 Base Address.
  */
-
 static unsigned int pci0GetMemory0Base(void)
 {
 	unsigned int base;
@@ -105,13 +104,9 @@ static unsigned int pci0GetMemory0Base(void)
  */
 static __inline__ int pci_range_ck(unsigned char bus, unsigned char dev)
 {
-	/*
-	 * We don't even pretend to handle other busses than bus 0 correctly.
-	 * Accessing device 31 crashes the CP7000 for some reason.
-	 */
-	if ((bus == 0) && (dev != 31))
-		return 0;
-	return -1;
+	if (((bus == 0) || (bus == 1)) && (dev >= 6) && (dev <= 8))
+		return 0;	// Bus/Device Number OK
+	return -1;		// Bus/Device Number not OK
 }
 
 /*
@@ -280,7 +275,7 @@ static int galileo_pcibios_read_config_byte(struct pci_dev *device,
 				     ((offset & ~0x3) * 8));
 
 	/*
-	 *  This is so that the upper PCI layer will get the correct return
+	 * This is so that the upper PCI layer will get the correct return
 	 * value if we're not attached to anything.
 	 */
 	if ((offset == 0xe) && (*val == 0xff)) {
@@ -338,6 +333,7 @@ static int galileo_pcibios_write_config_word(struct pci_dev *device,
 
 	if (bus == 0)
 		pci0WriteConfigReg(offset, device, tmp);
+
 	return PCIBIOS_SUCCESSFUL;
 }
 
@@ -462,6 +458,7 @@ void pcibios_update_resource(struct pci_dev *dev, struct resource *root,
 		printk(KERN_ERR "PCI: Error while updating region "
 		       "%s/%d (%08x != %08x)\n", dev->slot_name, resource,
 		       new, check);
+
 	}
 }
 
@@ -525,7 +522,6 @@ void __init pcibios_fixup_bus(struct pci_bus *c)
  * not scan behind bridges.  Those would be simple to implement, but we don't
  * currently need this.
  */
-
 static void __init scan_and_initialize_pci(void)
 {
 	struct pci_device pci_devices[MAX_PCI_DEVS];
@@ -561,7 +557,7 @@ static u32 __init scan_pci_bus(struct pci_device *pci_devices)
 		id = pci0ReadConfigReg(PCI_VENDOR_ID, &device);
 
 		/*
-		 *  Check for a PCI Master Abort (nothing responds in the
+		 * Check for a PCI Master Abort (nothing responds in the
 		 * slot)
 		 */
 		GT_READ(GT_INTRCAUSE_OFS, &c18RegValue);
@@ -687,6 +683,7 @@ static void __init allocate_pci_space(struct pci_device *pci_devices)
 
 void __init pcibios_init(void)
 {
+
 	u32 tmp;
 	struct pci_dev controller;
 
@@ -707,7 +704,7 @@ void __init pcibios_init(void)
 	scan_and_initialize_pci();
 
 	/*
-	 *  Reset PCI I/O and PCI MEM values to ones supported by EVM.
+	 * Reset PCI I/O and PCI MEM values to ones supported by EVM.
 	 */
 	ioport_resource.start	= GT_PCI_IO_BASE;
 	ioport_resource.end	= GT_PCI_IO_BASE + GT_PCI_IO_SIZE - 1;

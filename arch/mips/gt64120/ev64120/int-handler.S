@@ -27,7 +27,7 @@
 		and	t0,t2
 
 		andi	t1,t0,STATUSF_IP4 /* int2 hardware line (timer) */
-		bnez	t1,ll_galileo_irq
+		bnez	t1,ll_gt64120_irq
 		andi	t1,t0,STATUSF_IP2 /* int0 hardware line */
 		bnez	t1,ll_pci_intA
 		andi	t1,t0,STATUSF_IP5 /* int3 hardware line */
@@ -46,7 +46,7 @@
 
 		.align	5
 		.set	reorder
-ll_galileo_irq:
+ll_gt64120_irq:
 		li	a0,4
 		move	a1,sp
 		jal	do_IRQ

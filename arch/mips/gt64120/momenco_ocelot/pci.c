@@ -49,7 +49,7 @@ void __init gt64120_board_pcibios_fixup_bus(struct pci_bus *bus)
 			 */
 			if ((devices->vendor != 0x1011) ||
 			    (devices->device != 0x19) ) {
-				panic("galileo_pcibios_fixup_bus: "
+				panic("gt64120_board_pcibios_fixup_bus: "
 				      "found unexpected PCI device in slot 2.");
 			}
 			devices->irq = 3;       /* irq_nr is 3 for INT1 */

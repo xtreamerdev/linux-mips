@@ -1,9 +1,4 @@
 /*
- * setup.c
- *
- * BRIEF MODULE DESCRIPTION
- * Galileo Evaluation Boards - board dependent boot routines
- *
  * Copyright (C) 2000 RidgeRun, Inc.
  * Author: RidgeRun, Inc.
  *   glonnon@ridgerun.com, skranz@ridgerun.com, stevej@ridgerun.com
@@ -29,8 +24,6 @@
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
-
-#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
@@ -49,11 +42,14 @@
 #include <asm/pci.h>
 #include <asm/processor.h>
 #include <asm/ptrace.h>
+#include <asm/time.h>
 #include <asm/reboot.h>
 #include <asm/mc146818rtc.h>
 #include <asm/traps.h>
 #include <linux/version.h>
 #include <linux/bootmem.h>
+
+unsigned long gt64120_base = KSEG1ADDR(0x14000000);
 
 extern struct rtc_ops no_rtc_ops;
 
@@ -67,24 +63,15 @@ extern void galileo_machine_power_off(void);
  */
 extern struct pci_ops galileo_pci_ops;
 
-extern unsigned long mips_machgroup;
-
-char arcs_cmdline[CL_SIZE] = { "console=ttyS0,115200 "
-	    "root=/dev/nfs rw nfsroot=192.168.1.1:/mnt/disk2/fs.gal "
-	    "ip=192.168.1.211:192.168.1.1:::gt::"
+char arcs_cmdline[CL_SIZE] = {
+	"console=ttyS0,115200 "
+	"root=/dev/nfs rw nfsroot=192.168.1.1:/mnt/disk2/fs.gal "
+	"ip=192.168.1.211:192.168.1.1:::gt::"
 };
 
-//struct eeprom_parameters eeprom_param;
-
-/*
- * This function is added because arch/mips/mm/init.c needs it
- * basically it does nothing
- */
 void prom_free_prom_memory(void)
 {
 }
-
-extern void (*board_time_init) (struct irqaction * irq);
 
 static unsigned char galileo_rtc_read_data(unsigned long addr)
 {
@@ -107,48 +94,22 @@ struct rtc_ops galileo_rtc_ops = {
 };
 
 
-/********************************************************************
- *ev64120_setup -
- *
- *Initializes basic routines and structures pointers, memory size (as
- *given by the bios and saves the command line.
- *
- *
- *Inputs :
- *
- *Outpus :
- *
- *********************************************************************/
-extern void galileo_time_init();
+/*
+ * Initializes basic routines and structures pointers, memory size (as
+ * given by the bios and saves the command line.
+ */
+extern void gt64120_time_init(void);
+
 void ev64120_setup(void)
 {
-	unsigned int i, j;
-
-	//printk(KERN_INFO "ev64120_setup\n");
-
 	_machine_restart = galileo_machine_restart;
 	_machine_halt = galileo_machine_halt;
 	_machine_power_off = galileo_machine_power_off;
 
 	rtc_ops = &galileo_rtc_ops;
 
-	board_time_init = galileo_time_init;
+	board_time_init = gt64120_time_init;
 	set_io_port_base(KSEG1);
-
-#ifdef CONFIG_L2_L3_CACHE
-#error "external cache not implemented yet"
-	config_register = read_c0_config();
-	printk("\n\n\nchecking second level cache cp0_config = %08lx\n",
-	       config_register);
-	if (config_register & CONF_SC) {	// second/third level cache available
-		config_register = config_register & (1 << 12);
-		write_c0_config(config_register);
-		printk
-		    ("\n\n\nchecking second level cache c0_config = %08lx\n",
-		     config_register);
-	}
-#endif
-
 }
 
 const char *get_system_type(void)
@@ -178,8 +139,6 @@ void SetUpBootInfo(int argc, char **argv, char **envp)
 
 void __init prom_init(int a, char **b, char **c, int *d)
 {
-	unsigned long free_start, free_end, start_pfn, bootmap_size;
-
 	mips_machgroup = MACH_GROUP_GALILEO;
 	add_memory_region(0, 32 << 20, BOOT_MEM_RAM);
 }

@@ -16,10 +16,9 @@ all:	ev64120.o int-handler.o
 
 O_TARGET := ev64120.o
 
-export-objs		= i2o.o
-
-obj-y	:= serialGT.o int-handler.o promcon.o reset.o setup.o irq.o \
-	   irq-handler.o i2o.o pci_bios.o
+obj-y			+= serialGT.o int-handler.o promcon.o reset.o setup.o \
+			   irq.o
+obj-$(CONFIG_PCI)	+= fixup-ev64120.o
 
 int-handler.o: int-handler.S
 

@@ -136,7 +136,6 @@ static struct hw_interrupt_type cp7000_hpcdma_irq_type = {
 
 
 extern asmlinkage void ocelot_handle_int(void);
-extern void gt64120_irq_init(void);
 
 void __init init_IRQ(void)
 {
@@ -158,8 +157,6 @@ void __init init_IRQ(void)
 		irq_desc[i].depth	= 1;
 		irq_desc[i].handler	= &cp7000_hpcdma_irq_type;
 	}
-
-	gt64120_irq_init();
 
 #ifdef CONFIG_KGDB
 	printk("start kgdb ...\n");

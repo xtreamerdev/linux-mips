@@ -21,6 +21,8 @@
 #ifndef _ASM_GT64120_GT64120_H
 #define _ASM_GT64120_GT64120_H
 
+#include <linux/config.h>
+
 #define MSK(n)                    ((1 << (n)) - 1)
 
 /*
@@ -414,10 +416,11 @@
  * include asm/gt64120/<board>/gt64120_dep.h file
  */
 
-#include <linux/config.h>
-#include <linux/init.h>
+#ifdef CONFIG_MIPS_EV64120
+#include <asm/gt64120/ev64120/ev64120.h>
+#endif
 
-#if defined(CONFIG_MOMENCO_OCELOT)
+#ifdef CONFIG_MOMENCO_OCELOT
 #include <asm/gt64120/momenco_ocelot/gt64120_dep.h>
 #endif
 
@@ -438,6 +441,6 @@
  * This function is called by pcibios_fixup_bus(bus), which in turn is
  * invoked a bus is scanned.  You typically fixes IRQ numbers in this routine.
  */
-extern void __init gt64120_board_pcibios_fixup_bus(struct pci_bus *bus);
+extern void gt64120_board_pcibios_fixup_bus(struct pci_bus *bus);
 
 #endif /* _ASM_GT64120_GT64120_H */

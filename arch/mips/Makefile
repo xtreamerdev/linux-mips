@@ -247,8 +247,9 @@ endif
 # Galileo EV64120 Board
 #
 ifdef CONFIG_MIPS_EV64120
-LIBS		+= arch/mips/galileo-boards/ev64120/ev64120.o
-SUBDIRS		+= arch/mips/galileo-boards/ev64120
+LIBS		+= arch/mips/gt64120/common/gt64120.o \
+		   arch/mips/gt64120/ev64120/ev64120.o
+SUBDIRS		+= arch/mips/gt64120/common arch/mips/gt64120/ev64120
 LOADADDR	:= 0x80100000
 endif
 
@@ -256,10 +257,8 @@ endif
 # Galileo EV96100 Board
 #
 ifdef CONFIG_MIPS_EV96100
-LIBS		+= arch/mips/galileo-boards/ev96100/ev96100.o \
-		   arch/mips/galileo-boards/generic/galboards.o
-SUBDIRS		+= arch/mips/galileo-boards/generic \
-		   arch/mips/galileo-boards/ev96100
+LIBS		+= arch/mips/galileo-boards/ev96100/ev96100.o
+SUBDIRS		+= arch/mips/galileo-boards/ev96100
 LOADADDR	:= 0x80100000
 endif
 
