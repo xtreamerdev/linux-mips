@@ -69,6 +69,9 @@ if [ "$CONFIG_DDB5477" = "y" ]; then
 fi
 bool 'Support for NEC Osprey board' CONFIG_NEC_OSPREY
 bool 'Support for NEC Eagle/Hawk board' CONFIG_NEC_EAGLE
+if [ "$CONFIG_NEC_EAGLE" = "y" ]; then
+   tristate '  NEC VRC4173 support' CONFIG_VRC4173
+fi
 bool 'Support for Olivetti M700-10' CONFIG_OLIVETTI_M700
 dep_bool 'Support for Philips Nino (EXPERIMENTAL)' CONFIG_NINO $CONFIG_MIPS32 $CONFIG_EXPERIMENTAL
 if [ "$CONFIG_NINO" = "y" ]; then
@@ -117,6 +120,9 @@ fi
 bool 'Support for SNI RM200 PCI' CONFIG_SNI_RM200_PCI
 dep_bool 'Support for Toshiba JMR-TX3927 board' CONFIG_TOSHIBA_JMR3927 $CONFIG_MIPS32
 bool 'Support for Victor MP-C303/304' CONFIG_VICTOR_MPC30X
+if [ "$CONFIG_VICTOR_MPC30X" = "y" ]; then
+   tristate '  NEC VRC4173 support' CONFIG_VRC4173
+fi
 bool 'Support for ZAO Networks Capcella' CONFIG_ZAO_CAPCELLA
 
 dep_bool 'High Memory Support' CONFIG_HIGHMEM $CONFIG_MIPS32

@@ -46,6 +46,7 @@ CONFIG_KMOD=y
 # CONFIG_DDB5477 is not set
 # CONFIG_NEC_OSPREY is not set
 CONFIG_NEC_EAGLE=y
+CONFIG_VRC4173=y
 # CONFIG_OLIVETTI_M700 is not set
 # CONFIG_NINO is not set
 # CONFIG_SGI_IP22 is not set
@@ -658,7 +659,108 @@ CONFIG_SGI_PARTITION=y
 #
 # USB support
 #
-# CONFIG_USB is not set
+CONFIG_USB=y
+# CONFIG_USB_DEBUG is not set
+
+#
+# Miscellaneous USB options
+#
+CONFIG_USB_DEVICEFS=y
+CONFIG_USB_BANDWIDTH=y
+CONFIG_USB_LONG_TIMEOUT=y
+
+#
+# USB Host Controller Drivers
+#
+# CONFIG_USB_EHCI_HCD is not set
+# CONFIG_USB_UHCI is not set
+# CONFIG_USB_UHCI_ALT is not set
+CONFIG_USB_OHCI=y
+
+#
+# USB Device Class drivers
+#
+# CONFIG_USB_AUDIO is not set
+# CONFIG_USB_EMI26 is not set
+# CONFIG_USB_BLUETOOTH is not set
+# CONFIG_USB_MIDI is not set
+
+#
+#   SCSI support is needed for USB Storage
+#
+# CONFIG_USB_STORAGE is not set
+# CONFIG_USB_STORAGE_DEBUG is not set
+# CONFIG_USB_STORAGE_DATAFAB is not set
+# CONFIG_USB_STORAGE_FREECOM is not set
+# CONFIG_USB_STORAGE_ISD200 is not set
+# CONFIG_USB_STORAGE_DPCM is not set
+# CONFIG_USB_STORAGE_HP8200e is not set
+# CONFIG_USB_STORAGE_SDDR09 is not set
+# CONFIG_USB_STORAGE_SDDR55 is not set
+# CONFIG_USB_STORAGE_JUMPSHOT is not set
+# CONFIG_USB_ACM is not set
+# CONFIG_USB_PRINTER is not set
+
+#
+# USB Human Interface Devices (HID)
+#
+# CONFIG_USB_HID is not set
+
+#
+#     Input core support is needed for USB HID input layer or HIDBP support
+#
+# CONFIG_USB_HIDINPUT is not set
+# CONFIG_USB_HIDDEV is not set
+# CONFIG_USB_KBD is not set
+# CONFIG_USB_MOUSE is not set
+# CONFIG_USB_AIPTEK is not set
+# CONFIG_USB_WACOM is not set
+
+#
+# USB Imaging devices
+#
+# CONFIG_USB_DC2XX is not set
+# CONFIG_USB_MDC800 is not set
+# CONFIG_USB_SCANNER is not set
+# CONFIG_USB_MICROTEK is not set
+# CONFIG_USB_HPUSBSCSI is not set
+
+#
+# USB Multimedia devices
+#
+
+#
+#   Video4Linux support is needed for USB Multimedia device support
+#
+
+#
+# USB Network adaptors
+#
+CONFIG_USB_PEGASUS=y
+CONFIG_USB_RTL8150=y
+# CONFIG_USB_KAWETH is not set
+# CONFIG_USB_CATC is not set
+# CONFIG_USB_CDCETHER is not set
+# CONFIG_USB_USBNET is not set
+
+#
+# USB port drivers
+#
+# CONFIG_USB_USS720 is not set
+
+#
+# USB Serial Converter support
+#
+# CONFIG_USB_SERIAL is not set
+
+#
+# USB Miscellaneous drivers
+#
+# CONFIG_USB_RIO500 is not set
+# CONFIG_USB_AUERSWALD is not set
+# CONFIG_USB_TIGL is not set
+# CONFIG_USB_BRLVGER is not set
+# CONFIG_USB_LCD is not set
 
 #
 # Bluetooth support
