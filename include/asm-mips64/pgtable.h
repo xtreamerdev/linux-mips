@@ -89,12 +89,6 @@ extern void (*_flush_icache_page)(struct vm_area_struct *vma, struct page *page)
 #define flush_icache_user_range(vma, page, addr, len) \
 	flush_icache_page((vma), (page))
 #define flush_icache_page(vma, page)	_flush_icache_page(vma, page)
-#ifdef CONFIG_VTAG_ICACHE
-#define flush_icache_all()		_flush_icache_all()
-#else
-#define flush_icache_all()		do { } while(0)
-#endif
-
 
 #endif /* !CONFIG_CPU_R10000 */
 
