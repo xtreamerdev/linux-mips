@@ -18,6 +18,7 @@
 #include <linux/sched.h>
 #include <linux/param.h>
 #include <linux/time.h>
+#include <linux/timex.h>
 #include <linux/smp.h>
 #include <linux/kernel_stat.h>
 #include <linux/spinlock.h>
@@ -70,22 +71,23 @@ int (*rtc_set_mmss)(unsigned long);
  */
 void do_gettimeofday(struct timeval *tv)
 {
-	unsigned long flags;
+	unsigned long flags, lost;
 
 	read_lock_irqsave(&xtime_lock, flags);
+
 	*tv = xtime;
 	tv->tv_usec += do_gettimeoffset();
-
 	/*
-	 * xtime is atomically updated in timer_bh. jiffies - wall_jiffies
-	 * is nonzero if the timer bottom half hasnt executed yet.
+	 * xtime is atomically updated in timer_bh.  jiffies - wall_jiffies
+	 * is nonzero if the timer bottom half hasn't executed yet.
 	 */
-	if (jiffies - wall_jiffies)
-		tv->tv_usec += USECS_PER_JIFFY;
+	lost = jiffies - wall_jiffies;
+	if (lost)
+		tv->tv_usec += lost * tick;
 
 	read_unlock_irqrestore(&xtime_lock, flags);
 
-	if (tv->tv_usec >= 1000000) {
+	while (tv->tv_usec >= 1000000) {
 		tv->tv_usec -= 1000000;
 		tv->tv_sec++;
 	}
@@ -95,18 +97,20 @@ void do_settimeofday(struct timeval *tv)
 {
 	write_lock_irq(&xtime_lock);
 
-	/* This is revolting. We need to set the xtime.tv_usec
-	 * correctly. However, the value in this location is
-	 * is value at the last tick.
-	 * Discover what correction gettimeofday
-	 * would have done, and then undo it!
+	/*
+	 * This is revolting.  We need to set "xtime" correctly.  However,
+	 * the value in this location is the value at the most recent update
+	 * of wall time.  Discover what correction gettimeofday() would have
+	 * made, and then undo it!
 	 */
 	tv->tv_usec -= do_gettimeoffset();
+	tv->tv_usec -= (jiffies - wall_jiffies) * tick;
 
-	if (tv->tv_usec < 0) {
+	while (tv->tv_usec < 0) {
 		tv->tv_usec += 1000000;
 		tv->tv_sec--;
 	}
+
 	xtime = *tv;
 	time_adjust = 0;			/* stop active adjtime() */
 	time_status |= STA_UNSYNC;
