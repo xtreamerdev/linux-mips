@@ -29,6 +29,7 @@
 #include <linux/vt_kern.h>
 #include <linux/kd.h>
 #include <linux/netdevice.h>
+#include <linux/raw.h>
 #include <linux/route.h>
 #include <linux/hdreg.h>
 #include <linux/blkpg.h>
@@ -1828,6 +1829,10 @@ static struct ioctl32_list ioctl32_handler_table[] = {
 	IOCTL32_DEFAULT(DEVFSDIOC_SET_EVENT_MASK),
 	IOCTL32_DEFAULT(DEVFSDIOC_RELEASE_EVENT_QUEUE),
 	IOCTL32_DEFAULT(DEVFSDIOC_SET_DEBUG_MASK),
+
+	/* Raw devices */
+	IOCTL32_DEFAULT(RAW_SETBIND),
+	IOCTL32_DEFAULT(RAW_GETBIND),
 
 	/* Little p (/dev/rtc, /dev/envctrl, etc.) */
 	IOCTL32_DEFAULT(_IOR('p', 20, int[7])), /* RTCGET */
