@@ -251,7 +251,6 @@ obj-$(CONFIG_MK712_MOUSE) += mk712.o
 obj-$(CONFIG_RTC) += rtc.o
 obj-$(CONFIG_GEN_RTC) += genrtc.o
 obj-$(CONFIG_EFI_RTC) += efirtc.o
-obj-$(CONFIG_SGI_DS1286) += ds1286.o
 obj-$(CONFIG_MIPS_RTC) += mips_rtc.o
 obj-$(CONFIG_SGI_IP27_RTC) += ip27-rtc.o
 ifeq ($(CONFIG_PPC),)
@@ -259,6 +258,7 @@ ifeq ($(CONFIG_PPC),)
 endif
 obj-$(CONFIG_TOSHIBA) += toshiba.o
 obj-$(CONFIG_I8K) += i8k.o
+obj-$(CONFIG_DS1286) += ds1286.o
 obj-$(CONFIG_DS1620) += ds1620.o
 obj-$(CONFIG_DS1742) += ds1742.o
 obj-$(CONFIG_INTEL_RNG) += i810_rng.o

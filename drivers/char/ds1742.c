@@ -251,8 +251,8 @@ static int ds1742_read_proc(char *page, char **start, off_t off, int count,
 
 void rtc_ds1742_wait(void)
 {
-	while (CMOS_READ(RTC_SECONDS) & 1);
-	while (!(CMOS_READ(RTC_SECONDS) & 1));
+	unsigned char sec = CMOS_READ(RTC_SECONDS);
+	while (sec == CMOS_READ(RTC_SECONDS));
 }
 
 static int ds1742_ioctl(struct inode *inode, struct file *file,

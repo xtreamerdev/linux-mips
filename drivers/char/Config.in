@@ -317,7 +317,7 @@ if [ "$CONFIG_MIPS" = "y" -a "$CONFIG_NEW_TIME_C" = "y" ]; then
    tristate 'Generic MIPS RTC Support' CONFIG_MIPS_RTC
 fi
 if [ "$CONFIG_SGI_IP22" = "y" ]; then
-   bool 'SGI DS1286 RTC support' CONFIG_SGI_DS1286
+   tristate 'Dallas DS1286 RTC support' CONFIG_DS1286
 fi
 if [ "$CONFIG_SGI_IP27" = "y" ]; then
    bool 'SGI M48T35 RTC support' CONFIG_SGI_IP27_RTC
