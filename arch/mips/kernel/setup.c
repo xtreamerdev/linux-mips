@@ -5,7 +5,7 @@
  *
  * Copyright (C) 1995  Linus Torvalds
  * Copyright (C) 1995  Waldorf Electronics
- * Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 2001  Ralf Baechle
+ * Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000, 01, 05  Ralf Baechle
  * Copyright (C) 1996  Stoned Elipot
  * Copyright (C) 2000, 2001, 2002  Maciej W. Rozycki
  */
@@ -70,6 +70,8 @@ extern void * __rd_start, * __rd_end;
 
 extern struct rtc_ops no_rtc_ops;
 struct rtc_ops *rtc_ops;
+
+EXPORT_SYMBOL(rtc_ops);
 
 #ifdef CONFIG_PC_KEYB
 struct kbd_ops *kbd_ops;
