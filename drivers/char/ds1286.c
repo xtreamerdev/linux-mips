@@ -301,6 +301,7 @@ int get_ds1286_status(char *buf)
 
 	p = buf;
 
+	memset(&tm, 0, sizeof(struct rtc_time));
 	ds1286_get_time(&tm);
 	hundredth = CMOS_READ(RTC_HUNDREDTH_SECOND);
 	BCD_TO_BIN(hundredth);
@@ -316,6 +317,7 @@ int get_ds1286_status(char *buf)
 	 * match any value for that particular field. Values that are
 	 * greater than a valid time, but less than 0xc0 shouldn't appear.
 	 */
+	memset(&tm, 0, sizeof(struct rtc_time));
 	ds1286_get_alm_time(&tm);
 	p += sprintf(p, "alarm\t\t: %s ", days[tm.tm_wday]);
 	if (tm.tm_hour <= 24)
