@@ -67,7 +67,10 @@ endif
 ifdef CONFIG_CPU_SB1
 GCCFLAGS	+= -mcpu=r8000 -mips4
 endif
-
+ifdef CONFIG_CPU_MIPS64
+#CFLAGS		+= -mips64	# Should be used then we get a MIPS64 compiler
+CFLAGS		+= -mcpu=r8000 -mips4  
+endif
 
 #
 # We unconditionally build the math emulator
