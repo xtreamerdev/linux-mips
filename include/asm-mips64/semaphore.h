@@ -32,29 +32,24 @@ struct semaphore {
 } __attribute__((aligned(8)));
 
 #if WAITQUEUE_DEBUG
-# define __SEM_DEBUG_INIT(name) \
-		, (long)&(name).__magic
+# define __SEM_DEBUG_INIT(name) , .__magic = (long)&(name).__magic
 #else
 # define __SEM_DEBUG_INIT(name)
 #endif
 
-#ifdef __MIPSEB__
-#define __SEMAPHORE_INITIALIZER(name,count) \
-{ ATOMIC_INIT(count), ATOMIC_INIT(0), __WAIT_QUEUE_HEAD_INITIALIZER((name).wait) \
-	__SEM_DEBUG_INIT(name) }
-#else
-#define __SEMAPHORE_INITIALIZER(name,count) \
-{ ATOMIC_INIT(0), ATOMIC_INIT(count), __WAIT_QUEUE_HEAD_INITIALIZER((name).wait) \
-	__SEM_DEBUG_INIT(name) }
-#endif
+#define __SEMAPHORE_INITIALIZER(name,_count) {				\
+	.count	= ATOMIC_INIT(_count),					\
+	.waking	= ATOMIC_INIT(0),					\
+	.wait	= __WAIT_QUEUE_HEAD_INITIALIZER((name).wait)		\
+	__SEM_DEBUG_INIT(name)						\
+}
 
-#define __MUTEX_INITIALIZER(name) \
-	__SEMAPHORE_INITIALIZER(name,1)
+#define __MUTEX_INITIALIZER(name) __SEMAPHORE_INITIALIZER(name, 1)
 
 #define __DECLARE_SEMAPHORE_GENERIC(name,count) \
-	struct semaphore name = __SEMAPHORE_INITIALIZER(name,count)
+	struct semaphore name = __SEMAPHORE_INITIALIZER(name, count)
 
-#define DECLARE_MUTEX(name) __DECLARE_SEMAPHORE_GENERIC(name,1)
+#define DECLARE_MUTEX(name) __DECLARE_SEMAPHORE_GENERIC(name, 1)
 #define DECLARE_MUTEX_LOCKED(name) __DECLARE_SEMAPHORE_GENERIC(name,0)
 
 static inline void sema_init (struct semaphore *sem, int val)
