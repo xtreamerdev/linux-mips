@@ -95,10 +95,10 @@ CONFIG_CPU_MIPS32=y
 CONFIG_CPU_HAS_PREFETCH=y
 # CONFIG_VTAG_ICACHE is not set
 CONFIG_64BIT_PHYS_ADDR=y
-CONFIG_CPU_ADVANCED=y
+# CONFIG_CPU_ADVANCED is not set
 CONFIG_CPU_HAS_LLSC=y
 # CONFIG_CPU_HAS_LLDSCD is not set
-CONFIG_CPU_HAS_WB=y
+# CONFIG_CPU_HAS_WB is not set
 CONFIG_CPU_HAS_SYNC=y
 
 #
@@ -117,7 +117,7 @@ CONFIG_HOTPLUG=y
 #
 # PCMCIA/CardBus support
 #
-CONFIG_PCMCIA=y
+CONFIG_PCMCIA=m
 # CONFIG_CARDBUS is not set
 # CONFIG_TCIC is not set
 # CONFIG_I82092 is not set
@@ -353,24 +353,7 @@ CONFIG_PPPOE=m
 #
 # Wireless LAN (non-hamradio)
 #
-CONFIG_NET_RADIO=y
-# CONFIG_STRIP is not set
-# CONFIG_WAVELAN is not set
-# CONFIG_ARLAN is not set
-# CONFIG_AIRONET4500 is not set
-# CONFIG_AIRONET4500_NONCS is not set
-# CONFIG_AIRONET4500_PROC is not set
-# CONFIG_AIRO is not set
-CONFIG_HERMES=m
-# CONFIG_PLX_HERMES is not set
-# CONFIG_PCI_HERMES is not set
-
-#
-# Wireless Pcmcia cards support
-#
-# CONFIG_PCMCIA_HERMES is not set
-# CONFIG_AIRO_CS is not set
-CONFIG_NET_WIRELESS=y
+# CONFIG_NET_RADIO is not set
 
 #
 # Token Ring devices
