@@ -340,9 +340,9 @@ static void netlink_remove(struct sock *sk)
 	}
 	if (!nlk_sk(sk)->groups)
 		goto out;
-	for (skp = &table->mc_list; *skp; skp = &((*skp)->next)) {
+	for (skp = &table->mc_list; *skp; skp = &((*skp)->bind_next)) {
 		if (*skp == sk) {
-			*skp = sk->next;
+			*skp = sk->bind_next;
 			break;
 		}
 	}
@@ -450,7 +450,6 @@ retry:
 	err = netlink_insert(sk, pid);
 	if (err == -EADDRINUSE)
 		goto retry;
-	sk->protinfo.af_netlink->groups = 0;
 	return 0;
 }
 
