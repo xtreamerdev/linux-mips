@@ -337,19 +337,26 @@ static void r5432_flush_cache_page_d32i32(struct vm_area_struct *vma,
 	}
 }
 
-
-/* If the addresses passed to these routines are valid, they are
- * either:
- *
- * 1) In KSEG0, so we can do a direct flush of the page.
- * 2) In KSEG2, and since every process can translate those
- *    addresses all the time in kernel mode we can do a direct
- *    flush.
- * 3) In KSEG1, no flush necessary.
- */
-static void r5432_flush_page_to_ram_d32(struct page *page)
+static void r5432_flush_dcache_page_impl(struct page *page)
 {
 	blast_dcache32_page((unsigned long)page_address(page));
+}
+
+static void r5432_flush_dcache_page(struct page *page)
+{
+	if (page->mapping && page->mapping->i_mmap == NULL &&
+	    page->mapping->i_mmap_shared == NULL) {
+		SetPageDcacheDirty(page);
+
+		return;
+	}
+
+	/*
+	 * We could delay the flush for the !page->mapping case too.  But that
+	 * case is for exec env/arg pages and those are %99 certainly going to
+	 * get faulted into the tlb (and thus flushed) anyways.
+	 */
+	r5432_flush_dcache_page_impl(page);
 }
 
 static void
@@ -431,6 +438,20 @@ static void r5432_flush_cache_sigtramp(unsigned long addr)
 	protected_flush_icache_line(addr & ~(ic_lsize - 1));
 }
 
+void __update_cache(struct vm_area_struct *vma, unsigned long address,
+	pte_t pte)
+{
+	struct page *page = pte_page(pte);
+	unsigned long pg_flags;
+
+	if (VALID_PAGE(page) && page->mapping &&
+	    ((pg_flags = page->flags) & (1UL << PG_dcache_dirty))) {
+		r5432_flush_dcache_page_impl(page);
+
+		ClearPageDcacheDirty(page);
+	}
+}
+
 /* Detect and size the various r4k caches. */
 static void __init probe_icache(unsigned long config)
 {
@@ -450,7 +471,6 @@ static void __init probe_dcache(unsigned long config)
 	       dcache_size >> 10, dc_lsize);
 }
 
-
 void __init ld_mmu_r5432(void)
 {
 	unsigned long config = read_c0_config();
@@ -469,10 +489,10 @@ void __init ld_mmu_r5432(void)
 	_copy_page = r5432_copy_page_d32;
 	_flush_cache_all = r5432_flush_cache_all_d32i32;
 	___flush_cache_all = r5432_flush_cache_all_d32i32;
-	_flush_page_to_ram = r5432_flush_page_to_ram_d32;
 	_flush_cache_mm = r5432_flush_cache_mm_d32i32;
 	_flush_cache_range = r5432_flush_cache_range_d32i32;
 	_flush_cache_page = r5432_flush_cache_page_d32i32;
+	_flush_dcache_page = r5432_flush_dcache_page;
 	_flush_icache_page = r5432_flush_icache_page_i32;
 	_dma_cache_wback_inv = r5432_dma_cache_wback_inv_pc;
 	_dma_cache_wback = r5432_dma_cache_wback;

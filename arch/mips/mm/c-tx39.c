@@ -34,7 +34,7 @@ extern long scache_size;
 
 extern int r3k_have_wired_reg;	/* in r3k-tlb.c */
 
-static void tx39h_flush_page_to_ram(struct page * page)
+static void tx39h_flush_dcache_page(struct page * page)
 {
 }
 
@@ -133,7 +133,7 @@ static void tx39_flush_cache_page(struct vm_area_struct *vma,
 	 * If ownes no valid ASID yet, cannot possibly have gotten
 	 * this page into the cache.
 	 */
-	if(mm->context == 0)
+	if (mm->context == 0)
 		return;
 
 #ifdef DEBUG_CACHE
@@ -169,9 +169,27 @@ static void tx39_flush_cache_page(struct vm_area_struct *vma,
 	}
 }
 
-static void tx39_flush_page_to_ram(struct page * page)
+static void tx39_flush_dcache_page_impl(struct page *page)
 {
-	blast_dcache16_page((unsigned long)page_address(page));
+	if (mips_cpu.cputype != CPU_TX3912)
+		blast_dcache16_page((unsigned long)page_address(page));
+}
+
+static void tx39_flush_dcache_page(struct page *page)
+{
+	if (page->mapping && page->mapping->i_mmap == NULL &&
+	    page->mapping->i_mmap_shared == NULL) {
+	        SetPageDcacheDirty(page);
+
+		return;
+	}
+
+	/*
+	 * We could delay the flush for the !page->mapping case too.  But that
+	 * case is for exec env/arg pages and those are %99 certainly going to
+	 * get faulted into the tlb (and thus flushed) anyways.
+	 */
+	tx39_flush_dcache_page_impl(page);
 }
 
 static void tx39_flush_icache_range(unsigned long start, unsigned long end)
@@ -242,6 +260,20 @@ static void tx39_flush_cache_sigtramp(unsigned long addr)
 	local_irq_restore(flags);
 }
 
+void __update_cache(struct vm_area_struct *vma, unsigned long address,
+	pte_t pte)
+{
+	struct page *page = pte_page(pte);
+	unsigned long pg_flags;
+
+	if (VALID_PAGE(page) && page->mapping &&
+	    ((pg_flags = page->flags) & (1UL << PG_dcache_dirty))) {
+		tx39_flush_dcache_page_impl(page);
+
+		ClearPageDcacheDirty(page);
+	}
+}
+
 static __init void tx39_probe_cache(void)
 {
 	unsigned long config;
@@ -287,7 +319,7 @@ void __init ld_mmu_tx39(void)
 		_flush_cache_range	= (void *) tx39h_flush_icache_all;
 		_flush_cache_page	= (void *) tx39h_flush_icache_all;
 		_flush_cache_sigtramp	= (void *) tx39h_flush_icache_all;
-		_flush_page_to_ram	= tx39h_flush_page_to_ram;
+		_flush_dcache_page	= tx39h_flush_dcache_page;
 		_flush_icache_page	= (void *) tx39h_flush_icache_all;
 		_flush_icache_range	= (void *) tx39h_flush_icache_all;
 
@@ -308,7 +340,7 @@ void __init ld_mmu_tx39(void)
 		_flush_cache_range = tx39_flush_cache_range;
 		_flush_cache_page = tx39_flush_cache_page;
 		_flush_cache_sigtramp = tx39_flush_cache_sigtramp;
-		_flush_page_to_ram = tx39_flush_page_to_ram;
+		_flush_dcache_page = tx39_flush_dcache_page;
 		_flush_icache_page = tx39_flush_icache_page;
 		_flush_icache_range = tx39_flush_icache_range;
 
