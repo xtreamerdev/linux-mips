@@ -142,20 +142,14 @@ asm("sb1___flush_cache_all = local_sb1___flush_cache_all");
 /*
  * When flushing a range in the icache, we have to first writeback
  * the dcache for the same range, so new ifetches will see any
- * data that was dirty in the dcache.  Also, if the flush is very
- * large, just flush the whole cache rather than spinning in here
- * forever.  Fills from the (always coherent) L2 come in relatively
- * quickly.
+ * data that was dirty in the dcache.
  *
- * Also, at the moment we just hit-writeback the dcache instead
- * of writeback-invalidating it.  Not doing the invalidates
- * doesn't cost us anything, since we're coherent 
- *
+ * The start/end arguments are expected to be Kseg addresses.
  */
 
 static void local_sb1_flush_icache_range(unsigned long start, unsigned long end)
 {
-#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS					
+#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS
 	unsigned long flags;
 	local_irq_save(flags);
 #endif
@@ -167,44 +161,37 @@ static void local_sb1_flush_icache_range(unsigned long start, unsigned long end)
 		".set mips4                 \n"
 		"     move   $1, %0         \n" 
 		"1:                         \n"
-#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS					
+#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS
 		".align 3                   \n"
 		"     lw     $0,   0($1)    \n" /* Bug 1370, 1368            */
 		"     sync                  \n"
-		"     cache  0x15, 0($1)    \n" /* Hit-WB-inval this address */
-#else
-		"     cache  0x19, 0($1)    \n" /* Hit-WB this address */
 #endif
+		"     cache  %3, 0($1)      \n" /* Hit-WB{,-inval} this address */
 		"     bne    $1, %1, 1b     \n" /* loop test */
 		"      addu  $1, $1, %2     \n" /* next line */
 		".set pop                   \n"
 		:
 		: "r" (start  & ~(dcache_line_size - 1)),
 		  "r" ((end - 1) & ~(dcache_line_size - 1)),
-		  "r" (dcache_line_size));
+		  "r" (dcache_line_size),
+#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS
+		  "i" (Hit_Writeback_Inv_D)
+#else
+		  "i" (Hit_Writeback_D)
+#endif
+		);
 	__asm__ __volatile__ (
 		".set push                  \n"
 		".set noreorder             \n"
 		".set mips2                 \n"
 		"sync                       \n"
-#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS		/* Bug 1384 */			
+#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS		/* Bug 1384 */
 		"sync                       \n"
 #endif
 		".set pop                   \n");
-#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS					
-		local_irq_restore(flags);
+#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS
+	local_irq_restore(flags);
 #endif
-
-	/* Guess what: these Kseg0 addressese aren't enough to let us figure
-	 * out what may be in the cache under mapped Useg tags.  The situation
-	 * is even worse, because bit 12 belongs to both the page number AND
-	 * the cache index, which means the Kseg0 page number may have a
-	 * different cache index than the Useg address.  For these two reasons,
-	 * we have to flush the entire thing.  Since the Dcache is physically
-	 * tagged, we *can* use hit operations.
-	 */
-	start = 0;
-	end = icache_index_mask;
 
 	__asm__ __volatile__ (
 		".set push                  \n"
@@ -213,17 +200,18 @@ static void local_sb1_flush_icache_range(unsigned long start, unsigned long end)
 		".set mips4                 \n"
 		"     move   $1, %0         \n" 
 		".align 3                   \n"
-		"1:   cache  0, (0<<13)($1) \n" /* Index-inval this address */
-		"     cache  0, (1<<13)($1) \n" /* Index-inval this address */
-		"     cache  0, (2<<13)($1) \n" /* Index-inval this address */
-		"     cache  0, (3<<13)($1) \n" /* Index-inval this address */
+		"1:   cache  %3, (0<<13)($1) \n" /* Index-inval this address */
+		"     cache  %3, (1<<13)($1) \n" /* Index-inval this address */
+		"     cache  %3, (2<<13)($1) \n" /* Index-inval this address */
+		"     cache  %3, (3<<13)($1) \n" /* Index-inval this address */
 		"     bne    $1, %1, 1b     \n" /* loop test */
 		"      addu  $1, $1, %2     \n" /* next line */
 		".set pop                   \n"
 		:
 		: "r" (start & ~(icache_line_size - 1)),
 		  "r" ((end - 1) & ~(dcache_line_size - 1)),
-		  "r" (icache_line_size));
+		  "r" (icache_line_size),
+		  "i" (Index_Invalidate_I));
 }
 
 #ifdef CONFIG_SMP
@@ -257,17 +245,18 @@ asm("sb1_flush_icache_range = local_sb1_flush_icache_range");
  * If there's no context yet, or the page isn't executable, no icache flush
  * is needed
  */
-void sb1_flush_icache_all(void);
-
 static void sb1_flush_icache_page(struct vm_area_struct *vma, struct page *page)
 {
-	unsigned long addr;
-
 	if ((vma->vm_mm->context == 0) || !(vma->vm_flags & VM_EXEC)) {
 		return;
 	}
 
-	sb1_flush_icache_all();
+	/*
+	 * We're not sure of the virtual address(es) involved here, so
+	 * conservatively flush the entire caches on all processors
+	 * (ouch).
+	 */
+	sb1___flush_cache_all();
 }
 
 static inline void protected_flush_icache_line(unsigned long addr)
@@ -276,13 +265,14 @@ static inline void protected_flush_icache_line(unsigned long addr)
 		"    .set push                \n"
 		"    .set noreorder           \n"
 		"    .set mips4               \n"
-		"1:  cache 0x10, (%0)         \n"
+		"1:  cache %1, (%0)           \n"
 		"2:  .set pop                 \n"
 		"    .section __ex_table,\"a\"\n"
 		"     .word  1b, 2b          \n"
 		"     .previous"
 		:
-		: "r" (addr));
+		: "r" (addr),
+		  "i" (Hit_Invalidate_I));
 }
 
 static inline void protected_writeback_dcache_line(unsigned long addr)
@@ -300,20 +290,18 @@ static inline void protected_writeback_dcache_line(unsigned long addr)
 		"    .set noreorder           \n"
 		"    .set mips4               \n"
 		"1:                           \n"
-#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS					
-		"     lw    $0,   (%0)         \n"  
+#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS
+		"     lw    $0,   (%0)        \n"
 		"     sync                  \n"
-		"     cache  0x15, 0(%0)    \n" /* Hit-WB-inval this address */
-#else
-		"     cache  0x19, 0(%0)    \n" /* Hit-WB this address */
 #endif
+		"     cache  %1, 0(%0)    \n" /* Hit-WB{-inval} this address */
 		/* XXX: should be able to do this after both dcache cache
 		   ops, but there's no guarantee that this will be inlined,
 		   and the pass1 restriction checker can't detect syncs
 		   following cache ops except in the following basic block.
 		*/
 		"     sync                    \n"
-#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS		/* Bug 1384 */			
+#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS		/* Bug 1384 */
 		"     sync                    \n"
 #endif
 		"2:  .set pop                 \n"
@@ -321,8 +309,14 @@ static inline void protected_writeback_dcache_line(unsigned long addr)
 		"     .word  1b, 2b          \n"
 		"     .previous"
 		:
-		: "r" (addr));
-#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS					
+		: "r" (addr),
+#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS
+		  "i" (Hit_Writeback_Inv_D)
+#else
+		  "i" (Hit_Writeback_D)
+#endif
+		  );
+#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS
 	local_irq_restore(flags);
 #endif
 }
@@ -398,7 +392,7 @@ static void sb1_nop(void)
 /*
  * This only needs to make sure stores done up to this
  * point are visible to other agents outside the CPU.  Given 
- * the coherent nature of the ZBus, all that's required here is 
+ * the coherent nature of the ZBbus, all that's required here is 
  * a sync to make sure the data gets out to the caches and is
  * visible to an arbitrary A Phase from an external agent 
  *   
