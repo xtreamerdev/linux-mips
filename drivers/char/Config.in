@@ -398,6 +398,7 @@ fi
 if [ "$CONFIG_SOC_AU1X00" = "y" ]; then
    tristate ' Alchemy Au1x00 GPIO device support' CONFIG_AU1X00_GPIO
    tristate ' Au1000/ADS7846 touchscreen support' CONFIG_TS_AU1X00_ADS7846
+   tristate ' Alchemy Au1550 PSC SPI support' CONFIG_AU1550_PSC_SPI
 fi
 if [ "$CONFIG_MIPS_ITE8172" = "y" ]; then
   tristate ' ITE GPIO' CONFIG_ITE_GPIO

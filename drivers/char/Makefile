@@ -273,6 +273,7 @@ obj-$(CONFIG_BRIQ_PANEL) += briq_panel.o
 
 obj-$(CONFIG_ITE_GPIO) += ite_gpio.o
 obj-$(CONFIG_AU1X00_GPIO) += au1000_gpio.o
+obj-$(CONFIG_AU1550_PSC_SPI) += au1550_psc_spi.o
 obj-$(CONFIG_AU1X00_USB_TTY) += au1000_usbtty.o
 obj-$(CONFIG_AU1X00_USB_RAW) += au1000_usbraw.o
 obj-$(CONFIG_COBALT_LCD) += lcd.o
