@@ -473,6 +473,9 @@ static void r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
 {
 	unsigned long end, a;
 
+	if (unlikely(size == 0))
+		return;
+
 	if (cpu_has_subset_pcaches) {
 		unsigned long sc_lsize = current_cpu_data.scache.linesz;
 
@@ -519,6 +522,9 @@ static void r4k_dma_cache_wback_inv(unsigned long addr, unsigned long size)
 static void r4k_dma_cache_inv(unsigned long addr, unsigned long size)
 {
 	unsigned long end, a;
+
+	if (unlikely(size == 0))
+		return;
 
 	if (cpu_has_subset_pcaches) {
 		unsigned long sc_lsize = current_cpu_data.scache.linesz;
