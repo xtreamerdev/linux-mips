@@ -116,7 +116,7 @@ extern struct task_struct *child_reaper;
 
 #define idle_task(cpu) (init_tasks[cpu_number_map(cpu)])
 #define can_schedule(p,cpu) \
-	((p)->cpus_runnable & (p)->cpus_allowed & (1 << cpu))
+	((p)->cpus_runnable & (p)->cpus_allowed & (1UL << cpu))
 
 #else
 
