@@ -58,8 +58,8 @@ if [ "$CONFIG_NET_ETHERNET" = "y" ]; then
    if [ "$CONFIG_MIPS_GT96100" = "y" ]; then
       bool '  MIPS GT96100 Ethernet support' CONFIG_MIPS_GT96100ETH
    fi
-   if [ "$CONFIG_MIPS_AU1000" = "y" ]; then
-      bool '  MIPS AU1000 Ethernet support' CONFIG_MIPS_AU1000_ENET
+   if [ "$CONFIG_CPU_AU1X00" = "y" ]; then
+      bool '  MIPS Au1x00 Ethernet support' CONFIG_MIPS_AU1X00_ENET
    fi
    if [ "$CONFIG_SIBYTE_SB1250" = "y" ]; then
       tristate '  SB1250 Ethernet support' CONFIG_NET_SB1250_MAC

@@ -203,7 +203,7 @@ unsigned long cal_r4koff(void)
 	count = read_c0_count();
 	cpu_speed = count * 2;
 	mips_counter_frequency = count;
-	set_au1000_uart_baud_base(((cpu_speed) / 4) / 16);
+	set_au1x00_uart_baud_base(((cpu_speed) / 4) / 16);
 	spin_unlock_irqrestore(&time_lock, flags);
 	return (cpu_speed / HZ);
 }
@@ -223,8 +223,8 @@ void __init time_init(void)
 	est_freq -= est_freq%10000;
 	printk("CPU frequency %d.%02d MHz\n", est_freq/1000000,
 	       (est_freq%1000000)*100/1000000);
-	set_au1000_speed(est_freq);
-	set_au1000_lcd_clock(); // program the LCD clock
+ 	set_au1x00_speed(est_freq);
+ 	set_au1x00_lcd_clock(); // program the LCD clock
 	r4k_cur = (read_c0_count() + r4k_offset);
 
 	write_c0_compare(r4k_cur);

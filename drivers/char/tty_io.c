@@ -148,7 +148,7 @@ extern long vme_scc_console_init(void);
 extern int serial167_init(void);
 extern long serial167_console_init(void);
 extern void console_8xx_init(void);
-extern void au1000_serial_console_init(void);
+extern void au1x00_serial_console_init(void);
 extern int rs_8xx_init(void);
 extern void mac_scc_console_init(void);
 extern void hwc_console_init(void);
@@ -2210,8 +2210,8 @@ void __init console_init(void)
 #ifdef CONFIG_VT
 	con_init();
 #endif
-#ifdef CONFIG_AU1000_SERIAL_CONSOLE
-	au1000_serial_console_init();
+#ifdef CONFIG_AU1X00_SERIAL_CONSOLE
+	au1x00_serial_console_init();
 #endif
 #ifdef CONFIG_SERIAL_CONSOLE
 #if (defined(CONFIG_8xx) || defined(CONFIG_8260))

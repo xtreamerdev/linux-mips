@@ -157,6 +157,8 @@ static int __init au1000_pcmcia_driver_init(void)
 
 #if defined(CONFIG_MIPS_PB1000) || defined(CONFIG_MIPS_PB1100) || defined(CONFIG_MIPS_PB1500)
 	pcmcia_low_level=&pb1x00_pcmcia_ops;
+#elif defined(CONFIG_MIPS_DB1000) || defined(CONFIG_MIPS_DB1100) || defined(CONFIG_MIPS_DB1500)
+	pcmcia_low_level=&db1x00_pcmcia_ops;
 #else
 #error Unsupported AU1000 board.
 #endif

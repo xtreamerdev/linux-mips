@@ -325,4 +325,9 @@ static void calibrate_delay(void)
 	}
 }
 
+void au1k_wait(void)
+{
+	__asm__("nop\n\t" "nop\n\t");
+}
+
 #endif				/* CONFIG_PM */

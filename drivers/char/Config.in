@@ -76,15 +76,15 @@ if [ "$CONFIG_SERIAL_NONSTANDARD" = "y" ]; then
    if [ "$CONFIG_MIPS" = "y" ]; then
       bool '  TX3912/PR31700 serial port support' CONFIG_SERIAL_TX3912
       dep_bool '     Console on TX3912/PR31700 serial port' CONFIG_SERIAL_TX3912_CONSOLE $CONFIG_SERIAL_TX3912
-      if [ "$CONFIG_MIPS_AU1000" = "y" ]; then
-	 bool '  Enable Au1000 UART Support' CONFIG_AU1000_UART
-	 if [ "$CONFIG_AU1000_UART" = "y" ]; then
-	    bool '        Enable Au1000 serial console' CONFIG_AU1000_SERIAL_CONSOLE
+      if [ "$CONFIG_CPU_AU1X00" = "y" ]; then
+	 bool '  Enable Au1x00 UART Support' CONFIG_AU1X00_UART
+	 if [ "$CONFIG_AU1X00_UART" = "y" ]; then
+	    bool '        Enable Au1x00 serial console' CONFIG_AU1X00_SERIAL_CONSOLE
          fi
 	 if [ "$CONFIG_AU1000_USB_DEVICE" = "y" ]; then
-	    dep_tristate '  Au1000 USB TTY Device support' CONFIG_AU1000_USB_TTY $CONFIG_AU1000_USB_DEVICE
+	    dep_tristate '  Au1x00 USB TTY Device support' CONFIG_AU1X00_USB_TTY $CONFIG_AU1000_USB_DEVICE
 	    if [ "$CONFIG_AU1000_USB_TTY" != "y" ]; then
-	       dep_tristate '  Au1000 USB Raw Device support' CONFIG_AU1000_USB_RAW $CONFIG_AU1000_USB_DEVICE
+	       dep_tristate '  Au1x00 USB Raw Device support' CONFIG_AU1X00_USB_RAW $CONFIG_AU1000_USB_DEVICE
 	    fi
          fi
       fi

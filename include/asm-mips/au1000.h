@@ -28,10 +28,13 @@
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+ /*
+  * some definitions add by takuzo@sm.sony.co.jp and sato@sm.sony.co.jp
+  */
+
 #ifndef _AU1000_H_
 #define _AU1000_H_
 
-#include <linux/config.h>
 #include <linux/delay.h>
 #include <asm/io.h>
 
@@ -84,12 +87,12 @@ static inline u32 au_readl(unsigned long port)
 }
 
 /* arch/mips/au1000/common/clocks.c */
-extern void set_au1000_speed(unsigned int new_freq);
-extern unsigned int get_au1000_speed(void);
-extern void set_au1000_uart_baud_base(unsigned long new_baud_base);
-extern unsigned long get_au1000_uart_baud_base(void);
-extern void set_au1000_lcd_clock(void);
-extern unsigned int get_au1000_lcd_clock(void);
+extern void set_au1x00_speed(unsigned int new_freq);
+extern unsigned int get_au1x00_speed(void);
+extern void set_au1x00_uart_baud_base(unsigned long new_baud_base);
+extern unsigned long get_au1x00_uart_baud_base(void);
+extern void set_au1x00_lcd_clock(void);
+extern unsigned int get_au1x00_lcd_clock(void);
 
 #ifdef CONFIG_PM
 /* no CP0 timer irq */
@@ -721,7 +724,52 @@ extern unsigned int get_au1000_lcd_clock(void);
 #define SSI1_CONFIG                0xB1680020
 #define SSI1_ADATA                 0xB1680024
 #define SSI1_CLKDIV                0xB1680028
-#define SSI1_CONTROL               0xB1680100
+#define SSI1_ENABLE                0xB1680100
+
+/*
+ * Register content definitions
+ */
+#define SSI_STATUS_BF				(1<<4)
+#define SSI_STATUS_OF				(1<<3)
+#define SSI_STATUS_UF				(1<<2)
+#define SSI_STATUS_D				(1<<1)
+#define SSI_STATUS_B				(1<<0)
+
+/* SSI_INT */
+#define SSI_INT_OI					(1<<3)
+#define SSI_INT_UI					(1<<2)
+#define SSI_INT_DI					(1<<1)
+
+/* SSI_INTEN */
+#define SSI_INTEN_OIE				(1<<3)
+#define SSI_INTEN_UIE				(1<<2)
+#define SSI_INTEN_DIE				(1<<1)
+
+#define SSI_CONFIG_AO				(1<<24)
+#define SSI_CONFIG_DO				(1<<23)
+#define SSI_CONFIG_ALEN				(7<<20)
+#define SSI_CONFIG_DLEN				(15<<16)
+#define SSI_CONFIG_DD				(1<<11)
+#define SSI_CONFIG_AD				(1<<10)
+#define SSI_CONFIG_BM				(3<<8)
+#define SSI_CONFIG_CE				(1<<7)
+#define SSI_CONFIG_DP				(1<<6)
+#define SSI_CONFIG_DL				(1<<5)
+#define SSI_CONFIG_EP				(1<<4)
+#define SSI_CONFIG_ALEN_N(N)		((N-1)<<20)
+#define SSI_CONFIG_DLEN_N(N)		((N-1)<<16)
+#define SSI_CONFIG_BM_HI			(0<<8)
+#define SSI_CONFIG_BM_LO			(1<<8)
+#define SSI_CONFIG_BM_CY			(2<<8)
+
+#define SSI_ADATA_D					(1<<24)
+#define SSI_ADATA_ADDR				(0xFF<<16)
+#define SSI_ADATA_DATA				(0x0FFF)
+#define SSI_ADATA_ADDR_N(N)			(N<<16)
+
+#define SSI_ENABLE_CD				(1<<1)
+#define SSI_ENABLE_E				(1<<0)
+
 
 /* IrDA Controller */
 #define IRDA_BASE                 0xB0300000

@@ -111,6 +111,15 @@ void au1000_restart(char *command)
 	set_c0_config(CONF_CM_UNCACHED);
 	flush_cache_all();
 	write_c0_wired(0);
+ 
+#ifdef CONFIG_MIPS_PB1500
+	au_writel(0x00000000, 0xAE00001C);
+#endif
+
+#ifdef CONFIG_MIPS_PB1100
+	au_writel(0x00000000, 0xAE00001C);
+#endif
+ 
 	__asm__ __volatile__("jr\t%0"::"r"(0xbfc00000));
 }
 

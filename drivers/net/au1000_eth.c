@@ -1,9 +1,13 @@
 /*
- * Alchemy Semi Au1000 ethernet driver
  *
- * Copyright 2001 MontaVista Software Inc.
+ * Alchemy Au1x00 ethernet driver
+ *
+ * Copyright 2001,2002 MontaVista Software Inc.
+ * Copyright 2002 TimeSys Corp.
  * Author: MontaVista Software, Inc.
  *         	ppopov@mvista.com or source@mvista.com
+ *
+ * ########################################################################
  *
  *  This program is free software; you can distribute it and/or modify it
  *  under the terms of the GNU General Public License (Version 2) as
@@ -17,8 +21,16 @@
  *  You should have received a copy of the GNU General Public License along
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
+ *
+ * ########################################################################
+ *
+ * 
  */
-#include <linux/config.h>
+
+#ifndef __mips__
+#error This driver only works with MIPS architectures!
+#endif
+
 
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -36,7 +48,6 @@
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
 #include <linux/delay.h>
-#include <linux/crc32.h>
 #include <asm/mipsregs.h>
 #include <asm/irq.h>
 #include <asm/bitops.h>
@@ -101,24 +112,26 @@ extern char * __init prom_getcmdline(void);
 /*
  * Base address and interupt of the Au1xxx ethernet macs
  */
-static struct {
+static struct au1if {
 	unsigned int port;
 	int irq;
-} au1000_iflist[NUM_INTERFACES] = {
+} au1x00_iflist[] = {
+#if defined(CONFIG_CPU_AU1000)
 		{AU1000_ETH0_BASE, AU1000_ETH0_IRQ}, 
 		{AU1000_ETH1_BASE, AU1000_ETH1_IRQ}
-	},
-  au1500_iflist[NUM_INTERFACES] = {
+#elif defined(CONFIG_CPU_AU1500)
 		{AU1500_ETH0_BASE, AU1000_ETH0_IRQ}, 
 		{AU1500_ETH1_BASE, AU1000_ETH1_IRQ}
-	},
-  au1100_iflist[NUM_INTERFACES] = {
+#elif defined(CONFIG_CPU_AU1100)
 		{AU1000_ETH0_BASE, AU1000_ETH0_IRQ}, 
-		{0, 0}
+#else
+#error "Unsupported Au1x00 CPU"
+#endif
 	};
+#define NUM_INTERFACES (sizeof(au1x00_iflist) / sizeof(struct au1if))
 
 static char version[] __devinitdata =
-    "au1000eth.c:1.0 ppopov@mvista.com\n";
+    "au1000eth.c:1.1 ppopov@mvista.com\n";
 
 /* These addresses are only used if yamon doesn't tell us what
  * the mac address is, and the mac address is not passed on the
@@ -141,6 +154,13 @@ static unsigned char au1000_mac_addr[6] __devinitdata = {
  * code.
  */
 
+static char *phy_link[] = 
+	{"unknown", 
+	"10Base2", "10BaseT", 
+	"AUI",
+	"100BaseT", "100BaseTX", "100BaseFX"
+	};
+
 int bcm_5201_init(struct net_device *dev, int phy_addr)
 {
 	s16 data;
@@ -160,11 +180,6 @@ int bcm_5201_init(struct net_device *dev, int phy_addr)
 	data = mdio_read(dev, phy_addr, MII_CONTROL);
 	data |= MII_CNTL_RST_AUTO | MII_CNTL_AUTO;
 	mdio_write(dev, phy_addr, MII_CONTROL, data);
-
-	/* Enable TX LED instead of FDX */
-	data = mdio_read(dev, phy_addr, MII_INT);
-	data &= ~MII_FDX_LED;
-	mdio_write(dev, phy_addr, MII_INT, data);
 
 	if (au1000_debug > 4) dump_mii(dev, phy_addr);
 	return 0;
@@ -332,6 +347,98 @@ am79c901_status(struct net_device *dev, int phy_addr, u16 *link, u16 *speed)
 	return 0;
 }
 
+int am79c874_init(struct net_device *dev, int phy_addr)
+{
+	s16 data;
+
+	/* 79c874 has quit resembled bit assignments to BCM5201 */
+	if (au1000_debug > 4)
+		printk("am79c847_init\n");
+
+	/* Stop auto-negotiation */
+	data = mdio_read(dev, phy_addr, MII_CONTROL);
+	mdio_write(dev, phy_addr, MII_CONTROL, data & ~MII_CNTL_AUTO);
+
+	/* Set advertisement to 10/100 and Half/Full duplex
+	 * (full capabilities) */
+	data = mdio_read(dev, phy_addr, MII_ANADV);
+	data |= MII_NWAY_TX | MII_NWAY_TX_FDX | MII_NWAY_T_FDX | MII_NWAY_T;
+	mdio_write(dev, phy_addr, MII_ANADV, data);
+	
+	/* Restart auto-negotiation */
+	data = mdio_read(dev, phy_addr, MII_CONTROL);
+	data |= MII_CNTL_RST_AUTO | MII_CNTL_AUTO;
+	mdio_write(dev, phy_addr, MII_CONTROL, data);
+
+	if (au1000_debug > 4) dump_mii(dev, phy_addr);
+	return 0;
+}
+
+int am79c874_reset(struct net_device *dev, int phy_addr)
+{
+	s16 mii_control, timeout;
+	
+	if (au1000_debug > 4)
+		printk("am79c874_reset\n");
+
+	mii_control = mdio_read(dev, phy_addr, MII_CONTROL);
+	mdio_write(dev, phy_addr, MII_CONTROL, mii_control | MII_CNTL_RESET);
+	mdelay(1);
+	for (timeout = 100; timeout > 0; --timeout) {
+		mii_control = mdio_read(dev, phy_addr, MII_CONTROL);
+		if ((mii_control & MII_CNTL_RESET) == 0)
+			break;
+		mdelay(1);
+	}
+	if (mii_control & MII_CNTL_RESET) {
+		printk(KERN_ERR "%s PHY reset timeout !\n", dev->name);
+		return -1;
+	}
+	return 0;
+}
+
+int 
+am79c874_status(struct net_device *dev, int phy_addr, u16 *link, u16 *speed)
+{
+	u16 mii_data;
+	struct au1000_private *aup;
+
+	// printk("am79c874_status\n");
+	if (!dev) {
+		printk(KERN_ERR "am79c874_status error: NULL dev\n");
+		return -1;
+	}
+
+	aup = (struct au1000_private *) dev->priv;
+	mii_data = mdio_read(dev, aup->phy_addr, MII_STATUS);
+
+	if (mii_data & MII_STAT_LINK) {
+		*link = 1;
+		mii_data = mdio_read(dev, aup->phy_addr, MII_AUX_CNTRL);
+		if (mii_data & MII_AUX_100) {
+			if (mii_data & MII_AUX_FDX) {
+				*speed = IF_PORT_100BASEFX;
+				dev->if_port = IF_PORT_100BASEFX;
+			}
+			else {
+				*speed = IF_PORT_100BASETX;
+				dev->if_port = IF_PORT_100BASETX;
+			}
+		}
+		else  {
+			*speed = IF_PORT_10BASET;
+			dev->if_port = IF_PORT_10BASET;
+		}
+
+	}
+	else {
+		*link = 0;
+		*speed = 0;
+		dev->if_port = IF_PORT_UNKNOWN;
+	}
+	return 0;
+}
+
 struct phy_ops bcm_5201_ops = {
 	bcm_5201_init,
 	bcm_5201_reset,
@@ -342,6 +449,12 @@ struct phy_ops am79c901_ops = {
 	am79c901_init,
 	am79c901_reset,
 	am79c901_status,
+};
+
+struct phy_ops am79c874_ops = {
+	am79c874_init,
+	am79c874_reset,
+	am79c874_status,
 };
 
 struct phy_ops lsi_80227_ops = { 
@@ -357,9 +470,10 @@ static struct mii_chip_info {
 	struct phy_ops *phy_ops;	
 } mii_chip_table[] = {
 	{"Broadcom BCM5201 10/100 BaseT PHY",  0x0040, 0x6212, &bcm_5201_ops },
-	{"AMD 79C901 HomePNA PHY",  0x0000, 0x35c8, &am79c901_ops },
-	{"LSI 80227 10/100 BaseT PHY", 0x0016, 0xf840, &lsi_80227_ops },
 	{"Broadcom BCM5221 10/100 BaseT PHY",  0x0040, 0x61e4, &bcm_5201_ops },
+	{"AMD 79C901 HomePNA PHY",  0x0000, 0x35c8, &am79c901_ops },
+	{"AMD 79C874 10/100 BaseT PHY",  0x0022, 0x561b, &am79c874_ops },
+	{"LSI 80227 10/100 BaseT PHY", 0x0016, 0xf840, &lsi_80227_ops },
 	{0,},
 };
 
@@ -619,30 +733,14 @@ setup_hw_rings(struct au1000_private *aup, u32 rx_base, u32 tx_base)
 static int __init au1000_init_module(void)
 {
 	int i;
-	int prid;
 	int base_addr, irq;
 
-	prid = read_c0_prid();
 	for (i=0; i<NUM_INTERFACES; i++) {
-		if ( (prid & 0xffff0000) == 0x00030000 ) {
-			base_addr = au1000_iflist[i].port;
-			irq = au1000_iflist[i].irq;
-		} else if ( (prid & 0xffff0000) == 0x01030000 ) {
-			base_addr = au1500_iflist[i].port;
-			irq = au1500_iflist[i].irq;
-		} else if ( (prid & 0xffff0000) == 0x02030000 ) {
-			base_addr = au1100_iflist[i].port;
-			irq = au1100_iflist[i].irq;
-		} else {
-			printk(KERN_ERR "au1000 eth: unknown Processor ID\n");
-			return -ENODEV;
-		}
-		// check for valid entries, au1100 only has one entry
-		if (base_addr && irq) {
+		base_addr = au1x00_iflist[i].port;
+		irq = au1x00_iflist[i].irq;
 		if (au1000_probe1(NULL, base_addr, irq, i) != 0) {
 			return -ENODEV;
 		}
-	}
 	}
 	return 0;
 }
@@ -657,7 +755,7 @@ au1000_probe1(struct net_device *dev, long ioaddr, int irq, int port_num)
 	char *pmac, *argptr;
 	char ethaddr[6];
 
-	if (!request_region(ioaddr, MAC_IOSIZE, "Au1000 ENET")) {
+	if (!request_region(ioaddr, MAC_IOSIZE, "Au1x00 ENET")) {
 		 return -ENODEV;
 	}
 
@@ -818,9 +916,9 @@ free_region:
 				MAX_BUF_SIZE * (NUM_TX_BUFFS+NUM_RX_BUFFS));
 	if (dev->priv != NULL)
 		kfree(dev->priv);
+	kfree(dev);
 	printk(KERN_ERR "%s: au1000_probe1 failed.  Returns %d\n",
 	       dev->name, retval);
-	kfree(dev);
 	return retval;
 }
 
@@ -1044,9 +1142,8 @@ static void au1000_tx_ack(struct net_device *dev)
 	ptxd = aup->tx_dma_ring[aup->tx_tail];
 
 	while (ptxd->buff_stat & TX_T_DONE) {
- 		update_tx_stats(dev, ptxd->status, aup->tx_len[aup->tx_tail]  & 0x3ff);
+		update_tx_stats(dev, ptxd->status, ptxd->len & 0x3ff);
 		ptxd->buff_stat &= ~TX_T_DONE;
- 		aup->tx_len[aup->tx_tail] = 0;
 		ptxd->len = 0;
 		au_sync();
 
@@ -1086,8 +1183,7 @@ static int au1000_tx(struct sk_buff *skb, struct net_device *dev)
 		return 1;
 	}
 	else if (buff_stat & TX_T_DONE) {
- 		update_tx_stats(dev, ptxd->status, aup->tx_len[aup->tx_head] & 0x3ff);
- 		aup->tx_len[aup->tx_head] = 0;
+		update_tx_stats(dev, ptxd->status, ptxd->len & 0x3ff);
 		ptxd->len = 0;
 	}
 
@@ -1102,13 +1198,11 @@ static int au1000_tx(struct sk_buff *skb, struct net_device *dev)
 		for (i=skb->len; i<MAC_MIN_PKT_SIZE; i++) { 
 			((char *)pDB->vaddr)[i] = 0;
 		}
- 		aup->tx_len[aup->tx_head] = MAC_MIN_PKT_SIZE;
 		ptxd->len = MAC_MIN_PKT_SIZE;
 	}
-	else {
- 		aup->tx_len[aup->tx_head] = skb->len;
+	else
 		ptxd->len = skb->len;
-	}
+
 	ptxd->buff_stat = pDB->dma_addr | TX_DMA_ENABLE;
 	au_sync();
 	dev_kfree_skb(skb);
@@ -1248,6 +1342,23 @@ static void au1000_tx_timeout(struct net_device *dev)
 	netif_wake_queue(dev);
 }
 
+
+static unsigned const ethernet_polynomial = 0x04c11db7U;
+static inline u32 ether_crc(int length, unsigned char *data)
+{
+    int crc = -1;
+
+    while(--length >= 0) {
+		unsigned char current_octet = *data++;
+		int bit;
+		for (bit = 0; bit < 8; bit++, current_octet >>= 1)
+			crc = (crc << 1) ^
+				((crc < 0) ^ (current_octet & 1) ? 
+				 ethernet_polynomial : 0);
+    }
+    return crc;
+}
+
 static void set_rx_mode(struct net_device *dev)
 {
 	struct au1000_private *aup = (struct au1000_private *) dev->priv;
@@ -1271,7 +1382,7 @@ static void set_rx_mode(struct net_device *dev)
 		mc_filter[1] = mc_filter[0] = 0;
 		for (i = 0, mclist = dev->mc_list; mclist && i < dev->mc_count;
 			 i++, mclist = mclist->next) {
-			set_bit(ether_crc_le(ETH_ALEN, mclist->dmi_addr)>>26, 
+			set_bit(ether_crc(ETH_ALEN, mclist->dmi_addr)>>26, 
 					mc_filter);
 		}
 		aup->mac->multi_hash_high = mc_filter[1];
@@ -1287,24 +1398,16 @@ static int au1000_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
 	u16 *data = (u16 *)&rq->ifr_data;
 
 	/* fixme */
-	switch (cmd) { 
-	case SIOCGMIIPHY:		/* Get the address of the PHY in use. */
-	case SIOCDEVPRIVATE:		/* binary compat, remove in 2.5 */
+	switch(cmd) { 
+		case SIOCDEVPRIVATE:	/* Get the address of the PHY in use. */
 		data[0] = PHY_ADDRESS;
-
-	case SIOCGMIIREG:		/* Read the specified MII register. */
-	case SIOCDEVPRIVATE+1:		/* binary compat, remove in 2.5 */
+		case SIOCDEVPRIVATE+1:	/* Read the specified MII register. */
 		//data[3] = mdio_read(ioaddr, data[0], data[1]); 
 		return 0;
-
-	case SIOCSMIIREG:		/* Write the specified MII register */
-	case SIOCDEVPRIVATE+2:		/* binary compat, remove in 2.5 */
-		if (!capable(CAP_NET_ADMIN))
-			return -EPERM;
+		case SIOCDEVPRIVATE+2:	/* Write the specified MII register */
 		//mdio_write(ioaddr, data[0], data[1], data[2]);
 		return 0;
-
-	default:
+		default:
 		return -EOPNOTSUPP;
 	}
 }
@@ -1368,7 +1471,6 @@ static int au1000_set_config(struct net_device *dev, struct ifmap *map)
 			/* set Speed to 100Mbps, Half Duplex */
 			/* disable auto negotiation and enable 100MBit Mode */
 			control = mdio_read(dev, aup->phy_addr, MII_CONTROL);
-			printk("read control %x\n", control);
 			control &= ~(MII_CNTL_AUTO | MII_CNTL_FDX);
 			control |= MII_CNTL_F100;
 			mdio_write(dev, aup->phy_addr, MII_CONTROL, control);

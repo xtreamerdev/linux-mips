@@ -167,7 +167,7 @@
 #define LASAT_SERIAL_PORT_DEFNS
 #endif
 
-#ifdef CONFIG_AU1000_UART
+#ifdef CONFIG_AU1X00_UART
 #include <asm/au1000.h>
 #define AU1000_SERIAL_PORT_DEFNS                              \
     { .baud_base = 0, .port = UART0_ADDR, .irq = AU1000_UART0_INT,  \

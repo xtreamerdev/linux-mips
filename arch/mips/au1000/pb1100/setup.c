@@ -52,7 +52,7 @@
 #define CONFIG_AU1000_OHCI_FIX
 #endif
 
-#if defined(CONFIG_AU1000_SERIAL_CONSOLE)
+#if defined(CONFIG_AU1X00_SERIAL_CONSOLE)
 extern void console_setup(char *, int *);
 char serial_console[20];
 #endif
@@ -71,6 +71,7 @@ extern struct ide_ops *ide_ops;
 extern struct rtc_ops pb1500_rtc_ops;
 #endif
 
+void (*__wbflush) (void);
 extern char * __init prom_getcmdline(void);
 extern void au1000_restart(char *);
 extern void au1000_halt(void);
@@ -81,7 +82,12 @@ extern struct resource iomem_resource;
 
 void __init bus_error_init(void) { /* nothing */ }
 
-void __init au1100_setup(void)
+void au1100_wbflush(void)
+{
+	__asm__ volatile ("sync");
+}
+
+void __init au1x00_setup(void)
 {
 	char *argptr;
 	u32 pin_func, static_cfg0;
@@ -94,7 +100,7 @@ void __init au1100_setup(void)
 	/* Various early Au1000 Errata corrected by this */
 	set_c0_config(1<<19); /* Config[OD] */
 
-#ifdef CONFIG_AU1000_SERIAL_CONSOLE
+#ifdef CONFIG_AU1X00_SERIAL_CONSOLE
 	if ((argptr = strstr(argptr, "console=")) == NULL) {
 		argptr = prom_getcmdline();
 		strcat(argptr, " console=ttyS0,115200");
@@ -106,6 +112,7 @@ void __init au1100_setup(void)
 	argptr = prom_getcmdline();
 #endif
 
+        __wbflush = au1100_wbflush;
 	_machine_restart = au1000_restart;
 	_machine_halt = au1000_halt;
 	_machine_power_off = au1000_power_off;
@@ -128,7 +135,7 @@ void __init au1100_setup(void)
 	au_writel(0, SYS_PININPUTEN);
 	udelay(100);
 
-#if defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1000_USB_DEVICE)
+#if defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1X00_USB_DEVICE)
 #ifdef CONFIG_USB_OHCI
 	if ((argptr = strstr(argptr, "usb_ohci=")) == NULL) {
 	        char usb_args[80];
@@ -175,12 +182,12 @@ void __init au1100_setup(void)
 
 	// get USB Functionality pin state (device vs host drive pins)
 	pin_func = au_readl(SYS_PINFUNC) & (u32)(~0x8000);
-#ifndef CONFIG_AU1000_USB_DEVICE
+#ifndef CONFIG_AU1X00_USB_DEVICE
 	// 2nd USB port is USB host
 	pin_func |= 0x8000;
 #endif
 	au_writel(pin_func, SYS_PINFUNC);
-#endif // defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1000_USB_DEVICE)
+#endif // defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1X00_USB_DEVICE)
 
 #ifdef CONFIG_USB_OHCI
 	// enable host controller and wait for reset done

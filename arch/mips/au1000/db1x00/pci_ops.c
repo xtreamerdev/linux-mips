@@ -6,8 +6,6 @@
  * Author: MontaVista Software, Inc.
  *         	ppopov@mvista.com or source@mvista.com
  *
- *  Support for all devices (greater than 16) added by David Gathright.
- *
  *  This program is free software; you can redistribute  it and/or modify it
  *  under  the terms of  the GNU General  Public License as published by the
  *  Free Software Foundation;  either version 2 of the  License, or (at your
@@ -51,63 +49,82 @@
 #define	DBG(x...)	
 #endif
 
+#ifndef CONFIG_CPU_AU1500
+struct pci_channel mips_pci_channels[] = {
+    {(struct pci_ops *) NULL, (struct resource *) NULL,
+     (struct resource *) NULL, (int) NULL, (int) NULL}
+};
+#else
+
 /* TBD */
 static struct resource pci_io_resource = {
 	"pci IO space", 
-	(u32)Au1500_PCI_IO_START + 0x300,
-	(u32)Au1500_PCI_IO_END,
+	Au1500_PCI_IO_START,
+	Au1500_PCI_IO_END,
 	IORESOURCE_IO
 };
 
 static struct resource pci_mem_resource = {
 	"pci memory space", 
-	(u32)Au1500_PCI_MEM_START,
-	(u32)Au1500_PCI_MEM_END,
+	Au1500_PCI_MEM_START,
+	Au1500_PCI_MEM_END,
 	IORESOURCE_MEM
 };
 
 extern struct pci_ops pb1500_pci_ops;
 
 struct pci_channel mips_pci_channels[] = {
-	{&pb1500_pci_ops, &pci_io_resource, &pci_mem_resource, (0<<3),(19<<3)},
+	{&pb1500_pci_ops, &pci_io_resource, &pci_mem_resource, (10<<3),(16<<3)},
 	{(struct pci_ops *) NULL, (struct resource *) NULL,
 	 (struct resource *) NULL, (int) NULL, (int) NULL}
 };
 
+static unsigned long cfg_addr;
 static int config_access(unsigned char access_type, struct pci_dev *dev, 
 			 unsigned char where, u32 * data)
 {
 	unsigned char bus = dev->bus->number;
 	unsigned int dev_fn = dev->devfn;
-	unsigned int device = PCI_SLOT(dev_fn);
-	unsigned int function = PCI_FUNC(dev_fn);
+	unsigned int device, function;
 	unsigned long config, status;
-        unsigned long cfg_addr;
+	static int first = 1;
 
-	if (device > 19) {
+	/* 
+ 	 * 7:3 = slot
+ 	 * 2:0 = function
+	 */
+
+	if (bus != 0) {
 		*data = 0xffffffff;
 		return -1;
 	}
 
-	au_writel(((0x2000 << 16) | (au_readl(Au1500_PCI_STATCMD) & 0xffff)), 
+	if (first) {
+		first = 0;
+		cfg_addr = ioremap(Au1500_EXT_CFG, 0x10000000);
+		if (!cfg_addr) 
+			printk (KERN_ERR "PCI unable to ioremap cfg space\n");
+	}
+
+	device = (dev_fn >> 3) & 0x1f;
+	function = dev_fn & 0x7;
+
+#if 1
+	//if (!cfg_addr || (device < 10) || (device > 16)) {
+	if (!cfg_addr || (device > 16)) {
+		*data = 0xffffffff;
+		return -1;
+	}
+#endif
+
+	au_writel(((0x2000 << 16) | (au_readl(Au1500_PCI_STATCMD) & 0xffff)),
 			Au1500_PCI_STATCMD);
 	//au_writel(au_readl(Au1500_PCI_CFG) & ~PCI_ERROR, Au1500_PCI_CFG);
 	au_sync_udelay(1);
 
-        /* setup the config window */
-        if (bus == 0) {
-                cfg_addr = ioremap( Au1500_EXT_CFG | ((1<<device)<<11) , 
-				0x00100000);
-        } else {
-                cfg_addr = ioremap( Au1500_EXT_CFG_TYPE1 | (bus<<16) | 
-				(device<<11), 0x00100000);
-        }
-
-        if (!cfg_addr)
-                panic (KERN_ERR "PCI unable to ioremap cfg space\n");
-
-        /* setup the lower bits of the 36 bit address */
-        config = cfg_addr | (function << 8) | (where & ~0x3);
+	/* setup the lower 31 bits of the 36 bit address */
+	config = cfg_addr | 
+		((1<<device)<<11) | (function << 8) | (where & ~0x3);
 
 #if 0
 	printk("cfg access: config %x, dev_fn %x, device %x function %x\n",
@@ -119,20 +136,13 @@ static int config_access(unsigned char access_type, struct pci_dev *dev,
 	} else {
 		*data = au_readl(config);
 	}
-	au_sync_udelay(2);
-
+	au_sync_udelay(1);
 
 	DBG("config_access: %d bus %d device %d at %x *data %x, conf %x\n", 
 			access_type, bus, device, where, *data, config);
 
-        /* unmap io space */
-        iounmap( cfg_addr );
-
 	/* check master abort */
 	status = au_readl(Au1500_PCI_STATCMD);
-#if 0
-printk("cfg access: status %x, data %x\n", status, *data );
-#endif
 	if (status & (1<<29)) { 
 		*data = 0xffffffff;
 		return -1;
@@ -140,7 +150,8 @@ printk("cfg access: status %x, data %x\n", status, *data );
 		DBG("PCI ERR detected: status %x\n", status);
 		*data = 0xffffffff;
 		return -1;
-	} else {
+	}
+	else {
 		return PCIBIOS_SUCCESSFUL;
 	}
 }
@@ -155,7 +166,7 @@ static int read_config_byte(struct pci_dev *dev, int where, u8 * val)
         if (where & 1) data >>= 8;
         if (where & 2) data >>= 16;
         *val = data & 0xff;
-	return ret;
+	return ret; 
 }
 
 
@@ -167,7 +178,7 @@ static int read_config_word(struct pci_dev *dev, int where, u16 * val)
 	ret = config_access(PCI_ACCESS_READ, dev, where, &data);
         if (where & 2) data >>= 16;
         *val = data & 0xffff;
-	return ret;
+	return ret; 
 }
 
 static int read_config_dword(struct pci_dev *dev, int where, u32 * val)
@@ -175,14 +186,14 @@ static int read_config_dword(struct pci_dev *dev, int where, u32 * val)
 	int ret;
 
 	ret = config_access(PCI_ACCESS_READ, dev, where, val);
-	return ret;
+	return ret; 
 }
 
 
 static int write_config_byte(struct pci_dev *dev, int where, u8 val)
 {
 	u32 data = 0;
-
+       
 	if (config_access(PCI_ACCESS_READ, dev, where, &data))
 		return -1;
 
@@ -201,11 +212,11 @@ static int write_config_word(struct pci_dev *dev, int where, u16 val)
 
 	if (where & 1)
 		return PCIBIOS_BAD_REGISTER_NUMBER;
-
+       
         if (config_access(PCI_ACCESS_READ, dev, where, &data))
 	       return -1;
 
-	data = (data & ~(0xffff << ((where & 3) << 3))) |
+	data = (data & ~(0xffff << ((where & 3) << 3))) | 
 	       (val << ((where & 3) << 3));
 
 	if (config_access(PCI_ACCESS_WRITE, dev, where, &data))
@@ -234,4 +245,7 @@ struct pci_ops pb1500_pci_ops = {
 	write_config_word,
 	write_config_dword
 };
+
+#endif // CONFIG_CPU_AU1500
 #endif /* CONFIG_PCI */
+
