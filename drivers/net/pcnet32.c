@@ -1274,7 +1274,7 @@ pcnet32_probe1(unsigned long ioaddr, unsigned int irq_line, int shared,
     }
 
 #ifdef CONFIG_LASAT
-    if (dev->irq >= 0)
+    if (dev->irq >= 0) {
 #else
     if (dev->irq >= 2) {
 #endif
@@ -1365,8 +1365,9 @@ pcnet32_open(struct net_device *dev)
     int rc;
     unsigned long flags;
 
+    if (
 #ifndef CONFIG_LASAT
-    if (dev->irq == 0 ||
+        dev->irq == 0 ||
 #endif
 	request_irq(dev->irq, &pcnet32_interrupt,
 		    lp->shared_irq ? SA_SHIRQ : 0, dev->name, (void *)dev)) {
