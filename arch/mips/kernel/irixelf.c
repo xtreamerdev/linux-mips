@@ -1,4 +1,4 @@
-/* $Id: irixelf.c,v 1.16.2.4 1999/06/22 22:23:31 ralf Exp $
+/* $Id: irixelf.c,v 1.16.2.5 1999/06/27 08:44:26 ralf Exp $
  *
  * irixelf.c: Code to load IRIX ELF executables which conform to
  *            the MIPS ABI.
@@ -22,6 +22,7 @@
 #include <linux/signal.h>
 #include <linux/binfmts.h>
 #include <linux/string.h>
+#include <linux/file.h>
 #include <linux/fcntl.h>
 #include <linux/ptrace.h>
 #include <linux/malloc.h>
@@ -987,7 +988,7 @@ unsigned long irix_mapelf(int fd, struct elf_phdr *user_phdrp, int cnt)
 		return -EACCES;
 	if(!filp->f_op) {
 		printk("irix_mapelf: Bogon filp!\n");
-		fput(file);
+		fput(filp);
 		return -EACCES;
 	}
 
@@ -1005,7 +1006,7 @@ unsigned long irix_mapelf(int fd, struct elf_phdr *user_phdrp, int cnt)
 
 		if(retval != (hp->p_vaddr & 0xfffff000)) {
 			printk("irix_mapelf: do_mmap fails with %d!\n", retval);
-			fput(file);
+			fput(filp);
 			return retval;
 		}
 	}
@@ -1013,7 +1014,7 @@ unsigned long irix_mapelf(int fd, struct elf_phdr *user_phdrp, int cnt)
 #ifdef DEBUG_ELF
 	printk("irix_mapelf: Success, returning %08lx\n", user_phdrp->p_vaddr);
 #endif
-	fput(file);
+	fput(filp);
 	return user_phdrp->p_vaddr;
 }
 
