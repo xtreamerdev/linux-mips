@@ -491,6 +491,7 @@ CONFIG_EEPRO100=y
 # CONFIG_INPUT_MOUSEDEV is not set
 # CONFIG_INPUT_JOYDEV is not set
 # CONFIG_INPUT_EVDEV is not set
+# CONFIG_INPUT_UINPUT is not set
 
 #
 # Character devices

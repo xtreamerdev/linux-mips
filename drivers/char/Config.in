@@ -165,9 +165,9 @@ if [ "$CONFIG_MIPS_IVR" = "y" ]; then
    fi
    bool 'Enable Smart Card Reader 0 Support ' CONFIG_IT8172_SCR0
 fi
-if [ "$CONFIG_MIPS_HYDROGEN3" = "y" ]; then
-   dep_tristate 'Hydrogen III Au1100 buttons support' CONFIG_MIPS_HYDROGEN3_BUTTONS $CONFIG_MIPS_HYDROGEN3
-fi
+#if [ "$CONFIG_MIPS_HYDROGEN3" = "y" ]; then
+#   dep_tristate 'Hydrogen III Au1100 buttons support' CONFIG_MIPS_HYDROGEN3_BUTTONS $CONFIG_MIPS_HYDROGEN3
+#fi
 if [ "$CONFIG_CPU_VR41XX" = "y" ]; then
    bool 'NEC VR4100 series Keyboard Interface Unit Support ' CONFIG_VR41XX_KIU
 fi
@@ -383,6 +383,11 @@ if [ "$CONFIG_DRM" = "y" ]; then
       source drivers/char/drm/Config.in
    fi
 fi
+
+if [ "$CONFIG_X86" = "y" ]; then
+   tristate 'ACP Modem (Mwave) support' CONFIG_MWAVE
+fi
+
 endmenu
 
 if [ "$CONFIG_HOTPLUG" = "y" -a "$CONFIG_PCMCIA" != "n" ]; then
