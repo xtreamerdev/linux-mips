@@ -211,6 +211,8 @@ void __init au1x00_setup(void)
 	}
 #endif
 
+	au_writel(0, 0xAE000010); /* turn off pcmcia power */
+
 #ifdef CONFIG_MIPS_DB1000
     printk("AMD Alchemy Au1000/Db1000 Board\n");
 #endif

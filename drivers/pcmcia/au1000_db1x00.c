@@ -1,6 +1,6 @@
 /*
  *
- * Alchemy Semi Pb1x00 boards specific pcmcia routines.
+ * Alchemy Semi Db1x00 boards specific pcmcia routines.
  *
  * Copyright 2002 MontaVista Software Inc.
  * Author: MontaVista Software, Inc.
@@ -56,53 +56,29 @@
 
 #include <asm/db1x00.h>
 
+static BCSR * const bcsr = (BCSR *)0xAE000000;
+
 static int db1x00_pcmcia_init(struct pcmcia_init *init)
 {
-	u16 pcr;
-	/* assert RESET to the slots */
-	pcr = PCR_SLOT_0_RST | PCR_SLOT_1_RST;
-
-	/* clear GPIO interrupts */
-
-	au_writew(0x8000, DB1000_MDR); /* clear pcmcia interrupt */
-	au_sync_delay(100);
-	//au_writew(0x4000, DB1000_MDR); /* enable pcmcia interrupt */
-	// above is not necessary anymore since slot irqs separated
-	au_sync();
-
-	pcr |= SET_VCC_VPP(VCC_HIZ,VPP_HIZ,0);
-	pcr |= SET_VCC_VPP(VCC_HIZ,VPP_HIZ,1);
-	au_writew(pcr, DB1000_PCR);
-	au_sync_delay(20);
-	  
+	bcsr->pcmcia = 0; /* turn off power */
+	au_sync_delay(2);
 	return PCMCIA_NUM_SOCKS;
 }
 
 static int db1x00_pcmcia_shutdown(void)
 {
-	u16 pcr;
-	pcr = PCR_SLOT_0_RST | PCR_SLOT_1_RST;
-	pcr |= SET_VCC_VPP(VCC_HIZ,VPP_HIZ,0);
-	pcr |= SET_VCC_VPP(VCC_HIZ,VPP_HIZ,1);
-	au_writew(pcr, DB1000_PCR);
-	au_sync_delay(20);
+	bcsr->pcmcia = 0; /* turn off power */
+	au_sync_delay(2);
 	return 0;
 }
 
 static int 
 db1x00_pcmcia_socket_state(unsigned sock, struct pcmcia_state *state)
 {
-	u32 inserted0, inserted1;
-	unsigned short vs0, vs1;
+	u32 inserted;
+	unsigned char vs;
 
-	/* read the BOARD_STATUS Register */
-	vs0 = vs1 = au_readw(DB1000_BSR);
-
-	inserted0 = !((vs0 >> 4) & 0x01);
-	inserted1 = !((vs1 >> 5) & 0x01);
-
-	vs0 = (vs0 & 0x3);
-	vs1 = (vs1 >> 2) & 0x3;
+	if(sock > PCMCIA_MAX_SOCK) return -1;
 
 	state->ready = 0;
 	state->vs_Xv = 0;
@@ -110,44 +86,50 @@ db1x00_pcmcia_socket_state(unsigned sock, struct pcmcia_state *state)
 	state->detect = 0;
 
 	if (sock == 0) {
-		if (inserted0) {
-			switch (vs0) {
-				case 0:
-				case 2:
-					state->vs_3v=1;
-					break;
-				case 3: /* 5V */
-					break;
-				default:
-					/* return without setting 'detect' */
-					printk(KERN_ERR "pb1x00 bad VS (%d)\n",
-							vs0);
-					return 0;
-			}
-			state->detect = 1;
-		}
+		vs = bcsr->status & 0x3;
+		inserted = !(bcsr->status & (1<<4));
 	}
-	else  {
-		if (inserted1) {
-			switch (vs1) {
-				case 0:
-				case 2:
-					state->vs_3v=1;
-					break;
-				case 3: /* 5V */
-					break;
-				default:
-					/* return without setting 'detect' */
-					printk(KERN_ERR "pb1x00 bad VS (%d)\n",
-							vs1);
-					return 0;
-			}
-			state->detect = 1;
-		}
+	else {
+		vs = (bcsr->status & 0xC)>>2;
+		inserted = !(bcsr->status & (1<<5));
 	}
 
-	if (state->detect) {
+	DEBUG(KERN_DEBUG "db1x00 socket %d: inserted %d, vs %d\n", 
+			sock, inserted, vs);
+
+	if (inserted) {
+		switch (vs) {
+			case 0:
+			case 2:
+				state->vs_3v=1;
+				break;
+			case 3: /* 5V */
+				break;
+			default:
+				/* return without setting 'detect' */
+				printk(KERN_ERR "db1x00 bad VS (%d)\n",
+						vs);
+				return -1;
+		}
+		state->detect = 1;
 		state->ready = 1;
+	}
+	else {
+		/* if the card was previously inserted and then ejected,
+		 * we should turn off power to it
+		 */
+		if ((sock == 0) && (bcsr->pcmcia & BCSR_PCMCIA_PC0RST)) {
+			bcsr->pcmcia &= ~(BCSR_PCMCIA_PC0RST | 
+					BCSR_PCMCIA_PC0DRVEN |
+					BCSR_PCMCIA_PC0VPP |
+					BCSR_PCMCIA_PC0VCC);
+		}
+		else if ((sock == 1) && (bcsr->pcmcia & BCSR_PCMCIA_PC1RST)) {
+			bcsr->pcmcia &= ~(BCSR_PCMCIA_PC1RST | 
+					BCSR_PCMCIA_PC1DRVEN |
+					BCSR_PCMCIA_PC1VPP |
+					BCSR_PCMCIA_PC1VCC);
+		}
 	}
 
 	state->bvd1=1;
@@ -159,16 +141,14 @@ db1x00_pcmcia_socket_state(unsigned sock, struct pcmcia_state *state)
 
 static int db1x00_pcmcia_get_irq_info(struct pcmcia_irq_info *info)
 {
-
 	if(info->sock > PCMCIA_MAX_SOCK) return -1;
-	/*
-	 * Even in the case of the Pb1000, both sockets are connected
-	 * to the same irq line.
-	 */
-	if (info->sock == 0)
-		info->irq = AU1000_GPIO_2;	// must match irq.c
-	else
-		info->irq = AU1000_GPIO_5;	// must match irq.c
+
+	if(info->sock == 0) {
+		info->irq = AU1000_GPIO_2;
+	}
+	else 
+		info->irq = AU1000_GPIO_5;
+
 	return 0;
 }
 
@@ -176,81 +156,39 @@ static int db1x00_pcmcia_get_irq_info(struct pcmcia_irq_info *info)
 static int 
 db1x00_pcmcia_configure_socket(const struct pcmcia_configure *configure)
 {
-	u16 pcr;
-	int inten = 1;
+	u16 pwr;
+	int sock = configure->sock;
 
-	if(configure->sock > PCMCIA_MAX_SOCK) return -1;
+	if(sock > PCMCIA_MAX_SOCK) return -1;
 
-	pcr = au_readw(DB1000_PCR);
+	DEBUG(KERN_DEBUG "socket %d Vcc %dV Vpp %dV, reset %d\n", 
+			sock, configure->vcc, configure->vpp, configure->reset);
 
-	if (configure->sock == 0) {
-		pcr &= ~(PCR_SLOT_0_VCC0 | PCR_SLOT_0_VCC1 | 
-				PCR_SLOT_0_VPP0 | PCR_SLOT_0_VPP1);
-		pcr &= ~PCR_SLOT_0_RST;
-	}
-	else  {
-		pcr &= ~(PCR_SLOT_1_VCC0 | PCR_SLOT_1_VCC1 | 
-				PCR_SLOT_1_VPP0 | PCR_SLOT_1_VPP1);
-		pcr &= ~PCR_SLOT_1_RST;
-	}
-#if 0
-	DEBUG(KERN_INFO "Vcc %dV Vpp %dV, pcr %x\n", 
-			configure->vcc, configure->vpp, pcr);
-#endif
+	/* pcmcia reg was set to zero at init time. Be careful when
+	 * initializing a socket not to wipe out the settings of the 
+	 * other socket.
+	 */
+	pwr = bcsr->pcmcia;
+	pwr &= ~(0xf << sock*8); /* clear voltage settings */
+
 	switch(configure->vcc){
 		case 0:  /* Vcc 0 */
-			switch(configure->vpp) {
-				case 0:
-					pcr |= SET_VCC_VPP(VCC_HIZ,VPP_GND,
-							configure->sock);
-					inten = 0;
-					break;
-				case 12:
-					pcr |= SET_VCC_VPP(VCC_HIZ,VPP_12V,
-							configure->sock);
-					break;
-				case 50:
-					pcr |= SET_VCC_VPP(VCC_HIZ,VPP_5V,
-							configure->sock);
-					break;
-				case 33:
-					pcr |= SET_VCC_VPP(VCC_HIZ,VPP_3V,
-							configure->sock);
-					break;
-				default:
-					pcr |= SET_VCC_VPP(VCC_HIZ,VPP_HIZ,
-							configure->sock);
-					inten = 0;
-					printk("%s: bad Vcc/Vpp (%d:%d)\n", 
-							__FUNCTION__, 
-							configure->vcc, 
-							configure->vpp);
-					break;
-			}
+			pwr |= SET_VCC_VPP(0,0,sock);
 			break;
 		case 50: /* Vcc 5V */
 			switch(configure->vpp) {
 				case 0:
-					pcr |= SET_VCC_VPP(VCC_5V,VPP_GND,
-							configure->sock);
-					inten = 0;
+					pwr |= SET_VCC_VPP(2,0,sock);
 					break;
 				case 50:
-					pcr |= SET_VCC_VPP(VCC_5V,VPP_5V,
-							configure->sock);
+					pwr |= SET_VCC_VPP(2,1,sock);
 					break;
 				case 12:
-					pcr |= SET_VCC_VPP(VCC_5V,VPP_12V,
-							configure->sock);
+					pwr |= SET_VCC_VPP(2,2,sock);
 					break;
 				case 33:
-					pcr |= SET_VCC_VPP(VCC_5V,VPP_3V,
-							configure->sock);
-					break;
 				default:
-					pcr |= SET_VCC_VPP(VCC_HIZ,VPP_HIZ,
-							configure->sock);
-					inten = 0;
+					pwr |= SET_VCC_VPP(0,0,sock);
 					printk("%s: bad Vcc/Vpp (%d:%d)\n", 
 							__FUNCTION__, 
 							configure->vcc, 
@@ -261,26 +199,17 @@ db1x00_pcmcia_configure_socket(const struct pcmcia_configure *configure)
 		case 33: /* Vcc 3.3V */
 			switch(configure->vpp) {
 				case 0:
-					pcr |= SET_VCC_VPP(VCC_3V,VPP_GND,
-							configure->sock);
-					inten = 0;
-					break;
-				case 50:
-					pcr |= SET_VCC_VPP(VCC_3V,VPP_5V,
-							configure->sock);
+					pwr |= SET_VCC_VPP(1,0,sock);
 					break;
 				case 12:
-					pcr |= SET_VCC_VPP(VCC_3V,VPP_12V,
-							configure->sock);
+					pwr |= SET_VCC_VPP(1,2,sock);
 					break;
 				case 33:
-					pcr |= SET_VCC_VPP(VCC_3V,VPP_3V,
-							configure->sock);
+					pwr |= SET_VCC_VPP(1,1,sock);
 					break;
+				case 50:
 				default:
-					pcr |= SET_VCC_VPP(VCC_HIZ,VPP_HIZ,
-							configure->sock);
-					inten = 0;
+					pwr |= SET_VCC_VPP(0,0,sock);
 					printk("%s: bad Vcc/Vpp (%d:%d)\n", 
 							__FUNCTION__, 
 							configure->vcc, 
@@ -289,28 +218,45 @@ db1x00_pcmcia_configure_socket(const struct pcmcia_configure *configure)
 			}
 			break;
 		default: /* what's this ? */
-			pcr |= SET_VCC_VPP(VCC_HIZ,VPP_HIZ,configure->sock);
-			inten = 0;
+			pwr |= SET_VCC_VPP(0,0,sock);
 			printk(KERN_ERR "%s: bad Vcc %d\n", 
 					__FUNCTION__, configure->vcc);
 			break;
 	}
 
-	if (configure->sock == 0)
-	{
-		pcr &= ~(PCR_SLOT_0_RST);
-		if (configure->reset)
-			pcr |= PCR_SLOT_0_RST;
-	}
-	else
-	{
-		pcr &= ~(PCR_SLOT_1_RST);
-		if (configure->reset)
-			pcr |= PCR_SLOT_1_RST;
-	}
-	au_writew(pcr, DB1000_PCR);
+	bcsr->pcmcia = pwr;
 	au_sync_delay(300);
 
+	if (sock == 0) {
+		if (!configure->reset) {
+			pwr |= BCSR_PCMCIA_PC0DRVEN;
+			bcsr->pcmcia = pwr;
+			au_sync_delay(300);
+			pwr |= BCSR_PCMCIA_PC0RST;
+			bcsr->pcmcia = pwr;
+			au_sync_delay(100);
+		}
+		else {
+			pwr &= ~(BCSR_PCMCIA_PC0RST | BCSR_PCMCIA_PC0DRVEN);
+			bcsr->pcmcia = pwr;
+			au_sync_delay(100);
+		}
+	}
+	else {
+		if (!configure->reset) {
+			pwr |= BCSR_PCMCIA_PC1DRVEN;
+			bcsr->pcmcia = pwr;
+			au_sync_delay(300);
+			pwr |= BCSR_PCMCIA_PC1RST;
+			bcsr->pcmcia = pwr;
+			au_sync_delay(100);
+		}
+		else {
+			pwr &= ~(BCSR_PCMCIA_PC1RST | BCSR_PCMCIA_PC1DRVEN);
+			bcsr->pcmcia = pwr;
+			au_sync_delay(100);
+		}
+	}
 	return 0;
 }
 

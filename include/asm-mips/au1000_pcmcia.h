@@ -33,6 +33,22 @@
 #define AU1000_PCMCIA_IO_SPEED       (255)
 #define AU1000_PCMCIA_MEM_SPEED      (300)
 
+#define AU1X_SOCK0_IO        0xF00000000
+#define AU1X_SOCK0_PHYS_ATTR 0xF40000000
+#define AU1X_SOCK0_PHYS_MEM  0xF80000000
+
+/* pcmcia socket 1 needs external glue logic so the memory map
+ * differs from board to board.
+ */
+#if defined(CONFIG_MIPS_PB1000) || defined(CONFIG_MIPS_PB1100) || defined(CONFIG_MIPS_PB1500)
+#define AU1X_SOCK1_IO        0xF08000000
+#define AU1X_SOCK1_PHYS_ATTR 0xF48000000
+#define AU1X_SOCK1_PHYS_MEM  0xF88000000
+#elif defined(CONFIG_MIPS_DB1000) || defined(CONFIG_MIPS_DB1100) || defined(CONFIG_MIPS_DB1500)
+#define AU1X_SOCK1_IO        0xF04000000
+#define AU1X_SOCK1_PHYS_ATTR 0xF44000000
+#define AU1X_SOCK1_PHYS_MEM  0xF84000000
+#endif
 
 struct pcmcia_state {
   unsigned detect: 1,
