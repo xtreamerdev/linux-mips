@@ -56,6 +56,9 @@ bool 'Support for Momentum Ocelot board' CONFIG_MOMENCO_OCELOT
 dep_bool 'Support for NEC DDB Vrc-5074 (EXPERIMENTAL)' CONFIG_DDB5074 $CONFIG_EXPERIMENTAL
 bool 'Support for NEC DDB Vrc-5476' CONFIG_DDB5476
 bool 'Support for NEC DDB Vrc-5477' CONFIG_DDB5477
+if [ "$CONFIG_DDB5477" = "y" ]; then
+      int '   bus frequency (in kHZ, 0 for auto-detect)' CONFIG_DDB5477_BUS_FREQUENCY 0
+fi
 bool 'Support for NEC Osprey board' CONFIG_NEC_OSPREY
 bool 'Support for NEC Eagle/Hawk board' CONFIG_NEC_EAGLE
 bool 'Support for Olivetti M700-10' CONFIG_OLIVETTI_M700
@@ -268,6 +271,7 @@ if [ "$CONFIG_DDB5477" = "y" ]; then
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_DUMMY_KEYB y
+   define_bool CONFIG_I8259 y
 fi
 if [ "$CONFIG_NEC_OSPREY" = "y" ]; then
    define_bool CONFIG_VR4181 y
