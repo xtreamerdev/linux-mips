@@ -342,6 +342,20 @@ CONFIG_SD_EXTRA_DEVS=40
 # CONFIG_SCSI_DEBUG is not set
 
 #
+# Fusion MPT device support
+#
+# CONFIG_FUSION is not set
+# CONFIG_FUSION_BOOT is not set
+# CONFIG_FUSION_ISENSE is not set
+# CONFIG_FUSION_CTL is not set
+# CONFIG_FUSION_LAN is not set
+
+#
+# IEEE 1394 (FireWire) support (EXPERIMENTAL)
+#
+# CONFIG_IEEE1394 is not set
+
+#
 # Network device support
 #
 CONFIG_NETDEVICES=y

@@ -205,6 +205,15 @@ CONFIG_BLK_DEV_INITRD=y
 # CONFIG_SCSI is not set
 
 #
+# Fusion MPT device support
+#
+# CONFIG_FUSION is not set
+# CONFIG_FUSION_BOOT is not set
+# CONFIG_FUSION_ISENSE is not set
+# CONFIG_FUSION_CTL is not set
+# CONFIG_FUSION_LAN is not set
+
+#
 # Amateur Radio support
 #
 # CONFIG_HAMRADIO is not set

@@ -412,6 +412,20 @@ CONFIG_BLK_DEV_IDE_MODES=y
 # CONFIG_SCSI is not set
 
 #
+# Fusion MPT device support
+#
+# CONFIG_FUSION is not set
+# CONFIG_FUSION_BOOT is not set
+# CONFIG_FUSION_ISENSE is not set
+# CONFIG_FUSION_CTL is not set
+# CONFIG_FUSION_LAN is not set
+
+#
+# IEEE 1394 (FireWire) support (EXPERIMENTAL)
+#
+# CONFIG_IEEE1394 is not set
+
+#
 # I2O device support
 #
 # CONFIG_I2O is not set

@@ -990,6 +990,10 @@ if [ "$CONFIG_SCSI" != "n" ]; then
 fi
 endmenu
 
+source drivers/message/fusion/Config.in
+
+source drivers/ieee1394/Config.in
+
 if [ "$CONFIG_PCI" = "y" -a "$CONFIG_MIPS32" = "y" ]; then
    source drivers/message/i2o/Config.in
 fi
