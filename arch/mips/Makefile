@@ -18,8 +18,10 @@
 #
 ifdef CONFIG_CPU_LITTLE_ENDIAN
 tool-prefix	= mipsel-linux-
+ld-emul		= elf32ltsmip
 else
 tool-prefix	= mips-linux-
+ld-emul		= elf32btsmip
 endif
 
 ifdef CONFIG_CROSSCOMPILE
@@ -105,6 +107,7 @@ endif
 
 AFLAGS		+= $(GCCFLAGS)
 CFLAGS		+= $(GCCFLAGS)
+LDFLAGS		+= -m $(ld-emul)
 
 
 #
