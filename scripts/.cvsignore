@@ -1,2 +1,4 @@
 mkdep
 split-include
+kconfig.tk
+tkparse
