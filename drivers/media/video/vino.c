@@ -1,5 +1,5 @@
 /*
- * (incomplete) Driver for the VINO (Video In No Out) system found in SGI Indys.
+ * Driver for the VINO (Video In No Out) system found in SGI Indys.
  * 
  * This file is subject to the terms and conditions of the GNU General Public
  * License version 2 as published by the Free Software Foundation.
@@ -8,22 +8,19 @@
  */
 
 #include <linux/module.h>
+#include <linux/kmod.h>
 #include <linux/init.h>
 #include <linux/types.h>
-#include <linux/mm.h>
-#include <linux/slab.h>
-#include <linux/wrapper.h>
 #include <linux/errno.h>
+#include <linux/mm.h>
+#include <linux/wrapper.h>
 #include <linux/irq.h>
 #include <linux/delay.h>
+#include <linux/pci.h>
 #include <linux/videodev.h>
 #include <linux/i2c.h>
 #include <linux/i2c-algo-sgi.h>
 
-#include <asm/addrspace.h>
-#include <asm/system.h>
-#include <asm/bootinfo.h>
-#include <asm/pgtable.h>
 #include <asm/paccess.h>
 #include <asm/io.h>
 #include <asm/sgi/ip22.h>
@@ -34,11 +31,26 @@
 
 /* debugging? */
 #if 1
-#define DEBUG(x...)     printk(x);
+#define DEBUG(x...)	printk(x);
 #else
 #define DEBUG(x...)
 #endif
 
+/* VINO video size */
+#define VINO_PAL_WIDTH		768
+#define VINO_PAL_HEIGHT		576
+#define VINO_NTSC_WIDTH		646
+#define VINO_NTSC_HEIGHT	486
+
+/* set this to some sensible values. note: VINO_MIN_WIDTH has to be 8*x */
+#define VINO_MIN_WIDTH		32
+#define VINO_MIN_HEIGHT		32
+
+/* channel selection */
+#define VINO_INPUT_COMPOSITE	0
+#define VINO_INPUT_SVIDEO	1
+#define VINO_INPUT_CAMERA	2
+#define VINO_INPUT_CHANNELS	3
 
 /* VINO ASIC registers */
 struct sgi_vino *vino;
@@ -49,9 +61,44 @@ static int threshold_b = 512;
 
 struct vino_device {
 	struct video_device vdev;
-#define VINO_CHAN_A		1
-#define VINO_CHAN_B		2
+#define VINO_CHAN_A	1
+#define VINO_CHAN_B	2
 	int chan;
+	int alpha;
+	/* clipping... */
+	unsigned int left, right, top, bottom;
+	/* decimation used */
+	unsigned int decimation;
+	/* palette used... */
+	unsigned int palette;
+	/* VINO_INPUT_COMPOSITE, VINO_INPUT_SVIDEO or VINO_INPUT_CAMERA */
+	unsigned int input;
+	/* bytes per line */
+	unsigned int line_size;
+	/* descriptor table (virtual addresses) */
+	unsigned long *desc;
+	/* # of allocated pages */
+	int page_count;
+	/* descriptor table (dma addresses) */
+	struct {
+		dma_addr_t *cpu;
+		dma_addr_t dma;
+	} dma_desc;
+	/* add some more space to let VINO trigger End Of Field interrupt
+	 * before reaching end of buffer */
+#define VINO_FBUFSIZE	(VINO_PAL_WIDTH * VINO_PAL_HEIGHT * 4 + 2 * PAGE_SIZE)
+	unsigned int frame_size;
+#define VINO_BUF_UNUSED		0
+#define VINO_BUF_GRABBING	1
+#define VINO_BUF_DONE		2
+	int buffer_state;
+
+	wait_queue_head_t dma_wait;
+	spinlock_t state_lock;
+	struct semaphore sem;
+
+	/* Make sure we only have one user at the time */
+	int users;
 };
 
 struct vino_client {
@@ -65,16 +112,21 @@ struct vino_video {
 
 	struct vino_client decoder;
 	struct vino_client camera;
-
-	struct semaphore input_lock;
+	spinlock_t vino_lock;
+	spinlock_t input_lock;
 
 	/* Loaded into VINO descriptors to clear End Of Descriptors table
 	 * interupt condition */
-	unsigned long dummy_page;
-	unsigned int dummy_buf[4] __attribute__((aligned(8)));
+	unsigned long dummy_desc;
+	struct {
+		dma_addr_t *cpu;
+		dma_addr_t dma;
+	} dummy_dma;
 };
 
 static struct vino_video *Vino;
+
+/* --- */
 
 unsigned i2c_vino_getctrl(void *data)
 {
@@ -114,7 +166,7 @@ static int i2c_vino_client_reg(struct i2c_client *client)
 {
 	int res = 0;
 
-	down(&Vino->input_lock);
+	spin_lock(&Vino->input_lock);
 	switch (client->driver->id) {
 	case I2C_DRIVERID_SAA7191:
 		if (Vino->decoder.driver)
@@ -131,7 +183,7 @@ static int i2c_vino_client_reg(struct i2c_client *client)
 	default:
 		res = -ENODEV;
 	}
-	up(&Vino->input_lock);
+	spin_unlock(&Vino->input_lock);
 
 	return res;
 }
@@ -140,7 +192,7 @@ static int i2c_vino_client_unreg(struct i2c_client *client)
 {
 	int res = 0;
 	
-	down(&Vino->input_lock);
+	spin_lock(&Vino->input_lock);
 	if (client == Vino->decoder.driver) {
 		if (Vino->decoder.owner)
 			res = -EBUSY;
@@ -152,7 +204,7 @@ static int i2c_vino_client_unreg(struct i2c_client *client)
 		else
 			Vino->camera.driver = NULL;
 	}
-	up(&Vino->input_lock);
+	spin_unlock(&Vino->input_lock);
 
 	return res;
 }
@@ -176,52 +228,703 @@ static int vino_i2c_del_bus(void)
 	return i2c_sgi_del_bus(&vino_i2c_adapter);
 }
 
+/* --- */
 
-static void vino_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+static int bytes_per_pixel(struct vino_device *v)
 {
+	if (v->palette == VIDEO_PALETTE_GREY)
+		return 1;
+	if (v->palette == VIDEO_PALETTE_YUV422)
+		return 2;
+	/* VIDEO_PALETTE_RGB32 */
+	return 4;
 }
 
-static int vino_open(struct video_device *dev, int flags)
+static int get_capture_norm(struct vino_device *v)
 {
-	struct vino_device *videv = (struct vino_device *)dev;
+	if (v->input == VINO_INPUT_CAMERA)
+		return VIDEO_MODE_NTSC;
+	else {
+		/* TODO */
+		return VIDEO_MODE_NTSC;
+	}
+}
+
+/*
+ * Set clipping. Try new values to fit, if they don't return -EINVAL
+ */
+static int set_clipping(struct vino_device *v, int x, int y, int w, int h,
+			int d)
+{
+	int maxwidth, maxheight, lsize;
+
+	if (d < 1)
+		d = 1;
+	if (d > 8)
+		d = 8;
+	if (w / d < VINO_MIN_WIDTH || h / d < VINO_MIN_HEIGHT)
+		return -EINVAL;
+	if (get_capture_norm(v) == VIDEO_MODE_NTSC) {
+		maxwidth = VINO_NTSC_WIDTH;
+		maxheight = VINO_NTSC_HEIGHT;
+	} else {
+		maxwidth = VINO_PAL_WIDTH;
+		maxheight = VINO_PAL_HEIGHT;
+	}
+	if (x < 0)
+		x = 0;
+	if (y < 0)
+		y = 0;
+	y &= ~1;	/* odd/even fields */
+	if (x + w > maxwidth) {
+		w = maxwidth - x;
+		if (w / d < VINO_MIN_WIDTH)
+			x = maxwidth - VINO_MIN_WIDTH * d;
+	}
+	if (y + h > maxheight) {
+		h = maxheight - y;
+		if (h / d < VINO_MIN_HEIGHT)
+			y = maxheight - VINO_MIN_HEIGHT * d;
+	}
+	/* line size must be multiple of 8 bytes */
+	lsize = (bytes_per_pixel(v) * w / d) & ~7;
+	w = lsize * d / bytes_per_pixel(v);
+	v->left = x;
+	v->top = y;
+	v->right = x + w;
+	v->bottom = y + h;
+	v->decimation = d;
+	v->line_size = lsize;
+	DEBUG("VINO: clipping %d, %d, %d, %d / %d - %d\n", v->left, v->top,
+	      v->right, v->bottom, v->decimation, v->line_size);
+	return 0;
+}
+
+static int set_scaling(struct vino_device *v, int w, int h)
+{
+	int maxwidth, maxheight, lsize, d;
+
+	if (w < VINO_MIN_WIDTH || h < VINO_MIN_HEIGHT)
+		return -EINVAL;
+	if (get_capture_norm(v) == VIDEO_MODE_NTSC) {
+		maxwidth = VINO_NTSC_WIDTH;
+		maxheight = VINO_NTSC_HEIGHT;
+	} else {
+		maxwidth = VINO_PAL_WIDTH;
+		maxheight = VINO_PAL_HEIGHT;
+	}
+	if (w > maxwidth)
+		w = maxwidth;
+	if (h > maxheight)
+		h = maxheight;
+	d = max(maxwidth / w, maxheight / h);
+	if (d > 8)
+		d = 8;
+	/* line size must be multiple of 8 bytes */
+	lsize = (bytes_per_pixel(v) * w) & ~7;
+	w = lsize * d / bytes_per_pixel(v);
+	h *= d;
+	if (v->left + w > maxwidth)
+		v->left = maxwidth - w;
+	if (v->top + h > maxheight)
+		v->top = (maxheight - h) & ~1;	/* odd/even fields */
+	/* FIXME: -1 bug... Verify clipping with video signal generator */
+	v->right = v->left + w;
+	v->bottom = v->top + h;
+	v->decimation = d;
+	v->line_size = lsize;
+	DEBUG("VINO: scaling %d, %d, %d, %d / %d - %d\n", v->left, v->top,
+	      v->right, v->bottom, v->decimation, v->line_size);
 
 	return 0;
 }
 
-static void vino_close(struct video_device *dev)
+/* 
+ * Prepare vino for DMA transfer... (execute only with vino_lock locked)
+ */
+static int dma_setup(struct vino_device *v)
 {
-	struct vino_device *videv = (struct vino_device *)dev;
+	u32 ctrl, intr;
+	struct sgi_vino_channel *ch;
+
+	ch = (v->chan == VINO_CHAN_A) ? &vino->a : &vino->b;
+	ch->page_index = 0;
+	ch->line_count = 0;
+	/* let VINO know where to transfer data */
+	ch->start_desc_tbl = v->dma_desc.dma;
+	ch->next_4_desc = v->dma_desc.dma;
+	/* give vino time to fetch the first four descriptors, 5 usec
+	 * should be more than enough time */
+	udelay(5);
+	/* VINO line size register is set 8 bytes less than actual */
+	ch->line_size = v->line_size - 8;
+	/* set the alpha register */
+	ch->alpha = v->alpha;
+	/* set cliping registers */
+	ch->clip_start = VINO_CLIP_ODD(v->top) | VINO_CLIP_EVEN(v->top+1) |
+			 VINO_CLIP_X(v->left);
+	ch->clip_end = VINO_CLIP_ODD(v->bottom) | VINO_CLIP_EVEN(v->bottom+1) |
+		       VINO_CLIP_X(v->right);
+	/* FIXME: end-of-field bug workaround
+		       VINO_CLIP_X(VINO_PAL_WIDTH);
+	 */
+	/* init the frame rate and norm (full frame rate only for now...) */
+	ch->frame_rate = VINO_FRAMERT_RT(0x0fff) |
+			 (get_capture_norm(v) == VIDEO_MODE_PAL ?
+			  VINO_FRAMERT_PAL : 0);
+	ctrl = vino->control;
+	intr = vino->intr_status;
+	if (v->chan == VINO_CHAN_A) {
+		/* All interrupt conditions for this channel was cleared
+		 * so clear the interrupt status register and enable
+		 * interrupts */
+		intr &=	~VINO_INTSTAT_A;
+		ctrl |= VINO_CTRL_A_INT;
+		/* enable synchronization */
+		ctrl |= VINO_CTRL_A_SYNC_ENBL;
+		/* enable frame assembly */
+		ctrl |= VINO_CTRL_A_INTERLEAVE_ENBL;
+		/* set decimation used */
+		if (v->decimation < 2)
+			ctrl &= ~VINO_CTRL_A_DEC_ENBL;
+		else {
+			ctrl |= VINO_CTRL_A_DEC_ENBL;
+			ctrl &= ~VINO_CTRL_A_DEC_SCALE_MASK;
+			ctrl |= (v->decimation - 1) <<
+				VINO_CTRL_A_DEC_SCALE_SHIFT;
+		}
+		/* select input interface */
+		if (v->input == VINO_INPUT_CAMERA)
+			ctrl |= VINO_CTRL_A_SELECT;
+		else
+			ctrl &= ~VINO_CTRL_A_SELECT;
+		/* palette */
+		ctrl &= ~(VINO_CTRL_A_LUMA_ONLY | VINO_CTRL_A_RGB |
+			  VINO_CTRL_A_DITHER);
+	} else {
+		intr &= ~VINO_INTSTAT_B;
+		ctrl |= VINO_CTRL_B_INT;
+		ctrl |= VINO_CTRL_B_SYNC_ENBL;
+		ctrl |= VINO_CTRL_B_INTERLEAVE_ENBL;
+		if (v->decimation < 2)
+			ctrl &= ~VINO_CTRL_B_DEC_ENBL;
+		else {
+			ctrl |= VINO_CTRL_B_DEC_ENBL;
+			ctrl &= ~VINO_CTRL_B_DEC_SCALE_MASK;
+			ctrl |= (v->decimation - 1) <<
+				VINO_CTRL_B_DEC_SCALE_SHIFT;
+		}
+		if (v->input == VINO_INPUT_CAMERA)
+			ctrl |= VINO_CTRL_B_SELECT;
+		else
+			ctrl &= ~VINO_CTRL_B_SELECT;
+		ctrl &= ~(VINO_CTRL_B_LUMA_ONLY | VINO_CTRL_B_RGB |
+			  VINO_CTRL_B_DITHER);
+	}
+	/* set palette */
+	switch (v->palette) {
+		case VIDEO_PALETTE_GREY:
+			ctrl |= (v->chan == VINO_CHAN_A) ? 
+				VINO_CTRL_A_LUMA_ONLY : VINO_CTRL_B_LUMA_ONLY;
+			break;
+		case VIDEO_PALETTE_RGB32:
+			ctrl |= (v->chan == VINO_CHAN_A) ?
+				VINO_CTRL_A_RGB : VINO_CTRL_B_RGB;
+			break;
+#if 0
+		/* FIXME: this is NOT in v4l API :-( */
+		case VIDEO_PALETTE_RGB332:
+			ctrl |= (v->chan == VINO_CHAN_A) ?
+				VINO_CTRL_A_RGB | VINO_CTRL_A_DITHER : 
+				VINO_CTRL_B_RGB | VINO_CTRL_B_DITHER;
+			break;
+#endif
+	}
+	vino->control = ctrl;
+	vino->intr_status = intr;
+
+	return 0;
 }
 
-static int vino_mmap(struct video_device *dev, const char *adr,
-		     unsigned long size)
+/* (execute only with vino_lock locked) */
+static void dma_stop(struct vino_device *v)
 {
-	struct vino_device *videv = (struct vino_device *)dev;
-
-	return -EINVAL;
+	u32 ctrl = vino->control;
+	ctrl &= (v->chan == VINO_CHAN_A) ?
+		~VINO_CTRL_A_DMA_ENBL : ~VINO_CTRL_B_DMA_ENBL;
+	vino->control = ctrl;
 }
 
-static int vino_ioctl(struct video_device *dev, unsigned int cmd, void *arg)
+/* (execute only with vino_lock locked) */
+static void dma_go(struct vino_device *v)
 {
-	struct vino_device *videv = (struct vino_device *)dev;
-
-	return -EINVAL;
+	u32 ctrl = vino->control;
+	ctrl |= (v->chan == VINO_CHAN_A) ?
+		VINO_CTRL_A_DMA_ENBL : VINO_CTRL_B_DMA_ENBL;
+	vino->control = ctrl;
 }
 
-static const struct video_device vino_device = {
+/*
+ * Load dummy page to descriptor registers. This prevents generating of
+ * spurious interrupts. (execute only with vino_lock locked)
+ */
+static void clear_eod(struct vino_device *v)
+{
+	struct sgi_vino_channel *ch;
+
+	DEBUG("VINO: chnl %c clear EOD\n", (v->chan == VINO_CHAN_A) ? 'A':'B');
+	ch = (v->chan == VINO_CHAN_A) ? &vino->a : &vino->b;
+	ch->page_index = 0;
+	ch->line_count = 0;
+	ch->start_desc_tbl = Vino->dummy_dma.dma;
+	ch->next_4_desc = Vino->dummy_dma.dma;
+	udelay(5);
+}
+
+static void field_done(struct vino_device *v)
+{
+	spin_lock(&v->state_lock);
+	if (v->buffer_state == VINO_BUF_GRABBING)
+		v->buffer_state = VINO_BUF_DONE;
+	spin_unlock(&v->state_lock);
+	wake_up(&v->dma_wait);
+}
+
+static void vino_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+{
+	u32 intr, ctrl;
+
+	spin_lock(&Vino->vino_lock);
+	ctrl = vino->control;
+	intr = vino->intr_status;
+	DEBUG("VINO: intr status %04x\n", intr);
+	if (intr & (VINO_INTSTAT_A_FIFO_OF | VINO_INTSTAT_A_END_DESC_TBL)) {
+		ctrl &= ~VINO_CTRL_A_DMA_ENBL;
+		vino->control = ctrl;
+		clear_eod(&Vino->chA);
+	}
+	if (intr & (VINO_INTSTAT_B_FIFO_OF | VINO_INTSTAT_B_END_DESC_TBL)) {
+		ctrl &= ~VINO_CTRL_B_DMA_ENBL;
+		vino->control = ctrl;
+		clear_eod(&Vino->chB);
+	}
+	vino->intr_status = ~intr;
+	spin_unlock(&Vino->vino_lock);
+	/* FIXME: For now we are assuming that interrupt means that frame is
+	 * done. That's not true, but we can live with such brokeness for
+	 * a while ;-) */
+	field_done(&Vino->chA);
+}
+
+static int vino_grab(struct vino_device *v, int frame)
+{
+	int err = 0;
+
+	spin_lock_irq(&v->state_lock);
+	if (v->buffer_state == VINO_BUF_GRABBING)
+		err = -EBUSY;
+	v->buffer_state = VINO_BUF_GRABBING;
+	spin_unlock_irq(&v->state_lock);
+
+	if (err)
+		return err;
+
+	spin_lock_irq(&Vino->vino_lock);
+	dma_setup(v);
+	dma_go(v);
+	spin_unlock_irq(&Vino->vino_lock);
+
+	return 0;
+}
+
+static int vino_waitfor(struct vino_device *v, int frame)
+{
+	wait_queue_t wait;
+	int err = 0;
+
+	if (frame != 0)
+		return -EINVAL;
+
+	spin_lock_irq(&v->state_lock);
+	switch (v->buffer_state) {
+	case VINO_BUF_GRABBING:
+		init_waitqueue_entry(&wait, current);
+		/* add ourselves into wait queue */
+		add_wait_queue(&v->dma_wait, &wait);
+		/* and set current state */
+		set_current_state(TASK_INTERRUPTIBLE);
+		/* before releasing spinlock */
+		spin_unlock_irq(&v->state_lock);
+		/* to ensure that schedule_timeout will return imediately
+		 * if VINO interrupt was triggred meanwhile */
+		schedule_timeout(HZ / 20);
+		if (signal_pending(current))
+			err = -EINTR;
+		spin_lock_irq(&v->state_lock);
+		remove_wait_queue(&v->dma_wait, &wait);
+		/* don't rely on schedule_timeout return value and check what
+		 * really happened */
+		if (!err && v->buffer_state == VINO_BUF_GRABBING)
+			err = -EIO;
+		/* fall through */
+	case VINO_BUF_DONE:
+		v->buffer_state = VINO_BUF_UNUSED;
+		break;
+	default:
+		err = -EINVAL;
+	}
+	spin_unlock_irq(&v->state_lock);
+
+	if (err && err != -EINVAL) {
+		DEBUG("VINO: waiting for frame failed\n");
+		spin_lock_irq(&Vino->vino_lock);
+		dma_stop(v);
+		clear_eod(v);
+		spin_unlock_irq(&Vino->vino_lock);
+	}
+
+	return err;
+}
+
+#define PAGE_RATIO	(PAGE_SIZE / VINO_PAGE_SIZE)
+
+static int alloc_buffer(struct vino_device *v, int size)
+{
+	int count, i, j, err;
+
+	err = i = 0;
+	count = (size / PAGE_SIZE + 4) & ~3;
+	v->desc = (unsigned long *) kmalloc(count * sizeof(unsigned long),
+					    GFP_KERNEL);
+	if (!v->desc)
+		return -ENOMEM;
+
+	v->dma_desc.cpu = pci_alloc_consistent(NULL, PAGE_RATIO * (count+4) *
+					       sizeof(dma_addr_t),
+					       &v->dma_desc.dma);
+	if (!v->dma_desc.cpu) {
+		err = -ENOMEM;
+		goto out_free_desc;
+	}
+	while (i < count) {
+		dma_addr_t dma;
+
+		v->desc[i] = get_zeroed_page(GFP_KERNEL | GFP_DMA);
+		if (!v->desc[i])
+			break;
+		dma = pci_map_single(NULL, (void *)v->desc[i], PAGE_SIZE,
+				     PCI_DMA_FROMDEVICE);
+		for (j = 0; j < PAGE_RATIO; j++)
+			v->dma_desc.cpu[PAGE_RATIO * i + j ] = 
+				dma + VINO_PAGE_SIZE * j;
+		mem_map_reserve(virt_to_page(v->desc[i]));
+		i++;
+	}
+	v->dma_desc.cpu[PAGE_RATIO * count] = VINO_DESC_STOP;
+	if (i-- < count) {
+		while (i >= 0) {
+			mem_map_unreserve(virt_to_page(v->desc[i]));
+			pci_unmap_single(NULL, v->dma_desc.cpu[PAGE_RATIO * i],
+					 PAGE_SIZE, PCI_DMA_FROMDEVICE);
+			free_page(v->desc[i]);
+			i--;
+		}
+		pci_free_consistent(NULL,
+				    PAGE_RATIO * (count+4) * sizeof(dma_addr_t),
+				    (void *)v->dma_desc.cpu, v->dma_desc.dma);
+		err = -ENOBUFS;
+		goto out_free_desc;
+	}
+	v->page_count = count;
+	return 0;
+
+out_free_desc:
+	kfree(v->desc);
+	return err;
+}
+
+static void free_buffer(struct vino_device *v)
+{
+	int i;
+
+	for (i = 0; i < v->page_count; i++) {
+		mem_map_unreserve(virt_to_page(v->desc[i]));
+		pci_unmap_single(NULL, v->dma_desc.cpu[PAGE_RATIO * i],
+				 PAGE_SIZE, PCI_DMA_FROMDEVICE);
+		free_page(v->desc[i]);
+	}
+	pci_free_consistent(NULL,
+			    PAGE_RATIO * (v->page_count+4) * sizeof(dma_addr_t),
+			    (void *)v->dma_desc.cpu, v->dma_desc.dma);
+	kfree(v->desc);
+}
+
+static int vino_open(struct inode *inode, struct file *file)
+{
+	struct video_device *dev = video_devdata(file);
+	struct vino_device *v = dev->priv;
+	int err = 0;
+
+	down(&v->sem);
+	if (v->users) {
+		err =  -EBUSY;
+		goto out;
+	}
+	/* Check for input device (IndyCam, saa7191) availability */
+	spin_lock(&Vino->input_lock);
+	/* TODO */
+	spin_unlock(&Vino->input_lock);
+
+	if (alloc_buffer(v, VINO_FBUFSIZE)) {
+		err = -ENOBUFS;
+		goto out;
+	}
+	v->users++;
+out:
+	up(&v->sem);
+	return 0;
+}
+
+static int vino_close(struct inode *inode, struct file *file)
+{
+	struct video_device *dev = video_devdata(file);
+	struct vino_device *v = dev->priv;
+
+	down(&v->sem);
+	vino_waitfor(v, 0);
+	free_buffer(v);
+	v->users--;
+	up(&v->sem);
+	return 0;
+}
+
+static int vino_mmap(struct file *file, struct vm_area_struct *vma)
+{
+	struct video_device *dev = video_devdata(file);
+	struct vino_device *v = dev->priv;
+	unsigned long start = vma->vm_start;
+	unsigned long size  = vma->vm_end - vma->vm_start;
+	int i, err = 0;
+
+	if (down_interruptible(&v->sem))
+		return -EINTR;
+	if (size > v->page_count * PAGE_SIZE) {
+		err = -EINVAL;
+		goto out;
+	}
+	for (i = 0; i < v->page_count; i++) {
+		unsigned long page = virt_to_phys((void *)v->desc[i]);
+		if (remap_page_range(start, page, PAGE_SIZE, PAGE_SHARED)) {
+			err = -EAGAIN;
+			goto out;
+		}
+		start += PAGE_SIZE;
+		if (size <= PAGE_SIZE) break;
+		size -= PAGE_SIZE;
+	}
+out:
+	up(&v->sem);
+	return err;
+	
+}
+
+static int vino_do_ioctl(struct inode *inode, struct file *file,
+			 unsigned int cmd, void *arg)
+{
+	struct video_device *dev = video_devdata(file);
+	struct vino_device *v = dev->priv;
+
+	switch (cmd) {
+	case VIDIOCGCAP: {
+		struct video_capability *cap = arg;
+
+		strcpy(cap->name, vinostr);
+		cap->type = VID_TYPE_CAPTURE | VID_TYPE_SUBCAPTURE;
+		cap->channels = VINO_INPUT_CHANNELS;
+		cap->audios = 0;
+		cap->maxwidth = VINO_PAL_WIDTH;
+		cap->maxheight = VINO_PAL_HEIGHT;
+		cap->minwidth = VINO_MIN_WIDTH;
+		cap->minheight = VINO_MIN_HEIGHT;
+		break;
+	}
+	case VIDIOCGCHAN: {
+		struct video_channel *ch = arg;
+
+		ch->flags = 0;
+		ch->tuners = 0;
+		switch (ch->channel) {
+		case VINO_INPUT_COMPOSITE:
+			ch->norm = VIDEO_MODE_PAL | VIDEO_MODE_NTSC |
+				   VIDEO_MODE_AUTO;
+			ch->type = VIDEO_TYPE_TV;
+			strcpy(ch->name, "Composite");
+			break;
+		case VINO_INPUT_SVIDEO:
+			ch->norm = VIDEO_MODE_PAL | VIDEO_MODE_NTSC |
+				   VIDEO_MODE_AUTO;
+			ch->type = VIDEO_TYPE_TV;
+			strcpy(ch->name, "S-Video");
+			break;
+		case VINO_INPUT_CAMERA:
+			ch->norm = VIDEO_MODE_NTSC;
+			ch->type = VIDEO_TYPE_CAMERA;
+			strcpy(ch->name, "IndyCam");
+			break;
+		default:
+			return -EINVAL;
+		}
+		break;
+	}
+	case VIDIOCSCHAN: {
+		struct video_channel *ch = arg;
+
+		if (ch->channel < 0 || ch->channel > VINO_INPUT_CAMERA)
+			return -EINVAL;
+		v->input = ch->channel;
+		break;
+	}
+	case VIDIOCGPICT: {	/* TODO */
+		struct video_picture *pic = arg;
+
+		pic->brightness = 0x8000;
+		pic->hue = 0x8000;
+		pic->colour = 0x8000;
+		pic->contrast = 0x8000;
+		pic->whiteness = 0x8000;
+		pic->palette = v->palette;
+		if (pic->palette == VIDEO_PALETTE_GREY)
+			pic->depth = 8;
+		else if (pic->palette == VIDEO_PALETTE_YUV422)
+			pic->depth = 16;
+		else
+			pic->depth = 24;
+		break;
+	}
+	case VIDIOCSPICT: {	/* TODO */
+		struct video_picture *pic = arg;
+
+		if (pic->palette != VIDEO_PALETTE_GREY &&
+		    pic->palette != VIDEO_PALETTE_RGB32 &&
+		    pic->palette != VIDEO_PALETTE_YUV422)
+			return -EINVAL;
+		v->palette = pic->palette;
+		break;
+	}
+	/* get cropping */
+	case VIDIOCGCAPTURE: {
+		struct video_capture *capture = arg;
+
+		capture->x = v->left;
+		capture->y = v->top;
+		capture->width = v->right - v->left;
+		capture->height = v->bottom - v->top;
+		capture->decimation = v->decimation;
+		capture->flags = 0;
+		break;
+	}
+	/* set cropping */
+	case VIDIOCSCAPTURE: {
+		struct video_capture *capture = arg; 
+		
+		return set_clipping(v, capture->x, capture->y, capture->width,
+				    capture->height, capture->decimation);
+	}
+	/* get scaling */
+	case VIDIOCGWIN: {
+		struct video_window *win = arg;
+
+		memset(win, 0, sizeof(struct video_window));
+		win->width = (v->right - v->left) / v->decimation;
+		win->height = (v->bottom - v->top) / v->decimation;
+		break;
+	}
+	/* set scaling */
+	case VIDIOCSWIN: {
+		struct video_window *win = arg;
+
+		if (win->x || win->y || win->clipcount || win->clips)
+			return -EINVAL;
+		return set_scaling(v, win->width, win->height);
+	}
+	case VIDIOCGMBUF: {
+		struct video_mbuf *buf = arg;
+
+		buf->frames = 1;
+		buf->offsets[0] = 0;
+		buf->size = v->page_count * PAGE_SIZE;
+		break;
+	}
+	case VIDIOCMCAPTURE: {
+		struct video_mmap *mmap = arg; 
+
+		if (mmap->width != v->right - v->left ||
+		    mmap->height != v->bottom - v->top ||
+		    mmap->format != v->palette ||
+		    mmap->frame != 0)
+			return -EINVAL;
+
+		return vino_grab(v, mmap->frame);
+	}
+	case VIDIOCSYNC:
+		return vino_waitfor(v, *((int*)arg));
+	default:
+		return -ENOIOCTLCMD;
+	}
+	return 0;
+}
+
+static int vino_ioctl(struct inode *inode, struct file *file,
+		     unsigned int cmd, unsigned long arg)
+{
+	struct video_device *dev = video_devdata(file);
+	struct vino_device *v = dev->priv;
+	int err;
+
+	if (down_interruptible(&v->sem))
+		return -EINTR;
+	err = video_usercopy(inode, file, cmd, arg, vino_do_ioctl);
+	up(&v->sem);
+	return err;
+}
+
+static struct file_operations vino_fops = {
+	.owner		= THIS_MODULE,
+	.open		= vino_open,
+	.release	= vino_close,
+	.ioctl		= vino_ioctl,
+	.mmap		= vino_mmap,
+	.llseek		= no_llseek,
+};
+
+static const struct video_device vino_template = {
 	.owner		= THIS_MODULE,
 	.type		= VID_TYPE_CAPTURE | VID_TYPE_SUBCAPTURE,
 	.hardware	= VID_HARDWARE_VINO,
 	.name		= "VINO",
-	.open		= vino_open,
-	.close		= vino_close,
-	.ioctl		= vino_ioctl,
-	.mmap		= vino_mmap,
+	.fops		= &vino_fops,
+	.minor		= -1,
 };
+
+static void init_channel_data(struct vino_device *v, int channel)
+{
+	init_waitqueue_head(&v->dma_wait);
+	init_MUTEX(&v->sem);
+	spin_lock_init(&v->state_lock);
+	memcpy(&v->vdev, &vino_template, sizeof(vino_template));
+	v->vdev.priv = v;
+	v->chan = channel;
+	v->input = VINO_INPUT_CAMERA;
+	v->palette = VIDEO_PALETTE_RGB32;
+	v->buffer_state = VINO_BUF_UNUSED;
+	v->users = 0;
+	set_clipping(v, 0, 0, VINO_NTSC_WIDTH, VINO_NTSC_HEIGHT, 1);
+}
 
 static int __init vino_init(void)
 {
 	unsigned long rev;
+	dma_addr_t dma;
 	int i, ret = 0;
 	
 	/* VINO is Indy specific beast */
@@ -264,32 +967,44 @@ static int __init vino_init(void)
 		ret = -ENOMEM;
 		goto out_unmap;
 	}
+	memset(Vino, 0, sizeof(struct vino_video));
 
-	Vino->dummy_page = get_zeroed_page(GFP_KERNEL | GFP_DMA);
-	if (!Vino->dummy_page) {
+	Vino->dummy_desc = get_zeroed_page(GFP_KERNEL | GFP_DMA);
+	if (!Vino->dummy_desc) {
 		ret = -ENOMEM;
 		goto out_free_vino;
 	}
+	Vino->dummy_dma.cpu = pci_alloc_consistent(NULL, 4 * sizeof(dma_addr_t),
+						   &Vino->dummy_dma.dma);
+	if (!Vino->dummy_dma.cpu) {
+		ret = -ENOMEM;
+		goto out_free_dummy_desc;
+	}
+	dma = pci_map_single(NULL, (void *)Vino->dummy_desc, PAGE_SIZE,
+			     PCI_DMA_FROMDEVICE);
 	for (i = 0; i < 4; i++)
-		Vino->dummy_buf[i] = PHYSADDR(Vino->dummy_page);
+		Vino->dummy_dma.cpu[i] = dma;
 
 	vino->control = 0;
 	/* prevent VINO from throwing spurious interrupts */
-	vino->a.next_4_desc = PHYSADDR(Vino->dummy_buf);
-	vino->b.next_4_desc = PHYSADDR(Vino->dummy_buf);
+	vino->a.next_4_desc = Vino->dummy_dma.dma;
+	vino->b.next_4_desc = Vino->dummy_dma.dma;
 	udelay(5);
 	vino->intr_status = 0;
         /* set threshold level */
         vino->a.fifo_thres = threshold_a;
 	vino->b.fifo_thres = threshold_b;
 
-	init_MUTEX(&Vino->input_lock);
+	spin_lock_init(&Vino->vino_lock);
+	spin_lock_init(&Vino->input_lock);
+	init_channel_data(&Vino->chA, VINO_CHAN_A);
+	init_channel_data(&Vino->chB, VINO_CHAN_B);
 
 	if (request_irq(SGI_VINO_IRQ, vino_interrupt, 0, vinostr, NULL)) {
-		printk(KERN_ERR "VINO: irq%02d registration failed\n",
+		printk(KERN_ERR "VINO: request irq%02d failed\n",
 		       SGI_VINO_IRQ);
 		ret = -EAGAIN;
-		goto out_free_page;
+		goto out_unmap_dummy_desc;
 	}
 
 	ret = vino_i2c_add_bus();
@@ -311,6 +1026,10 @@ static int __init vino_init(void)
 		goto out_unregister_vdev;
 	}
 
+#if defined(CONFIG_KMOD) && defined (MODULE)
+	request_module("saa7191");
+	request_module("indycam");
+#endif
 	return 0;
 
 out_unregister_vdev:
@@ -319,8 +1038,13 @@ out_i2c_del_bus:
 	vino_i2c_del_bus();
 out_free_irq:
 	free_irq(SGI_VINO_IRQ, NULL);
-out_free_page:
-	free_page(Vino->dummy_page);
+out_unmap_dummy_desc:
+	pci_unmap_single(NULL, Vino->dummy_dma.dma, PAGE_SIZE,
+			 PCI_DMA_FROMDEVICE);
+	pci_free_consistent(NULL, 4 * sizeof(dma_addr_t),
+			    (void *)Vino->dummy_dma.cpu, Vino->dummy_dma.dma);
+out_free_dummy_desc:
+	free_page(Vino->dummy_desc);
 out_free_vino:
 	kfree(Vino);
 out_unmap:
@@ -335,7 +1059,11 @@ static void __exit vino_exit(void)
 	video_unregister_device(&Vino->chB.vdev);
 	vino_i2c_del_bus();
 	free_irq(SGI_VINO_IRQ, NULL);
-	free_page(Vino->dummy_page);
+	pci_unmap_single(NULL, Vino->dummy_dma.dma, PAGE_SIZE,
+			 PCI_DMA_FROMDEVICE);
+	pci_free_consistent(NULL, 4 * sizeof(dma_addr_t),
+			    (void *)Vino->dummy_dma.cpu, Vino->dummy_dma.dma);
+	free_page(Vino->dummy_desc);
 	kfree(Vino);
 	iounmap(vino);
 }
@@ -343,5 +1071,6 @@ static void __exit vino_exit(void)
 module_init(vino_init);
 module_exit(vino_exit);
 
+MODULE_AUTHOR("Ladislav Michl <ladis@linux-mips.org>");
 MODULE_DESCRIPTION("Video4Linux driver for SGI Indy VINO (IndyCam)");
 MODULE_LICENSE("GPL");

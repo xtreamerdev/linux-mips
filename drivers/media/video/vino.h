@@ -8,6 +8,7 @@
 
 #define VINO_BASE	0x00080000	/* Vino is in the EISA address space,
 					 * but it is not an EISA bus card */
+#define VINO_PAGE_SIZE	4096
 
 struct sgi_vino_channel {
 	u32 _pad_alpha;
