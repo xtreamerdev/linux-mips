@@ -32,18 +32,18 @@
  */
 static unsigned long indy_rtc_get_time(void)
 {
-	unsigned char yrs, mon, day, hrs, min, sec;
-	unsigned char save_control;
+	unsigned int yrs, mon, day, hrs, min, sec;
+	unsigned int save_control;
 
-	save_control = hpc3c0->rtcregs[RTC_CMD];
+	save_control = hpc3c0->rtcregs[RTC_CMD] & 0xff;
 	hpc3c0->rtcregs[RTC_CMD] = save_control | RTC_TE;
 
-	sec = hpc3c0->rtcregs[RTC_SECONDS];
-	min = hpc3c0->rtcregs[RTC_MINUTES];
+	sec = hpc3c0->rtcregs[RTC_SECONDS] & 0xff;
+	min = hpc3c0->rtcregs[RTC_MINUTES] & 0xff;
 	hrs = hpc3c0->rtcregs[RTC_HOURS] & 0x1f;
-	day = hpc3c0->rtcregs[RTC_DATE];
+	day = hpc3c0->rtcregs[RTC_DATE] & 0xff;
 	mon = hpc3c0->rtcregs[RTC_MONTH] & 0x1f;
-	yrs = hpc3c0->rtcregs[RTC_YEAR];
+	yrs = hpc3c0->rtcregs[RTC_YEAR] & 0xff;
 
 	hpc3c0->rtcregs[RTC_CMD] = save_control;
 
@@ -59,13 +59,13 @@ static unsigned long indy_rtc_get_time(void)
 	if ((yrs += 40) < 70)
 		yrs += 100;
 
-	return mktime((int)yrs + 1900, mon, day, hrs, min, sec);
+	return mktime(yrs + 1900, mon, day, hrs, min, sec);
 }
 
 static int indy_rtc_set_time(unsigned long tim)
 {
 	struct rtc_time tm;
-	unsigned char save_control;
+	unsigned int save_control;
 
 	to_tm(tim, &tm);
 
@@ -81,7 +81,7 @@ static int indy_rtc_set_time(unsigned long tim)
 	BIN_TO_BCD(tm.tm_mon);
 	BIN_TO_BCD(tm.tm_year);
 
-	save_control = hpc3c0->rtcregs[RTC_CMD];
+	save_control = hpc3c0->rtcregs[RTC_CMD] & 0xff;
 	hpc3c0->rtcregs[RTC_CMD] = save_control | RTC_TE;
 
 	hpc3c0->rtcregs[RTC_YEAR] = tm.tm_year;
@@ -214,8 +214,6 @@ extern int setup_irq(unsigned int irq, struct irqaction *irqaction);
 
 static void indy_timer_setup(struct irqaction *irq)
 {
-	unsigned long count;
-
 	/* over-write the handler, we use our own way */
 	irq->handler = no_action;
 
