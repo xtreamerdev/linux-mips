@@ -956,10 +956,8 @@ void __init trap_init(void)
 	 * Some MIPS CPUs have a dedicated interrupt vector which reduces the
 	 * interrupt processing overhead.  Use it where available.
 	 */
-	if (mips_cpu.options & MIPS_CPU_DIVEC) {
+	if (mips_cpu.options & MIPS_CPU_DIVEC)
 		memcpy((void *)(KSEG0 + 0x200), &except_vec4, 8);
-		set_c0_cause(CAUSEF_IV);
-	}
 
 	/*
 	 * Some CPUs can enable/disable for cache parity detection, but does
