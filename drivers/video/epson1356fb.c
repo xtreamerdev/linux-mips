@@ -77,7 +77,7 @@
 
 #include <video/e1356fb.h>
 
-#ifdef CONFIG_CPU_AU1X00
+#ifdef CONFIG_SOC_AU1X00
 #include <asm/au1000.h>
 #endif
 
@@ -2296,7 +2296,7 @@ e1356fb_init(void)
 	 * Program the clocks
 	 */
 
-#ifdef CONFIG_CPU_AU1X00
+#ifdef CONFIG_SOC_AU1X00
 	if ((epfix->system == SYS_PB1000) || (epfix->system == SYS_PB1500))
 		epfix->busclk = get_au1x00_lcd_clock();
 #endif

@@ -68,7 +68,7 @@ extern void au1000_halt(void);
 extern void au1000_power_off(void);
 extern struct resource ioport_resource;
 extern struct resource iomem_resource;
-#if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_CPU_AU1500)
+#if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_SOC_AU1500)
 extern phys_t (*fixup_bigphys_addr)(phys_t phys_addr, phys_t size);
 static phys_t db_fixup_bigphys_addr(phys_t phys_addr, phys_t size);
 #endif
@@ -101,7 +101,7 @@ void __init au1x00_setup(void)
     }
 #endif
 
-#if defined(CONFIG_SOUND_AU1X00) && !defined(CONFIG_CPU_AU1000)
+#if defined(CONFIG_SOUND_AU1X00) && !defined(CONFIG_SOC_AU1000)
 	// au1000 does not support vra, au1500 and au1100 do
 	strcat(argptr, " au1000_audio=vra");
 	argptr = prom_getcmdline();
@@ -111,13 +111,13 @@ void __init au1x00_setup(void)
 	_machine_restart = au1000_restart;
 	_machine_halt = au1000_halt;
 	_machine_power_off = au1000_power_off;
-#if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_CPU_AU1500)
+#if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_SOC_AU1500)
 	fixup_bigphys_addr = db_fixup_bigphys_addr;
 #endif
 
 	// IO/MEM resources. 
 	set_io_port_base(0);
-#ifdef CONFIG_CPU_AU1500
+#ifdef CONFIG_SOC_AU1500
 	ioport_resource.start = 0x00000000;
 #else
 	/* don't allow any legacy ports probing */
@@ -215,7 +215,7 @@ void __init au1x00_setup(void)
 #endif
 }
 
-#if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_CPU_AU1500)
+#if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_SOC_AU1500)
 static phys_t db_fixup_bigphys_addr(phys_t phys_addr, phys_t size)
 {
 	u32 pci_start = (u32)Au1500_PCI_MEM_START;

@@ -29,7 +29,7 @@ if [ "$CONFIG_PCMCIA" != "n" ]; then
    if [ "$CONFIG_8xx" = "y" ]; then
       dep_tristate '  M8xx support' CONFIG_PCMCIA_M8XX $CONFIG_PCMCIA
    fi
-   if [ "$CONFIG_CPU_AU1X00" = "y" ]; then
+   if [ "$CONFIG_SOC_AU1X00" = "y" ]; then
       dep_tristate '  Au1x00 PCMCIA support' CONFIG_PCMCIA_AU1X00 $CONFIG_PCMCIA 
       if [ "$CONFIG_PCMCIA_AU1X00" != "n" ]; then
         bool '  Pb1x00 board support' CONFIG_PCMCIA_PB1X00

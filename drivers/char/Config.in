@@ -86,7 +86,7 @@ if [ "$CONFIG_SERIAL_NONSTANDARD" = "y" ]; then
       dep_bool '     Console on TX3912/PR31700 serial port' CONFIG_SERIAL_TX3912_CONSOLE $CONFIG_SERIAL_TX3912
       bool '  TMPTX39XX/49XX serial port support' CONFIG_SERIAL_TXX9
       dep_bool '     Console on TMPTX39XX/49XX serial port' CONFIG_SERIAL_TXX9_CONSOLE $CONFIG_SERIAL_TXX9
-      if [ "$CONFIG_CPU_AU1X00" = "y" ]; then
+      if [ "$CONFIG_SOC_AU1X00" = "y" ]; then
 	 bool '  Enable Au1x00 UART Support' CONFIG_AU1X00_UART
 	 if [ "$CONFIG_AU1X00_UART" = "y" ]; then
 	    bool '        Enable Au1x00 serial console' CONFIG_AU1X00_SERIAL_CONSOLE
@@ -350,7 +350,7 @@ fi
 if [ "$CONFIG_HOTPLUG" = "y" -a "$CONFIG_PCMCIA" != "n" ]; then
    source drivers/char/pcmcia/Config.in
 fi
-if [ "$CONFIG_CPU_AU1X00" = "y" ]; then
+if [ "$CONFIG_SOC_AU1X00" = "y" ]; then
    tristate ' Alchemy Au1x00 GPIO device support' CONFIG_AU1X00_GPIO
    tristate ' Au1000/ADS7846 touchscreen support' CONFIG_TS_AU1X00_ADS7846
 fi

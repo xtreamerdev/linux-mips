@@ -123,7 +123,7 @@ static int config_access(unsigned char access_type, struct pci_dev *dev,
 static int config_access(unsigned char access_type, struct pci_dev *dev, 
 			 unsigned char where, u32 * data)
 {
-#ifdef CONFIG_CPU_AU1500
+#ifdef CONFIG_SOC_AU1500
 	unsigned char bus = dev->bus->number;
 	unsigned int dev_fn = dev->devfn;
 	unsigned int device = PCI_SLOT(dev_fn);

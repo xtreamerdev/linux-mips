@@ -49,7 +49,7 @@
 #endif
 
 static void fixup_resource(int r_num, struct pci_dev *dev) ;
-#ifdef CONFIG_CPU_AU1500
+#ifdef CONFIG_SOC_AU1500
 static unsigned long virt_io_addr;
 #endif
 
@@ -60,7 +60,7 @@ void __init pcibios_fixup_resources(struct pci_dev *dev)
 
 void __init pcibios_fixup(void)
 {
-#ifdef CONFIG_CPU_AU1500
+#ifdef CONFIG_SOC_AU1500
 	int i;
 	struct pci_dev *dev;
 	
@@ -92,7 +92,7 @@ void __init pcibios_fixup(void)
 
 void __init pcibios_fixup_irqs(void)
 {
-#ifdef CONFIG_CPU_AU1500
+#ifdef CONFIG_SOC_AU1500
 	unsigned int slot, func;
 	unsigned char pin;
 	struct pci_dev *dev;

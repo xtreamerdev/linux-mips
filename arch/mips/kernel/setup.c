@@ -649,7 +649,7 @@ void __init setup_arch(char **cmdline_p)
                 lasat_setup();
                 break;
 #endif
-#ifdef CONFIG_CPU_AU1X00
+#ifdef CONFIG_SOC_AU1X00
 	case MACH_GROUP_ALCHEMY:
 		au1x00_setup();
 		break;

@@ -116,10 +116,10 @@ static struct au1if {
 	unsigned int port;
 	int irq;
 } au1x00_iflist[] = {
-#if defined(CONFIG_CPU_AU1000)
+#if defined(CONFIG_SOC_AU1000)
 		{AU1000_ETH0_BASE, AU1000_ETH0_IRQ}, 
 		{AU1000_ETH1_BASE, AU1000_ETH1_IRQ}
-#elif defined(CONFIG_CPU_AU1500)
+#elif defined(CONFIG_SOC_AU1500)
 		{AU1500_ETH0_BASE, AU1000_ETH0_IRQ}, 
 		{AU1500_ETH1_BASE, AU1000_ETH1_IRQ}
 #elif defined(CONFIG_CPU_AU1100)
