@@ -174,8 +174,7 @@ static inline unsigned char read_zsreg(struct sgi_zschannel *channel,
 
 	udelay(2);
 	channel->control = reg;
-	if (sgint)
-		junk = sgint->istat0;
+	junk = sgint->istat0;
 	udelay(1);
 	retval = channel->control;
 	return retval;
@@ -188,12 +187,10 @@ static inline void write_zsreg(struct sgi_zschannel *channel,
 
 	udelay(2);
 	channel->control = reg;
-	if (sgint)
-		junk = sgint->istat0;
+	junk = sgint->istat0;
 	udelay(1);
 	channel->control = value;
-	if (sgint)
-		junk = sgint->istat0;
+	junk = sgint->istat0;
 	return;
 }
 

@@ -409,8 +409,7 @@ static inline void ZS_CLEARERR(struct sgi_zschannel *channel)
 
 	udelay(2);
 	channel->control = ERR_RES;
-	if (sgint)
-		junk = sgint->istat0;
+	junk = sgint->istat0;
 }
 
 static inline void ZS_CLEARFIFO(struct sgi_zschannel *channel)
@@ -420,16 +419,13 @@ static inline void ZS_CLEARFIFO(struct sgi_zschannel *channel)
 	udelay(2);
 	junk = channel->data;
 	udelay(2);
-	if (sgint)
-		junk = sgint->istat0;
+	junk = sgint->istat0;
 	junk = channel->data;
 	udelay(2);
-	if (sgint)
-		junk = sgint->istat0;
+	junk = sgint->istat0;
 	junk = channel->data;
 	udelay(2);
-	if (sgint)
-		junk = sgint->istat0;
+	junk = sgint->istat0;
 }
 
 #if 0
