@@ -95,14 +95,14 @@ asmlinkage __inline__ void pci_intD(struct pt_regs *regs)
 /* Function for careful CP0 interrupt mask access */
 static inline void modify_cp0_intmask(unsigned clr_mask, unsigned set_mask)
 {
-	unsigned long status = read_32bit_cp0_register(CP0_STATUS);
+	unsigned long status = read_c0_status();
 	DBG(KERN_INFO "modify_cp0_intmask clr %x, set %x\n", clr_mask,
 	    set_mask);
 	DBG(KERN_INFO "modify_cp0_intmask status %x\n", status);
 	status &= ~((clr_mask & 0xFF) << 8);
 	status |= (set_mask & 0xFF) << 8;
 	DBG(KERN_INFO "modify_cp0_intmask status %x\n", status);
-	write_32bit_cp0_register(CP0_STATUS, status);
+	write_c0_status(status);
 }
 
 static inline void mask_irq(unsigned int irq_nr)
@@ -227,10 +227,10 @@ asmlinkage void do_IRQ(int irq, struct pt_regs *regs)
 		DBG(KERN_INFO __FUNCTION__ " irq = %d\n", irq);
 	if (irq != TIMER)
 		DBG(KERN_INFO "cause register = %x\n",
-		    read_32bit_cp0_register(CP0_CAUSE));
+		    read_c0_cause());
 	if (irq != TIMER)
 		DBG(KERN_INFO "status register = %x\n",
-		    read_32bit_cp0_register(CP0_STATUS));
+		    read_c0_status());
 #endif
 
 	cpu = smp_processor_id();
@@ -407,7 +407,7 @@ void galileo_irq_setup(void)
 	/*
 	 * Clear all of the interrupts while we change the able around a bit.
 	 */
-	clear_cp0_status(ST0_IM);
+	clear_c0_status(ST0_IM);
 
 	/* Sets the exception_handler array. */
 	set_except_vector(0, galileo_handle_int);
@@ -418,7 +418,7 @@ void galileo_irq_setup(void)
 	 * Enable timer.  Other interrupts will be enabled as they are
 	 * registered.
 	 */
-	set_cp0_status(IE_IRQ2);
+	set_c0_status(IE_IRQ2);
 
 
 #ifdef CONFIG_REMOTE_DEBUG

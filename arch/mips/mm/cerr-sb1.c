@@ -137,7 +137,7 @@ asmlinkage void sb1_cache_error(void)
 	/* Prevent re-entrance in the SMP case */
 	spin_lock(&in_cacheerr);
 	printk("Cache error exception on CPU %x:\n",
-	       (read_32bit_cp0_register(CP0_PRID) >> 25) & 0x7);
+	       (read_c0_prid() >> 25) & 0x7);
 
 	__asm__ __volatile__ (
 	"	.set	push\n\t"

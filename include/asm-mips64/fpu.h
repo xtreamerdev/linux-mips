@@ -31,15 +31,15 @@ extern void _save_fp(struct task_struct *);
 extern void _restore_fp(struct task_struct *);
 
 #if defined(CONFIG_CPU_SB1)
-#define __enable_fpu_hazard()                                           \
-do {                                                                    \
-        asm(".set push          \n\t"                                   \
-            ".set mips2      #.set mips64        \n\t"                  \
-            ".set noreorder     \n\t"                                   \
-            "sll $0,$0,1     #ssnop              \n\t"                  \
-            "bnezl $0, .+4      \n\t"                                   \
-            "sll $0,$0,1     #ssnop              \n\t"                  \
-            ".set pop");                                                \
+#define __enable_fpu_hazard()						\
+do {									\
+	asm(".set push		\n\t"					\
+	    ".set mips64	\n\t"					\
+	    ".set noreorder	\n\t"					\
+	    "ssnop		\n\t"					\
+	    "bnezl $0, .+4	\n\t"					\
+	    "ssnop		\n\t"					\
+	    ".set pop");						\
 } while (0)
 #else
 #define __enable_fpu_hazard()                                           \
@@ -48,16 +48,16 @@ do {                                                                    \
 } while (0)
 #endif
 
-#define __enable_fpu()                                                  \
-do {                                                                    \
-        set_cp0_status(ST0_CU1);                                        \
-        __enable_fpu_hazard();                                          \
+#define __enable_fpu()							\
+do {									\
+        set_c0_status(ST0_CU1);						\
+        __enable_fpu_hazard();						\
 } while (0)
 
 #define __disable_fpu()							\
 do {									\
-	clear_cp0_status(ST0_CU1);					\
-	/* We don't care about the cp0 hazard here  */			\
+	clear_c0_status(ST0_CU1);					\
+	/* We don't care about the c0 hazard here  */			\
 } while (0)
 
 #define enable_fpu()							\

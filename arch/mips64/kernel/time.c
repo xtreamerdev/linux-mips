@@ -157,7 +157,7 @@ unsigned long fixed_rate_gettimeoffset(void)
 	unsigned long res;
 
 	/* Get last timer tick in absolute kernel time */
-	count = read_32bit_cp0_register(CP0_COUNT);
+	count = read_c0_count();
 
 	/* .. relative to previous jiffy (32 bits is enough) */
 	count -= timerlo;
@@ -213,7 +213,7 @@ unsigned long calibrate_div32_gettimeoffset(void)
 	}
 
 	/* Get last timer tick in absolute kernel time */
-	count = read_32bit_cp0_register(CP0_COUNT);
+	count = read_c0_count();
 
 	/* .. relative to previous jiffy (32 bits is enough) */
 	count -= timerlo;
@@ -268,7 +268,7 @@ unsigned long calibrate_div64_gettimeoffset(void)
 	}
 
 	/* Get last timer tick in absolute kernel time */
-	count = read_32bit_cp0_register(CP0_COUNT);
+	count = read_c0_count();
 
 	/* .. relative to previous jiffy (32 bits is enough) */
 	count -= timerlo;
@@ -339,7 +339,7 @@ void timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 		 * The cycle counter is only 32 bit which is good for about
 		 * a minute at current count rates of upto 150MHz or so.
 		 */
-		count = read_32bit_cp0_register(CP0_COUNT);
+		count = read_c0_count();
 		timerhi += (count < timerlo);   /* Wrap around */
 		timerlo = count;
 
@@ -348,7 +348,7 @@ void timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 		 * is using another timer interrupt source.
 		 * Note that writing to COMPARE register clears the interrupt
 		 */
-		write_32bit_cp0_register (CP0_COMPARE,
+		write_c0_compare(
 					  count + cycles_per_jiffy);
 
 	}
@@ -518,8 +518,8 @@ void __init time_init(void)
 		 * For those using cpu counter as timer,  this sets up the
 		 * first interrupt
 		 */
-		count = read_32bit_cp0_register(CP0_COUNT);
-		write_32bit_cp0_register (CP0_COMPARE,
+		count = read_c0_count();
+		write_c0_compare(
 					  count + cycles_per_jiffy);
 	}
 

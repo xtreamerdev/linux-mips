@@ -673,22 +673,22 @@ void __init per_cpu_trap_init(void)
 	unsigned int cpu = smp_processor_id();
 
 	/* Some firmware leaves the BEV flag set, clear it.  */
-	clear_cp0_status(ST0_CU1|ST0_CU2|ST0_CU3|ST0_BEV);
-	set_cp0_status(ST0_CU0|ST0_FR|ST0_KX|ST0_SX|ST0_UX);
+	clear_c0_status(ST0_CU1|ST0_CU2|ST0_CU3|ST0_BEV);
+	set_c0_status(ST0_CU0|ST0_FR|ST0_KX|ST0_SX|ST0_UX);
 
 	if (mips_cpu.isa_level == MIPS_CPU_ISA_IV)
-		set_cp0_status(ST0_XX);
+		set_c0_status(ST0_XX);
 
 	/*
 	 * Some MIPS CPUs have a dedicated interrupt vector which reduces the
 	 * interrupt processing overhead.  Use it where available.
 	 */
 	if (mips_cpu.options & MIPS_CPU_DIVEC)
-		set_cp0_cause(CAUSEF_IV);
+		set_c0_cause(CAUSEF_IV);
 
 	cpu_data[cpu].asid_cache = ASID_FIRST_VERSION;
-	set_context(((long)(&pgd_current[cpu])) << 23);
-	set_wired(0);
+	write_c0_context(((long)(&pgd_current[cpu])) << 23);
+	write_c0_wired(0);
 
 	atomic_inc(&init_mm.mm_count);
 	current->active_mm = &init_mm;
@@ -729,7 +729,7 @@ void __init trap_init(void)
 	 */
 	if (mips_cpu.options & MIPS_CPU_DIVEC) {
 		memcpy((void *)(KSEG0 + 0x200), &except_vec4, 0x80);
-		set_cp0_cause(CAUSEF_IV);
+		set_c0_cause(CAUSEF_IV);
 	}
 
 	/*
@@ -787,8 +787,8 @@ void __init trap_init(void)
 
 	if (mips_cpu.cputype == CPU_SB1) {
 		/* Enable timer interrupt and scd mapped interrupt */
-		clear_cp0_status(0xf000);
-		set_cp0_status(0xc00);
+		clear_c0_status(0xf000);
+		set_c0_status(0xc00);
 	}
 
 	if (mips_cpu.options & MIPS_CPU_FPU) {

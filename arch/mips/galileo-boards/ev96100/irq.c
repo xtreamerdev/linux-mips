@@ -60,7 +60,7 @@ static void disable_ev96100_irq(unsigned int irq_nr)
 	unsigned long flags;
 
 	save_and_cli(flags);
-	clear_cp0_status(0x100 << irq_nr);
+	clear_c0_status(0x100 << irq_nr);
 	restore_flags(flags);
 }
 
@@ -69,7 +69,7 @@ static inline void enable_ev96100_irq(unsigned int irq_nr)
 	unsigned long flags;
 
 	save_and_cli(flags);
-	set_cp0_status(0x100 << irq_nr);
+	set_c0_status(0x100 << irq_nr);
 	restore_flags(flags);
 }
 
