@@ -2227,9 +2227,6 @@ void __init console_init(void)
 #elif defined(CONFIG_SERIAL)
 	serial_console_init();
 #endif /* CONFIG_8xx */
-#ifdef CONFIG_SGI_SERIAL
-	sgi_serial_console_init();
-#endif
 #if defined(CONFIG_MVME162_SCC) || defined(CONFIG_BVME6000_SCC) || defined(CONFIG_MVME147_SCC)
 	vme_scc_console_init();
 #endif
@@ -2272,6 +2269,9 @@ void __init console_init(void)
 #endif
 #ifdef CONFIG_SIBYTE_SB1250_DUART_CONSOLE
 	sb1250_serial_console_init();
+#endif
+#ifdef CONFIG_IP22_SERIAL
+	sgi_serial_console_init();
 #endif
 }
 

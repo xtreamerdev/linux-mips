@@ -3366,9 +3366,9 @@ CONFIG_SERIAL_MULTIPORT
   servicing. Say Y here to enable the serial driver to take advantage
   of those special I/O ports.
 
-SGI Zilog85C30 serial support
-CONFIG_SGI_SERIAL
-  If you want to use your SGI's built-in serial ports under Linux,
+SGI IP22 Zilog85C30 serial support
+CONFIG_IP22_SERIAL
+  If you want to use your IP22's built-in serial ports under Linux,
   answer Y.
 
 SGI Newport Graphics support
