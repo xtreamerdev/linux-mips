@@ -29,6 +29,7 @@
 #include <linux/personality.h>
 #include <linux/timex.h>
 #include <linux/dnotify.h>
+#include <linux/linkage.h>
 #include <linux/module.h>
 #include <net/sock.h>
 #include <net/scm.h>
@@ -36,6 +37,37 @@
 #include <asm/uaccess.h>
 #include <asm/mman.h>
 #include <asm/ipc.h>
+
+extern asmlinkage long sys_socket(int family, int type, int protocol);
+extern asmlinkage long sys_bind(int fd, struct sockaddr *umyaddr, int addrlen);
+extern asmlinkage long sys_connect(int fd, struct sockaddr *uservaddr,
+	int addrlen);
+extern asmlinkage long sys_listen(int fd, int backlog);
+extern asmlinkage long sys_accept(int fd, struct sockaddr *upeer_sockaddr,
+	int *upeer_addrlen);
+extern asmlinkage long sys_getsockname(int fd, struct sockaddr *usockaddr,
+	int *usockaddr_len);
+extern asmlinkage long sys_getpeername(int fd, struct sockaddr *usockaddr,
+	int *usockaddr_len);
+extern asmlinkage long sys_socketpair(int family, int type, int protocol,
+	int *usockvec);
+extern asmlinkage long sys_send(int fd, void * buff, size_t len,
+	unsigned flags);
+extern asmlinkage long sys_sendto(int fd, void * buff, size_t len,
+	unsigned flags, struct sockaddr *addr, int addr_len);
+extern asmlinkage long sys_recv(int fd, void * ubuf, size_t size,
+	unsigned flags);
+extern asmlinkage long sys_recvfrom(int fd, void * ubuf, size_t size,
+	unsigned flags, struct sockaddr *addr, int *addr_len);
+extern asmlinkage long sys_shutdown(int fd, int how);
+extern asmlinkage long sys_setsockopt(int fd, int level, int optname,
+	char *optval, int optlen);
+extern asmlinkage long sys_getsockopt(int fd, int level, int optname,
+	char *optval, int *optlen);
+extern asmlinkage long sys_sendmsg(int fd, struct msghdr *msg, unsigned flags);
+extern asmlinkage long sys_recvmsg(int fd, struct msghdr *msg,
+	unsigned int flags);
+
 
 /* Use this to get at 32-bit user passed pointers. */
 /* A() macro should be used for places where you e.g.
@@ -1462,9 +1494,6 @@ asmlinkage long sys32_times(struct tms32 *tbuf)
 	}
 	return ret;
 }
-
-extern asmlinkage int sys_setsockopt(int fd, int level, int optname,
-				     char *optval, int optlen);
 
 static int do_set_attach_filter(int fd, int level, int optname,
 				char *optval, int optlen)
@@ -2936,27 +2965,6 @@ asmlinkage long sys32_socketcall(int call, unsigned int *args32)
 	unsigned int a0,a1;
 	int err;
 
-	extern asmlinkage long sys_socket(int family, int type, int protocol);
-	extern asmlinkage long sys_bind(int fd, struct sockaddr __user *umyaddr, int addrlen);
-	extern asmlinkage long sys_connect(int fd, struct sockaddr __user *uservaddr, int addrlen);
-	extern asmlinkage long sys_listen(int fd, int backlog);
-	extern asmlinkage long sys_accept(int fd, struct sockaddr __user *upeer_sockaddr, int __user *upeer_addrlen);
-	extern asmlinkage long sys_getsockname(int fd, struct sockaddr __user *usockaddr, int __user *usockaddr_len);
-	extern asmlinkage long sys_getpeername(int fd, struct sockaddr __user *usockaddr, int __user *usockaddr_len);
-	extern asmlinkage long sys_socketpair(int family, int type, int protocol, int __user *usockvec);
-	extern asmlinkage long sys_send(int fd, void __user * buff, size_t len, unsigned flags);
-	extern asmlinkage long sys_sendto(int fd, void __user * buff, size_t len, unsigned flags,
-					  struct sockaddr __user *addr, int addr_len);
-	extern asmlinkage long sys_recv(int fd, void __user * ubuf, size_t size, unsigned flags);
-	extern asmlinkage long sys_recvfrom(int fd, void __user * ubuf, size_t size, unsigned flags,
-					    struct sockaddr __user *addr, int __user *addr_len);
-	extern asmlinkage long sys_shutdown(int fd, int how);
-	extern asmlinkage long sys_setsockopt(int fd, int level, int optname, char __user *optval, int optlen);
-	extern asmlinkage long sys_getsockopt(int fd, int level, int optname, char __user *optval, int *optlen);
-	extern asmlinkage long sys_sendmsg(int fd, struct msghdr __user *msg, unsigned flags);
-	extern asmlinkage long sys_recvmsg(int fd, struct msghdr __user *msg, unsigned int flags);
-
-
 	if(call<1||call>SYS_RECVMSG)
 		return -EINVAL;
 
@@ -2967,64 +2975,63 @@ asmlinkage long sys32_socketcall(int call, unsigned int *args32)
 	a0=a[0];
 	a1=a[1];
 	
-	switch(call) 
-	{
-		case SYS_SOCKET:
-			err = sys_socket(a0,a1,a[2]);
-			break;
-		case SYS_BIND:
-			err = sys_bind(a0,(struct sockaddr __user *)A(a1), a[2]);
-			break;
-		case SYS_CONNECT:
-			err = sys_connect(a0, (struct sockaddr __user *)A(a1), a[2]);
-			break;
-		case SYS_LISTEN:
-			err = sys_listen(a0,a1);
-			break;
-		case SYS_ACCEPT:
-			err = sys_accept(a0,(struct sockaddr __user *)A(a1), (int __user *)A(a[2]));
-			break;
-		case SYS_GETSOCKNAME:
-			err = sys_getsockname(a0,(struct sockaddr __user *)A(a1), (int __user *)A(a[2]));
-			break;
-		case SYS_GETPEERNAME:
-			err = sys_getpeername(a0, (struct sockaddr __user *)A(a1), (int __user *)A(a[2]));
-			break;
-		case SYS_SOCKETPAIR:
-			err = sys_socketpair(a0,a1, a[2], (int __user *)A(a[3]));
-			break;
-		case SYS_SEND:
-			err = sys_send(a0, (void __user *)A(a1), a[2], a[3]);
-			break;
-		case SYS_SENDTO:
-			err = sys_sendto(a0,(void __user *)A(a1), a[2], a[3],
-					 (struct sockaddr __user *)A(a[4]), a[5]);
-			break;
-		case SYS_RECV:
-			err = sys_recv(a0, (void __user *)A(a1), a[2], a[3]);
-			break;
-		case SYS_RECVFROM:
-			err = sys_recvfrom(a0, (void __user *)A(a1), a[2], a[3],
-					   (struct sockaddr __user *)A(a[4]), (int __user *)A(a[5]));
-			break;
-		case SYS_SHUTDOWN:
-			err = sys_shutdown(a0,a1);
-			break;
-		case SYS_SETSOCKOPT:
-			err = sys_setsockopt(a0, a1, a[2], (char __user *)A(a[3]), a[4]);
-			break;
-		case SYS_GETSOCKOPT:
-			err = sys_getsockopt(a0, a1, a[2], (char __user *)A(a[3]), (int __user *)A(a[4]));
-			break;
-		case SYS_SENDMSG:
-			err = sys_sendmsg(a0, (struct msghdr __user *) A(a1), a[2]);
-			break;
-		case SYS_RECVMSG:
-			err = sys_recvmsg(a0, (struct msghdr __user *) A(a1), a[2]);
-			break;
-		default:
-			err = -EINVAL;
-			break;
+	switch (call) {
+	case SYS_SOCKET:
+		err = sys_socket(a0,a1,a[2]);
+		break;
+	case SYS_BIND:
+		err = sys_bind(a0,(struct sockaddr *)A(a1), a[2]);
+		break;
+	case SYS_CONNECT:
+		err = sys_connect(a0, (struct sockaddr *)A(a1), a[2]);
+		break;
+	case SYS_LISTEN:
+		err = sys_listen(a0,a1);
+		break;
+	case SYS_ACCEPT:
+		err = sys_accept(a0,(struct sockaddr *)A(a1), (int *)A(a[2]));
+		break;
+	case SYS_GETSOCKNAME:
+		err = sys_getsockname(a0,(struct sockaddr *)A(a1), (int *)A(a[2]));
+		break;
+	case SYS_GETPEERNAME:
+		err = sys_getpeername(a0, (struct sockaddr *)A(a1), (int *)A(a[2]));
+		break;
+	case SYS_SOCKETPAIR:
+		err = sys_socketpair(a0,a1, a[2], (int *)A(a[3]));
+		break;
+	case SYS_SEND:
+		err = sys_send(a0, (void *)A(a1), a[2], a[3]);
+		break;
+	case SYS_SENDTO:
+		err = sys_sendto(a0,(void *)A(a1), a[2], a[3],
+				 (struct sockaddr *)A(a[4]), a[5]);
+		break;
+	case SYS_RECV:
+		err = sys_recv(a0, (void *)A(a1), a[2], a[3]);
+		break;
+	case SYS_RECVFROM:
+		err = sys_recvfrom(a0, (void *)A(a1), a[2], a[3],
+				   (struct sockaddr *)A(a[4]), (int *)A(a[5]));
+		break;
+	case SYS_SHUTDOWN:
+		err = sys_shutdown(a0,a1);
+		break;
+	case SYS_SETSOCKOPT:
+		err = sys_setsockopt(a0, a1, a[2], (char *)A(a[3]), a[4]);
+		break;
+	case SYS_GETSOCKOPT:
+		err = sys_getsockopt(a0, a1, a[2], (char *)A(a[3]), (int *)A(a[4]));
+		break;
+	case SYS_SENDMSG:
+		err = sys_sendmsg(a0, (struct msghdr *) A(a1), a[2]);
+		break;
+	case SYS_RECVMSG:
+		err = sys_recvmsg(a0, (struct msghdr *) A(a1), a[2]);
+		break;
+	default:
+		err = -EINVAL;
+		break;
 	}
 	return err;
 }
