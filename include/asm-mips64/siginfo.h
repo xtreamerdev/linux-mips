@@ -3,7 +3,7 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 1998, 1999, 2001, 2003 Ralf Baechle
+ * Copyright (C) 1998, 1999, 2001, 03, 04 Ralf Baechle
  * Copyright (C) 2000, 2001 Silicon Graphics, Inc.
  */
 #ifndef _ASM_SIGINFO_H
@@ -31,7 +31,12 @@ typedef union sigval32 {
    has Linux extensions.  */
 
 #define SI_MAX_SIZE	128
+#ifdef CONFIG_MIPS32
+#define SI_PAD_SIZE	((SI_MAX_SIZE/sizeof(int)) - 3)
+#endif
+#ifdef CONFIG_MIPS64
 #define SI_PAD_SIZE	((SI_MAX_SIZE/sizeof(int)) - 4)
+#endif
 #define SI_PAD_SIZE32	((SI_MAX_SIZE/sizeof(int)) - 3)
 
 typedef struct siginfo {
