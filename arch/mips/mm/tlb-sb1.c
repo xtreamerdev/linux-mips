@@ -36,6 +36,7 @@ static inline void dump_cur_tlb_regs(void)
 		".set noreorder        \n"
 		".set mips64           \n"
 		".set noat             \n"
+		"     tlbr             \n"
 		"     dmfc0  $1, $10   \n"
 		"     dsrl32 %0, $1, 0 \n"
 		"     sll    %1, $1, 0 \n"
@@ -77,7 +78,6 @@ void sb1_dump_tlb(void)
 	for (entry = 0; entry < current_cpu_data.tlbsize; entry++) {
 		write_c0_index(entry);
 		printk("\n%02i ", entry);
-		tlb_read();
 		dump_cur_tlb_regs();
 	}
 	printk("\n");
