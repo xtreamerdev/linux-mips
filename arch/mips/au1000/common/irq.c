@@ -287,10 +287,6 @@ static void end_irq(unsigned int irq_nr)
 	if (!(irq_desc[irq_nr].status & (IRQ_DISABLED|IRQ_INPROGRESS))) {
 		local_enable_irq(irq_nr);
 	}
-	else {
-		printk("warning: end_irq %d did not enable (%x)\n",
-				irq_nr, irq_desc[irq_nr].status);
-	}
 #if defined(CONFIG_MIPS_PB1000)
 	if (irq_nr == AU1000_GPIO_15) {
 		au_writel(0x4000, PB1000_MDR); /* enable int */
