@@ -24041,8 +24041,8 @@ CONFIG_SOUND_BT878
 
 SGI Vino Video For Linux
 CONFIG_VIDEO_VINO
-  Say Y here to build in support for the Vino video input system found
-  on SGI Indy machines.
+  Say Y here to include support for SGI VINO (Video In No Out) system
+  found on SGI Indy workstations.
 
 Stradis 4:2:2 MPEG-2 video driver
 CONFIG_VIDEO_STRADIS
