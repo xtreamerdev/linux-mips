@@ -53,8 +53,6 @@ extern unsigned long vr41xx_get_tclock_frequency(void);
  * Clock Mask Unit
  */
 extern void vr41xx_cmu_init(void);
-extern void vr41xx_clock_supply(unsigned int clock);
-extern void vr41xx_clock_mask(unsigned int clock);
 
 enum {
 	PIU_CLOCK,
@@ -71,6 +69,9 @@ enum {
 	ETHER0_CLOCK,
 	ETHER1_CLOCK
 };
+
+extern void vr41xx_supply_clock(unsigned int clock);
+extern void vr41xx_mask_clock(unsigned int clock);
 
 /*
  * Interrupt Control Unit

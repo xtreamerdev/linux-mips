@@ -325,7 +325,7 @@ void __devinit kbd_init_hw(void)
 
 	if (current_cpu_data.cputype == CPU_VR4111 ||
 	    current_cpu_data.cputype == CPU_VR4121)
-		vr41xx_clock_supply(KIU_CLOCK);
+		vr41xx_supply_clock(KIU_CLOCK);
 
 	kiu_writew(KIURST_KIURST, KIURST);
 
