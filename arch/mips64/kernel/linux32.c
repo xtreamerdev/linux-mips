@@ -404,11 +404,13 @@ out:
 	return error;
 }
 #else
-static int
-nargs(unsigned int arg, char **ap)
+static int nargs(unsigned int arg, char **ap)
 {
 	char *ptr;
 	int n, ret;
+
+	if (!arg)
+		return 0;
 
 	n = 0;
 	do {
@@ -423,7 +425,8 @@ nargs(unsigned int arg, char **ap)
 		arg += sizeof(unsigned int);
 		n++;
 	} while (ptr);
-	return(n - 1);
+
+	return n - 1;
 }
 
 asmlinkage int 
