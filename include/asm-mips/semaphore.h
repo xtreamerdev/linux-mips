@@ -11,6 +11,7 @@
 #ifndef _ASM_SEMAPHORE_H
 #define _ASM_SEMAPHORE_H
 
+#include <linux/compiler.h>
 #include <linux/config.h>
 #include <linux/spinlock.h>
 #include <linux/wait.h>
@@ -86,10 +87,13 @@ extern void __up_wakeup(struct semaphore * sem);
 
 static inline void down(struct semaphore * sem)
 {
+	int count;
+
 #if WAITQUEUE_DEBUG
 	CHECK_MAGIC(sem->__magic);
 #endif
-	if (atomic_dec_return(&sem->count) < 0)
+	count = atomic_dec_return(&sem->count);
+	if (unlikely(count < 0))
 		__down(sem);
 }
 
@@ -99,14 +103,16 @@ static inline void down(struct semaphore * sem)
  */
 static inline int down_interruptible(struct semaphore * sem)
 {
-	int ret = 0;
+	int count;
 
 #if WAITQUEUE_DEBUG
 	CHECK_MAGIC(sem->__magic);
 #endif
-	if (atomic_dec_return(&sem->count) < 0)
-		ret = __down_interruptible(sem);
-	return ret;
+	count = atomic_dec_return(&sem->count);
+	if (unlikely(count < 0))
+		return __down_interruptible(sem);
+
+	return 0;
 }
 
 #ifdef CONFIG_CPU_HAS_LLDSCD
@@ -223,7 +229,7 @@ static inline int down_trylock(struct semaphore * sem)
 	spin_lock_irqsave(&semaphore_lock, flags);
 	count = atomic_read(&sem->count) - 1;
 	atomic_set(&sem->count, count);
-	if (count < 0) {
+	if (unlikely(count < 0)) {
 		waking = atomic_read(&sem->waking);
 		if (waking <= 0) {
 			atomic_set(&sem->count, count + 1);
