@@ -103,7 +103,7 @@ static int console_may_schedule;
 /*
  *	Setup a list of consoles. Called from init/main.c
  */
-int __init console_setup(char *str)
+static int __init console_setup(char *str)
 {
 	struct console_cmdline *c;
 	char name[sizeof(c->name)];
