@@ -48,8 +48,6 @@ CONFIG_NONCOHERENT_IO=y
 CONFIG_PC_KEYB=y
 # CONFIG_ISA is not set
 # CONFIG_EISA is not set
-# CONFIG_PCI is not set
-# CONFIG_I8259 is not set
 
 #
 # Loadable module support
@@ -409,6 +407,13 @@ CONFIG_MSDOS_PARTITION=y
 CONFIG_FB=y
 CONFIG_DUMMY_CONSOLE=y
 # CONFIG_FB_CYBER2000 is not set
+# CONFIG_FB_MATROX is not set
+# CONFIG_FB_ATY is not set
+# CONFIG_FB_RADEON is not set
+# CONFIG_FB_ATY128 is not set
+# CONFIG_FB_SIS is not set
+# CONFIG_FB_3DFX is not set
+# CONFIG_FB_VOODOO1 is not set
 CONFIG_FB_TX3912=y
 # CONFIG_FB_VIRTUAL is not set
 CONFIG_FBCON_ADVANCED=y

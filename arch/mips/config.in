@@ -269,7 +269,6 @@ if [ "$CONFIG_HP_LASERJET" = "y" ]; then
    #not yet define_bool CONFIG_PCI_AUTO y
 fi
 
-
 if [ "$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
        define_bool CONFIG_TOSHIBA_BOARDS y
        define_bool CONFIG_PCI y 
@@ -286,14 +285,6 @@ if [ "$CONFIG_ISA" != "y" ]; then
    define_bool CONFIG_EISA n
 else
    define_bool CONFIG_EISA y
-fi
-
-if [ "$CONFIG_PCI" != "y" ]; then
-   define_bool CONFIG_PCI n
-fi
-
-if [ "$CONFIG_I8259" != "y" ]; then
-   define_bool CONFIG_I8259 n
 fi
 endmenu
 

@@ -49,12 +49,9 @@ CONFIG_RWSEM_GENERIC_SPINLOCK=y
 # CONFIG_MCA is not set
 # CONFIG_SBUS is not set
 CONFIG_NEW_IRQ=y
-# CONFIG_PCI is not set
 CONFIG_SWAP_IO_SPACE=y
 # CONFIG_ISA is not set
 # CONFIG_EISA is not set
-# CONFIG_PCI is not set
-# CONFIG_I8259 is not set
 
 #
 # Loadable module support

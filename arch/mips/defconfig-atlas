@@ -44,7 +44,6 @@ CONFIG_PCI=y
 CONFIG_SWAP_IO_SPACE=y
 # CONFIG_ISA is not set
 # CONFIG_EISA is not set
-# CONFIG_I8259 is not set
 
 #
 # Loadable module support
