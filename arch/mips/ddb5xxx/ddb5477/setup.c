@@ -35,8 +35,8 @@
 #include <asm/traps.h>
 #include <asm/debug.h>
 #ifdef CONFIG_PC_KEYB
-#include <asm/keyboard.h> 
-#endif 
+#include <asm/keyboard.h>
+#endif
 
 #include <asm/ddb5xxx/ddb5xxx.h>
 
@@ -115,7 +115,7 @@ static unsigned int __init detect_bus_frequency(unsigned long rtc_base)
 
 	/* find the nearest preset freq */
 	for (i=0; freq > preset_freq[i+1]; i++);
-	if ((freq - preset_freq[i]) >= (preset_freq[i+1]-freq)) 
+	if ((freq - preset_freq[i]) >= (preset_freq[i+1]-freq))
 		i++;
 
 	printk("DDB bus frequency detection : %d -> %d\n", freq, preset_freq[i]);
@@ -144,7 +144,7 @@ static void __init ddb_time_init(void)
 
 	/* mips_counter_frequency is 1/2 of the cpu core freq */
 	i =  (read_32bit_cp0_register(CP0_CONFIG) >> 28 ) & 7;
-	if ((mips_cpu.cputype == CPU_R5432) && (i == 3)) 
+	if ((mips_cpu.cputype == CPU_R5432) && (i == 3))
 		i = 4;
 	mips_counter_frequency = bus_frequency*(i+4)/4;
 }
@@ -179,13 +179,13 @@ extern void ddb5477_irq_setup(void);
 
 #if defined(CONFIG_BLK_DEV_INITRD)
 extern unsigned long __rd_start, __rd_end, initrd_start, initrd_end;
-#endif 
+#endif
 
 void __init ddb_setup(void)
 {
 	extern int panic_timeout;
 #ifdef CONFIG_BLK_DEV_IDE
-	extern struct ide_ops std_ide_ops;   
+	extern struct ide_ops std_ide_ops;
 #endif
 
 	/* initialize board - we don't trust the loader */
@@ -204,7 +204,7 @@ void __init ddb_setup(void)
 	/* setup resource limits */
 	ioport_resource.end = DDB_PCI0_IO_SIZE + DDB_PCI1_IO_SIZE - 1;
 	iomem_resource.end = 0xffffffff;
-	
+
 	/* Reboot on panic */
 	panic_timeout = 180;
 
@@ -227,12 +227,12 @@ void __init ddb_setup(void)
 static void __init ddb5477_board_init()
 {
 #ifdef CONFIG_PC_KEYB
-	extern struct kbd_ops std_kbd_ops;   
+	extern struct kbd_ops std_kbd_ops;
 #endif
 	/* ----------- setup PDARs ------------ */
 
 	/* SDRAM should have been set */
-	db_assert(ddb_in32(DDB_SDRAM0) == 
+	db_assert(ddb_in32(DDB_SDRAM0) ==
 		    ddb_calc_pdar(DDB_SDRAM_BASE, board_ram_size, 32, 0, 1));
 
 	/* SDRAM1 should be turned off.  What is this for anyway ? */
@@ -261,11 +261,11 @@ static void __init ddb5477_board_init()
 	}
 
 	/* verify VRC5477 base addr */
-	db_assert(ddb_in32(DDB_VRC5477) == 
+	db_assert(ddb_in32(DDB_VRC5477) ==
 		  ddb_calc_pdar(DDB_VRC5477_BASE, DDB_VRC5477_SIZE, 32, 0, 1));
-	
+
 	/* verify BOOT ROM addr */
-	db_assert(ddb_in32(DDB_BOOTCS) == 
+	db_assert(ddb_in32(DDB_BOOTCS) ==
 		  ddb_calc_pdar(DDB_BOOTCS_BASE, DDB_BOOTCS_SIZE, 8, 0, 0));
 
 	/* setup PCI windows - window0 for MEM/config, window1 for IO */
@@ -300,7 +300,7 @@ static void __init ddb5477_board_init()
 	ddb_out32(DDB_BAR51, 0xffffffff);
 	ddb_out32(DDB_BARB1, 0xffffffff);
 
-	/* 
+	/*
 	 * We use pci master register 0  for memory space / config space
 	 * And we use register 1 for IO space.
 	 * Note that for memory space, we bump up the pci base address
@@ -308,16 +308,16 @@ static void __init ddb5477_board_init()
 	 * For PCI IO space, it starts from 0 in PCI IO space but with
 	 * DDB_xx_IO_BASE in CPU physical address space.
 	 */
-	ddb_set_pmr(DDB_PCIINIT00, DDB_PCICMD_MEM, DDB_PCI0_MEM_BASE, 
+	ddb_set_pmr(DDB_PCIINIT00, DDB_PCICMD_MEM, DDB_PCI0_MEM_BASE,
 		    DDB_PCI_ACCESS_32);
 	ddb_set_pmr(DDB_PCIINIT10, DDB_PCICMD_IO, 0, DDB_PCI_ACCESS_32);
 
-	ddb_set_pmr(DDB_PCIINIT01, DDB_PCICMD_MEM, DDB_PCI1_MEM_BASE, 
+	ddb_set_pmr(DDB_PCIINIT01, DDB_PCICMD_MEM, DDB_PCI1_MEM_BASE,
 		    DDB_PCI_ACCESS_32);
-	ddb_set_pmr(DDB_PCIINIT11, DDB_PCICMD_IO, DDB_PCI0_IO_SIZE, 
+	ddb_set_pmr(DDB_PCIINIT11, DDB_PCICMD_IO, DDB_PCI0_IO_SIZE,
                     DDB_PCI_ACCESS_32);
 
-	
+
 	/* PCI cross window should be set properly */
 	ddb_set_pdar(DDB_BARP00, DDB_PCI1_MEM_BASE, DDB_PCI1_MEM_SIZE, 32, 0, 1);
 	ddb_set_pdar(DDB_BARP10, DDB_PCI1_IO_BASE, DDB_PCI1_IO_SIZE, 32, 0, 1);
@@ -326,11 +326,11 @@ static void __init ddb5477_board_init()
 
 	if (mips_machtype == MACH_NEC_ROCKHOPPER
 	   ||  mips_machtype == MACH_NEC_ROCKHOPPERII) {
-		/* Disable bus diagnostics. */ 
+		/* Disable bus diagnostics. */
 		ddb_out32(DDB_PCICTL0_L, 0);
 		ddb_out32(DDB_PCICTL0_H, 0);
 		ddb_out32(DDB_PCICTL1_L, 0);
-		ddb_out32(DDB_PCICTL1_H, 0);         
+		ddb_out32(DDB_PCICTL1_H, 0);
 	}
 
 	if (mips_machtype == MACH_NEC_ROCKHOPPER) {
@@ -357,12 +357,12 @@ static void __init ddb5477_board_init()
 	/* For dual-function pins, make them all non-GPIO */
 	ddb_out32(DDB_GIUFUNSEL, 0x0);
 	// ddb_out32(DDB_GIUFUNSEL, 0xfe0fcfff);  /* NEC recommanded value */
-	
+
 	if (mips_machtype == MACH_NEC_ROCKHOPPERII) {
 #ifdef CONFIG_PC_KEYB
 	printk("kdb_ops is std\n");
 	kbd_ops = &std_kbd_ops;
-#endif                     
+#endif
 	}
 
 	if (mips_machtype == MACH_NEC_ROCKHOPPERII) {
@@ -389,7 +389,7 @@ static void __init ddb5477_board_init()
 		 */
 		pci_write_config_byte(&dev_m1533, 0x58, 0x74);
 
-		/* 
+		/*
 		 * positive decode (bit6 -0)
 		 * enable IDE controler interrupt (bit 4 -1)
 		 * setup SIRQ to point to IRQ 14 (bit 3:0 - 1101)
@@ -399,31 +399,31 @@ static void __init ddb5477_board_init()
 		/* Setup M5229 registers */
 		dev_m5229.bus = &bus;
 		dev_m5229.sysdata = NULL;
-		dev_m5229.devfn = 4*8;  	// slot 4 (AD15): M5229 IDE 
+		dev_m5229.devfn = 4*8;  	// slot 4 (AD15): M5229 IDE
 
 		/*
 		 * enable IDE in the M5229 config register 0x50 (bit 0 - 1)
-		 * M5229 IDSEL is addr:15; see above setting 
+		 * M5229 IDSEL is addr:15; see above setting
 		 */
 		pci_read_config_byte(&dev_m5229, 0x50, &temp8);
 		pci_write_config_byte(&dev_m5229, 0x50, temp8 | 0x1);
 
-		/* 
-		 * enable bus master (bit 2)  and IO decoding  (bit 0) 
+		/*
+		 * enable bus master (bit 2)  and IO decoding  (bit 0)
 		 */
 		pci_read_config_byte(&dev_m5229, 0x04, &temp8);
 		pci_write_config_byte(&dev_m5229, 0x04, temp8 | 0x5);
 
 		/*
 		 * enable native, copied from arch/ppc/k2boot/head.S
-		 * TODO - need volatile, need to be portable 
+		 * TODO - need volatile, need to be portable
 		 */
 		pci_write_config_byte(&dev_m5229, 0x09, 0xef);
 
-		/* Set Primary Channel Command Block Timing */ 
+		/* Set Primary Channel Command Block Timing */
 		pci_write_config_byte(&dev_m5229, 0x59, 0x31);
 
-		/* 
+		/*
 		 * Enable primary channel 40-pin cable
 		 * M5229 register 0x4a (bit 0)
 		 */

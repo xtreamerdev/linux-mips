@@ -10,17 +10,17 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-/* 
+/*
  * These are routines to set up and handle interrupts from the
  * sb1250 general purpose timer 0.  We're using the timer as a
  * system clock, so we set it up to run at 100 Hz.  On every
- * interrupt, we update our idea of what the time of day is, 
+ * interrupt, we update our idea of what the time of day is,
  * then call do_timer() in the architecture-independent kernel
  * code to do general bookkeeping (e.g. update jiffies, run
  * bottom halves, etc.)
@@ -56,10 +56,10 @@ void sb1250_time_init(void)
 	}
 
 	sb1250_mask_irq(cpu, K_INT_TIMER_0 + cpu);
-	
+
 	/* Map the timer interrupt to ip[4] of this cpu */
-	out64(IMR_IP4_VAL, KSEG1 + A_IMR_REGISTER(cpu, R_IMR_INTERRUPT_MAP_BASE) 
-	      + ((K_INT_TIMER_0 + cpu)<<3)); 
+	out64(IMR_IP4_VAL, KSEG1 + A_IMR_REGISTER(cpu, R_IMR_INTERRUPT_MAP_BASE)
+	      + ((K_INT_TIMER_0 + cpu)<<3));
 
 	/* the general purpose timer ticks at 1 Mhz independent if the rest of the system */
 	/* Disable the timer and set up the count */
@@ -93,7 +93,7 @@ void sb1250_timer_interrupt(struct pt_regs *regs)
 
 	/* Reset the timer */
 	out64(M_SCD_TIMER_ENABLE|M_SCD_TIMER_MODE_CONTINUOUS,
-	      KSEG1 + A_SCD_TIMER_REGISTER(cpu, R_SCD_TIMER_CFG));  
+	      KSEG1 + A_SCD_TIMER_REGISTER(cpu, R_SCD_TIMER_CFG));
 
 	/*
 	 * CPU 0 handles the global timer interrupt job

@@ -73,7 +73,7 @@ extern void add_wired_entry(unsigned long entrylo0, unsigned long entrylo1,
 /*
  * - add_temporary_entry() add a temporary TLB entry. We use TLB entries
  *	starting at the top and working down. This is for populating the
- *	TLB before trap_init() puts the TLB miss handler in place. It 
+ *	TLB before trap_init() puts the TLB miss handler in place. It
  *	should be used only for entries matching the actual page tables,
  *	to prevent inconsistencies.
  */
@@ -436,7 +436,7 @@ static inline pmd_t *pmd_offset(pgd_t *dir, unsigned long address)
 	return (pmd_t *) dir;
 }
 
-/* Find an entry in the third-level page table.. */ 
+/* Find an entry in the third-level page table.. */
 static inline pte_t *pte_offset(pmd_t * dir, unsigned long address)
 {
 	return (pte_t *) (pmd_page(*dir)) +

@@ -26,7 +26,7 @@ void __init init_IRQ(void)
     set_except_vector(0, hpIRQ);
 
 #ifdef CONFIG_REMOTE_DEBUG
-    { 
+    {
        extern void breakpoint(void);
        extern int remote_debug;
 
@@ -36,6 +36,6 @@ void __init init_IRQ(void)
        }
     }
 #endif
-        
+
 }
 

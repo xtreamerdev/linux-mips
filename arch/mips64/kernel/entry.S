@@ -38,7 +38,7 @@ EXPORT(ret_from_exception)
 		bnez	t0, ret_from_sys_call
 		j	restore_all
 
-reschedule:	jal	schedule 
+reschedule:	jal	schedule
 
 FEXPORT(ret_from_sys_call)
 		mfc0	t0, CP0_STATUS	# need_resched and signals atomic test

@@ -67,7 +67,7 @@ signal_return:
 		b	restore_all
 
 reschedule:
-		jal	schedule 
+		jal	schedule
 		b	ret_from_schedule
 
 /*

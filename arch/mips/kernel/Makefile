@@ -55,7 +55,7 @@ obj-$(CONFIG_NEW_TIME_C)	+= time.o
 
 obj-$(CONFIG_BINFMT_IRIX)	+= irixelf.o irixioctl.o irixsig.o sysirix.o \
 				   irixinv.o
-obj-$(CONFIG_REMOTE_DEBUG)	+= gdb-low.o gdb-stub.o 
+obj-$(CONFIG_REMOTE_DEBUG)	+= gdb-low.o gdb-stub.o
 obj-$(CONFIG_PROC_FS)		+= proc.o
 
 obj-$(CONFIG_NEW_PCI)		+= pci.o

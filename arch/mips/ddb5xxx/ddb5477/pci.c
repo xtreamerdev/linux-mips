@@ -24,25 +24,25 @@
 #include <asm/ddb5xxx/ddb5xxx.h>
 
 static struct resource extpci_io_resource = {
-	"ext pci IO space", 
+	"ext pci IO space",
 	DDB_PCI0_IO_BASE - DDB_PCI_IO_BASE + 0x4000,
 	DDB_PCI0_IO_BASE - DDB_PCI_IO_BASE + DDB_PCI0_IO_SIZE -1,
 	IORESOURCE_IO};
 
 static struct resource extpci_mem_resource = {
-	"ext pci memory space", 
+	"ext pci memory space",
 	DDB_PCI0_MEM_BASE + 0x100000,
 	DDB_PCI0_MEM_BASE + DDB_PCI0_MEM_SIZE -1,
 	IORESOURCE_MEM};
 
 static struct resource iopci_io_resource = {
-	"io pci IO space", 
+	"io pci IO space",
 	DDB_PCI1_IO_BASE - DDB_PCI_IO_BASE,
 	DDB_PCI1_IO_BASE - DDB_PCI_IO_BASE + DDB_PCI1_IO_SIZE -1,
 	IORESOURCE_IO};
 
 static struct resource iopci_mem_resource = {
-	"ext pci memory space", 
+	"ext pci memory space",
 	DDB_PCI1_MEM_BASE,
 	DDB_PCI1_MEM_BASE + DDB_PCI1_MEM_SIZE -1,
 	IORESOURCE_MEM};
@@ -63,11 +63,11 @@ struct pci_channel mips_pci_channels[] = {
  * Fortunately this works because, although we have two pci buses,
  * they all have different slot numbers (except for rockhopper slot 20
  * which is handled below).
- * 
+ *
  */
 
-/* 
- * irq mapping : device -> pci int # -> vrc4377 irq# , 
+/*
+ * irq mapping : device -> pci int # -> vrc4377 irq# ,
  * ddb5477 board manual page 4  and vrc5477 manual page 46
  */
 
@@ -109,7 +109,7 @@ static unsigned char rockhopperII_irq_map[MAX_SLOT_NUM] = {
 	/* SLOT:  7, AD:18 */ VRC5477_IRQ_INTD,       /* slot 5 */
 	/* SLOT:  8, AD:19 */ 0,                      /* M5457 modem nop */
 	/* SLOT:  9, AD:20 */ VRC5477_IRQ_INTA,       /* slot 2 */
-	/* SLOT: 10, AD:21 */ 0xff,     
+	/* SLOT: 10, AD:21 */ 0xff,
 	/* SLOT: 11, AD:22 */ 0xff,
 	/* SLOT: 12, AD:23 */ 0xff,
 	/* SLOT: 13, AD:24 */ 0xff,
@@ -143,7 +143,7 @@ void __init pcibios_fixup_irqs(void)
 
                 db_assert(irq != 0xff);
 
-		pci_write_config_byte(dev, 
+		pci_write_config_byte(dev,
 				      PCI_INTERRUPT_LINE,
 				      irq);
 
@@ -151,12 +151,12 @@ void __init pcibios_fixup_irqs(void)
 
 		if (mips_machtype == MACH_NEC_ROCKHOPPERII) {
 			/* hack to distinquish overlapping slot 20s, one
-			 * on bus 0 (ALI USB on the M1535 on the backplane), 
+			 * on bus 0 (ALI USB on the M1535 on the backplane),
 			 * and one on bus 2 (NEC USB controller on the CPU board)
 			 * Make the M1535 USB - ISA IRQ number 9.
 			 */
 			if (slot_num == 20 && dev->bus->number == 0) {
-				pci_write_config_byte(dev, 
+				pci_write_config_byte(dev,
 						      PCI_INTERRUPT_LINE,
 						      9);
 				dev->irq = 9;
@@ -171,7 +171,7 @@ extern void jsun_scan_pci_bus(void);
 extern void jsun_assign_pci_resource(void);
 #endif
 void ddb_pci_reset_bus(void)
-{	
+{
 	u32 temp;
 
 	/*
@@ -232,7 +232,7 @@ void __init pcibios_fixup(void)
 		/* Exit config mode. */
 		outb(0xbb, M1535_CONFIG_PORT);
 
-		pci_for_each_dev(dev) { 
+		pci_for_each_dev(dev) {
 			if(dev->vendor == PCI_VENDOR_ID_AL)
 				if(dev->device == PCI_DEVICE_ID_AL_M1535
 				    || dev->device == PCI_DEVICE_ID_AL_M1533) {
@@ -242,7 +242,7 @@ void __init pcibios_fixup(void)
 				pci_write_config_byte(dev, 0x41, old | 0xd0);
 			}
 		}
-		
+
 	}
 }
 

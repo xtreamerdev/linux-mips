@@ -39,7 +39,7 @@
  *	7 - 	cpu timer (used by default)
  *
  *  8-39: 32 Vrc5477 interrupt sources
- *	(refer to the Vrc5477 manual)	
+ *	(refer to the Vrc5477 manual)
  */
 
 #define	PCI0			DDB_INTPPES0
@@ -57,7 +57,7 @@
 #define	INTD			3
 #define	INTE			4
 
-static inline void 
+static inline void
 set_pci_int_attr(u32 pci, u32 intn, u32 active, u32 trigger)
 {
 	u32 reg_value;
@@ -65,7 +65,7 @@ set_pci_int_attr(u32 pci, u32 intn, u32 active, u32 trigger)
 
 	reg_value = ddb_in32(pci);
 	reg_bitmask = 0x3 << (intn * 2);
-	
+
 	reg_value &= ~reg_bitmask;
 	reg_value |= (active | trigger) << (intn * 2);
 	ddb_out32(pci, reg_value);
@@ -75,7 +75,7 @@ extern void init_i8259_irqs (void);
 extern void vrc5477_irq_init(u32 base);
 extern void mips_cpu_irq_init(u32 base);
 extern asmlinkage void ddb5477_handle_int(void);
-extern int setup_irq(unsigned int irq, struct irqaction *irqaction);  
+extern int setup_irq(unsigned int irq, struct irqaction *irqaction);
 static struct irqaction irq_cascade = { no_action, 0, 0, "cascade", NULL, NULL };
 
 void
@@ -83,7 +83,7 @@ ddb5477_irq_setup(void)
 {
 	db_run(printk("ddb5477_irq_setup invoked.\n"));
 
-	/* by default, we disable all interrupts and route all vrc5477 
+	/* by default, we disable all interrupts and route all vrc5477
 	 * interrupts to pin 0 (irq 2) */
 	ddb_out32(DDB_INTCTRL0, 0);
 	ddb_out32(DDB_INTCTRL1, 0);
@@ -96,7 +96,7 @@ ddb5477_irq_setup(void)
 	/* setup PCI interrupt attributes */
 	set_pci_int_attr(PCI0, INTA, ACTIVE_LOW, LEVEL_SENSE);
 	set_pci_int_attr(PCI0, INTB, ACTIVE_LOW, LEVEL_SENSE);
-	if (mips_machtype == MACH_NEC_ROCKHOPPERII) 
+	if (mips_machtype == MACH_NEC_ROCKHOPPERII)
 		set_pci_int_attr(PCI0, INTC, ACTIVE_HIGH, LEVEL_SENSE);
 	else
 		set_pci_int_attr(PCI0, INTC, ACTIVE_LOW, LEVEL_SENSE);
@@ -109,9 +109,9 @@ ddb5477_irq_setup(void)
 	set_pci_int_attr(PCI1, INTD, ACTIVE_LOW, LEVEL_SENSE);
 	set_pci_int_attr(PCI1, INTE, ACTIVE_LOW, LEVEL_SENSE);
 
-	/* 
+	/*
 	 * for debugging purpose, we enable several error interrupts
-	 * and route them to pin 1. (IP3) 
+	 * and route them to pin 1. (IP3)
 	 */
 	/* cpu parity check - 0 */
 	ll_vrc5477_irq_route(0, 1); ll_vrc5477_irq_enable(0);
@@ -136,7 +136,7 @@ ddb5477_irq_setup(void)
 
 	/* setup cascade interrupts */
 	setup_irq(VRC5477_IRQ_BASE + VRC5477_I8259_CASCADE, &irq_cascade);
-	setup_irq(CPU_IRQ_BASE + CPU_VRC5477_CASCADE, &irq_cascade);      
+	setup_irq(CPU_IRQ_BASE + CPU_VRC5477_CASCADE, &irq_cascade);
 
 	/* hook up the first-level interrupt handler */
 	set_except_vector(0, ddb5477_handle_int);
