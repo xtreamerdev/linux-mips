@@ -63,6 +63,9 @@ extern unsigned long ldt_eoi_space;
 extern void breakpoint(void);
 extern void set_debug_traps(void);
 static int kgdb_irq;
+#ifdef CONFIG_GDB_CONSOLE
+extern void register_gdb_console(void);
+#endif
 
 /* kgdb is on when configured.  Pass "nokgdb" kernel arg to turn it off */
 static int kgdb_flag = 1;
@@ -72,6 +75,12 @@ static int __init nokgdb(char *str)
 	return 1;
 }
 __setup("nokgdb", nokgdb);
+
+/* Default to UART1 */
+int kgdb_port = 1;
+#ifdef CONFIG_SIBYTE_SB1250_DUART
+extern char sb1250_duart_present[];
+#endif
 #endif
 
 static struct hw_interrupt_type sb1250_irq_type = {
@@ -380,19 +389,24 @@ void __init init_IRQ(void)
 
 #ifdef CONFIG_KGDB
 	if (kgdb_flag) {
-		kgdb_irq = K_INT_UART_1;
+		kgdb_irq = K_INT_UART_0 + kgdb_port;
 
+#ifdef CONFIG_SIBYTE_SB1250_DUART	
+		sb1250_duart_present[kgdb_port] = 0;
+#endif
 		/* Setup uart 1 settings, mapper */
-		out64(M_DUART_IMR_BRK, KSEG1 + A_DUART + R_DUART_IMR_B);
+		out64(M_DUART_IMR_BRK, IO_SPACE_BASE + A_DUART_IMRREG(kgdb_port));
 
 		sb1250_steal_irq(kgdb_irq);
 		out64(IMR_IP6_VAL,
-			KSEG1 + A_IMR_REGISTER(0, R_IMR_INTERRUPT_MAP_BASE) + (kgdb_irq<<3));
-		tmp = in64(KSEG1 + A_IMR_REGISTER(0, R_IMR_INTERRUPT_MASK));
-		tmp &= ~(1LL<<kgdb_irq);
-		out64(tmp, KSEG1 + A_IMR_REGISTER(0, R_IMR_INTERRUPT_MASK));
+		      IO_SPACE_BASE + A_IMR_REGISTER(0, R_IMR_INTERRUPT_MAP_BASE) +
+		      (kgdb_irq<<3));
+		sb1250_unmask_irq(0, kgdb_irq);
 
-		prom_printf("Waiting for GDB on UART port 1\n");
+#ifdef CONFIG_GDB_CONSOLE
+		register_gdb_console();
+#endif
+		prom_printf("Waiting for GDB on UART port %d\n", kgdb_port);
 		set_debug_traps();
 		breakpoint();
 	}
@@ -405,8 +419,8 @@ void __init init_IRQ(void)
 
 extern void set_async_breakpoint(unsigned long *epc);
 
-#define duart_out(reg, val)     csr_out32(val, KSEG1 + A_DUART_CHANREG(1,reg))
-#define duart_in(reg)           csr_in32(KSEG1 + A_DUART_CHANREG(1,reg))
+#define duart_out(reg, val)     csr_out32(val, KSEG1 + A_DUART_CHANREG(kgdb_port,reg))
+#define duart_in(reg)           csr_in32(KSEG1 + A_DUART_CHANREG(kgdb_port,reg))
 
 void sb1250_kgdb_interrupt(struct pt_regs *regs)
 {
