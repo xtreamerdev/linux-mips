@@ -37,6 +37,14 @@
 #include <asm/au1550_spi.h>
 #include <asm/au1xxx_psc.h>
 
+#ifdef CONFIG_MIPS_PB1550
+#include <asm/pb1550.h>
+#endif
+
+#ifdef CONFIG_MIPS_DB1550
+#include <asm/db1x00.h>
+#endif
+
 /* This is just a simple programmed I/O SPI interface on the PSC of the 1550.
  * We support open, close, write, and ioctl.  The SPI is a full duplex
  * interface, you can't read without writing.  So, the write system call

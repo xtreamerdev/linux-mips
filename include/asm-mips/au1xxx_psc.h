@@ -33,21 +33,13 @@
 #ifndef _AU1000_PSC_H_
 #define _AU1000_PSC_H_
 
-/* The PSC base addresses.
-*/
-#define PSC_BASE0		0xb1a00000
-#define PSC_BASE1		0xb1b00000
-#define PSC_BASE2		0xb0a00000
-#define PSC_BASE3		0xb0d00000
-
-/* These should be defined in a board specific file!
- * So far, all boards use the same configuration.
- */
-#define SPI_PSC_BASE		PSC_BASE0
-#define AC97_PSC_BASE		PSC_BASE1
-#define SMBUS_PSC_BASE		PSC_BASE2
-#define I2S_PSC_BASE		PSC_BASE3
-
+/* The PSC base addresses.  */
+#ifdef CONFIG_SOC_AU1550
+#define PSC0_BASE_ADDR		0xb1a00000
+#define PSC1_BASE_ADDR		0xb1b00000
+#define PSC2_BASE_ADDR		0xb0a00000
+#define PSC3_BASE_ADDR		0xb0d00000
+#endif
 
 /* The PSC select and control registers are common to
  * all protocols.
