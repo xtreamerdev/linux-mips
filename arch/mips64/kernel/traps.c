@@ -678,8 +678,8 @@ void __init trap_init(void)
 		/* Enable timer interrupt and scd mapped interrupt */
 		clear_cp0_status(0xf000);
 		set_cp0_status(0xc00);
-		goto nocache;
 
+		/* Fall through. */
 	case CPU_R10000:
 	case CPU_R4000MC:
 	case CPU_R4400MC:
@@ -692,10 +692,6 @@ void __init trap_init(void)
 	case CPU_R4600:
 	case CPU_R5000:
 	case CPU_NEVADA:
-		/* Cache error vector  */
-		memcpy((void *)(KSEG0 + 0x100), (void *) KSEG0, 0x80);
-
-nocache:
 		/* Debug TLB refill handler.  */
 		memcpy((void *)KSEG0, &except_vec0, 0x80);
 		memcpy((void *)KSEG0 + 0x080, &except_vec1_r10k, 0x80);
