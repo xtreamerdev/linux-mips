@@ -79,11 +79,6 @@ EXPORT_SYMBOL_NOVERS(__strnlen_user_asm);
 /* Networking helper routines. */
 EXPORT_SYMBOL(csum_partial_copy);
 
-#ifdef CONFIG_NONCOHERENT_IO
-EXPORT_SYMBOL(_dma_cache_wback_inv);
-EXPORT_SYMBOL(_dma_cache_inv);
-#endif
-
 EXPORT_SYMBOL(invalid_pte_table);
 
 /*
