@@ -679,3 +679,17 @@ CONFIG_CROSSCOMPILE=y
 # CONFIG_GDB_CONSOLE is not set
 # CONFIG_DEBUG_INFO is not set
 # CONFIG_MAGIC_SYSRQ is not set
+# CONFIG_MIPS_UNCACHED is not set
+CONFIG_LOG_BUF_SHIFT=0
+
+#
+# Cryptographic options
+#
+# CONFIG_CRYPTO is not set
+
+#
+# Library routines
+#
+# CONFIG_CRC32 is not set
+# CONFIG_ZLIB_INFLATE is not set
+# CONFIG_ZLIB_DEFLATE is not set

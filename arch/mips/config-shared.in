@@ -1097,8 +1097,11 @@ if [ "$CONFIG_SMP" != "y" ]; then
 else
    if [ "$CONFIG_MIPS32" = "y" ]; then
       int  'Maximum number of CPUs (2-32)' CONFIG_NR_CPUS 32
-   else if [ "$CONFIG_MIPS64" = "y" ]; then
-      int  'Maximum number of CPUs (2-64)' CONFIG_NR_CPUS 64
+   else
+      if [ "$CONFIG_MIPS64" = "y" ]; then
+	 int  'Maximum number of CPUs (2-64)' CONFIG_NR_CPUS 64
+      fi
+   fi
 fi
 
 int 'Kernel messages buffer length shift (0 = default)' CONFIG_LOG_BUF_SHIFT 0
