@@ -39,10 +39,11 @@
 #define P_MTC0		mtc0
 #endif
 
-#define PTE_PAGE_SIZE	(_PAGE_SIZE << _PTE_ORDER)
+#define PTE_PAGE_SHIFT	(_PAGE_SHIFT + _PTE_ORDER)
+#define PTE_PAGE_SIZE	(1L << PTE_PAGE_SHIFT)
 #define PTEP_INDX_MSK	((PTE_PAGE_SIZE - 1) & ~(_PTE_T_SIZE << 1 - 1))
 #define PTE_INDX_MSK	((PTE_PAGE_SIZE - 1) & ~(_PTE_T_SIZE - 1))
-#define PTE_INDX_SHIFT	(PTE_PAGE_SIZE - _PTE_T_LOG2)
+#define PTE_INDX_SHIFT	(PTE_PAGE_SHIFT - _PTE_T_LOG2)
 
 /*
  * ABUSE of CPP macros 101.
