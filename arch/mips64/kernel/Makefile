@@ -21,6 +21,7 @@ obj-y		:= branch.o cpu-probe.o entry.o irq.o proc.o process.o \
 
 obj-$(CONFIG_I8259)		+= i8259.o
 obj-$(CONFIG_IRQ_CPU)		+= irq_cpu.o
+obj-$(CONFIG_IRQ_CPU_RM7K)	+= irq-rm7000.o
 obj-$(CONFIG_NEW_TIME_C)	+= time.o
 
 obj-$(CONFIG_MODULES)		+= mips64_ksyms.o
