@@ -21,6 +21,7 @@
 #include <asm/cpu.h>
 #include <asm/bootinfo.h>
 #include <asm/mmu_context.h>
+#include <linux/module.h>
 #include <asm/pgtable.h>
 #include <asm/system.h>
 
@@ -199,6 +200,8 @@ void local_flush_tlb_one(unsigned long page)
 	write_c0_entryhi(oldpid);
 	local_irq_restore(flags);
 }
+
+EXPORT_SYMBOL(local_flush_tlb_one);
 
 /* We will need multiple versions of update_mmu_cache(), one that just
  * updates the TLB with the new pte(s), and another which also checks

@@ -18,6 +18,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 #include <linux/config.h>
+#include <linux/module.h>
 #include <linux/init.h>
 #include <asm/mmu_context.h>
 #include <asm/bootinfo.h>
@@ -237,6 +238,9 @@ void local_flush_tlb_one(unsigned long page)
 	write_c0_entryhi(oldpid);
 	local_irq_restore(flags);
 }
+
+/* The highmem code wants this. */
+EXPORT_SYMBOL(local_flush_tlb_one);
 
 /* All entries common to a mm share an asid.  To effectively flush
    these entries, we just bump the asid. */
