@@ -1,4 +1,4 @@
-/* $Id: signal.c,v 1.18 1999/02/15 02:16:52 ralf Exp $
+/* $Id: signal.c,v 1.18.2.1 1999/06/17 12:06:40 ralf Exp $
  *
  *  linux/arch/mips/kernel/signal.c
  *
@@ -115,7 +115,7 @@ sys_sigaction(int sig, const struct sigaction *act,
 		    __put_user(old_ka.sa.sa_handler, &oact->sa_handler) ||
 		    __put_user(old_ka.sa.sa_flags, &oact->sa_flags))
 			return -EFAULT;
-		__copy_to_user(&old_ka.sa.sa_mask, &oact->sa_mask,
+		__copy_to_user(&oact->sa_mask, &old_ka.sa.sa_mask,
 		               sizeof(sigset_t));
 	}
 
