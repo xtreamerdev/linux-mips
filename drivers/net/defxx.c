@@ -10,10 +10,12 @@
  *
  * Abstract:
  *   A Linux device driver supporting the Digital Equipment Corporation
- *   FDDI EISA and PCI controller families.  Supported adapters include:
+ *   FDDI TURBOchannel, EISA and PCI controller families.  Supported
+ *   adapters include:
  *
- *		DEC FDDIcontroller/EISA (DEFEA)
- *		DEC FDDIcontroller/PCI  (DEFPA)
+ *		DEC FDDIcontroller/TURBOchannel (DEFTA)
+ *		DEC FDDIcontroller/EISA         (DEFEA)
+ *		DEC FDDIcontroller/PCI          (DEFPA)
  *
  * The original author:
  *   LVS	Lawrence V. Stefani <lstefani@yahoo.com>
@@ -191,6 +193,7 @@
  *		Feb 2001	davej		PCI enable cleanups.
  *		04 Aug 2003	macro		Converted to the DMA API.
  *		14 Aug 2004	macro		Fix device names reported.
+ *		26 Sep 2004	macro		TURBOchannel support.
  */
 
 /* Include files */
@@ -213,12 +216,22 @@
 #include <asm/bitops.h>
 #include <asm/io.h>
 
+#ifdef CONFIG_TC
+#include <asm/dec/tc.h>
+#else
+static int search_tc_card(const char *name) { return -ENODEV; }
+static void claim_tc_card(int slot) { }
+static void release_tc_card(int slot) { }
+static unsigned long get_tc_base_addr(int slot) { return 0; }
+static unsigned long get_tc_irq_nr(int slot) { return -1; }
+#endif
+
 #include "defxx.h"
 
 /* Version information string should be updated prior to each new release!  */
 #define DRV_NAME "defxx"
-#define DRV_VERSION "v1.07"
-#define DRV_RELDATE "2004/08/14"
+#define DRV_VERSION "v1.07T"
+#define DRV_RELDATE "2004/09/26"
 
 static char version[] __devinitdata =
 	DRV_NAME ": " DRV_VERSION " " DRV_RELDATE
@@ -332,48 +345,84 @@ static inline void dfx_port_write_byte(
 	int			offset,
 	u8			data
 	)
+{
+	if (bp->bus_type == DFX_BUS_TYPE_TC)
+	{
+	volatile u8 *addr = (void *)(bp->base_addr + offset);
 
+	*addr = data;
+	mb();
+	}
+	else
 	{
 	u16 port = bp->base_addr + offset;
 
 	outb(data, port);
 	}
+}
 
 static inline void dfx_port_read_byte(
 	DFX_board_t	*bp,
 	int			offset,
 	u8			*data
 	)
+{
+	if (bp->bus_type == DFX_BUS_TYPE_TC)
+	{
+	volatile u8 *addr = (void *)(bp->base_addr + offset);
 
+	mb();
+	*data = *addr;
+	}
+	else
 	{
 	u16 port = bp->base_addr + offset;
 
 	*data = inb(port);
 	}
+}
 
 static inline void dfx_port_write_long(
 	DFX_board_t	*bp,
 	int			offset,
 	u32			data
 	)
+{
+	if (bp->bus_type == DFX_BUS_TYPE_TC)
+	{
+	volatile u32 *addr = (void *)(bp->base_addr + offset);
 
+	*addr = data;
+	mb();
+	}
+	else
 	{
 	u16 port = bp->base_addr + offset;
 
 	outl(data, port);
 	}
+}
 
 static inline void dfx_port_read_long(
 	DFX_board_t	*bp,
 	int			offset,
 	u32			*data
 	)
+{
+	if (bp->bus_type == DFX_BUS_TYPE_TC)
+	{
+	volatile u32 *addr = (void *)(bp->base_addr + offset);
 
+	mb();
+	*data = *addr;
+	}
+	else
 	{
 	u16 port = bp->base_addr + offset;
 
 	*data = inl(port);
 	}
+}
 
 
 /*
@@ -388,8 +437,9 @@ static inline void dfx_port_read_long(
  *   Condition code
  *       
  * Arguments:
- *   pdev - pointer to pci device information (NULL for EISA)
- *   ioaddr - pointer to port (NULL for PCI)
+ *   pdev - pointer to pci device information (NULL for EISA or TURBOchannel)
+ *   bus_type - bus type (one of DFX_BUS_TYPE_*)
+ *   handle - bus-specific data: slot (TC), pointer to port (EISA), NULL (PCI)
  *
  * Functional Description:
  *
@@ -405,12 +455,14 @@ static inline void dfx_port_read_long(
  *   initialized and the board resources are read and stored in
  *   the device structure.
  */
-static int __devinit dfx_init_one_pci_or_eisa(struct pci_dev *pdev, long ioaddr)
+static int __devinit dfx_init_one_pci_or_eisa(struct pci_dev *pdev, u32 bus_type, long handle)
 {
 	static int version_disp;
 	char *print_name = DRV_NAME;
 	struct net_device *dev;
 	DFX_board_t	  *bp;			/* board pointer */
+	long ioaddr;				/* pointer to port */
+	unsigned long len;			/* resource length */
 	int alloc_size;				/* total buffer size used */
 	int err;
 
@@ -430,7 +482,7 @@ static int __devinit dfx_init_one_pci_or_eisa(struct pci_dev *pdev, long ioaddr)
 	}
 
 	/* Enable PCI device. */
-	if (pdev != NULL) {
+	if (bus_type == DFX_BUS_TYPE_PCI) {
 		err = pci_enable_device (pdev);
 		if (err) goto err_out;
 		ioaddr = pci_resource_start (pdev, 1);
@@ -441,19 +493,29 @@ static int __devinit dfx_init_one_pci_or_eisa(struct pci_dev *pdev, long ioaddr)
 
 	bp = dev->priv;
 
-	if (!request_region(ioaddr,
-			    pdev ? PFI_K_CSR_IO_LEN : PI_ESIC_K_CSR_IO_LEN,
-			    print_name)) {
+	if (bus_type == DFX_BUS_TYPE_TC) {
+		/* TURBOchannel board */
+		bp->slot = handle;
+		claim_tc_card(bp->slot);
+		ioaddr = get_tc_base_addr(handle) + PI_TC_K_CSR_OFFSET;
+		len = PI_TC_K_CSR_LEN;
+	} else if (bus_type == DFX_BUS_TYPE_EISA) {
+		/* EISA board */
+		ioaddr = handle;
+		len = PI_ESIC_K_CSR_IO_LEN;
+	} else
+		/* PCI board */
+		len = PFI_K_CSR_IO_LEN;
+	dev->base_addr			= ioaddr; /* save port (I/O) base address */
+
+	if (!request_region(ioaddr, len, print_name)) {
 		printk(KERN_ERR "%s: Cannot reserve I/O resource "
-		       "0x%x @ 0x%lx, aborting\n", print_name,
-		       pdev ? PFI_K_CSR_IO_LEN : PI_ESIC_K_CSR_IO_LEN, ioaddr);
+		       "0x%lx @ 0x%lx, aborting\n", print_name, len, ioaddr);
 		err = -EBUSY;
 		goto err_out;
 	}
 
 	/* Initialize new device structure */
-
-	dev->base_addr			= ioaddr; /* save port (I/O) base address */
 
 	dev->get_stats			= dfx_ctl_get_stats;
 	dev->open			= dfx_open;
@@ -462,18 +524,18 @@ static int __devinit dfx_init_one_pci_or_eisa(struct pci_dev *pdev, long ioaddr)
 	dev->set_multicast_list		= dfx_ctl_set_multicast_list;
 	dev->set_mac_address		= dfx_ctl_set_mac_address;
 
-	if (pdev == NULL) {
-		/* EISA board */
-		bp->bus_type = DFX_BUS_TYPE_EISA;
+	bp->bus_type = bus_type;
+	if (bus_type == DFX_BUS_TYPE_TC || bus_type == DFX_BUS_TYPE_EISA) {
+		/* TURBOchannel or EISA board */
 		bp->next = root_dfx_eisa_dev;
 		root_dfx_eisa_dev = dev;
 	} else {
 		/* PCI board */
-		bp->bus_type = DFX_BUS_TYPE_PCI;
 		bp->pci_dev = pdev;
 		pci_set_drvdata (pdev, dev);
 		pci_set_master (pdev);
 	}
+
 
 	if (dfx_driver_init(dev, print_name) != DFX_K_SUCCESS) {
 		err = -ENODEV;
@@ -499,15 +561,17 @@ err_out_kfree:
 		pci_free_consistent(pdev, alloc_size,
 				    bp->kmalloced, bp->kmalloced_dma);
 err_out_region:
-	release_region(ioaddr, pdev ? PFI_K_CSR_IO_LEN : PI_ESIC_K_CSR_IO_LEN);
+	release_region(ioaddr, len);
 err_out:
+	if (bp->bus_type == DFX_BUS_TYPE_TC)
+		release_tc_card(bp->slot);
 	free_netdev(dev);
 	return err;
 }
 
 static int __devinit dfx_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
-	return dfx_init_one_pci_or_eisa(pdev, 0);
+	return dfx_init_one_pci_or_eisa(pdev, DFX_BUS_TYPE_PCI, 0);
 }
 
 static int __init dfx_eisa_init(void)
@@ -519,6 +583,7 @@ static int __init dfx_eisa_init(void)
 
 	DBG_printk("In dfx_eisa_init...\n");
 
+#ifdef CONFIG_EISA
 	/* Scan for FDDI EISA controllers */
 
 	for (i=0; i < DFX_MAX_EISA_SLOTS; i++)		/* only scan for up to 16 EISA slots */
@@ -529,8 +594,26 @@ static int __init dfx_eisa_init(void)
 		{
 			port = (i << 12);					/* recalc base addr */
 
-			if (dfx_init_one_pci_or_eisa(NULL, port) == 0) rc = 0;
+			if (dfx_init_one_pci_or_eisa(NULL, DFX_BUS_TYPE_EISA, port) == 0) rc = 0;
 		}
+	}
+#endif
+	return rc;
+}
+
+static int __init dfx_tc_init(void)
+{
+	int rc = -ENODEV;
+	int slot;		/* TC slot number */
+
+	DBG_printk("In dfx_tc_init...\n");
+
+	/* Scan for FDDI TC controllers */
+	while ((slot = search_tc_card("PMAF-F")) >= 0) {
+		if (dfx_init_one_pci_or_eisa(NULL, DFX_BUS_TYPE_TC, slot) == 0)
+			rc = 0;
+		else
+			break;
 	}
 	return rc;
 }
@@ -595,8 +678,9 @@ static void __devinit dfx_bus_init(struct net_device *dev)
 
 	/* Initialize adapter based on bus type */
 
-	if (bp->bus_type == DFX_BUS_TYPE_EISA)
-		{
+	if (bp->bus_type == DFX_BUS_TYPE_TC) {
+		dev->irq = get_tc_irq_nr(bp->slot);
+	} else if (bp->bus_type == DFX_BUS_TYPE_EISA) {
 		/* Get the interrupt level from the ESIC chip */
 
 		dfx_port_read_byte(bp, PI_ESIC_K_IO_CONFIG_STAT_0, &val);
@@ -875,7 +959,14 @@ static int __devinit dfx_driver_init(struct net_device *dev,
 	 */
 
 	memcpy(dev->dev_addr, bp->factory_mac_addr, FDDI_K_ALEN);
-	if (bp->bus_type == DFX_BUS_TYPE_EISA)
+	if (bp->bus_type == DFX_BUS_TYPE_TC)
+		printk("%s: DEFTA at addr = 0x%lX, IRQ = %d, "
+		       "Hardware addr = %02X-%02X-%02X-%02X-%02X-%02X\n",
+		       print_name, dev->base_addr, dev->irq,
+		       dev->dev_addr[0], dev->dev_addr[1],
+		       dev->dev_addr[2], dev->dev_addr[3],
+		       dev->dev_addr[4], dev->dev_addr[5]);
+	else if (bp->bus_type == DFX_BUS_TYPE_EISA)
 		printk("%s: DEFEA at I/O addr = 0x%lX, IRQ = %d, "
 		       "Hardware addr = %02X-%02X-%02X-%02X-%02X-%02X\n",
 		       print_name, dev->base_addr, dev->irq,
@@ -1225,7 +1316,9 @@ static int dfx_open(struct net_device *dev)
 	
 	/* Register IRQ - support shared interrupts by passing device ptr */
 
-	ret = request_irq(dev->irq, (void *)dfx_interrupt, SA_SHIRQ, dev->name, dev);
+	ret = request_irq(dev->irq, (void *)dfx_interrupt,
+			  (bp->bus_type == DFX_BUS_TYPE_TC) ? 0 : SA_SHIRQ,
+			  dev->name, dev);
 	if (ret) {
 		printk(KERN_ERR "%s: Requested IRQ %d is busy\n", dev->name, dev->irq);
 		return ret;
@@ -1744,7 +1837,7 @@ static void dfx_interrupt(int irq, void *dev_id, struct pt_regs	*regs)
 		dfx_port_write_long(bp, PFI_K_REG_MODE_CTRL,
 					(PFI_MODE_M_PDQ_INT_ENB + PFI_MODE_M_DMA_ENB));
 		}
-	else
+	else if (bp->bus_type == DFX_BUS_TYPE_EISA)
 		{
 		/* Disable interrupts at the ESIC */
 
@@ -1762,6 +1855,13 @@ static void dfx_interrupt(int irq, void *dev_id, struct pt_regs	*regs)
 		tmp |= PI_CONFIG_STAT_0_M_INT_ENB;
 		dfx_port_write_byte(bp, PI_ESIC_K_IO_CONFIG_STAT_0, tmp);
 		}
+	else {
+		/* TC doesn't share interrupts so no need to disable them */
+
+		/* Call interrupt service routine for this adapter */
+
+		dfx_int_common(dev);
+	}
 
 	spin_unlock(&bp->lock);
 	}
@@ -3365,10 +3465,23 @@ static void dfx_xmt_flush( DFX_board_t *bp )
 static void __devexit dfx_remove_one_pci_or_eisa(struct pci_dev *pdev, struct net_device *dev)
 {
 	DFX_board_t	*bp = dev->priv;
+	unsigned long	len;			/* resource length */
 	int		alloc_size;		/* total buffer size used */
 
+	if (bp->bus_type == DFX_BUS_TYPE_TC) {
+		/* TURBOchannel board */
+		len = PI_TC_K_CSR_LEN;
+	} else if (bp->bus_type == DFX_BUS_TYPE_EISA) {
+		/* EISA board */
+		len = PI_ESIC_K_CSR_IO_LEN;
+	} else {
+		len = PFI_K_CSR_IO_LEN;
+	}
 	unregister_netdev(dev);
-	release_region(dev->base_addr,  pdev ? PFI_K_CSR_IO_LEN : PI_ESIC_K_CSR_IO_LEN );
+	release_region(dev->base_addr, len);
+
+	if (bp->bus_type == DFX_BUS_TYPE_TC)
+		release_tc_card(bp->slot);
 
 	alloc_size = sizeof(PI_DESCR_BLOCK) +
 		     PI_CMD_REQ_K_SIZE_MAX + PI_CMD_RSP_K_SIZE_MAX +
@@ -3406,6 +3519,7 @@ static struct pci_driver dfx_driver = {
 
 static int dfx_have_pci;
 static int dfx_have_eisa;
+static int dfx_have_tc;
 
 
 static void __exit dfx_eisa_cleanup(void)
@@ -3426,7 +3540,7 @@ static void __exit dfx_eisa_cleanup(void)
 
 static int __init dfx_init(void)
 {
-	int rc_pci, rc_eisa;
+	int rc_pci, rc_eisa, rc_tc;
 
 	rc_pci = pci_module_init(&dfx_driver);
 	if (rc_pci >= 0) dfx_have_pci = 1;
@@ -3434,16 +3548,20 @@ static int __init dfx_init(void)
 	rc_eisa = dfx_eisa_init();
 	if (rc_eisa >= 0) dfx_have_eisa = 1;
 
-	return ((rc_eisa < 0) ? 0 : rc_eisa)  + ((rc_pci < 0) ? 0 : rc_pci); 
+	rc_tc = dfx_tc_init();
+	if (rc_tc >= 0) dfx_have_tc = 1;
+
+	return ((rc_tc < 0) ? 0 : rc_tc) +
+	       ((rc_eisa < 0) ? 0 : rc_eisa) +
+	       ((rc_pci < 0) ? 0 : rc_pci); 
 }
 
 static void __exit dfx_cleanup(void)
 {
 	if (dfx_have_pci)
 		pci_unregister_driver(&dfx_driver);
-	if (dfx_have_eisa)
+	if (dfx_have_eisa || dfx_have_tc)
 		dfx_eisa_cleanup();
-		
 }	
 
 module_init(dfx_init);

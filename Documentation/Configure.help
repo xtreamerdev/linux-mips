@@ -13480,10 +13480,11 @@ CONFIG_FDDI
   then also Y to the driver for your FDDI card, below). Most people
   will say N.
 
-Digital DEFEA and DEFPA adapter support
+Digital DEFTA/DEFEA/DEFPA adapter support
 CONFIG_DEFXX
-  This is support for the DIGITAL series of EISA (DEFEA) and PCI
-  (DEFPA) controllers which can connect you to a local FDDI network.
+  This is support for the DIGITAL series of TURBOchannel (DEFTA), EISA
+  (DEFEA) and PCI (DEFPA) controllers which can connect you to a local
+  FDDI network.
 
   If you want to compile the driver as a module ( = code which can be
   inserted in and removed from the running kernel whenever you want),

@@ -1462,6 +1462,11 @@ typedef union
 
 #endif	/* #ifndef BIG_ENDIAN */
 
+/* Define TC PDQ CSR offset and length */
+
+#define PI_TC_K_CSR_OFFSET		0x100000
+#define PI_TC_K_CSR_LEN			0x80		/* 128 bytes */
+
 /* Define EISA controller register offsets */
 
 #define PI_ESIC_K_BURST_HOLDOFF		0x040
@@ -1629,6 +1634,7 @@ typedef union
 
 #define DFX_BUS_TYPE_PCI		0			/* type code for DEC FDDIcontroller/PCI */
 #define DFX_BUS_TYPE_EISA		1			/* type code for DEC FDDIcontroller/EISA */
+#define DFX_BUS_TYPE_TC			2			/* type code for DEC FDDIcontroller/TURBOchannel */
 
 #define DFX_FC_PRH2_PRH1_PRH0		0x54003820	/* Packet Request Header bytes + FC */
 #define DFX_PRH0_BYTE			0x20		/* Packet Request Header byte 0 */
@@ -1755,8 +1761,9 @@ typedef struct DFX_board_tag
 
 	struct net_device		*dev;						/* pointer to device structure */
 	struct net_device		*next;
-	u32				bus_type;					/* bus type (0 == PCI, 1 == EISA) */
-	u16				base_addr;					/* base I/O address (same as dev->base_addr) */
+	u32				bus_type;					/* bus type (0 == PCI, 1 == EISA, 2 == TC) */
+	long				base_addr;					/* base I/O address (same as dev->base_addr) */
+	int				slot;						/* TC slot number */
 	struct pci_dev *		pci_dev;
 	u32				full_duplex_enb;				/* FDDI Full Duplex enable (1 == on, 2 == off) */
 	u32				req_ttrt;					/* requested TTRT value (in 80ns units) */
