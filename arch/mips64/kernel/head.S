@@ -168,13 +168,10 @@ NESTED(smp_bootstrap, 16, sp)
 
 	declare_saved_sp
 
-#undef PAGE_SIZE
-#define PAGE_SIZE	0x1000
-
 	.macro	page name, order=0
 	.globl	\name
-\name:	.size	\name, (PAGE_SIZE << \order)
-	.org	. + (PAGE_SIZE << \order)
+\name:	.size	\name, (_PAGE_SIZE << \order)
+	.org	. + (_PAGE_SIZE << \order)
 	.type	\name, @object
 	.endm
 
