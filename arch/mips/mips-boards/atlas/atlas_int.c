@@ -21,6 +21,7 @@
  *
  * Routines for generic manipulation of the interrupts found on the MIPS 
  * Atlas board.
+ *
  */
 #include <linux/config.h>
 #include <linux/init.h>
@@ -29,9 +30,11 @@
 #include <linux/interrupt.h>
 #include <linux/kernel_stat.h>
 
+#include <asm/irq.h>
 #include <asm/mips-boards/atlas.h>
 #include <asm/mips-boards/atlasint.h>
 #include <asm/gdb-stub.h>
+
 
 struct atlas_ictrl_regs *atlas_hw0_icregs
 	= (struct atlas_ictrl_regs *)ATLAS_ICTRL_REGS_BASE;

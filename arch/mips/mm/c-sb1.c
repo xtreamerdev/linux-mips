@@ -257,6 +257,8 @@ asm("sb1_flush_icache_range = local_sb1_flush_icache_range");
  * If there's no context yet, or the page isn't executable, no icache flush
  * is needed
  */
+void sb1_flush_icache_all(void);
+
 static void sb1_flush_icache_page(struct vm_area_struct *vma, struct page *page)
 {
 	unsigned long addr;
@@ -265,14 +267,7 @@ static void sb1_flush_icache_page(struct vm_area_struct *vma, struct page *page)
 		return;
 	}
 
-	addr = (unsigned long)page_address(page);
-	/*
-	 * XXXKW addr is a Kseg0 address, whereas hidden higher up the call
-	 * stack, we may really need to flush a Useg address.  Our Icache is
-	 * virtually tagged, which means we have to be super conservative.
-	 *  See comments in sb1_flush_icache_rage.
-	 */
-	sb1_flush_icache_range(addr, addr + PAGE_SIZE);
+	sb1_flush_icache_all();
 }
 
 static inline void protected_flush_icache_line(unsigned long addr)

@@ -448,7 +448,7 @@
         __res;})
 
 #define read_64bit_cp0_register(source)                         \
-({ int __res;                                                   \
+({ unsigned long __res;                                         \
         __asm__ __volatile__(                                   \
         ".set\tmips3\n\t"                                       \
         "dmfc0\t%0,"STR(source)"\n\t"                           \

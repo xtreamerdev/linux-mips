@@ -12,6 +12,7 @@
 #include <linux/types.h>
 #include <linux/console.h>
 #include <linux/sched.h>
+#include <linux/tty.h>
 #include <linux/pc_keyb.h>
 
 #include <asm/addrspace.h>
@@ -117,6 +118,10 @@ struct kbd_ops sgi_kbd_ops = {
 	sgi_write_command,
 	sgi_read_status
 };
+
+void __init bus_error_init(void)
+{
+}
 
 void __init ip22_setup(void)
 {

@@ -12,7 +12,6 @@
 #include <linux/mm.h>
 #include <linux/string.h>
 #include <linux/pci.h>
-
 #include <asm/io.h>
 
 void *pci_alloc_consistent(struct pci_dev *hwdev, size_t size,

@@ -171,7 +171,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 			}
 			set_entryhi(oldpid);
 		} else {
-			get_new_mmu_context(mm, smp_processor_id());
+			get_new_mmu_context(mm, cpu);
 			if (mm == current->active_mm)
 				set_entryhi(CPU_CONTEXT(cpu, mm) & 0xff);
 		}
@@ -183,7 +183,6 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 {
 	unsigned long flags;
 
-	__save_and_cli(flags);
 #ifdef CONFIG_SMP
 	/*
 	 * This variable is eliminated from CPU_CONTEXT() if SMP isn't defined,
@@ -193,6 +192,7 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 	int cpu = smp_processor_id();
 #endif
 
+	__save_and_cli(flags);
 	if (CPU_CONTEXT(cpu, vma->vm_mm) != 0) {
 		int oldpid, newpid, idx;
 #ifdef DEBUG_TLB

@@ -2,6 +2,9 @@
 # For a description of the syntax of this configuration file,
 # see Documentation/kbuild/config-language.txt.
 #
+define_bool CONFIG_MIPS y
+define_bool CONFIG_MIPS64 y
+
 mainmenu_name "Linux Kernel Configuration"
 
 mainmenu_option next_comment
@@ -21,6 +24,20 @@ if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
    bool '  Support for SGI-IP32 (O2)' CONFIG_SGI_IP32
 fi
 bool '  Support for SiByte SWARM board' CONFIG_SIBYTE_SWARM
+   if [ "$CONFIG_SIBYTE_SB1250" = "y" ]; then
+      bool '  Support for SB1250 onchip PCI controller' CONFIG_PCI
+      bool '  Support for SB1250 profiling - SB1/SCD perf counters' CONFIG_SIBYTE_SB1250_PROF
+      bool '  Support for BCM1250 profiling using trace buffer' CONFIG_BCM1250_TBPROF
+   bool '  Remote debugging (kgdb over UART 1)' CONFIG_REMOTE_DEBUG
+   bool '  Support for SiByte SWARM board' CONFIG_SIBYTE_SWARM
+   if [ "$CONFIG_SIBYTE_SWARM" = "y" ]; then
+      bool '    Running under simulation' CONFIG_SIMULATION
+      bool '    Configure for L3proc Demo' CONFIG_L3DEMO
+      int '      Maximum memory chunks' CONFIG_SIBYTE_SWARM_MAX_MEM_REGIONS 16
+      bool '      Multi-Processing support' CONFIG_SMP
+   fi
+fi
+
 
 if [ "$CONFIG_SGI_IP27" = "y" ]; then
    bool '  IP27 N-Mode' CONFIG_SGI_SN0_N_MODE
@@ -54,6 +71,7 @@ fi
 
 if [ "$CONFIG_MIPS_MALTA" = "y" ]; then
    define_bool CONFIG_BOOT_ELF32 y
+   define_bool CONFIG_I8259 y
    define_int CONFIG_L1_CACHE_SHIFT 5
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PCI y
@@ -65,6 +83,7 @@ if [ "$CONFIG_SGI_IP22" = "y" ]; then
    define_bool CONFIG_ARC_CONSOLE y
    define_bool CONFIG_ARC_MEMORY y
    define_bool CONFIG_BOARD_SCACHE y
+   define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_BOOT_ELF32 y
    define_bool CONFIG_NONCOHERENT_IO y
@@ -87,7 +106,7 @@ if [ "$CONFIG_SGI_IP32" = "y" ]; then
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_PCI y
    #define_bool CONFIG_BOARD_SCACHE y
-   define_bool CONFIG_MAPPED_PCI_IO y
+   define_bool CONFIG_MAPPED_PCI_IO n
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_ARC_MEMORY y
    define_int CONFIG_L1_CACHE_SHIFT 5
@@ -127,6 +146,12 @@ choice 'CPU type'				\
 	 R10000 CONFIG_CPU_R10000		\
 	 SB1   CONFIG_CPU_SB1" R4x00
 endmenu
+
+if [ "$CONFIG_CPU_SB1" = "y" ]; then
+   bool '  Workarounds for pass 1 sb1 bugs' CONFIG_SB1_PASS_1_WORKAROUNDS
+   bool '  Support for SB1 Cache Error handler' CONFIG_SB1_CACHE_ERROR
+   define_bool CONFIG_VTAG_ICACHE y
+fi
 
 define_bool CONFIG_CPU_HAS_LLSC y
 define_bool CONFIG_CPU_HAS_LLDSCD y

@@ -438,7 +438,7 @@ void cboot(void)
 	start_secondary();
 }
 
-void allowboot(void)
+__init void allowboot(void)
 {
 	int		num_cpus = 0;
 	cpuid_t		cpu, mycpuid = getcpuid();
@@ -536,6 +536,17 @@ void allowboot(void)
 	init_mfhi_war();
 #endif
 	smp_num_cpus = num_cpus;
+}
+
+void __init smp_boot_cpus(void)
+{
+	extern void allowboot(void);
+
+	init_new_context(current, &init_mm);
+	current->processor = 0;
+	init_idle();
+	smp_tune_scheduling();
+	allowboot();
 }
 
 #else /* CONFIG_SMP */

@@ -27,13 +27,27 @@
  *  - flush_cache_range(mm, start, end) flushes a range of pages
  *  - flush_page_to_ram(page) write back kernel page to ram
  */
+extern void (*_flush_cache_all)(void);
+extern void (*___flush_cache_all)(void);
 extern void (*_flush_cache_mm)(struct mm_struct *mm);
 extern void (*_flush_cache_range)(struct mm_struct *mm, unsigned long start,
-                                 unsigned long end);
-extern void (*_flush_cache_page)(struct vm_area_struct *vma, unsigned long page);
+	unsigned long end);
+extern void (*_flush_cache_page)(struct vm_area_struct *vma,
+	unsigned long page);
 extern void (*_flush_page_to_ram)(struct page * page);
+extern void (*_flush_icache_range)(unsigned long start, unsigned long end);
+extern void (*_flush_icache_page)(struct vm_area_struct *vma,
+	struct page *page);
+extern void (*_flush_cache_sigtramp)(unsigned long addr);
+extern void (*_flush_icache_all)(void);
 
-#define flush_cache_all()		do { } while(0)
+/* These suck ...  */
+extern void (*_flush_cache_l2)(void);
+extern void (*_flush_cache_l1)(void);
+
+
+#define flush_cache_all()		_flush_cache_all()
+#define __flush_cache_all()		___flush_cache_all()
 #define flush_dcache_page(page)		do { } while (0)
 
 #ifndef CONFIG_CPU_R10000
@@ -73,15 +87,13 @@ do {									\
 } while (0)
 #endif /* !CONFIG_CPU_R10000 */
 
-/*
- * The foll cache flushing routines are MIPS specific.
- * flush_cache_l2 is needed only during initialization.
- */
-extern void (*_flush_cache_sigtramp)(unsigned long addr);
-extern void (*_flush_cache_l2)(void);
-extern void (*_flush_cache_l1)(void);
-
 #define flush_cache_sigtramp(addr)	_flush_cache_sigtramp(addr)
+#ifdef CONFIG_VTAG_ICACHE
+#define flush_icache_all()		_flush_icache_all()
+#else
+#define flush_icache_all()		do { } while(0)
+#endif
+
 #define flush_cache_l2()		_flush_cache_l2()
 #define flush_cache_l1()		_flush_cache_l1()
 
@@ -529,8 +541,9 @@ extern void pmd_init(unsigned long page, unsigned long pagetable);
 extern pgd_t swapper_pg_dir[1024];
 extern void paging_init(void);
 
-extern void (*update_mmu_cache)(struct vm_area_struct *vma,
-				unsigned long address, pte_t pte);
+extern void (*_update_mmu_cache)(struct vm_area_struct *vma,
+	unsigned long address, pte_t pte);
+#define update_mmu_cache(vma, address, pte) _update_mmu_cache(vma, address, pte)
 
 /*
  * Non-present pages:  high 24 bits are offset, next 8 bits type,

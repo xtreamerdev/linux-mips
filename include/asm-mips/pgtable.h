@@ -35,12 +35,13 @@ extern void (*_flush_cache_all)(void);
 extern void (*___flush_cache_all)(void);
 extern void (*_flush_cache_mm)(struct mm_struct *mm);
 extern void (*_flush_cache_range)(struct mm_struct *mm, unsigned long start,
-				 unsigned long end);
-extern void (*_flush_cache_page)(struct vm_area_struct *vma, unsigned long page);
+	unsigned long end);
+extern void (*_flush_cache_page)(struct vm_area_struct *vma,
+	unsigned long page);
 extern void (*_flush_page_to_ram)(struct page * page);
 extern void (*_flush_icache_range)(unsigned long start, unsigned long end);
 extern void (*_flush_icache_page)(struct vm_area_struct *vma,
-                                  struct page *page);
+	struct page *page);
 extern void (*_flush_cache_sigtramp)(unsigned long addr);
 extern void (*_flush_icache_all)(void);
 

@@ -26,6 +26,7 @@
 #include <linux/bootmem.h>
 #include <linux/blk.h>
 #include <linux/init.h>
+#include <linux/ide.h>
 #include <asm/irq.h>
 #include <asm/io.h>
 #include <asm/bootinfo.h>
@@ -35,7 +36,7 @@
 #include <asm/sibyte/sb1250_defs.h>
 #include <asm/sibyte/sb1250_regs.h>
 #include <asm/reboot.h>
-#include <linux/ide.h>
+#include <asm/time.h>
 
 #include "cfe_xiocb.h"
 #include "cfe_api.h"
@@ -153,15 +154,18 @@ static void stop_this_cpu(void *dummy)
 
 static void smp_cpu0_exit(void)
 {
+	unsigned long tmp;
+
 	printk("cpu %d poked\n", smp_processor_id());
 	/* XXXKW we are in the mailbox handler... */
-	__asm__(".set push\n\t"
-		".set mips32\n\t"
-		"la $2, swarm_linux_exit\n\t"
-		"mtc0 $2, $24\n\t"
+	local_irq_disable();
+	__asm__("#.set mips64\n\t"
+		".set mips4\n\t"
+		"la %0, swarm_linux_exit\n\t"
+		"mtc0 %0, $24\n\t"
 		"eret\n\t"
 		".set pop"
-		::: "$2");
+		: "=r" (tmp));
 }
 
 extern void (*smp_cpu0_finalize)(void);
@@ -181,9 +185,16 @@ static void swarm_linux_exit(void)
 	}
 }
 
+void __init bus_error_init(void)
+{
+}
+
+extern void swarm_time_init(void);
+
 void __init swarm_setup(void)
 {
 	extern int panic_timeout;
+
 	rtc_ops = &swarm_rtc_ops;
 	panic_timeout = 5;  /* For debug.  This should probably be raised later */
 	_machine_restart   = (void (*)(char *))swarm_linux_exit;
@@ -203,10 +214,11 @@ void __init swarm_setup(void)
 #endif
 	       " runs\n");
 
-#ifdef CONFIG_BLK_DEV_IDE_SWARM
-        ide_ops = &swarm_ide_ops;
-#endif
+	board_time_init = swarm_time_init;
 
+#ifdef CONFIG_BLK_DEV_IDE_SWARM
+	ide_ops = &swarm_ide_ops;
+#endif
 }  
 
 /* This is the kernel command line.  Actually, it's 

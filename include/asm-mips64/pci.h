@@ -50,6 +50,13 @@ static inline void pcibios_penalize_isa_irq(int irq)
 struct pci_dev;
 
 /*
+ * The PCI address space does equal the physical memory address space.  The
+ * networking and block device layers use this boolean for bounce buffer
+ * decisions.
+ */
+#define PCI_DMA_BUS_IS_PHYS	(1)
+
+/*
  * Allocate and map kernel buffer using consistent mode DMA for a device.
  * hwdev should be valid struct pci_dev pointer for PCI devices,
  * NULL for PCI-like buses (ISA, EISA).
@@ -174,9 +181,7 @@ static inline void pci_unmap_page(struct pci_dev *hwdev, dma_addr_t dma_address,
 static inline int pci_map_sg(struct pci_dev *hwdev, struct scatterlist *sg,
 			     int nents, int direction)
 {
-#ifdef CONFIG_NONCOHERENT_IO
 	int i;
-#endif
 
 	if (direction == PCI_DMA_NONE)
 		BUG();
@@ -186,7 +191,7 @@ static inline int pci_map_sg(struct pci_dev *hwdev, struct scatterlist *sg,
 #ifdef CONFIG_NONCOHERENT_IO
 		dma_cache_wback_inv((unsigned long)sg->address, sg->length);
 #endif
-		sg->address = (char *)(bus_to_baddr[hwdev->bus->number] | __pa(sg->address));
+		sg->dma_address = (char *)(__pa(sg->address));
 	}
 
 	return nents;

@@ -23,6 +23,13 @@
 #define BUG() do { printk("kernel BUG at %s:%d!\n", __FILE__, __LINE__); *(int *)0=0; } while (0)
 #define PAGE_BUG(page) do {  BUG(); } while (0)
 
+/*
+ * Prototypes for clear_page / copy_page variants with processor dependant
+ * optimizations.
+ */
+void sb1_clear_page(void * page);
+void sb1_copy_page(void * to, void * from);
+
 extern void (*_clear_page)(void * page);
 extern void (*_copy_page)(void * to, void * from);
 
@@ -81,6 +88,9 @@ extern __inline__ int get_order(unsigned long size)
 #define PAGE_OFFSET	0x9800000000000000UL
 #endif
 #if defined(CONFIG_SGI_IP27)
+#define PAGE_OFFSET	0xa800000000000000UL
+#endif
+#if defined(CONFIG_SIBYTE_SB1250)
 #define PAGE_OFFSET	0xa800000000000000UL
 #endif
 

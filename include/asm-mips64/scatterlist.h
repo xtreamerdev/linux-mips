@@ -6,14 +6,14 @@ struct scatterlist {
 	struct page *page;
 	unsigned int length;
 
-	__u32 dvma_address;
+	__u32 dma_address;
 };
 
 struct mmu_sglist {
         char *addr;
         char *__dont_touch;
         unsigned int len;
-        __u32 dvma_addr;
+        __u32 dma_addr;
 };
 
 #define ISA_DMA_THRESHOLD (0x00ffffffUL)

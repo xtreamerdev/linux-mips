@@ -31,13 +31,19 @@ spinlock_t kernel_flag __cacheline_aligned_in_smp = SPIN_LOCK_UNLOCKED;
 int smp_threads_ready;	/* Not used */
 atomic_t smp_commenced = ATOMIC_INIT(0);
 struct cpuinfo_mips cpu_data[NR_CPUS];
+void (*volatile smp_cpu0_finalize)(void);
+
+// static atomic_t cpus_booted = ATOMIC_INIT(0);
+atomic_t cpus_booted = ATOMIC_INIT(0);
+
 int smp_num_cpus = 1;			/* Number that came online.  */
 cpumask_t cpu_online_map;		/* Bitmask of currently online CPUs */
 int __cpu_number_map[NR_CPUS];
 int __cpu_logical_map[NR_CPUS];
 cycles_t cacheflush_time;
 
-static void smp_tune_scheduling (void)
+// static void smp_tune_scheduling (void)
+void smp_tune_scheduling (void)
 {
 }
 
@@ -57,17 +63,6 @@ int __init start_secondary(void)
 	while (!atomic_read(&smp_commenced));
 
 	cpu_idle();
-}
-
-void __init smp_boot_cpus(void)
-{
-	extern void allowboot(void);
-
-	init_new_context(current, &init_mm);
-	current->processor = 0;
-	init_idle();
-	smp_tune_scheduling();
-	allowboot();
 }
 
 void __init smp_commence(void)
@@ -171,11 +166,13 @@ void smp_call_function_interrupt(void)
 
 static void stop_this_cpu(void *dummy)
 {
-	/*
-	 * Remove this CPU
-	 * XXX update this from 32-bit version
-	 */
-	for (;;);
+	int cpu = smp_processor_id();
+	if (cpu)
+		for (;;);		/* XXX Use halt like i386 */
+
+	/* XXXKW this isn't quite there yet */
+	while (!smp_cpu0_finalize) ;
+	smp_cpu0_finalize();
 }
 
 void smp_send_stop(void)

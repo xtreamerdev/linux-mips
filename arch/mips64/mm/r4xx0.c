@@ -2388,7 +2388,7 @@ void __init ld_mmu_r4xx0(void)
 
 	_flush_cache_l2 = r4k_flush_cache_l2;
 
-	update_mmu_cache = r4k_update_mmu_cache;
+	_update_mmu_cache = r4k_update_mmu_cache;
 
 	_show_regs = r4k_show_regs;
 

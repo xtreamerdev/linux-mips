@@ -13,15 +13,16 @@
 #include <linux/kernel.h>
 #include <linux/interrupt.h>
 #include <linux/kernel_stat.h>
+#include <linux/time.h>
 
 #include <asm/cpu.h>
 #include <asm/mipsregs.h>
 #include <asm/io.h>
 #include <asm/irq.h>
-#include <asm/time.h>
 #include <asm/ds1286.h>
 #include <asm/sgialib.h>
 #include <asm/sgi/sgint23.h>
+#include <asm/time.h>
 
 /*
  * note that mktime uses month from 1 to 12 while to_tm
@@ -187,11 +188,13 @@ void indy_8254timer_irq(struct pt_regs *regs)
 {
 	int cpu = smp_processor_id();
 	int irq = SGI_8254_0_IRQ;
+	long cnt;
+	char c;
 
 	irq_enter(cpu, irq);
 	kstat.irqs[cpu][irq]++;
 	printk("indy_8254timer_irq: Whoops, should not have gotten this IRQ\n");
-	prom_getchar();
+	ArcRead(0, &c, 1, &cnt);
 	ArcEnterInteractiveMode();
 	irq_exit(cpu, irq);
 }

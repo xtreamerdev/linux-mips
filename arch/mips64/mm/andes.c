@@ -358,7 +358,7 @@ void __init ld_mmu_andes(void)
 			while(1);
 	}
     
-	update_mmu_cache = andes_update_mmu_cache;
+	_update_mmu_cache = andes_update_mmu_cache;
 
 	_show_regs = andes_show_regs;
 
