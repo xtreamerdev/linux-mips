@@ -220,6 +220,14 @@ fi
 bool 'Support for ZAO Networks Capcella' CONFIG_ZAO_CAPCELLA
 
 dep_bool 'High Memory Support' CONFIG_HIGHMEM $CONFIG_MIPS32
+if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
+   choice 'Kernel page size'					\
+	"4KB                    CONFIG_PAGE_SIZE_4KB		\
+	 16KB                   CONFIG_PAGE_SIZE_16KB		\
+	 64KB                   CONFIG_PAGE_SIZE_64KB" 4KB
+else
+   define_bool CONFIG_PAGE_SIZE_4KB y
+fi
 
 define_bool CONFIG_RWSEM_GENERIC_SPINLOCK y
 define_bool CONFIG_RWSEM_XCHGADD_ALGORITHM n
