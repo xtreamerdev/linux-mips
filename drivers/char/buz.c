@@ -2901,7 +2901,6 @@ static int zoran_ioctl(struct video_device *dev, unsigned int cmd, void *arg)
 		{
 			struct zoran_status bs;
 			int norm, input, status;
-			unsigned long timeout;
 
 			if (zr->codec_mode != BUZ_MODE_IDLE) {
 				return -EINVAL;
@@ -3222,7 +3221,7 @@ static int zr36057_init(int i)
 	}
 	/* i2c */
 	memcpy(&zr->i2c, &zoran_i2c_bus_template, sizeof(struct i2c_bus));
-	sprintf(zr->i2c.name, "zoran%u%u", zr->id);
+	sprintf(zr->i2c.name, "zoran%u", zr->id);
 	zr->i2c.data = zr;
 	if (i2c_register_bus(&zr->i2c) < 0) {
 		kfree((void *) zr->stat_com);
@@ -3317,7 +3316,6 @@ static int find_zr36057(void)
 	unsigned char latency;
 	struct zoran *zr;
 	struct pci_dev *dev = NULL;
-	int result;
 
 	zoran_num = 0;
 

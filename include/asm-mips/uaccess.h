@@ -1,16 +1,13 @@
-/*
- * include/asm-mips/uaccess.h
+/* * $Id: uaccess.h,v 1.8 1999/01/04 16:09:27 ralf Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 1996, 1997, 1998 by Ralf Baechle
- *
- * $Id: uaccess.h,v 1.7 1998/05/04 09:13:02 ralf Exp $
+ * Copyright (C) 1996, 1997, 1998, 1999 by Ralf Baechle
  */
-#ifndef __ASM_MIPS_UACCESS_H
-#define __ASM_MIPS_UACCESS_H
+#ifndef _ASM_UACCESS_H
+#define _ASM_UACCESS_H
 
 #include <linux/errno.h>
 #include <linux/sched.h>
@@ -25,8 +22,8 @@
  *
  * For historical reasons, these macros are grossly misnamed.
  */
-#define KERNEL_DS	((mm_segment_t) { 0UL })
-#define USER_DS		((mm_segment_t) { 1UL })
+#define KERNEL_DS	((mm_segment_t) { (unsigned long) 0L })
+#define USER_DS		((mm_segment_t) { (unsigned long) -1L })
 
 #define VERIFY_READ    0
 #define VERIFY_WRITE   1
@@ -50,7 +47,7 @@
  */
 #define __access_ok(addr,size,mask) \
         (((__signed__ long)((mask)&(addr | size | (addr+size)))) >= 0)
-#define __access_mask (-(long)(get_fs().seg))
+#define __access_mask ((long)(get_fs().seg))
 
 #define access_ok(type,addr,size) \
 __access_ok(((unsigned long)(addr)),(size),__access_mask)
@@ -481,6 +478,39 @@ extern inline long strlen_user(const char *s)
 	return res;
 }
 
+/* Returns: 0 if bad, string length+1 (memory size) of string if ok */
+extern inline long __strnlen_user(const char *s, long n)
+{
+	long res;
+
+	__asm__ __volatile__(
+		"move\t$4, %1\n\t"
+		"move\t$5, %2\n\t"
+		__MODULE_JAL(__strnlen_user_nocheck_asm)
+		"move\t%0, $2"
+		: "=r" (res)
+		: "r" (s), "r" (n)
+		: "$2", "$4", "$5", "$8", "$31");
+
+	return res;
+}
+
+extern inline long strnlen_user(const char *s, long n)
+{
+	long res;
+
+	__asm__ __volatile__(
+		"move\t$4, %1\n\t"
+		"move\t$5, %2\n\t"
+		__MODULE_JAL(__strnlen_user_asm)
+		"move\t%0, $2"
+		: "=r" (res)
+		: "r" (s), "r" (n)
+		: "$2", "$4", "$5", "$8", "$31");
+
+	return res;
+}
+
 struct exception_table_entry
 {
 	unsigned long insn;
@@ -496,4 +526,4 @@ extern unsigned long search_exception_table(unsigned long addr);
 	fixup_unit;                                             \
 })
 
-#endif /* __ASM_MIPS_UACCESS_H */
+#endif /* _ASM_UACCESS_H */

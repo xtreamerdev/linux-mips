@@ -1,19 +1,19 @@
-/* $Id: softirq.h,v 1.4 1998/09/19 19:19:39 ralf Exp $
+/* $Id: softirq.h,v 1.5 1999/02/15 02:22:12 ralf Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
  * Copyright (C) 1997, 1998, 1999 by Ralf Baechle
+ * Copyright (C) 1999 Silicon Graphics, Inc.
  */
-#ifndef __ASM_MIPS_SOFTIRQ_H
-#define __ASM_MIPS_SOFTIRQ_H
+#ifndef _ASM_SOFTIRQ_H
+#define _ASM_SOFTIRQ_H
 
 /* The locking mechanism for base handlers, to prevent re-entrancy,
  * is entirely private to an implementation, it should not be
  * referenced at all outside of this file.
  */
-extern atomic_t __mips_bh_counter;
 
 extern unsigned int local_bh_count[NR_CPUS];
 
@@ -34,6 +34,11 @@ static inline void clear_active_bhs(unsigned long x)
 		 "m" (bh_active));
 }
 
+/* These are for the irq's testing the lock */
+#define softirq_trylock(cpu)	(local_bh_count[cpu] ? 0 : (local_bh_count[cpu] = 1))
+#define softirq_endlock(cpu)	(local_bh_count[cpu] = 0)
+#define synchronize_bh()	barrier()
+
 extern inline void init_bh(int nr, void (*routine)(void))
 {
 	bh_base[nr] = routine;
@@ -44,7 +49,7 @@ extern inline void init_bh(int nr, void (*routine)(void))
 extern inline void remove_bh(int nr)
 {
 	bh_mask &= ~(1 << nr);
-	mb();
+	synchronize_bh();
 	bh_base[nr] = NULL;
 }
 
@@ -61,6 +66,7 @@ extern inline void disable_bh(int nr)
 {
 	bh_mask &= ~(1 << nr);
 	atomic_inc(&bh_mask_count[nr]);
+	synchronize_bh();
 }
 
 extern inline void enable_bh(int nr)
@@ -81,9 +87,4 @@ extern inline void end_bh_atomic(void)
 	local_bh_count[smp_processor_id()]--;
 }
 
-/* These are for the irq's testing the lock */
-#define softirq_trylock(cpu)	(local_bh_count[cpu] ? 0 : (local_bh_count[cpu] = 1))
-#define softirq_endlock(cpu)	(local_bh_count[cpu] = 0)
-#define synchronize_bh()	barrier()
-
-#endif /* __ASM_MIPS_SOFTIRQ_H */
+#endif /* _ASM_SOFTIRQ_H */

@@ -1,4 +1,4 @@
-/* $Id: ttable.h,v 1.11 1999/03/29 12:38:12 jj Exp $ */
+/* $Id: ttable.h,v 1.11.2.2 1999/09/22 11:37:47 jj Exp $ */
 #ifndef _SPARC64_TTABLE_H
 #define _SPARC64_TTABLE_H
 
@@ -54,6 +54,13 @@
 	 clr	%l6;					\
 	nop;
 	
+#define TRAPTL1_CEE			\
+	ldxa	[%g0] ASI_AFSR, %g1;	\
+	membar	#Sync;			\
+	stxa	%g1, [%g0] ASI_AFSR;	\
+	membar	#Sync;			\
+	retry; nop; nop; nop;
+
 #define TRAP_ARG(routine, arg)				\
 	sethi	%hi(109f), %g7;				\
 	ba,pt	%xcc, etrap;				\
@@ -100,7 +107,11 @@
 	ba,pt	%xcc, utrap_ill;					\
 	 mov	lvl, %o1;
 
+#ifdef CONFIG_SUNOS_EMUL
 #define SUNOS_SYSCALL_TRAP SYSCALL_TRAP(linux_sparc_syscall32, sunos_sys_table)
+#else
+#define SUNOS_SYSCALL_TRAP TRAP(sunos_syscall)
+#endif
 #define	LINUX_32BIT_SYSCALL_TRAP SYSCALL_TRAP(linux_sparc_syscall32, sys_call_table32)
 #define LINUX_64BIT_SYSCALL_TRAP SYSCALL_TRAP(linux_sparc_syscall, sys_call_table64)
 #define GETCC_TRAP TRAP(getcc)

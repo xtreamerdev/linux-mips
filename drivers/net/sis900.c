@@ -585,7 +585,7 @@ static struct device * sis900_probe1(   int pci_bus,
         tp = kmalloc(sizeof(*tp), GFP_KERNEL | GFP_DMA);
         if(tp==NULL)
         {
-        	releaseregion(ioaddr, pci_tbl[chip_idx].io_size);
+        	release_region(ioaddr, pci_tbl[chip_idx].io_size);
         	return NULL;
         }
         memset(tp, 0, sizeof(*tp));
@@ -969,6 +969,7 @@ sis900_open(struct device *dev)
         outl(TxATP | (TX_DMA_BURST << 20) | (TX_FIFO_THRESH<<8) | TxDRNT_10,
                                                 ioaddr + txcfg);
         if (sis900_debug > 1)
+        {
         	if (tp->LinkOn) {
         		printk(KERN_INFO"%s: Media Type %s%s-duplex.\n",
                                 dev->name,
@@ -976,8 +977,11 @@ sis900_open(struct device *dev)
 					"100mbps " : "10mbps ",
                                 tp->full_duplex== FDX_CAPABLE_FULL_SELECTED ?
 					"full" : "half");
-		} else {
+		}
+		else
+		{
 			printk(KERN_INFO"%s: Media Link Off\n", dev->name);
+		}
 	}
         set_rx_mode(dev);
 

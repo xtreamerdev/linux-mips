@@ -104,7 +104,8 @@ S:	Maintained
 ADVANSYS SCSI DRIVER
 P:	Bob Frey
 M:	Bob Frey <bobf@advansys.com>
-W:	http://www.advansys.com/linux
+W:	http://www.advansys.com/linux.html
+L:	linux-scsi@vger.rutgers.edu
 S:	Maintained
 
 AEDSP16 DRIVER
@@ -361,7 +362,7 @@ S:	Maintained
 
 HFS FILESYSTEM
 P:      Adrian Sun
-M:      asun@u.washington.edu
+M:      asun@cobaltnet.com
 L:      linux-kernel@vger.rutgers.edu
 S:      Maintained
 
@@ -387,6 +388,12 @@ P:	Michael Lang
 M:	langa2@kph.uni-mainz.de
 W:	http://www.uni-mainz.de/~langm000/linux.html
 S:	Maintained
+
+IBM ServeRAID RAID DRIVER
+P:      Keith Mitchell
+M:      ipslinux@us.ibm.com
+W:      http://www.developer.ibm.com/welcome/netfinity/serveraid_beta.html
+S:      Supported 
 
 IDE DRIVER [GENERAL]
 P:	Andre Hedrick
@@ -430,10 +437,17 @@ L:      linux-irda@list.uit.no
 W:      http://www.cs.uit.no/linux-irda/
 S:      Maintained
 
-ISDN SUBSYSTEM
+ISDN SUBSYSTEM (general)
 P:	Fritz Elfert
-M:	fritz@wuemaus.franken.de
-L:	isdn4linux@hub-wue.franken.de
+M:	fritz@isdn4linux.de
+L:	isdn4linux@listserv.isdn4linux.de
+W:	www.isdn4linux.de
+S:	Maintained
+
+ISDN SUBSYSTEM (HiSax)
+P:	Karsten Keil
+M:	keil@isdn4linux.de
+L:	isdn4linux@listserv.isdn4linux.de
 S:	Maintained
 
 JOYSTICK DRIVER
@@ -839,6 +853,11 @@ P:	Gordon Chaffee
 M:	chaffee@cs.berkeley.edu
 L:	linux-kernel@vger.rutgers.edu
 W:	http://bmrc.berkeley.edu/people/chaffee
+S:	Maintained
+
+VIA 82Cxxx AUDIO DRIVER
+P:	Jeff Garzik
+M:	jgarzik@pobox.com
 S:	Maintained
 
 VIDEO FOR LINUX

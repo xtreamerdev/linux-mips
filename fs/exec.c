@@ -200,7 +200,7 @@ out:
 /*
  * count() counts the number of arguments/envelopes
  */
-static int count(char ** argv)
+static int count(char ** argv, int max)
 {
 	int i = 0;
 
@@ -215,7 +215,7 @@ static int count(char ** argv)
 			if (!p)
 				break;
 			argv++;
-			i++;
+			if (++i > max) return -E2BIG;
 		}
 	}
 	return i;
@@ -244,8 +244,8 @@ unsigned long copy_strings(int argc,char ** argv,unsigned long *page,
 	char *str;
 	mm_segment_t old_fs;
 
-	if (!p)
-		return 0;	/* bullet-proofing */
+	if ((long)p <= 0)
+		return p;	/* bullet-proofing */
 	old_fs = get_fs();
 	if (from_kmem==2)
 		set_fs(KERNEL_DS);
@@ -259,19 +259,18 @@ unsigned long copy_strings(int argc,char ** argv,unsigned long *page,
 		if (!str)
 		{
 			set_fs(old_fs);
-			return 0;
-//			panic("VFS: argc is wrong");
+			return -EFAULT;
 		}
 		if (from_kmem == 1)
 			set_fs(old_fs);
-		len = strlen_user(str);	/* includes the '\0' */
-		if (p < len) {	/* this shouldn't happen - 128kB */
-			set_fs(old_fs);
-			return 0;
+		len = strnlen_user(str, p);	/* includes the '\0' */
+ 		if (!len || len > p) {	/* EFAULT or E2BIG */
+ 			set_fs(old_fs);
+ 			return len ? -E2BIG : -EFAULT;
 		}
 		p -= len;
 		pos = p;
-		while (len) {
+		while (len>0) {
 			char *pag;
 			int offset, bytes_to_copy;
 
@@ -281,7 +280,7 @@ unsigned long copy_strings(int argc,char ** argv,unsigned long *page,
 			      (unsigned long *) get_free_page(GFP_USER))) {
 				if (from_kmem==2)
 					set_fs(old_fs);
-				return 0;
+				return -EFAULT;
 			}
 			bytes_to_copy = PAGE_SIZE - offset;
 			if (bytes_to_copy > len)
@@ -533,6 +532,8 @@ int flush_old_exec(struct linux_binprm * bprm)
 	if (bprm->e_uid != current->euid || bprm->e_gid != current->egid || 
 	    permission(bprm->dentry->d_inode,MAY_READ))
 		current->dumpable = 0;
+		
+	current->self_exec_id++;
 
 	flush_signal_handlers(current);
 	flush_old_files(current->files);
@@ -823,12 +824,12 @@ int do_execve(char * filename, char ** argv, char ** envp, struct pt_regs * regs
 	bprm.java = 0;
 	bprm.loader = 0;
 	bprm.exec = 0;
-	if ((bprm.argc = count(argv)) < 0) {
+	if ((bprm.argc = count(argv, bprm.p / sizeof(void *))) < 0) {
 		dput(dentry);
 		return bprm.argc;
 	}
 
-	if ((bprm.envc = count(envp)) < 0) {
+	if ((bprm.envc = count(envp, bprm.p / sizeof(void *))) < 0) {
 		dput(dentry);
 		return bprm.envc;
 	}
@@ -840,8 +841,8 @@ int do_execve(char * filename, char ** argv, char ** envp, struct pt_regs * regs
 		bprm.exec = bprm.p;
 		bprm.p = copy_strings(bprm.envc,envp,bprm.page,bprm.p,0);
 		bprm.p = copy_strings(bprm.argc,argv,bprm.page,bprm.p,0);
-		if (!bprm.p)
-			retval = -E2BIG;
+		if ((long)bprm.p < 0)
+			retval = (long)bprm.p;
 	}
 
 	if (retval >= 0)

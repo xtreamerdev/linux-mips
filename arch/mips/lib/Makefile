@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.8 1998/10/18 13:21:50 tsbogend Exp $
+# $Id: Makefile,v 1.9 1999/01/04 16:03:50 ralf Exp $
 #
 # Makefile for MIPS-specific library files..
 #
@@ -11,6 +11,7 @@
 L_TARGET = lib.a
 L_OBJS	= csum_partial.o csum_partial_copy.o dump_tlb.o floppy-std.o \
 	  floppy-no.o ide-std.o ide-no.o kbd-std.o kbd-no.o rtc-std.o \
-	  rtc-no.o memset.o memcpy.o strlen_user.o strncpy_user.o watch.o
+	  rtc-no.o memset.o memcpy.o strlen_user.o strnlen_user.o \
+	  strncpy_user.o watch.o
 
 include $(TOPDIR)/Rules.make

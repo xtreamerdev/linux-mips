@@ -30,6 +30,7 @@ if [ "$CONFIG_SCSI_AIC7XXX" != "n" ]; then
     bool '   Collect statistics to report in /proc' CONFIG_AIC7XXX_PROC_STATS N
     int  '   Delay in seconds after SCSI bus reset' CONFIG_AIC7XXX_RESET_DELAY 5
 fi
+dep_tristate 'IBM ServeRAID support' CONFIG_SCSI_IPS $CONFIG_SCSI
 dep_tristate 'AdvanSys SCSI support' CONFIG_SCSI_ADVANSYS $CONFIG_SCSI
 dep_tristate 'Always IN2000 SCSI support' CONFIG_SCSI_IN2000 $CONFIG_SCSI
 dep_tristate 'AM53/79C974 PCI SCSI support' CONFIG_SCSI_AM53C974 $CONFIG_SCSI
@@ -74,6 +75,7 @@ if [ "$CONFIG_PARPORT" != "n" ]; then
 fi
 dep_tristate 'NCR53c406a SCSI support' CONFIG_SCSI_NCR53C406A $CONFIG_SCSI
 dep_tristate 'symbios 53c416 SCSI support' CONFIG_SCSI_SYM53C416 $CONFIG_SCSI
+dep_tristate 'Simple 53c710 SCSI support (Compaq, NCR machines)' CONFIG_SCSI_SIM710 $CONFIG_SCSI
 if [ "$CONFIG_PCI" = "y" ]; then
   dep_tristate 'NCR53c7,8xx SCSI support'  CONFIG_SCSI_NCR53C7xx $CONFIG_SCSI
   if [ "$CONFIG_SCSI_NCR53C7xx" != "n" ]; then

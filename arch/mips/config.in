@@ -60,6 +60,15 @@ choice 'CPU type' \
 	 R10000 CONFIG_CPU_R10000" R4x00
 endmenu
 
+if [ "$CONFIG_CPU_R4300" = "y" \
+     -o "$CONFIG_CPU_R4X00" = "y" \
+     -o "$CONFIG_CPU_R5000" = "y" \
+     -o "$CONFIG_CPU_NEVADA" = "y" \
+     -o "$CONFIG_CPU_R8000" = "y" \
+     -o "$CONFIG_CPU_R10000" = "y" ]; then
+   define_bool CONFIG_CPU_HAS_LLSC y
+fi
+
 mainmenu_option next_comment
 comment 'General setup'
 

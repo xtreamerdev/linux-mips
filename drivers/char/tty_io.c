@@ -652,33 +652,37 @@ static inline ssize_t do_tty_write(
 	struct inode *inode = file->f_dentry->d_inode;
 	
 	up(&inode->i_sem);
-	if (down_interruptible(&inode->i_atomic_write)) {
+	if (down_interruptible(&tty->atomic_write)) {
 		down(&inode->i_sem);
 		return -ERESTARTSYS;
 	}
-	for (;;) {
-		unsigned long size = PAGE_SIZE*2;
-		if (size > count)
-			size = count;
-		ret = write(tty, file, buf, size);
-		if (ret <= 0)
-			break;
-		written += ret;
-		buf += ret;
-		count -= ret;
-		if (!count)
-			break;
-		ret = -ERESTARTSYS;
-		if (signal_pending(current))
-			break;
-		if (current->need_resched)
-			schedule();
+	if ( test_bit(TTY_NO_WRITE_SPLIT, &tty->flags) )
+		written = write(tty, file, buf, count);
+	else {
+		for (;;) {
+			unsigned long size = PAGE_SIZE*2;
+			if (size > count)
+				size = count;
+			ret = write(tty, file, buf, size);
+			if (ret <= 0)
+				break;
+			written += ret;
+			buf += ret;
+			count -= ret;
+			if (!count)
+				break;
+			ret = -ERESTARTSYS;
+			if (signal_pending(current))
+				break;
+			if (current->need_resched)
+				schedule();
+		}
 	}
 	if (written) {
 		file->f_dentry->d_inode->i_mtime = CURRENT_TIME;
 		ret = written;
 	}
-	up(&inode->i_atomic_write);
+	up(&tty->atomic_write);
 	down(&inode->i_sem);
 	return ret;
 }
@@ -1492,10 +1496,11 @@ static int tiocswinsz(struct tty_struct *tty, struct tty_struct *real_tty,
 	return 0;
 }
 
-static int tioccons(struct tty_struct *tty, struct tty_struct *real_tty)
+static int tioccons(struct inode *inode,
+	struct tty_struct *tty, struct tty_struct *real_tty)
 {
-	if (tty->driver.type == TTY_DRIVER_TYPE_CONSOLE ||
-	    tty->driver.type == TTY_DRIVER_TYPE_SYSCONS) {
+	if (inode->i_rdev == SYSCONS_DEV ||
+	    inode->i_rdev == CONSOLE_DEV) {
 		if (!suser())
 			return -EPERM;
 		redirect = NULL;
@@ -1705,7 +1710,7 @@ int tty_ioctl(struct inode * inode, struct file * file,
 		case TIOCSWINSZ:
 			return tiocswinsz(tty, real_tty, (struct winsize *) arg);
 		case TIOCCONS:
-			return tioccons(tty, real_tty);
+			return tioccons(inode, tty, real_tty);
 		case FIONBIO:
 			return fionbio(file, (int *) arg);
 		case TIOCEXCL:
@@ -1934,6 +1939,7 @@ static void initialize_tty_struct(struct tty_struct *tty)
 	tty->tq_hangup.routine = do_tty_hangup;
 	tty->tq_hangup.data = tty;
 	sema_init(&tty->atomic_read, 1);
+	sema_init(&tty->atomic_write, 1);
 }
 
 /*
@@ -1979,7 +1985,8 @@ int tty_unregister_driver(struct tty_driver *driver)
 {
 	int	retval;
 	struct tty_driver *p;
-	int	found = 0;
+	int	i, found = 0;
+	struct termios *tp;
 	const char *othername = NULL;
 	
 	if (*driver->refcount)
@@ -2010,6 +2017,23 @@ int tty_unregister_driver(struct tty_driver *driver)
 	if (driver->next)
 		driver->next->prev = driver->prev;
 
+	/*
+	 * Free the termios and termios_locked structures because
+	 * we don't want to get memory leaks when modular tty
+	 * drivers are removed from the kernel.
+	 */
+	for (i = 0; i < driver->num; i++) {
+		tp = driver->termios[i];
+		if (tp) {
+			driver->termios[i] = NULL;
+			kfree_s(tp, sizeof(struct termios));
+		}
+		tp = driver->termios_locked[i];
+		if (tp) {
+			driver->termios_locked[i] = NULL;
+			kfree_s(tp, sizeof(struct termios));
+		}
+	}
 	proc_tty_unregister_driver(driver);
 	return 0;
 }

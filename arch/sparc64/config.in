@@ -1,4 +1,4 @@
-# $Id: config.in,v 1.66 1999/03/29 05:08:42 davem Exp $
+# $Id: config.in,v 1.67.2.2 1999/09/22 11:37:42 jj Exp $
 # For a description of the syntax of this configuration file,
 # see the Configure script.
 #
@@ -66,6 +66,7 @@ if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
   tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
   tristate 'Kernel support for JAVA binaries (obsolete)' CONFIG_BINFMT_JAVA
 fi
+bool 'SunOS binary emulation' CONFIG_SUNOS_EMUL
 if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
   tristate 'Solaris binary emulation' CONFIG_SOLARIS_EMUL
 fi
@@ -163,14 +164,10 @@ if [ "$CONFIG_SCSI" != "n" ]; then
 	if [ "$CONFIG_PCI" != "n" ]; then
 	  dep_tristate 'Adaptec AIC7xxx support' CONFIG_SCSI_AIC7XXX $CONFIG_SCSI
 	  if [ "$CONFIG_SCSI_AIC7XXX" != "n" ]; then
-	    bool '   Enable tagged command queueing' CONFIG_AIC7XXX_TAGGED_QUEUEING Y
-	    bool '   Override driver defaults for commands per LUN' CONFIG_OVERRIDE_CMDS N
-	    if [ "$CONFIG_OVERRIDE_CMDS" != "n" ]; then
-	      int  '   Maximum number of commands per LUN' CONFIG_AIC7XXX_CMDS_PER_LUN 8
-	    fi
-	    bool '   Enable SCB paging' CONFIG_AIC7XXX_PAGE_ENABLE N
+	    bool '   Enable Tagged Command Queueing (TCQ) by default' CONFIG_AIC7XXX_TCQ_ON_BY_DEFAULT
+	    int  '   Maximum number of TCQ commands per device' CONFIG_AIC7XXX_CMDS_PER_DEVICE 8
 	    bool '   Collect statistics to report in /proc' CONFIG_AIC7XXX_PROC_STATS N
-	    int  '   Delay in seconds after SCSI bus reset' CONFIG_AIC7XXX_RESET_DELAY 15
+	    int  '   Delay in seconds after SCSI bus reset' CONFIG_AIC7XXX_RESET_DELAY 5
 	  fi
 	  dep_tristate 'NCR53C8XX SCSI support' CONFIG_SCSI_NCR53C8XX $CONFIG_SCSI
 	  if [ "$CONFIG_SCSI_NCR53C8XX" != "n" ]; then
@@ -221,6 +218,9 @@ if [ "$CONFIG_NET" = "y" ]; then
 		if [ "$CONFIG_PCI" = "y" ]; then
 			tristate 'Generic DECchip & DIGITAL EtherWORKS PCI/EISA' CONFIG_DE4X5
 			tristate '3c590/3c900 series (592/595/597) "Vortex/Boomerang" support' CONFIG_VORTEX
+			tristate 'RealTek 8129/8139 (not 8019/8029!) support' CONFIG_RTL8139
+			tristate 'PCI NE2000 support' CONFIG_NE2K_PCI
+			tristate 'EtherExpressPro/100 support' CONFIG_EEXPRESS_PRO100
 		fi
 #		bool 'FDDI driver support' CONFIG_FDDI
 #		if [ "$CONFIG_FDDI" = "y" ]; then

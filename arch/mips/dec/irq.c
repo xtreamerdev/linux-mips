@@ -4,7 +4,7 @@
  * Copyright (C) 1992 Linus Torvalds
  * Copyright (C) 1994, 1995, 1996, 1997 Ralf Baechle
  *
- * $Id: irq.c,v 1.2 1999/01/17 03:49:41 ralf Exp $
+ * $Id: irq.c,v 1.3 1999/04/11 17:06:16 harald Exp $
  */
 #include <linux/errno.h>
 #include <linux/init.h>
@@ -113,8 +113,6 @@ int get_irq_list(char *buf)
     }
     return len;
 }
-
-atomic_t __mips_bh_counter;
 
 /*
  * do_IRQ handles IRQ's that have been installed without the

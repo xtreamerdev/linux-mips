@@ -1,4 +1,4 @@
-/* $Id: irq.c,v 1.14 1999/02/15 02:16:50 ralf Exp $
+/* $Id: irq.c,v 1.15 1999/02/25 21:50:49 tsbogend Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
@@ -122,8 +122,6 @@ int get_irq_list(char *buf)
 	}
 	return len;
 }
-
-atomic_t __mips_bh_counter;
 
 static inline void i8259_mask_and_ack_irq(int irq)
 {

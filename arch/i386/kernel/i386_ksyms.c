@@ -72,7 +72,7 @@ EXPORT_SYMBOL(clear_user);
 EXPORT_SYMBOL(__clear_user);
 EXPORT_SYMBOL(__generic_copy_from_user);
 EXPORT_SYMBOL(__generic_copy_to_user);
-EXPORT_SYMBOL(strlen_user);
+EXPORT_SYMBOL(strnlen_user);
 
 #ifdef __SMP__
 EXPORT_SYMBOL(cpu_data);
@@ -90,6 +90,7 @@ EXPORT_SYMBOL(synchronize_bh);
 EXPORT_SYMBOL(global_bh_count);
 EXPORT_SYMBOL(global_bh_lock);
 EXPORT_SYMBOL(global_irq_holder);
+EXPORT_SYMBOL(i386_bh_lock);
 EXPORT_SYMBOL(__global_cli);
 EXPORT_SYMBOL(__global_sti);
 EXPORT_SYMBOL(__global_save_flags);

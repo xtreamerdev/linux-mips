@@ -574,6 +574,15 @@ else
   endif
 endif
 
+ifeq ($(CONFIG_DM9102),y) 
+L_OBJS += dmfe.o
+else
+  ifeq ($(CONFIG_DM9102),m)
+  M_OBJS += dmfe.o
+  endif
+endif
+
+
 ifeq ($(CONFIG_YELLOWFIN),y)
 L_OBJS += yellowfin.o
 else
@@ -1144,6 +1153,14 @@ MOD_IN_SUB_DIRS += fc
 else
   ifeq ($(CONFIG_NET_FC),m)
   MOD_IN_SUB_DIRS += fc
+  endif
+endif
+
+ifeq ($(CONFIG_SBNI),y)
+L_OBJS += sbni.o
+else
+  ifeq ($(CONFIG_SBNI),m)
+  M_OBJS += sbni.o
   endif
 endif
 

@@ -575,6 +575,13 @@ int do_fork(unsigned long clone_flags, unsigned long usp, struct pt_regs *regs)
 	struct task_struct *p;
 	struct semaphore sem = MUTEX_LOCKED;
 
+	if(clone_flags & CLONE_PID)
+	{
+		/* This is only allowed from the boot up thread */
+		if(current->pid)
+			return -EPERM;
+	}
+	
 	current->vfork_sem = &sem;
 
 	p = alloc_task_struct();
@@ -672,6 +679,11 @@ int do_fork(unsigned long clone_flags, unsigned long usp, struct pt_regs *regs)
 	if (retval)
 		goto bad_fork_cleanup_mm;
 	p->semundo = NULL;
+	
+	/* Our parent execution domain becomes current domain
+	   These must match for thread signalling to apply */
+	   
+	p->parent_exec_id = p->self_exec_id;
 
 	/* ok, now we should be set up.. */
 	p->swappable = 1;
@@ -698,9 +710,9 @@ int do_fork(unsigned long clone_flags, unsigned long usp, struct pt_regs *regs)
 		write_lock_irq(&tasklist_lock);
 		SET_LINKS(p);
 		hash_pid(p);
-		write_unlock_irq(&tasklist_lock);
-
 		nr_tasks++;
+
+		write_unlock_irq(&tasklist_lock);
 
 		p->next_run = NULL;
 		p->prev_run = NULL;

@@ -1,5 +1,5 @@
 /*
- * $Id: setup.c,v 1.132.2.1 1999/06/03 03:03:45 paulus Exp $
+ * $Id: setup.c,v 1.132.2.5 1999/09/11 03:32:50 paulus Exp $
  * Common prep/pmac/chrp boot and setup code.
  */
 
@@ -272,7 +272,17 @@ int get_cpuinfo(char *buffer)
 			
 			cpu_node = find_type_devices("cpu");
 			if ( !cpu_node ) break;
+			{
+				int s;
+				for ( s = 0; (s < i) && cpu_node->next ;
+				      s++, cpu_node = cpu_node->next )
+					/* nothing */ ;
+				if ( s != i )
+					printk("get_cpuinfo(): ran out of "
+					       "cpu nodes.\n");
+			}
 			fp = (int *) get_property(cpu_node, "clock-frequency", NULL);
+			
 			if ( !fp ) break;
 			len += sprintf(len+buffer, "clock\t\t: %dMHz\n",
 				       *fp / 1000000);
@@ -350,33 +360,30 @@ identify_machine(unsigned long r3, unsigned long r4, unsigned long r5,
 		is_prep = 1;
 	} else {
 		char *model;
+		struct device_node *root;
 
 		have_of = 1;
-		
-		/* prom_init has already been called from __start */
-		finish_device_tree();
-		/* ask the OF info if we're a chrp or pmac */
-		model = get_property(find_path_device("/"), "device_type", NULL);
-		if ( model && !strncmp("chrp",model,4) )
-		{
-			_machine = _MACH_chrp;
-			is_chrp = 1;
-		}
-		else
-		{
-			model = get_property(find_path_device("/"),
-					     "model", NULL);
-			if ( model && !strncmp(model, "IBM", 3))
-			{
-				_machine = _MACH_chrp;
-				is_chrp = 1;
-			}
-			else
-			{
-				_machine = _MACH_Pmac;
-			}
-		}
 
+		/* prom_init has already been called from __start */
+		if (boot_infos)
+			relocate_nodes();
+
+		/* ask the OF info if we're a chrp or pmac */
+		/* we need to set _machine before calling finish_device_tree */
+		root = find_path_device("/");
+		if (root != 0) {
+			model = get_property(root, "device_type", NULL);
+			if (model && !strncmp("chrp", model, 4))
+				is_chrp = 1;
+			else {
+				model = get_property(root, "model", NULL);
+				if (model && !strncmp(model, "IBM", 3))
+					is_chrp = 1;
+			}
+		}
+		_machine = is_chrp? _MACH_chrp: _MACH_Pmac;
+
+		finish_device_tree();
 	}
 #else /* CONFIG_MACH_SPECIFIC */
 
@@ -405,6 +412,8 @@ identify_machine(unsigned long r3, unsigned long r4, unsigned long r5,
 	{
 #ifdef CONFIG_MACH_SPECIFIC
 		/* prom_init has already been called from __start */
+		if (boot_infos)
+			relocate_nodes();
 		finish_device_tree();
 #endif /* CONFIG_MACH_SPECIFIC	*/
 		/*

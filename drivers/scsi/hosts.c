@@ -63,6 +63,10 @@
 #include "bvme6000.h"
 #endif
 
+#ifdef CONFIG_SCSI_SIM710
+#include "sim710.h"
+#endif
+
 #ifdef CONFIG_A3000_SCSI
 #include "a3000.h"
 #endif
@@ -129,6 +133,10 @@
 
 #ifdef CONFIG_SCSI_AIC7XXX
 #include "aic7xxx.h"
+#endif
+
+#ifdef CONFIG_SCSI_IPS
+#include "ips.h"
 #endif
 
 #ifdef CONFIG_SCSI_BUSLOGIC
@@ -440,6 +448,9 @@ static Scsi_Host_Template builtin_scsi_hosts[] =
 #ifdef CONFIG_BVME6000_SCSI
 	BVME6000_SCSI,
 #endif
+#ifdef CONFIG_SCSI_SIM710
+	SIM710_SCSI,
+#endif
 #ifdef CONFIG_SCSI_ADVANSYS
 	ADVANSYS,
 #endif
@@ -475,6 +486,9 @@ static Scsi_Host_Template builtin_scsi_hosts[] =
 #endif
 #ifdef CONFIG_SCSI_AIC7XXX
     AIC7XXX,
+#endif
+#ifdef CONFIG_SCSI_IPS
+    IPS,
 #endif
 #ifdef CONFIG_SCSI_FD_MCS
    FD_MCS,

@@ -792,6 +792,8 @@ sys_kill(int pid, int sig)
 {
 	struct siginfo info;
 
+	memset(&info, 0, sizeof(info));
+	
 	info.si_signo = sig;
 	info.si_errno = 0;
 	info.si_code = SI_USER;
@@ -870,7 +872,8 @@ do_sigaction(int sig, const struct k_sigaction *act, struct k_sigaction *oact)
 					if (q->info.si_signo != sig)
 						pp = &q->next;
 					else {
-						*pp = q->next;
+						if ((*pp = q->next) == NULL)
+							current->sigqueue_tail = pp;
 						kmem_cache_free(signal_queue_cachep, q);
 						atomic_dec(&nr_queued_signals);
 					}

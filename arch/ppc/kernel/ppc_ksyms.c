@@ -121,7 +121,7 @@ EXPORT_SYMBOL(csum_tcpudp_magic);
 EXPORT_SYMBOL(__copy_tofrom_user);
 EXPORT_SYMBOL(__clear_user);
 EXPORT_SYMBOL(__strncpy_from_user);
-EXPORT_SYMBOL(strlen_user);
+EXPORT_SYMBOL(__strnlen_user);
 
 /*
 EXPORT_SYMBOL(inb);
@@ -190,6 +190,7 @@ EXPORT_SYMBOL(pmu_poll);
 #ifdef CONFIG_PMAC_PBOOK
 EXPORT_SYMBOL(pmu_register_sleep_notifier);
 EXPORT_SYMBOL(pmu_unregister_sleep_notifier);
+EXPORT_SYMBOL(pmu_enable_irled);
 #endif CONFIG_PMAC_PBOOK
 EXPORT_SYMBOL(abort);
 EXPORT_SYMBOL(find_devices);

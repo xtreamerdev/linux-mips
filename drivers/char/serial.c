@@ -1715,7 +1715,7 @@ static int set_serial_info(struct async_struct * info,
 	if ((new_serial.type != state->type) ||
 	    (new_serial.xmit_fifo_size <= 0))
 		new_serial.xmit_fifo_size =
-			uart_config[state->type].dfl_xmit_fifo_size;
+			uart_config[new_serial.type].dfl_xmit_fifo_size;
 
 	/* Make sure address is not already in use */
 	if (new_serial.type) {
@@ -2804,7 +2804,7 @@ int rs_read_proc(char *page, char **start, off_t off, int count,
 	off_t	begin = 0;
 
 	len += sprintf(page, "serinfo:1.0 driver:%s\n", serial_version);
-	for (i = 0; i < NR_PORTS && len < 4000; i++) {
+	for (i = 0; i < NR_PORTS && len < 3900; i++) {
 		l = line_info(page + len, &rs_table[i]);
 		len += l;
 		if (len+begin > off+count)
@@ -3311,6 +3311,7 @@ void cleanup_module(void)
 	unsigned long flags;
 	int e1, e2;
 	int i;
+	struct async_struct *info;
 
 	/* printk("Unloading %s: version %s\n", serial_name, serial_version); */
 	save_flags(flags);
@@ -3330,6 +3331,11 @@ void cleanup_module(void)
 	for (i = 0; i < NR_PORTS; i++) {
 		if (rs_table[i].type != PORT_UNKNOWN)
 			release_region(rs_table[i].port, 8);
+		info = rs_table[i].info;
+		if (info) {
+			rs_table[i].info = NULL;
+			kfree_s(info, sizeof(struct async_struct));
+		}
 	}
 	if (tmp_buf) {
 		free_page((unsigned long) tmp_buf);

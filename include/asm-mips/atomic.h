@@ -11,10 +11,10 @@
  *
  * Copyright (C) 1996, 1997 by Ralf Baechle
  *
- * $Id: atomic.h,v 1.3 1997/12/15 10:38:29 ralf Exp $
+ * $Id: atomic.h,v 1.5 1998/03/04 09:51:21 ralf Exp $
  */
-#ifndef __ASM_MIPS_ATOMIC_H
-#define __ASM_MIPS_ATOMIC_H
+#ifndef _ASM_ATOMIC_H
+#define _ASM_ATOMIC_H
 
 #include <asm/sgidefs.h>
 
@@ -42,8 +42,7 @@ extern __inline__ void atomic_add(int i, volatile atomic_t * v)
 {
 	int	flags;
 
-	save_flags(flags);
-	cli();
+	save_and_cli(flags);
 	*v += i;
 	restore_flags(flags);
 }
@@ -52,9 +51,26 @@ extern __inline__ void atomic_sub(int i, volatile atomic_t * v)
 {
 	int	flags;
 
-	save_flags(flags);
-	cli();
+	save_and_cli(flags);
 	*v -= i;
+	restore_flags(flags);
+}
+
+extern __inline__ void atomic_or(int i, volatile atomic_t * v)
+{
+	int	flags;
+
+	save_and_cli(flags);
+	*v |= i;
+	restore_flags(flags);
+}
+
+extern __inline__ void atomic_and(int i, volatile atomic_t * v)
+{
+	int	flags;
+
+	save_and_cli(flags);
+	*v &= i;
 	restore_flags(flags);
 }
 
@@ -62,8 +78,7 @@ extern __inline__ int atomic_add_return(int i, atomic_t * v)
 {
 	int	temp, flags;
 
-	save_flags(flags);
-	cli();
+	save_and_cli(flags);
 	temp = *v;
 	temp += i;
 	*v = temp;
@@ -76,10 +91,34 @@ extern __inline__ int atomic_sub_return(int i, atomic_t * v)
 {
 	int	temp, flags;
 
-	save_flags(flags);
-	cli();
+	save_and_cli(flags);
 	temp = *v;
 	temp -= i;
+	*v = temp;
+	restore_flags(flags);
+
+	return temp;
+}
+extern __inline__ int atomic_or_return(int i, atomic_t * v)
+{
+	int	temp, flags;
+
+	save_and_cli(flags);
+	temp = *v;
+	temp |= i;
+	*v = temp;
+	restore_flags(flags);
+
+	return temp;
+}
+
+extern __inline__ int atomic_and_return(int i, atomic_t * v)
+{
+	int	temp, flags;
+
+	save_and_cli(flags);
+	temp = *v;
+	temp &= i;
 	*v = temp;
 	restore_flags(flags);
 
@@ -123,6 +162,66 @@ extern __inline__ void atomic_sub(int i, volatile atomic_t * v)
 	__asm__ __volatile__(
 		"1:\tll\t%0,%1\n\t"
 		"subu\t%0,%2\n\t"
+		"sc\t%0,%1\n\t"
+		"beqz\t%0,1b"
+		:"=&r" (temp),
+		 "=m" (__atomic_fool_gcc(v))
+		:"Ir" (i),
+		 "m" (__atomic_fool_gcc(v)));
+}
+
+extern __inline__ void atomic_or(int i, volatile atomic_t * v)
+{
+	unsigned long temp;
+
+	__asm__ __volatile__(
+		"1:\tll\t%0,%1\n\t"
+		"or\t%0,%2\n\t"
+		"sc\t%0,%1\n\t"
+		"beqz\t%0,1b"
+		:"=&r" (temp),
+		 "=m" (__atomic_fool_gcc(v))
+		:"Ir" (i),
+		 "m" (__atomic_fool_gcc(v)));
+}
+
+extern __inline__ void atomic_and(int i, volatile atomic_t * v)
+{
+	unsigned long temp;
+
+	__asm__ __volatile__(
+		"1:\tll\t%0,%1\n\t"
+		"and\t%0,%2\n\t"
+		"sc\t%0,%1\n\t"
+		"beqz\t%0,1b"
+		:"=&r" (temp),
+		 "=m" (__atomic_fool_gcc(v))
+		:"Ir" (i),
+		 "m" (__atomic_fool_gcc(v)));
+}
+
+extern __inline__ void atomic_long_or(long i, volatile long * v)
+{
+	unsigned long temp;
+
+	__asm__ __volatile__(
+		"1:\tll\t%0,%1\n\t"
+		"or\t%0,%2\n\t"
+		"sc\t%0,%1\n\t"
+		"beqz\t%0,1b"
+		:"=&r" (temp),
+		 "=m" (__atomic_fool_gcc(v))
+		:"Ir" (i),
+		 "m" (__atomic_fool_gcc(v)));
+}
+
+extern __inline__ void atomic_long_and(long i, volatile long * v)
+{
+	unsigned long temp;
+
+	__asm__ __volatile__(
+		"1:\tll\t%0,%1\n\t"
+		"and\t%0,%2\n\t"
 		"sc\t%0,%1\n\t"
 		"beqz\t%0,1b"
 		:"=&r" (temp),
@@ -175,6 +274,48 @@ extern __inline__ int atomic_sub_return(int i, atomic_t * v)
 
 	return result;
 }
+
+extern __inline__ int atomic_or_return(int i, atomic_t * v)
+{
+	unsigned long temp, result;
+
+	__asm__ __volatile__(
+		".set\tnoreorder\n"
+		"1:\tll\t%1,%2\n\t"
+		"or\t%0,%1,%3\n\t"
+		"sc\t%0,%2\n\t"
+		"beqz\t%0,1b\n\t"
+		"or\t%0,%1,%3\n\t"
+		".set\treorder"
+		:"=&r" (result),
+		 "=&r" (temp),
+		 "=m" (__atomic_fool_gcc(v))
+		:"Ir" (i),
+		 "m" (__atomic_fool_gcc(v)));
+
+	return result;
+}
+
+extern __inline__ int atomic_and_return(int i, atomic_t * v)
+{
+	unsigned long temp, result;
+
+	__asm__ __volatile__(
+		".set\tnoreorder\n"
+		"1:\tll\t%1,%2\n\t"
+		"and\t%0,%1,%3\n\t"
+		"sc\t%0,%2\n\t"
+		"beqz\t%0,1b\n\t"
+		"and\t%0,%1,%3\n\t"
+		".set\treorder"
+		:"=&r" (result),
+		 "=&r" (temp),
+		 "=m" (__atomic_fool_gcc(v))
+		:"Ir" (i),
+		 "m" (__atomic_fool_gcc(v)));
+
+	return result;
+}
 #endif
 
 #define atomic_dec_return(v) atomic_sub_return(1,(v))
@@ -185,6 +326,7 @@ extern __inline__ int atomic_sub_return(int i, atomic_t * v)
 
 #define atomic_inc(v) atomic_add(1,(v))
 #define atomic_dec(v) atomic_sub(1,(v))
-#endif /* defined(__KERNEL__) */
 
-#endif /* __ASM_MIPS_ATOMIC_H */
+#endif /* __KERNEL__ */
+
+#endif /* _ASM_ATOMIC_H */

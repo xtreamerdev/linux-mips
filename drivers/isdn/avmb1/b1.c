@@ -1,11 +1,25 @@
 /*
- * $Id: b1.c,v 1.7 1999/08/04 10:10:09 calle Exp $
+ * $Id: b1.c,v 1.10 1999/09/15 08:16:03 calle Exp $
  * 
  * Common module for AVM B1 cards.
  * 
  * (c) Copyright 1999 by Carsten Paeth (calle@calle.in-berlin.de)
  * 
  * $Log: b1.c,v $
+ * Revision 1.10  1999/09/15 08:16:03  calle
+ * Implementation of 64Bit extention complete.
+ *
+ * Revision 1.9  1999/09/07 09:02:53  calle
+ * SETDATA removed. Now inside the kernel the datapart of DATA_B3_REQ and
+ * DATA_B3_IND is always directly after the CAPI message. The "Data" member
+ * ist never used inside the kernel.
+ *
+ * Revision 1.8  1999/08/22 20:26:22  calle
+ * backported changes from kernel 2.3.14:
+ * - several #include "config.h" gone, others come.
+ * - "struct device" changed to "struct net_device" in 2.3.14, added a
+ *   define in isdn_compat.h for older kernel versions.
+ *
  * Revision 1.7  1999/08/04 10:10:09  calle
  * Bugfix: corrected /proc functions, added structure for new AVM cards.
  *
@@ -47,7 +61,6 @@
  *
  */
 
-#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/skbuff.h>
@@ -57,13 +70,13 @@
 #include <linux/ioport.h>
 #include <linux/capi.h>
 #include <asm/io.h>
-#include <linux/isdn_compat.h>
+#include <asm/uaccess.h>
 #include "capilli.h"
 #include "avmcard.h"
 #include "capicmd.h"
 #include "capiutil.h"
 
-static char *revision = "$Revision: 1.7 $";
+static char *revision = "$Revision: 1.10 $";
 
 /* ------------------------------------------------------------- */
 
@@ -476,13 +489,17 @@ void b1_handle_interrupt(avmcard * card)
 		MsgLen = b1_get_slice(card->port, card->msgbuf);
 		DataB3Len = b1_get_slice(card->port, card->databuf);
 
+		if (MsgLen < 30) { /* not CAPI 64Bit */
+			memset(card->msgbuf+MsgLen, 0, 30-MsgLen);
+			MsgLen = 30;
+			CAPIMSG_SETLEN(card->msgbuf, 30);
+		}
 		if (!(skb = alloc_skb(DataB3Len + MsgLen, GFP_ATOMIC))) {
 			printk(KERN_ERR "%s: incoming packet dropped\n",
 					card->name);
 		} else {
 			memcpy(skb_put(skb, MsgLen), card->msgbuf, MsgLen);
 			memcpy(skb_put(skb, DataB3Len), card->databuf, DataB3Len);
-			CAPIMSG_SETDATA(skb->data, skb->data + MsgLen);
 			ctrl->handle_capimsg(ctrl, ApplId, skb);
 		}
 		break;

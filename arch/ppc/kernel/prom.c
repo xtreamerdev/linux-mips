@@ -1,5 +1,5 @@
 /*
- * $Id: prom.c,v 1.54.2.1 1999/05/29 19:10:12 cort Exp $
+ * $Id: prom.c,v 1.54.2.12 1999/09/10 01:08:04 paulus Exp $
  *
  * Procedures for interfacing to the Open Firmware PROM on
  * Power Macintosh computers.
@@ -82,7 +82,7 @@ static interpret_func interpret_root_props;
 #ifndef FB_MAX			/* avoid pulling in all of the fb stuff */
 #define FB_MAX	8
 #endif
-char *prom_display_paths[FB_MAX] __initdata = { 0, };
+char *prom_display_paths[FB_MAX] __pmacdata = { 0, };
 unsigned int prom_num_displays = 0;
 char *of_stdout_device = 0;
 
@@ -134,7 +134,6 @@ static unsigned long inspect_node(phandle, struct device_node *, unsigned long,
 				  unsigned long, struct device_node ***);
 static unsigned long finish_node(struct device_node *, unsigned long,
 				 interpret_func *);
-static void relocate_nodes(void);
 static unsigned long check_display(unsigned long);
 static int prom_next_node(phandle *);
 static void *early_get_property(unsigned long, unsigned long, char *);
@@ -378,7 +377,7 @@ prom_init(int r3, int r4, prom_entry pp)
 #endif
 		return;
 	}
-
+	
 	/* check if we're prep, return if we are */
 	if ( *(unsigned long *)(0) == 0xdeadc0de )
 		return;
@@ -744,8 +743,6 @@ finish_device_tree(void)
 {
 	unsigned long mem = (unsigned long) klimit;
 
-	if (boot_infos)
-		relocate_nodes();
 	mem = finish_node(allnodes, mem, NULL);
 	printk(KERN_INFO "device tree used %lu bytes\n",
 	       mem - (unsigned long) allnodes);
@@ -839,7 +836,7 @@ finish_node(struct device_node *np, unsigned long mem_start,
  * This procedure updates the pointers.
  */
 __init
-static void relocate_nodes(void)
+void relocate_nodes(void)
 {
 	unsigned long base;
 	struct device_node *np;
@@ -1216,22 +1213,6 @@ find_path_device(const char *path)
 		if (np->full_name != 0 && strcasecmp(np->full_name, path) == 0)
 			return np;
 	return NULL;
-}
-
-/*
- * Indicates whether the root node has a given value in its
- * compatible property.
- */
-__openfirmware
-int
-machine_is_compatible(const char *compat)
-{
-	struct device_node *root;
-
-	root = find_path_device("/");
-	if (root == 0)
-		return 0;
-	return device_is_compatible(root, compat);
 }
 
 /*
@@ -2005,5 +1986,20 @@ static unsigned char vga_font[cmapsz] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 0x00, 0x00, 0x00, 0x00, 
 };
+
+/* Indicates whether the root node has a given value in its
+ * compatible property.
+ */
+__openfirmware
+int
+machine_is_compatible(const char *compat)
+{
+	struct device_node *root;
+	
+	root = find_path_device("/");
+	if (root == 0)
+		return 0;
+	return device_is_compatible(root, compat);
+}
 
 #endif /* CONFIG_BOOTX_TEXT */

@@ -341,6 +341,7 @@ struct pci_dev_info dev_info[] = {
 	DEVICE( VIA,		VIA_82C585,	"VT 82C585 Apollo VP1/VPX"),
 	DEVICE( VIA,		VIA_82C586_0,	"VT 82C586 Apollo ISA"),
 	DEVICE( VIA,		VIA_82C595,	"VT 82C595 Apollo VP2"),
+	DEVICE( VIA,		VIA_82C596_0,	"VT 82C596 Apollo Pro"),
 	DEVICE( VIA,		VIA_82C597_0,	"VT 82C597 Apollo VP3"),
 	DEVICE( VIA,		VIA_82C598_0,	"VT 82C598 Apollo MVP3"),
 	DEVICE( VIA,		VIA_82C926,	"VT 82C926 Amazon"),
@@ -906,7 +907,7 @@ static int sprint_dev_config(struct pci_dev *dev, char *buf, int size)
 			       vendor, device);
 	}
 
-	str = 0;	/* to keep gcc shut... */
+	str = "Confused devsel.";
 	switch (status & PCI_STATUS_DEVSEL_MASK) {
 	      case PCI_STATUS_DEVSEL_FAST:   str = "Fast devsel.  "; break;
 	      case PCI_STATUS_DEVSEL_MEDIUM: str = "Medium devsel.  "; break;

@@ -52,6 +52,7 @@
 #include <asm/smp.h>
 #include <asm/cobalt.h>
 #include <asm/msr.h>
+#include <asm/dma.h>
 
 /*
  * Machine setup..
@@ -121,6 +122,8 @@ extern unsigned long cpu_hz;
 #define RAMDISK_IMAGE_START_MASK  	0x07FF
 #define RAMDISK_PROMPT_FLAG		0x8000
 #define RAMDISK_LOAD_FLAG		0x4000	
+
+#define BIOS_ENDBASE	0x9F000
 
 #ifdef	CONFIG_VISWS
 char visws_board_type = -1;
@@ -251,6 +254,7 @@ visws_get_board_type_and_rev(void)
 
 static char command_line[COMMAND_LINE_SIZE] = { 0, };
        char saved_command_line[COMMAND_LINE_SIZE];
+unsigned long i386_endbase __initdata =  0;
 
 __initfunc(void setup_arch(char **cmdline_p,
 	unsigned long * memory_start_p, unsigned long * memory_end_p))
@@ -258,6 +262,7 @@ __initfunc(void setup_arch(char **cmdline_p,
 	unsigned long memory_start, memory_end;
 	char c = ' ', *to = command_line, *from = COMMAND_LINE;
 	int len = 0;
+	int read_endbase_from_BIOS = 1;
 
 #ifdef CONFIG_VISWS
 	visws_get_board_type_and_rev();
@@ -326,6 +331,13 @@ __initfunc(void setup_arch(char **cmdline_p,
 				}
 			}
 		}
+		else if (c == ' ' && !memcmp(from, "endbase=", 8))
+		{
+			if (to != command_line) to--;
+			i386_endbase = simple_strtoul(from+8, &from, 0);
+			i386_endbase += PAGE_OFFSET;
+			read_endbase_from_BIOS = 0;
+		}
 		c = *(from++);
 		if (!c)
 			break;
@@ -335,6 +347,32 @@ __initfunc(void setup_arch(char **cmdline_p,
 	}
 	*to = '\0';
 	*cmdline_p = command_line;
+
+	if (read_endbase_from_BIOS)
+	{
+		/*
+		 * The amount of available base memory is now taken from 
+		 * WORD 40:13 (The BIOS EBDA pointer) in order to account for 
+		 * some recent systems, where its value is smaller than the 
+		 * 4K we blindly allowed before.
+		 *
+		 * (this was pointed out by Josef Moellers from
+		 * Siemens Paderborn (Germany) ).
+		 */
+		i386_endbase = (*(unsigned short *)__va(0x413)*1024)&PAGE_MASK;
+		
+		if (!i386_endbase || i386_endbase > 0xA0000)
+		{
+			/* Zero is valid according to the BIOS weenies */
+			if(i386_endbase)
+			{
+				printk(KERN_NOTICE "Ignoring bogus EBDA pointer %X\n", 
+					i386_endbase);
+			}
+			i386_endbase = BIOS_ENDBASE;
+		}
+		i386_endbase += PAGE_OFFSET;
+	}
 
 #define VMALLOC_RESERVE	(64 << 20)	/* 64MB for vmalloc */
 #define MAXMEM	((unsigned long)(-PAGE_OFFSET-VMALLOC_RESERVE))
@@ -619,6 +657,16 @@ __initfunc(static void cyrix_model(struct cpuinfo_x86 *c))
 		 *	on the MediaGX. So we turn it off for now. 
 		 */
 		
+#ifdef CONFIG_PCI_QUIRKS
+                /* It isnt really a PCI quirk directly, but the cure is the
+       	           same. The MediaGX has deep magic SMM stuff that handles the
+                   SB emulation. It thows away the fifo on disable_dma() which
+                   is wrong and ruins the audio. */
+
+		printk(KERN_INFO "Working around Cyrix MediaGX virtual DMA bug.\n");
+                isa_dma_bridge_buggy = 1;
+                  	                                                                     	        
+#endif
 		/* GXm supports extended cpuid levels 'ala' AMD */
 		if (c->cpuid_level == 2) {
 			get_model_name(c);  /* get CPU marketing name */
@@ -882,6 +930,8 @@ __initfunc(void print_cpu_info(struct cpuinfo_x86 *c))
 
 	if (c->x86_mask || c->cpuid_level>=0) 
 		printk(" stepping %02x\n", c->x86_mask);
+	else
+		printk("\n");
 
 	if(c->x86_vendor == X86_VENDOR_CENTAUR) {
 		u32 hv,lv;
