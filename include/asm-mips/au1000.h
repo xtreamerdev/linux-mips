@@ -1056,4 +1056,10 @@ extern au1xxx_irq_map_t au1xxx_irq_map[];
 #define PCI_LAST_DEVFN  0
 #endif
 
+#if defined(CONFIG_SOC_AU1000) || defined(CONFIG_SOC_AU1500)
+#define NUM_ETH_INTERFACES 2
+#elif defined(CONFIG_SOC_AU1100)
+#define NUM_ETH_INTERFACES 1
+#endif
+
 #endif

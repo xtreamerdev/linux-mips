@@ -54,6 +54,7 @@
 #include <asm/io.h>
 
 #include <asm/au1000.h>
+#include <asm/cpu.h>
 #include "au1000_eth.h"
 
 #ifdef AU1000_ETH_DEBUG
@@ -109,27 +110,6 @@ extern char * __init prom_getcmdline(void);
  */
 
 
-/*
- * Base address and interupt of the Au1xxx ethernet macs
- */
-static struct au1if {
-	unsigned int port;
-	int irq;
-} au1x00_iflist[] = {
-#if defined(CONFIG_SOC_AU1000)
-		{AU1000_ETH0_BASE, AU1000_ETH0_IRQ}, 
-		{AU1000_ETH1_BASE, AU1000_ETH1_IRQ}
-#elif defined(CONFIG_SOC_AU1500)
-		{AU1500_ETH0_BASE, AU1000_ETH0_IRQ}, 
-		{AU1500_ETH1_BASE, AU1000_ETH1_IRQ}
-#elif defined(CONFIG_SOC_AU1100)
-		{AU1000_ETH0_BASE, AU1000_ETH0_IRQ}, 
-#else
-#error "Unsupported Au1x00 CPU"
-#endif
-	};
-#define NUM_INTERFACES (sizeof(au1x00_iflist) / sizeof(struct au1if))
-
 static char version[] __devinitdata =
     "au1000eth.c:1.2 ppopov@mvista.com\n";
 
@@ -148,7 +128,7 @@ static unsigned char au1000_mac_addr[6] __devinitdata = {
 #define cpu_to_dma32 cpu_to_be32
 #define dma32_to_cpu be32_to_cpu
 
-struct au1000_private *au_macs[NUM_INTERFACES];
+struct au1000_private *au_macs[NUM_ETH_INTERFACES];
 
 /* FIXME 
  * All of the PHY code really should be detached from the MAC 
@@ -1082,17 +1062,40 @@ setup_hw_rings(struct au1000_private *aup, u32 rx_base, u32 tx_base)
 	}
 }
 
+/*
+ * Setup the base address and interupt of the Au1xxx ethernet macs
+ * based on cpu type and whether the interface is enabled in sys_pinfunc
+ * register. The last interface is enabled if SYS_PF_NI2 (bit 4) is 0.
+ */
 static int __init au1000_init_module(void)
 {
-	int i;
-	int base_addr, irq;
+	struct cpuinfo_mips *c = &current_cpu_data;
+	int base_addr[2], irq[2], num_ifs, i;
+	int ni = (int)((au_readl(SYS_PINFUNC) & (u32)(SYS_PF_NI2)) >> 4);
 
-	for (i=0; i<NUM_INTERFACES; i++) {
-		base_addr = au1x00_iflist[i].port;
-		irq = au1x00_iflist[i].irq;
-		if (au1000_probe1(NULL, base_addr, irq, i) != 0) {
+	irq[0] = AU1000_ETH0_IRQ;
+	irq[1] = AU1000_ETH1_IRQ;
+	switch (c->cputype) {
+	case CPU_AU1000:
+		num_ifs = 2 - ni;
+		base_addr[0] = AU1000_ETH0_BASE;
+		base_addr[1] = AU1000_ETH1_BASE;
+		break;
+	case CPU_AU1100:
+		num_ifs = 1 - ni;
+		base_addr[0] = AU1000_ETH0_BASE;
+		break;
+	case CPU_AU1500:
+		num_ifs = 2 - ni;
+		base_addr[0] = AU1500_ETH0_BASE;
+		base_addr[1] = AU1500_ETH1_BASE;
+		break;
+	default:
+		num_ifs = 0;
+	}
+	for(i = 0; i < num_ifs; i++) {
+		if (au1000_probe1(NULL, base_addr[i], irq[i], i) != 0)
 			return -ENODEV;
-		}
 	}
 	return 0;
 }
