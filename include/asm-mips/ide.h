@@ -63,10 +63,6 @@ static __inline__ void ide_init_default_hwifs(void)
 #endif /* CONFIG_BLK_DEV_IDEPCI */
 }
 
-#ifdef CONFIG_SIBYTE_SB1xxx_SOC
-//#define IDE_ARCH_ACK_INTR 1
-#endif
-
 #include <asm-generic/ide_iops.h>
 
 #endif /* __KERNEL__ */
