@@ -169,18 +169,15 @@ static inline void pci_unmap_page(struct pci_dev *hwdev, dma_addr_t dma_address,
 static inline int pci_map_sg(struct pci_dev *hwdev, struct scatterlist *sg,
 			     int nents, int direction)
 {
-#ifdef CONFIG_NONCOHERENT_IO
 	int i;
-#endif
 
 	if (direction == PCI_DMA_NONE)
 		out_of_line_bug();
 
-#ifdef CONFIG_NONCOHERENT_IO
-	/* Make sure that gcc doesn't leave the empty loop body.  */
-	for (i = 0; i < nents; i++, sg++)
+	for (i = 0; i < nents; i++, sg++) {
 		dma_cache_wback_inv((unsigned long)sg->address, sg->length);
-#endif
+		sg->dma_address = (char *)(__pa(sg->address));
+	}
 
 	return nents;
 }

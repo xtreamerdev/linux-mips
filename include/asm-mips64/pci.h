@@ -210,9 +210,7 @@ static inline int pci_map_sg(struct pci_dev *hwdev, struct scatterlist *sg,
 
 	/* Make sure that gcc doesn't leave the empty loop body.  */
 	for (i = 0; i < nents; i++, sg++) {
-#ifdef CONFIG_NONCOHERENT_IO
 		dma_cache_wback_inv((unsigned long)sg->address, sg->length);
-#endif
 		sg->dma_address = (char *)(__pa(sg->address));
 	}
 
