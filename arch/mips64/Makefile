@@ -164,6 +164,28 @@ LOADADDR	:= 0x80100000
 endif
 
 #
+# Momentum Ocelot-G board
+#
+ifdef CONFIG_MOMENCO_OCELOT_G
+# The Ocelot-G setup.o must be linked early - it does the ioremap() for the
+# mips_io_port_base.
+CORE_FILES	+= arch/mips/momentum/ocelot_g/ocelot_g.o
+SUBDIRS		+= arch/mips/momentum/ocelot_g
+LOADADDR	:= 0x80100000
+endif
+                                                                                
+#
+# Momentum Ocelot-C and -CS boards
+#
+ifdef CONFIG_MOMENCO_OCELOT_C
+# The Ocelot-C[S] setup.o must be linked early - it does the ioremap() for the
+# mips_io_port_base.
+CORE_FILES	+= arch/mips/momentum/ocelot_c/ocelot_c.o
+SUBDIRS		+= arch/mips/momentum/ocelot_c
+LOADADDR	:= 0x80100000
+endif
+
+#
 # SGI IP22 (Indy/Indigo2)
 #
 ifdef CONFIG_SGI_IP22
