@@ -1171,10 +1171,6 @@ static void show_task(struct task_struct * p)
 	else
 		printk(" (NOTLB)\n");
 
-/*
- * This is very useful, but only works on ARM, x86, MIPS and sparc64 right
- * now
- */
 	{
 		extern void show_trace_task(struct task_struct *tsk);
 		show_trace_task(p);
