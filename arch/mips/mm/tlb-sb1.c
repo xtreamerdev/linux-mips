@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 1996 David S. Miller (dm@engr.sgi.com)
  * Copyright (C) 1997, 2001 Ralf Baechle (ralf@gnu.org)
- * Copyright (C) 2000, 2001 Broadcom Corporation
+ * Copyright (C) 2000, 2001, 2002, 2003 Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -101,7 +101,7 @@ void local_flush_tlb_all(void)
 
 	entry = read_c0_wired();
 	while (entry < current_cpu_data.tlbsize) {
-		write_c0_entryhi(KSEG0 + (PAGE_SIZE << 1) * entry);
+		write_c0_entryhi(UNIQUE_ENTRYHI(entry));
 		write_c0_index(entry);
 		tlb_write_indexed();
 		entry++;
