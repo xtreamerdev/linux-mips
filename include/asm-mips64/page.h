@@ -113,7 +113,7 @@ static __inline__ int get_order(unsigned long size)
  */
 #if defined(CONFIG_SGI_IP22) || defined(CONFIG_MIPS_ATLAS) || \
     defined(CONFIG_MIPS_MALTA) || defined(CONFIG_MIPS_SEAD) || \
-    defined(CONFIG_DECSTATION)
+    defined(CONFIG_DECSTATION) || defined(CONFIG_MIPS_COBALT)
 #define PAGE_OFFSET	0xffffffff80000000UL
 #define UNCAC_BASE	0xffffffffa0000000UL
 #endif

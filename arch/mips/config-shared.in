@@ -383,6 +383,7 @@ if [ "$CONFIG_COGENT_CSB250" = "y" ]; then
    define_bool CONFIG_PC_KEYB y
 fi
 if [ "$CONFIG_MIPS_COBALT" = "y" ]; then
+   define_bool CONFIG_BOOT_ELF32 y
    define_bool CONFIG_COBALT_LCD y
    define_bool CONFIG_I8259 y
    define_bool CONFIG_PCI y

@@ -62,7 +62,8 @@ ifdef CONFIG_CPU_R5000
 GCCFLAGS	+= -mcpu=r8000 -mips4
 endif
 ifdef CONFIG_CPU_NEVADA
-GCCFLAGS	+= -mcpu=r8000 -mips3 -mmad
+# Cannot use -mmad with currently recommended tools
+GCCFLAGS	+= -mcpu=r8000 -mips3
 endif
 ifdef CONFIG_CPU_RM7000
 GCCFLAGS	+= $(call check_gcc, -march=rm7000, -mcpu=r5000) \
@@ -111,6 +112,15 @@ endif
 #
 # Board-dependent options and extra files
 #
+
+#
+# Cobalt Server
+#
+ifdef CONFIG_MIPS_COBALT
+SUBDIRS		+= arch/mips/cobalt
+CORE_FILES	+= arch/mips/cobalt/cobalt.o
+LOADADDR	:= 0x80080000
+endif
 
 #
 # DECstation family
