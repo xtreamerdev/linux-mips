@@ -38,6 +38,8 @@
 #undef __KERNEL__		/* This file was born to be ugly ...  */
 #include <scsi/scsi_ioctl.h>
 #define __KERNEL__
+#include <scsi/sg.h>
+
 #include <asm/types.h>
 #include <asm/uaccess.h>
 
