@@ -12,7 +12,7 @@ O_TARGET := dec.o
 
 all: dec.o
 
-export-objs := setup.o wbflush.o
+export-objs := rtc-dec.o setup.o wbflush.o
 obj-y	 := int-handler.o ioasic-irq.o kn02-irq.o reset.o rtc-dec.o setup.o \
 	time.o
 
