@@ -328,6 +328,7 @@ archclean:
 archmrproper:
 	@$(MAKEBOOT) mrproper
 	$(MAKE) -C arch/mips/tools mrproper
+	$(RM) $(TOPDIR)/include/asm-$(ARCH)/offset.h
 
 archdep:
 	if [ ! -f $(TOPDIR)/include/asm-$(ARCH)/offset.h ]; then \

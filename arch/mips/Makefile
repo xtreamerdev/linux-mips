@@ -626,6 +626,7 @@ archclean:
 
 archmrproper:
 	@$(MAKEBOOT) mrproper
+	$(RM) $(TOPDIR)/include/asm-$(ARCH)/offset.h
 	$(MAKE) -C arch/$(ARCH)/tools mrproper
 
 archdep:
