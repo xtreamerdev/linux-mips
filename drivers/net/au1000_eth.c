@@ -58,6 +58,7 @@
 #include <asm/cpu.h>
 #include "au1000_eth.h"
 
+
 #ifdef AU1000_ETH_DEBUG
 static int au1000_debug = 5;
 #else
@@ -114,7 +115,7 @@ extern char * __init prom_getcmdline(void);
 
 
 static char version[] __devinitdata =
-    "au1000eth.c:1.3 ppopov@mvista.com\n";
+    "au1000eth.c:1.4 ppopov@mvista.com\n";
 
 /* These addresses are only used if yamon doesn't tell us what
  * the mac address is, and the mac address is not passed on the
@@ -906,8 +907,8 @@ found:
 					aup->mii = mii_phy;
 					aup->phy_ops->phy_init(dev,phy_addr);
 				} else {
-					printk(KERN_ERR "%s: out of memory\n",
-							dev->name)
+					printk(KERN_ERR "%s: out of memory\n", 
+							dev->name);
 					return -1;
 				}
 				mii_phy->chip_info = mii_chip_table+i;
@@ -1666,6 +1667,7 @@ static int au1000_rx(struct net_device *dev)
 	volatile rx_dma_t *prxd;
 	u32 buff_stat, status;
 	db_dest_t *pDB;
+	u32	frmlen;
 
 	if (au1000_debug > 5)
 		printk("%s: au1000_rx head %d\n", dev->name, aup->rx_head);
@@ -1679,7 +1681,9 @@ static int au1000_rx(struct net_device *dev)
 		if (!(status & RX_ERROR))  {
 
 			/* good frame */
-			skb = dev_alloc_skb((status & RX_FRAME_LEN_MASK) + 2);
+			frmlen = (status & RX_FRAME_LEN_MASK);
+			frmlen -= 4; /* Remove FCS */
+			skb = dev_alloc_skb(frmlen + 2);
 			if (skb == NULL) {
 				printk(KERN_ERR
 				       "%s: Memory squeeze, dropping packet.\n",
@@ -1689,9 +1693,9 @@ static int au1000_rx(struct net_device *dev)
 			}
 			skb->dev = dev;
 			skb_reserve(skb, 2);	/* 16 byte IP header align */
-			eth_copy_and_sum(skb, (unsigned char *)pDB->vaddr, 
-					status & RX_FRAME_LEN_MASK, 0);
-			skb_put(skb, status & RX_FRAME_LEN_MASK);
+			eth_copy_and_sum(skb,
+				(unsigned char *)pDB->vaddr, frmlen, 0);
+			skb_put(skb, frmlen);
 			skb->protocol = eth_type_trans(skb, dev);
 			netif_rx(skb);	/* pass the packet to upper layers */
 		}
