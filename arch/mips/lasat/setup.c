@@ -32,7 +32,6 @@
 #include <linux/pci.h>
 #include <linux/ide.h>
 
-#include <linux/ds1603.h>
 #include <linux/interrupt.h>
 #include <asm/time.h>
 
@@ -46,6 +45,8 @@
 #if CONFIG_PICVUE
 #include <linux/notifier.h>
 #endif
+
+#include "ds1603.h"
 
 int lasat_command_line = 0;
 void lasatint_init(void);
