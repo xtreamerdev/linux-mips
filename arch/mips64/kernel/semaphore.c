@@ -68,7 +68,7 @@ void __down(struct semaphore * sem)
 	init_waitqueue_entry(&wait, tsk);
 
 	tsk->state = TASK_UNINTERRUPTIBLE;
-	add_wait_queue(&sem->wait, &wait);
+	add_wait_queue_exclusive(&sem->wait, &wait);
 
 	/*
 	 * Ok, we're set up.  sem->count is known to be less than zero
@@ -103,7 +103,7 @@ int __down_interruptible(struct semaphore * sem)
 	init_waitqueue_entry(&wait, tsk);
 
 	tsk->state = TASK_INTERRUPTIBLE;
-	add_wait_queue(&sem->wait, &wait);
+	add_wait_queue_exclusive(&sem->wait, &wait);
 
 	/*
 	 * Ok, we're set up.  sem->count is known to be less than zero
