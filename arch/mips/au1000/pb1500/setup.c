@@ -80,8 +80,8 @@ extern void au1000_power_off(void);
 extern struct resource ioport_resource;
 extern struct resource iomem_resource;
 #ifdef CONFIG_64BIT_PHYS_ADDR
-extern phys_t (*__ioremap_fixup)(phys_t phys_addr, phys_t size);
-static phys_t pb1500_ioremap_fixup(phys_t phys_addr, phys_t size);
+extern phys_t (*fixup_bigphys_addr)(phys_t phys_addr, phys_t size);
+static phys_t pb1500_fixup_bigphys_addr(phys_t phys_addr, phys_t size);
 #endif
 
 
@@ -122,7 +122,7 @@ void __init au1x00_setup(void)
 	_machine_halt = au1000_halt;
 	_machine_power_off = au1000_power_off;
 #ifdef CONFIG_64BIT_PHYS_ADDR
-	__ioremap_fixup = pb1500_ioremap_fixup;
+	fixup_bigphys_addr = pb1500_fixup_bigphys_addr;
 #endif
 
 	// IO/MEM resources.
@@ -276,7 +276,7 @@ void __init au1x00_setup(void)
 }
 
 #ifdef CONFIG_64BIT_PHYS_ADDR
-static phys_t pb1500_ioremap_fixup(phys_t phys_addr,
+static phys_t pb1500_fixup_bigphys_addr(phys_t phys_addr,
 					phys_t size)
 {
 	u32 pci_start = (u32)Au1500_PCI_MEM_START;
