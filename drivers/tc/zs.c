@@ -1868,7 +1868,6 @@ static void __init probe_sccs(void)
 int __init zs_init(void)
 {
 	int channel, i;
-	unsigned long flags;
 	struct dec_serial *info;
 
 	if(!BUS_PRESENT)
