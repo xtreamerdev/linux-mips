@@ -35,8 +35,6 @@ void sb1_copy_page(void * to, void * from);
 extern void (*_clear_page)(void * page);
 extern void (*_copy_page)(void * to, void * from);
 
-extern void mips64_clear_page_dc(unsigned long page);
-extern void mips64_clear_page_sc(unsigned long page);
 void r4k_clear_page_d16(void * page);
 void r4k_clear_page_d32(void * page);
 void r4k_clear_page_r4600_v1(void * page);
@@ -46,8 +44,6 @@ void r4k_clear_page_s32(void * page);
 void r4k_clear_page_s64(void * page);
 void r4k_clear_page_s128(void * page);
 
-extern void mips64_copy_page_dc(unsigned long to, unsigned long from);
-extern void mips64_copy_page_sc(unsigned long to, unsigned long from);
 void r4k_copy_page_d16(void * to, void * from);
 void r4k_copy_page_d32(void * to, void * from);
 void r4k_copy_page_r4600_v1(void * to, void * from);
