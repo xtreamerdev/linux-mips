@@ -19904,6 +19904,23 @@ CONFIG_MIPS32_COMPAT
   compatibility. Since all software available for Linux/MIPS is
   currently 32-bit you should say Y here.
 
+Kernel support for o32 binaries
+CONFIG_MIPS32_O32
+  Select this option if you want to run o32 binaries.  These are pure
+  32-bit binaries as used by the 32-bit Linux/MIPS port.  Most of
+  existing binaries are in this format.
+
+  If unsure, say Y.
+
+Kernel support for n32 binaries
+CONFIG_MIPS32_N32
+  Select this option if you want to run n32 binaries.  These are
+  64-bit binaries using 32-bit quantities for addressing and certain
+  data that would normally be 64-bit.  They are used in special
+  cases.
+
+  If unsure, say N.
+
 Build fp exception handler module
 CONFIG_MIPS_FPE_MODULE
   Build the floating point exception handler module. This option is
