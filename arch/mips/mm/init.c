@@ -151,7 +151,8 @@ void __init paging_init(void)
 
 	/* Initialize the entire pgd.  */
 	pgd_init((unsigned long)swapper_pg_dir);
-	pgd_init((unsigned long)swapper_pg_dir + PAGE_SIZE / 2);
+	pgd_init((unsigned long)swapper_pg_dir +
+	         sizeof(unsigned long) * USER_PTRS_PER_PGD);
 
 	max_dma = virt_to_phys((char *)MAX_DMA_ADDRESS) >> PAGE_SHIFT;
 	low = max_low_pfn;
