@@ -23,6 +23,7 @@
 #include <asm/ds1286.h>
 #include <asm/sgialib.h>
 #include <asm/sgi/ioc.h>
+#include <asm/sgi/hpc3.h>
 #include <asm/sgi/ip22.h>
 
 /*
@@ -34,17 +35,17 @@ static unsigned long indy_rtc_get_time(void)
 	unsigned char yrs, mon, day, hrs, min, sec;
 	unsigned char save_control;
 
-	save_control = CMOS_READ(RTC_CMD);
-	CMOS_WRITE((save_control|RTC_TE), RTC_CMD);
+	save_control = hpc3c0->rtcregs[RTC_CMD];
+	hpc3c0->rtcregs[RTC_CMD] = save_control | RTC_TE;
 
-	sec = CMOS_READ(RTC_SECONDS);
-	min = CMOS_READ(RTC_MINUTES);
-	hrs = CMOS_READ(RTC_HOURS) & 0x1f;
-	day = CMOS_READ(RTC_DATE);
-	mon = CMOS_READ(RTC_MONTH) & 0x1f;
-	yrs = CMOS_READ(RTC_YEAR);
+	sec = hpc3c0->rtcregs[RTC_SECONDS];
+	min = hpc3c0->rtcregs[RTC_MINUTES];
+	hrs = hpc3c0->rtcregs[RTC_HOURS] & 0x1f;
+	day = hpc3c0->rtcregs[RTC_DATE];
+	mon = hpc3c0->rtcregs[RTC_MONTH] & 0x1f;
+	yrs = hpc3c0->rtcregs[RTC_YEAR];
 
-	CMOS_WRITE(save_control, RTC_CMD);
+	hpc3c0->rtcregs[RTC_CMD] = save_control;
 
 	BCD_TO_BIN(sec);
 	BCD_TO_BIN(min);
@@ -80,18 +81,18 @@ static int indy_rtc_set_time(unsigned long tim)
 	BIN_TO_BCD(tm.tm_mon);
 	BIN_TO_BCD(tm.tm_year);
 
-	save_control = CMOS_READ(RTC_CMD);
-	CMOS_WRITE((save_control|RTC_TE), RTC_CMD);
+	save_control = hpc3c0->rtcregs[RTC_CMD];
+	hpc3c0->rtcregs[RTC_CMD] = save_control | RTC_TE;
 
-	CMOS_WRITE(tm.tm_year, RTC_YEAR);
-	CMOS_WRITE(tm.tm_mon, RTC_MONTH);
-	CMOS_WRITE(tm.tm_mday, RTC_DATE);
-	CMOS_WRITE(tm.tm_hour, RTC_HOURS);
-	CMOS_WRITE(tm.tm_min, RTC_MINUTES);
-	CMOS_WRITE(tm.tm_sec, RTC_SECONDS);
-	CMOS_WRITE(0, RTC_HUNDREDTH_SECOND);
+	hpc3c0->rtcregs[RTC_YEAR] = tm.tm_year;
+	hpc3c0->rtcregs[RTC_MONTH] = tm.tm_mon;
+	hpc3c0->rtcregs[RTC_DATE] = tm.tm_mday;
+	hpc3c0->rtcregs[RTC_HOURS] = tm.tm_hour;
+	hpc3c0->rtcregs[RTC_MINUTES] = tm.tm_min;
+	hpc3c0->rtcregs[RTC_SECONDS] = tm.tm_sec;
+	hpc3c0->rtcregs[RTC_HUNDREDTH_SECOND] = 0;
 
-	CMOS_WRITE(save_control, RTC_CMD);
+	hpc3c0->rtcregs[RTC_CMD] = save_control;
 
 	return 0;
 }
@@ -217,11 +218,6 @@ static void indy_timer_setup(struct irqaction *irq)
 
 	/* over-write the handler, we use our own way */
 	irq->handler = no_action;
-
-	/* set time for first interrupt */
-	count = read_c0_count();
-	count += mips_counter_frequency / HZ;
-	write_c0_compare(count);
 
 	/* setup irqaction */
 	setup_irq(SGI_TIMER_IRQ, irq);
