@@ -305,8 +305,6 @@ out:
 
 static void __init probe_tlb(unsigned long config)
 {
-        unsigned long config1;
-
         if (!(config & (1 << 31))) {
 	        /*
 		 * Not a MIPS64 complainant CPU.
@@ -314,6 +312,8 @@ static void __init probe_tlb(unsigned long config)
 		 */
 	        current_cpu_data.tlbsize = 48;
 	} else {
+        	unsigned long config1;
+
 	        config1 = read_c0_config1();
 		if (!((config >> 7) & 3))
 		        panic("No MMU present");

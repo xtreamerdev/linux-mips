@@ -48,7 +48,7 @@ void __update_cache(struct vm_area_struct *vma, unsigned long address,
 
 	if (VALID_PAGE(page) && page->mapping &&
 	    (page->flags & (1UL << PG_dcache_dirty))) {
-		if (pages_do_alias(page_address(page), address & PAGE_MASK)) {
+		if (pages_do_alias((unsigned long) page_address(page), address & PAGE_MASK)) {
 			addr = (unsigned long) page_address(page);
 			flush_data_cache_page(addr);
 		}
