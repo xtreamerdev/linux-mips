@@ -10,7 +10,7 @@ USE_STANDARD_AS_RULE := true
 
 O_TARGET := mm.o
 
-export-objs			+= ioremap.o loadmmu.o remap.o
+export-objs			+= cache.o ioremap.o loadmmu.o remap.o
 obj-y				+= cache.o extable.o init.o ioremap.o fault.o \
 				   loadmmu.o
 

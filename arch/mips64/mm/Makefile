@@ -6,7 +6,7 @@ USE_STANDARD_AS_RULE := true
 
 O_TARGET := mm.o
 
-export-objs			:= loadmmu.o
+export-objs			:= cache.o loadmmu.o
 obj-y				:= cache.o extable.o init.o fault.o loadmmu.o \
 				   tlbex-r4k.o
 
