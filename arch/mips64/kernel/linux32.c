@@ -266,15 +266,15 @@ static int count32(u32 * argv, int max)
 
 	if (argv != NULL) {
 		for (;;) {
-			u32 p;
-			/* egcs is stupid */
-			if (!access_ok(VERIFY_READ, argv, sizeof (u32)))
-				return -EFAULT;
-			__get_user(p,argv);
+			u32 p; int error;
+
+			error = get_user(p,argv);
+			if (error)
+				return error;
 			if (!p)
 				break;
 			argv++;
-			if(++i > max)
+			if (++i > max)
 				return -E2BIG;
 		}
 	}
@@ -440,26 +440,22 @@ out:
 #else
 static int nargs(unsigned int arg, char **ap)
 {
-	char *ptr;
-	int n, ret;
+	unsigned int addr;
+	int n, err;
 
 	if (!arg)
 		return 0;
 
 	n = 0;
 	do {
-		/* egcs is stupid */
-		if (!access_ok(VERIFY_READ, arg, sizeof (unsigned int)))
-			return -EFAULT;
-		if ((ret = __get_user((long)ptr,(int *)A(arg))))
-			return ret;
-		if (ap)		/* no access_ok needed, we allocated */
-			if ((ret = __put_user(ptr, ap++)))
-				return ret;
+		err = get_user(addr, (unsigned int *)A(arg));
+		if (err)
+			return err;
+		if (ap)
+			*ap++ = (char *) A(addr);
 		arg += sizeof(unsigned int);
 		n++;
-	} while (ptr);
-
+	} while (addr);
 	return n - 1;
 }
 
