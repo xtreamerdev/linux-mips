@@ -125,14 +125,14 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
            BCM91250C2-LittleSur CONFIG_SIBYTE_LITTLESUR \
            BCM91120C-CRhine     CONFIG_SIBYTE_CRHINE \
            BCM91125C-CRhone     CONFIG_SIBYTE_CRHONE \
-           Other                CONFIG_SIBYTE_UNKNOWN" CONFIG_SIBYTE_SWARM
+           Other                CONFIG_SIBYTE_UNKNOWN" BCM91250A-SWARM
 
    if [ "$CONFIG_SIBYTE_UNKNOWN" = "y" ]; then
       choice '   BCM1xxx SOC Type' \
           "BCM1250     CONFIG_SIBYTE_SB1250 \
            BCM1120     CONFIG_SIBYTE_BCM1120 \
            BCM1125     CONFIG_SIBYTE_BCM1125 \
-           BCM1125H    CONFIG_SIBYTE_BCM1125H" CONFIG_SIBYTE_SB1250
+           BCM1125H    CONFIG_SIBYTE_BCM1125H" BCM1250
       unset CONFIG_SIBYTE_BOARD
    else
       define_bool CONFIG_SIBYTE_BOARD y
