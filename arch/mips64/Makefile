@@ -26,6 +26,9 @@ ifdef CONFIG_CROSSCOMPILE
 CROSS_COMPILE	= $(tool-prefix)
 endif
 
+check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
+check_gas = $(shell if $(CC) $(1) -Wa,-Z -c -o /dev/null -xassembler /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
+
 #
 # The ELF GCC uses -G 0 -mabicalls -fpic as default.  We don't need PIC
 # code in the kernel since it only slows down the whole thing.  For the
@@ -48,8 +51,6 @@ ifdef CONFIG_SB1XXX_CORELIS
 GCCFLAGS	+= -mno-sched-prolog -fno-omit-frame-pointer
 endif
 endif
-
-check_gas = $(shell if $(CC) $(1) -Wa,-Z -c -o /dev/null -xassembler /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
 
 #
 # Use: $(call set_gccflags,<cpu0>,<isa0>,<cpu1>,<isa1>)
@@ -372,8 +373,6 @@ CORE_FILES := arch/mips64/kernel/kernel.o arch/mips64/mm/mm.o $(CORE_FILES)
 LIBS := arch/mips64/lib/lib.a $(LIBS)
 
 MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
-
-check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
 
 vmlinux: arch/mips64/ld.script.elf32
 arch/mips64/ld.script.elf32: arch/mips64/ld.script.elf32.S
