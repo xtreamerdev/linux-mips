@@ -250,7 +250,8 @@ static void __exit au1000_pcmcia_driver_shutdown(void)
 	flush_scheduled_tasks();
 	for(i=0; i < socket_count; i++) {
 		if (pcmcia_socket[i].virt_io) 
-			iounmap((void *)pcmcia_socket[i].virt_io);
+			iounmap((void *)pcmcia_socket[i].virt_io + 
+					mips_io_port_base);
 	}
 	DEBUG(1, "au1000: shutdown complete\n");
 }
