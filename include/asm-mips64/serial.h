@@ -20,8 +20,6 @@
  */
 #define BASE_BAUD (1843200 / 16)
 
-#ifdef CONFIG_HAVE_STD_PC_SERIAL_PORT
-
 /* Standard COM flags (except for COM4, because of the 8514 problem) */
 #ifdef CONFIG_SERIAL_DETECT_IRQ
 #define STD_COM_FLAGS (ASYNC_BOOT_AUTOCONF | ASYNC_SKIP_TEST | ASYNC_AUTO_IRQ)
@@ -30,6 +28,8 @@
 #define STD_COM_FLAGS (ASYNC_BOOT_AUTOCONF | ASYNC_SKIP_TEST)
 #define STD_COM4_FLAGS ASYNC_BOOT_AUTOCONF
 #endif
+
+#ifdef CONFIG_HAVE_STD_PC_SERIAL_PORT
 
 #define STD_SERIAL_PORT_DEFNS			\
 	/* UART CLK   PORT IRQ     FLAGS        */			\
