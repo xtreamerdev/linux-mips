@@ -666,6 +666,7 @@ CONFIG_CROSSCOMPILE=y
 # CONFIG_RUNTIME_DEBUG is not set
 # CONFIG_KGDB is not set
 # CONFIG_GDB_CONSOLE is not set
+# CONFIG_DEBUG_INFO is not set
 # CONFIG_MAGIC_SYSRQ is not set
 # CONFIG_MIPS_UNCACHED is not set
 
