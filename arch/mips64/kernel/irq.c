@@ -14,6 +14,8 @@
 #include <linux/sched.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>
+#include <linux/kernel_stat.h>
+#include <linux/proc_fs.h>
 
 #include <asm/atomic.h>
 #include <asm/system.h>
