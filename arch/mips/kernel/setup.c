@@ -1003,7 +1003,7 @@ void __init setup_arch(char **cmdline_p)
 		if (end_pfn < max_low_pfn) {
 			res->end = res->start + boot_mem_map.map[i].size - 1;
 		} else {
-			res->end = max_low_pfn;
+			res->end = max_low_pfn - 1;
 		}
 		res->flags = IORESOURCE_MEM | IORESOURCE_BUSY;
 		request_resource(&iomem_resource, res);
