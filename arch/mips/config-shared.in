@@ -32,7 +32,11 @@ dep_bool 'Support for Alchemy PB1500 board' CONFIG_MIPS_PB1500 $CONFIG_MIPS32
 dep_bool 'Support for BAGET MIPS series (EXPERIMENTAL)' CONFIG_BAGET_MIPS $CONFIG_MIPS32 $CONFIG_EXPERIMENTAL
 bool 'Support for CASIO CASSIOPEIA E-10/15/55/65' CONFIG_CASIO_E55
 dep_bool 'Support for Cobalt Server (EXPERIMENTAL)' CONFIG_MIPS_COBALT $CONFIG_EXPERIMENTAL
-dep_bool 'Support for DECstations' CONFIG_DECSTATION $CONFIG_MIPS32
+if [ "$CONFIG_MIPS32" = "y" ]; then
+   bool 'Support for DECstations' CONFIG_DECSTATION
+else
+   dep_bool 'Support for DECstations (EXPERIMENTAL)' CONFIG_DECSTATION $CONFIG_EXPERIMENTAL
+fi
 dep_bool 'Support for Galileo EV64120 Evaluation board (EXPERIMENTAL)' CONFIG_MIPS_EV64120 $CONFIG_EXPERIMENTAL
 if [ "$CONFIG_MIPS_EV64120" = "y" ]; then
    bool '  Enable Second PCI (PCI1)' CONFIG_EVB_PCI1
@@ -227,7 +231,9 @@ if [ "$CONFIG_MIPS_COBALT" = "y" ]; then
    define_bool CONFIG_NONCOHERENT_IO y
 fi
 if [ "$CONFIG_DECSTATION" = "y" ]; then
+   define_bool CONFIG_BOOT_ELF32 y
    define_bool CONFIG_IRQ_CPU y
+   define_int CONFIG_L1_CACHE_SHIFT 4
    define_bool CONFIG_NONCOHERENT_IO y
 fi
 if [ "$CONFIG_MIPS_EV64120" = "y" ]; then
@@ -426,6 +432,7 @@ if [ "$CONFIG_SGI_IP27" = "y" ]; then
    define_bool CONFIG_ARC64 y
    define_int CONFIG_L1_CACHE_SHIFT 7
    #define_bool CONFIG_MAPPED_PCI_IO y
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PCI y
    define_bool CONFIG_QL_ISP_A64 y
 fi
@@ -437,6 +444,7 @@ if [ "$CONFIG_SGI_IP32" = "y" ]; then
    define_bool CONFIG_R5000_CPU_SCACHE y
    define_bool CONFIG_BOOT_ELF32 y
    define_int CONFIG_L1_CACHE_SHIFT 5
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_PCI y

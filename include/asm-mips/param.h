@@ -24,7 +24,7 @@
     * This works only if 100 / HZ <= 1
     */
 #  define QUOTIENT ((1UL << (32 - LOG_2_HZ)) * 100)
-#  define hz_to_std(a)			    	\
+#  define hz_to_std(a)				\
    ({ unsigned long __res;			\
       unsigned long __lo;			\
 	__asm__("multu\t%2,%3\n\t"		\

@@ -107,7 +107,7 @@ if [ "$CONFIG_SERIAL_NONSTANDARD" = "y" ]; then
    if [ "$CONFIG_DECSTATION" = "y" ]; then
       bool '  DECstation serial support' CONFIG_SERIAL_DEC
       dep_bool '    Support for console on a DECstation serial port' CONFIG_SERIAL_DEC_CONSOLE $CONFIG_SERIAL_DEC
-      dep_bool '    DZ11 serial support' CONFIG_DZ $CONFIG_SERIAL_DEC
+      dep_bool '    DZ11 serial support' CONFIG_DZ $CONFIG_SERIAL_DEC $CONFIG_MIPS32
       dep_bool '    Z85C30 serial support' CONFIG_ZS $CONFIG_SERIAL_DEC $CONFIG_TC
    fi
 fi
