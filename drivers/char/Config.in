@@ -165,7 +165,6 @@ if [ "$CONFIG_MIPS_IVR" = "y" ]; then
    fi
    bool 'Enable Smart Card Reader 0 Support ' CONFIG_IT8172_SCR0
 fi
-dep_tristate 'Hydrogen 3 Au1100 buttons support' CONFIG_MIPS_HYDROGEN3_BUTTONS $CONFIG_MIPS_HYDROGEN3
 if [ "$CONFIG_CPU_VR41XX" = "y" ]; then
    bool 'NEC VR4100 series Keyboard Interface Unit Support ' CONFIG_VR41XX_KIU
 fi

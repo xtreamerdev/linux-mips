@@ -14,7 +14,7 @@ USE_STANDARD_AS_RULE := true
 
 O_TARGET := hydrogen3.o
 
-obj-y := init.o board_setup.o irqmap.o
+obj-y := init.o board_setup.o irqmap.o buttons.o
 
 ifdef CONFIG_MMC
 obj-y += mmc_support.o
