@@ -1,4 +1,4 @@
-/* $Id: traps.c,v 1.20 1999/06/13 16:30:34 ralf Exp $
+/* $Id: traps.c,v 1.20.2.1 1999/06/23 22:28:29 ralf Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
@@ -540,10 +540,10 @@ __initfunc(void trap_init(void))
 
 		if (vce_available) {
 			memcpy((void *)(KSEG0 + 0x180), &except_vec3_r4000,
-			       0x180);
+			       0x80);
 		} else {
 			memcpy((void *)(KSEG0 + 0x180), &except_vec3_generic,
-			       0x100);
+			       0x80);
 		}
 
 		save_fp_context = r4k_save_fp_context;
