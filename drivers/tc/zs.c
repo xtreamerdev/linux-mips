@@ -5,8 +5,8 @@
  * Derived from drivers/macintosh/macserial.c by Harald Koerfgen.
  *
  * DECstation changes
- * Copyright (C) 1998-2002 Harald Koerfgen
- * Copyright (C) 2000,2001 Maciej W. Rozycki <macro@ds2.pg.gda.pl>
+ * Copyright (C) 1998-2000 Harald Koerfgen
+ * Copyright (C) 2000, 2001, 2002  Maciej W. Rozycki <macro@ds2.pg.gda.pl>
  *
  * For the rest of the code the original Copyright applies:
  * Copyright (C) 1996 Paul Mackerras (Paul.Mackerras@cs.anu.edu.au)
@@ -409,7 +409,7 @@ static _INLINE_ void receive_chars(struct dec_serial *info,
 		stat = read_zsreg(info->zs_channel, R1);
 		ch = read_zsdata(info->zs_channel);
 
-		if (!tty && !info->hook && !info->hook->rx_char)
+		if (!tty && (!info->hook || !info->hook->rx_char))
 			continue;
 
 		if (tty_break) {
@@ -524,9 +524,9 @@ static _INLINE_ void status_handle(struct dec_serial *info)
 
 	if (info->zs_channel != info->zs_chan_a) {
 
-		/* FIXEM: Check for DCD transitions */
-		if (((stat ^ info->read_reg_zero) & DCD) != 0
-		    && info->tty && !C_CLOCAL(info->tty)) {
+		/* Check for DCD transitions */
+		if (info->tty && !C_CLOCAL(info->tty) &&
+		    ((stat ^ info->read_reg_zero) & DCD) != 0 ) {
 			if (stat & DCD) {
 				wake_up_interruptible(&info->open_wait);
 			} else if (!(info->flags & ZILOG_CALLOUT_ACTIVE)) {
@@ -1721,7 +1721,7 @@ int rs_open(struct tty_struct *tty, struct file * filp)
 
 static void __init show_serial_version(void)
 {
-	printk("DECstation Z8530 serial driver version 0.06\n");
+	printk("DECstation Z8530 serial driver version 0.07\n");
 }
 
 /*  Initialize Z8530s zs_channels
@@ -1934,34 +1934,30 @@ int __init zs_init(void)
 	save_flags(flags); cli();
 
 	for (channel = 0; channel < zs_channels_found; ++channel) {
-		if (zs_soft[channel].hook &&
-		    zs_soft[channel].hook->init_channel)
-			(*zs_soft[channel].hook->init_channel)
-				(&zs_soft[channel]);
-
-		zs_soft[channel].clk_divisor = 16;
-		zs_soft[channel].zs_baud = get_zsbaud(&zs_soft[channel]);
-
 		if (request_irq(zs_parms->irq, rs_interrupt, SA_SHIRQ,
 				"SCC", &zs_soft[channel]))
 			printk(KERN_ERR "decserial: can't get irq %d\n",
 			       zs_parms->irq);
+
+		zs_soft[channel].clk_divisor = 16;
+		zs_soft[channel].zs_baud = get_zsbaud(&zs_soft[channel]);
 	}
 
-	for (info = zs_chain, i = 0; info; info = info->zs_next, i++)
-	{
-		if (info->hook && info->hook->init_info) {
-			(*info->hook->init_info)(info);
+	for (info = zs_chain, i = 0; info; info = info->zs_next, i++) {
+
+		/* Needed before interrupts are enabled. */
+		info->tty = 0;
+		info->x_char = 0;
+
+		if (info->hook && info->hook->init_info)
 			continue;
-		}
+
 		info->magic = SERIAL_MAGIC;
 		info->port = (int) info->zs_channel->control;
 		info->line = i;
-		info->tty = 0;
 		info->custom_divisor = 16;
 		info->close_delay = 50;
 		info->closing_wait = 3000;
-		info->x_char = 0;
 		info->event = 0;
 		info->count = 0;
 		info->blocked_open = 0;
@@ -1982,6 +1978,18 @@ int __init zs_init(void)
 	}
 
 	restore_flags(flags);
+
+	for (channel = 0; channel < zs_channels_found; ++channel) {
+		if (zs_soft[channel].hook &&
+		    zs_soft[channel].hook->init_channel)
+			(*zs_soft[channel].hook->init_channel)
+				(&zs_soft[channel]);
+	}
+
+	for (info = zs_chain, i = 0; info; info = info->zs_next, i++) {
+		if (info->hook && info->hook->init_info)
+			(*info->hook->init_info)(info);
+	}
 
 	return 0;
 }
@@ -2013,21 +2021,13 @@ zs_poll_tx_char(struct dec_serial *info, unsigned char ch)
 	if(chan) {
 		int loops = 10000;
 
- 		RECOVERY_DELAY;
-               	wbflush();
-		RECOVERY_DELAY;
-
-		while (loops && !(*(chan->control) & Tx_BUF_EMP)) {
+		while (loops && !(read_zsreg(chan, 0) & Tx_BUF_EMP))
 			loops--;
-	        	RECOVERY_DELAY;
-		}
 
 		if (loops) {
-			*(chan->data) = ch;
-			wbflush();
-			RECOVERY_DELAY;
+			write_zsdata(chan, ch);
 			ret = 0;
-                } else
+		} else
 			ret = -EAGAIN;
 
 		return ret;
@@ -2044,9 +2044,8 @@ zs_poll_rx_char(struct dec_serial *info)
 	if(chan) {
                 int loops = 10000;
 
-                while(loops && ((read_zsreg(chan, 0) & Rx_CH_AV) == 0)) {
+		while (loops && !(read_zsreg(chan, 0) & Rx_CH_AV))
 			loops--;
-		}
 
                 if (loops)
                         ret = read_zsdata(chan);
@@ -2054,8 +2053,8 @@ zs_poll_rx_char(struct dec_serial *info)
                         ret = -EAGAIN;
 
 		return ret;
-        } else
-                return -ENODEV;
+	} else
+		return -ENODEV;
 }
 
 unsigned int register_zs_hook(unsigned int channel, struct zs_hook *hook)
