@@ -367,7 +367,7 @@ struct linux_smonblock {
 
 #ifdef CONFIG_ARC32
 #define __arc_clobbers							\
-	"$2","$3","$4","$5","$6","$7","$8","$9","$10","$11",		\
+	"$2","$3", /* ... */, "$8","$9","$10","$11",			\
 	"$12","$13","$14","$15","$16","$24","25","$31"
 
 #define ARC_CALL0(dest)							\
@@ -380,7 +380,7 @@ struct linux_smonblock {
 	"move\t%0, $2"							\
 	: "=r" (__res), "=r" (__vec)					\
 	: "1" (__vec)							\
-	: __arc_clobbers);						\
+	: __arc_clobbers, "$4","$5","$6","$7");				\
 	(unsigned long) __res;						\
 })
 
@@ -395,7 +395,7 @@ struct linux_smonblock {
 	"move\t%0, $2"							\
 	: "=r" (__res), "=r" (__vec)					\
 	: "1" (__vec), "r" (__a1)					\
-	: __arc_clobbers);						\
+	: __arc_clobbers, "$5","$6","$7");				\
 	(unsigned long) __res;						\
 })
 
@@ -411,7 +411,7 @@ struct linux_smonblock {
 	"move\t%0, $2"							\
 	: "=r" (__res), "=r" (__vec)					\
 	: "1" (__vec), "r" (__a1), "r" (__a2)				\
-	: __arc_clobbers);						\
+	: __arc_clobbers, "$6","$7");					\
 	__res;								\
 })
 
@@ -428,7 +428,7 @@ struct linux_smonblock {
 	"move\t%0, $2"							\
 	: "=r" (__res), "=r" (__vec)					\
 	: "1" (__vec), "r" (__a1), "r" (__a2), "r" (__a3)		\
-	: __arc_clobbers);						\
+	: __arc_clobbers, "$7");					\
 	__res;								\
 })
 
