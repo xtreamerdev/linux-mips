@@ -1,0 +1,6 @@
+.depend
+.*.flags
+rom
+rom.bin
+rom.sw
+kImage.bin

@@ -329,6 +329,11 @@ LIBS		+= arch/mips/ddb5xxx/common/ddb5xxx.o \
 LOADADDR	:= 0x80100000
 endif
 
+ifdef CONFIG_LASAT
+LIBS          += arch/mips/lasat/lasatkern.o
+SUBDIRS       += arch/mips/lasat
+LOADADDR      += 0x80000000
+endif
 #
 # NEC Osprey (vr4181) board
 #
@@ -500,6 +505,11 @@ gboot: vmlinux
 	$(MAKE) -C arch/$(ARCH)/galileo-boards/ev64120/compressed
 endif
 
+ifdef CONFIG_LASAT
+rom.bin rom.sw: vmlinux
+	$(MAKE) -C arch/$(ARCH)/lasat/image $@
+endif
+
 MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
 
 vmlinux.ecoff: vmlinux
@@ -510,6 +520,7 @@ archclean:
 	rm -f arch/$(ARCH)/ld.script
 	$(MAKE) -C arch/$(ARCH)/tools clean
 	$(MAKE) -C arch/mips/baget clean
+	$(MAKE) -C arch/mips/lasat clean
 
 archmrproper:
 	@$(MAKEBOOT) mrproper
