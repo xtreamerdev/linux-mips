@@ -461,7 +461,7 @@
 #define __NR_lremovexattr		(__NR_Linux + 190)
 #define __NR_fremovexattr		(__NR_Linux + 191)
 #define __NR_tkill			(__NR_Linux + 192)
-#define __NR_time			(__NR_Linux + 193)
+#define __NR_unused193			(__NR_Linux + 193)
 #define __NR_futex			(__NR_Linux + 194)
 #define __NR_sched_setaffinity		(__NR_Linux + 195)
 #define __NR_sched_getaffinity		(__NR_Linux + 196)
