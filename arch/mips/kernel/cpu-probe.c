@@ -220,8 +220,11 @@ static inline void cpu_probe_legacy(struct cpuinfo_mips *c)
 			else
 				c->cputype = CPU_VR4181A;
 			break;
-		case PRID_REV_VR4131:
-			c->cputype = CPU_VR4131;
+		case PRID_REV_VR4130:
+			if ((c->processor_id & 0xf) < 0x4)
+				c->cputype = CPU_VR4131;
+			else
+				c->cputype = CPU_VR4133;
 			break;
 		default:
 			printk(KERN_INFO "Unexpected CPU of NEC VR4100 series\n");
