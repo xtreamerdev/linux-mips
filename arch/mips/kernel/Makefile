@@ -12,7 +12,7 @@ all:	kernel.o head.o init_task.o
 
 O_TARGET := kernel.o
 
-export-objs	= irq.o mips_ksyms.o pci-dma.o setup.o smp.o
+export-objs	= irq.o mips_ksyms.o pci-dma.o setup.o semaphore.o smp.o
 
 obj-y		+= branch.o cpu-probe.o irq.o process.o signal.o entry.o \
 		   traps.o ptrace.o reset.o semaphore.o setup.o syscall.o \

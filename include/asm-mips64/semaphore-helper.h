@@ -16,13 +16,6 @@
 #define sem_read(a) ((a)->counter)
 #define sem_inc(a) (((a)->counter)++)
 #define sem_dec(a) (((a)->counter)--)
-/*
- * These two _must_ execute atomically wrt each other.
- */
-static inline void wake_one_more(struct semaphore * sem)
-{
-	atomic_inc(&sem->waking);
-}
 
 #ifdef CONFIG_CPU_HAS_LLSC
 

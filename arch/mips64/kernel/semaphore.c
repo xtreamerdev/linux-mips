@@ -2,7 +2,7 @@
  *  Generic semaphore code. Buyer beware. Do your own
  * specific changes in <asm/semaphore-helper.h>
  */
-
+#include <linux/module.h>
 #include <linux/sched.h>
 #include <asm/semaphore-helper.h>
 
@@ -36,11 +36,12 @@
  * critical part is the inline stuff in <asm/semaphore.h>
  * where we want to avoid any extra jumps and calls.
  */
-void __up(struct semaphore *sem)
+void __up_wakeup(struct semaphore *sem)
 {
-	wake_one_more(sem);
 	wake_up(&sem->wait);
 }
+
+EXPORT_SYMBOL(__up_wakeup);
 
 /*
  * Perform the "down" function.  Return zero for semaphore acquired,
