@@ -18,34 +18,28 @@ EXPORT_SYMBOL(semaphore_lock);
 #endif
 
 /*
- * Semaphores are implemented using a two-way counter:
- * The "count" variable is decremented for each process
- * that tries to sleep, while the "waking" variable is
- * incremented when the "up()" code goes to wake up waiting
- * processes.
+ * Semaphores are implemented using a two-way counter: The "count" variable is
+ * decremented for each process that tries to sleep, while the "waking" variable
+ * is incremented when the "up()" code goes to wake up waiting processes.
  *
- * Notably, the inline "up()" and "down()" functions can
- * efficiently test if they need to do any extra work (up
- * needs to do something only if count was negative before
- * the increment operation.
+ * Notably, the inline "up()" and "down()" functions can efficiently test if
+ * they need to do any extra work (up needs to do something only if count was
+ * negative before the increment operation.
  *
- * waking_non_zero() (from asm/semaphore.h) must execute
- * atomically.
+ * waking_non_zero() (from asm/semaphore-helper.h) must execute atomically.
  *
- * When __up() is called, the count was negative before
- * incrementing it, and we need to wake up somebody.
+ * When __up() is called, the count was negative before incrementing it, and we
+ * need to wake up somebody.
  *
- * This routine adds one to the count of processes that need to
- * wake up and exit.  ALL waiting processes actually wake up but
- * only the one that gets to the "waking" field first will gate
- * through and acquire the semaphore.  The others will go back
- * to sleep.
+ * This routine adds one to the count of processes that need to wake up and
+ * exit.  ALL waiting processes actually wake up but only the one that gets to
+ * the "waking" field first will gate through and acquire the semaphore.  The
+ * others will go back to sleep.
  *
- * Note that these functions are only called when there is
- * contention on the lock, and as such all this is the
- * "non-critical" part of the whole semaphore business. The
- * critical part is the inline stuff in <asm/semaphore.h>
- * where we want to avoid any extra jumps and calls.
+ * Note that these functions are only called when there is contention on the
+ * lock, and as such all this is the "non-critical" part of the whole semaphore
+ * business. The critical part is the inline stuff in <asm/semaphore.h> where
+ * we want to avoid any extra jumps and calls.
  */
 void __up_wakeup(struct semaphore *sem)
 {
@@ -55,21 +49,18 @@ void __up_wakeup(struct semaphore *sem)
 EXPORT_SYMBOL(__up_wakeup);
 
 /*
- * Perform the "down" function.  Return zero for semaphore acquired,
- * return negative for signalled out of the function.
+ * Perform the "down" function.  Return zero for semaphore acquired, return
+ * negative for signalled out of the function.
  *
- * If called from __down, the return is ignored and the wait loop is
- * not interruptible.  This means that a task waiting on a semaphore
- * using "down()" cannot be killed until someone does an "up()" on
- * the semaphore.
+ * If called from down, the return is ignored and the wait loop is not
+ * interruptible.  This means that a task waiting on a semaphore using "down()"
+ * cannot be killed until someone does an "up()" on the semaphore.
  *
- * If called from __down_interruptible, the return value gets checked
- * upon return.  If the return value is negative then the task continues
- * with the negative value in the return register (it can be tested by
- * the caller).
+ * If called from down_interruptible, the return value gets checked upon return.
+ * If the return value is negative then the task continues with the negative
+ * value in the return register (it can be tested by the caller).
  *
  * Either form may be used in conjunction with "up()".
- *
  */
 
 void __down(struct semaphore * sem)
