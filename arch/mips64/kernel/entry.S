@@ -22,7 +22,7 @@
 FEXPORT(ret_from_fork)
 		move	a0, v0			# prev
 		jal	schedule_tail
-		lw	t0, TASK_PTRACE($28)	# syscall tracing enabled?
+		ld	t0, TASK_PTRACE($28)	# syscall tracing enabled?
 		andi	t0, _PT_TRACESYS
 		bnez	t0, tracesys_exit
 		j	ret_from_sys_call
