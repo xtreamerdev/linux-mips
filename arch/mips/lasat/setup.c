@@ -134,13 +134,11 @@ void __init lasat_setup(void)
 
 	lasat_reboot_setup();
 
-#ifdef CONFIG_NEW_TIME_C
 	board_time_init = lasat_time_init;
 	board_timer_setup = lasat_timer_setup;
 #ifdef CONFIG_DS1603
 	rtc_get_time = ds1603_read;
 	rtc_set_time = ds1603_set;
-#endif
 #endif
 
 	/* Switch from prom exception handler to normal mode */
