@@ -1052,6 +1052,7 @@ asmlinkage long sys_newuname(struct new_utsname * name)
 asmlinkage long sys_sethostname(char *name, int len)
 {
 	int errno;
+	char tmp[__NEW_UTS_LEN];
 
 	if (!capable(CAP_SYS_ADMIN))
 		return -EPERM;
@@ -1059,7 +1060,8 @@ asmlinkage long sys_sethostname(char *name, int len)
 		return -EINVAL;
 	down_write(&uts_sem);
 	errno = -EFAULT;
-	if (!copy_from_user(system_utsname.nodename, name, len)) {
+	if (!copy_from_user(tmp, name, len)) {
+		memcpy(system_utsname.nodename, tmp, len);
 		system_utsname.nodename[len] = 0;
 		errno = 0;
 	}
@@ -1091,6 +1093,7 @@ asmlinkage long sys_gethostname(char *name, int len)
 asmlinkage long sys_setdomainname(char *name, int len)
 {
 	int errno;
+	char tmp[__NEW_UTS_LEN];
 
 	if (!capable(CAP_SYS_ADMIN))
 		return -EPERM;
@@ -1099,9 +1102,10 @@ asmlinkage long sys_setdomainname(char *name, int len)
 
 	down_write(&uts_sem);
 	errno = -EFAULT;
-	if (!copy_from_user(system_utsname.domainname, name, len)) {
-		errno = 0;
+	if (!copy_from_user(tmp, name, len)) {
+		memcpy(system_utsname.domainname, tmp, len);
 		system_utsname.domainname[len] = 0;
+		errno = 0;
 	}
 	up_write(&uts_sem);
 	return errno;
@@ -1146,6 +1150,8 @@ asmlinkage long sys_setrlimit(unsigned int resource, struct rlimit *rlim)
 		return -EINVAL;
 	if(copy_from_user(&new_rlim, rlim, sizeof(*rlim)))
 		return -EFAULT;
+       if (new_rlim.rlim_cur > new_rlim.rlim_max)
+               return -EINVAL;
 	old_rlim = current->rlim + resource;
 	if (((new_rlim.rlim_cur > old_rlim->rlim_max) ||
 	     (new_rlim.rlim_max > old_rlim->rlim_max)) &&

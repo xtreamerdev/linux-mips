@@ -341,6 +341,18 @@ running once the system is up.
 			memory; to be used when the kernel is not able
 			to see the whole system memory or for test.
 
+	mem=nn[KMG]@ss[KMG]
+			[KNL,BOOT] Force usage of a specific region of memory
+			Region of memory to be used, from ss to ss+nn.
+
+	mem=nn[KMG]#ss[KMG]
+			[KNL,BOOT,ACPI] Mark specific memory as ACPI data.
+			Region of memory to be used, from ss to ss+nn.
+
+	mem=nn[KMG]$ss[KMG]
+			[KNL,BOOT,ACPI] Mark specific memory as reserved.
+			Region of memory to be used, from ss to ss+nn.
+
 	memfrac=	[KNL]
 
 	mga=		[HW,DRM]
@@ -491,7 +503,7 @@ running once the system is up.
 	plip=		[PPT,NET] Parallel port network link.
 
 	profile=	[KNL] enable kernel profiling via /proc/profile
-			(param:log level).
+			(param: profile step/bucket size as a power of 2)
 
 	prompt_ramdisk=	[RAM] List of RAM disks to prompt for floppy disk
 			before loading.

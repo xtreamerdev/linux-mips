@@ -384,7 +384,7 @@ Your cooperation is appreciated.
 		180 = /dev/vrbuttons	Vr41xx button input device
 		181 = /dev/toshiba	Toshiba laptop SMM support
 		182 = /dev/perfctr	Performance-monitoring counters
-		183 = /dev/intel_rng	Intel i8x0 random number generator
+		183 = /dev/hwrandom	Hardware random number generator (RNG)
 		184 = /dev/cpu/microcode CPU microcode update interface
 		186 = /dev/atomicps	Atomic shapshot of process state data
 		187 = /dev/irnet	IrNET device
@@ -2531,15 +2531,15 @@ Your cooperation is appreciated.
 		  1 = /dev/dri/card1		Second graphics card
 		    ...
 
-227 char	IBM 3270 terminal block-mode access
+227 char	IBM 3270 terminal Unix tty access
+		  1 = /dev/3270/tty1		First 3270 terminal
+		  2 = /dev/3270/tty2		Seconds 3270 terminal
+		    ...
+
+228 char	IBM 3270 terminal block-mode access
 		  0 = /dev/3270/tub		Controlling interface
 		  1 = /dev/3270/tub1		First 3270 terminal
 		  2 = /dev/3270/tub2		Second 3270 terminal
-		    ...
-
-228 char	IBM 3270 terminal Unix tty access
-		  1 = /dev/3270/tty1		First 3270 terminal
-		  2 = /dev/3270/tty2		Seconds 3270 terminal
 		    ...
 
 229 char	IBM iSeries virtual console

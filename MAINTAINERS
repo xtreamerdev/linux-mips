@@ -206,6 +206,21 @@ M:	Juergen Fischer <fischer@norbit.de>
 L:	linux-scsi@vger.kernel.org
 S:	Maintained
 
+ALCATEL SPEEDTOUCH USB DRIVER
+P:	Duncan Sands
+M:	duncan.sands@wanadoo.fr
+L:	linux-usb-users@lists.sourceforge.net
+L:	linux-usb-devel@lists.sourceforge.net
+W:	http://www.linux-usb.org/SpeedTouch/
+S:	Maintained
+
+AIPTEK USB TABLET DRIVER
+P:	Bryan W. Headley
+M:	Bryan W. Headley <bwheadley@earthlink.net>
+W:	http://aiptektablet.sourceforge.net
+L:	aiptektablet-users@sourceforge.net
+S:	Maintained
+
 ALTERA EPXA1/EPXA10 DEVELOPMENT BOARD PORT
 P:	Clive Davies
 M:	cdavies@altera.com
@@ -302,16 +317,76 @@ M:	axboe@suse.de
 L:	linux-kernel@vger.kernel.org
 S:	Maintained
 
-BLUETOOTH SUBSYSTEM (BlueZ)
+BLUETOOTH SUBSYSTEM
 P:	Maxim Krasnyansky
 M:	maxk@qualcomm.com
 W:	http://bluez.sf.net
 S:	Maintained
 
-BLUETOOTH SUBSYSTEM (PC Card Drivers)
+BLUETOOTH RFCOMM LAYER
+P:	Maxim Krasnyansky
+M:	maxk@qualcomm.com
+W:	http://bluez.sf.net
+S:	Maintained
+
+BLUETOOTH BNEP LAYER
+P:	Maxim Krasnyansky
+M:	maxk@qualcomm.com
+W:	http://bluez.sf.net
+S:	Maintained
+
+BLUETOOTH CMTP LAYER
 P:	Marcel Holtmann
 M:	marcel@holtmann.org
 W:	http://www.holtmann.org/linux/bluetooth/
+S:	Maintained
+
+BLUETOOTH HCI USB DRIVER
+P:	Maxim Krasnyansky
+M:	maxk@qualcomm.com
+W:	http://bluez.sf.net
+S:	Maintained
+
+BLUETOOTH HCI UART DRIVER
+P:	Maxim Krasnyansky
+M:	maxk@qualcomm.com
+W:	http://bluez.sf.net
+S:	Maintained
+
+BLUETOOTH HCI BFUSB DRIVER
+P:	Marcel Holtmann
+M:	marcel@holtmann.org
+W:	http://www.holtmann.org/linux/bluetooth/
+S:	Maintained
+
+BLUETOOTH HCI DTL1 DRIVER
+P:	Marcel Holtmann
+M:	marcel@holtmann.org
+W:	http://www.holtmann.org/linux/bluetooth/
+S:	Maintained
+
+BLUETOOTH HCI BLUECARD DRIVER
+P:	Marcel Holtmann
+M:	marcel@holtmann.org
+W:	http://www.holtmann.org/linux/bluetooth/
+S:	Maintained
+
+BLUETOOTH HCI BT3C DRIVER
+P:	Marcel Holtmann
+M:	marcel@holtmann.org
+W:	http://www.holtmann.org/linux/bluetooth/
+S:	Maintained
+
+BLUETOOTH HCI BTUART DRIVER
+P:	Marcel Holtmann
+M:	marcel@holtmann.org
+W:	http://www.holtmann.org/linux/bluetooth/
+S:	Maintained
+
+BLUETOOTH HCI VHCI DRIVER
+P:	Maxim Krasnyansky
+M:	maxk@qualcomm.com
+W:	http://bluez.sf.net
 S:	Maintained
 
 BONDING DRIVER
@@ -381,8 +456,8 @@ L:     linux-computone@lazuli.wittsend.com
 S:     Supported
 
 COMX/MULTIGATE SYNC SERIAL DRIVERS
-P:	Gergely Madarasz
-M:	Gergely Madarasz <gorgo@itc.hu>
+P:	Pasztor Szilard
+M:	Pasztor Szilard <don@itc.hu>
 S:	Supported
 
 CONFIGURE, MENUCONFIG, XCONFIG
@@ -428,6 +503,15 @@ P:	Bjorn Wesen
 M:	bjornw@axis.com
 L:	dev-etrax@axis.com
 W:	http://developer.axis.com
+S:	Maintained
+
+CRYPTO API
+P:	James Morris
+M:	jmorris@intercode.com.au
+P:	David S. Miller
+M:	davem@redhat.com
+W	http://samba.org/~jamesm/crypto/
+L:	linux-kernel@vger.kernel.org
 S:	Maintained
 
 CYBERPRO FB DRIVER
@@ -825,7 +909,7 @@ S:	Maintained
 
 IMS TWINTURBO FRAMEBUFFER DRIVER
 P:	Paul Mundt
-M:	lethal@chaoticdreams.org
+M:	lethal@linux-sh.org
 L:	linux-fbdev-devel@lists.sourceforge.net
 S:	Maintained
 
@@ -1183,6 +1267,8 @@ P:	Pekka Savola (ipv6)
 M:	pekkas@netcore.fi
 P:	James Morris
 M:	jmorris@intercode.com.au
+P:	Hideaki YOSHIFUJI
+M:	yoshfuji@linux-ipv6.org
 L:	netdev@oss.sgi.com
 S:	Maintained
 
@@ -1364,9 +1450,9 @@ POWERVR2 FRAMEBUFFER DRIVER
 P:	M. R. Brown
 M:	mrbrown@0xd6.org
 P:	Paul Mundt
-M:	lethal@0xd6.org
+M:	lethal@linux-sh.org
 L:	linux-fbdev-devel@lists.sourceforge.net
-W:	http://www.linuxdc.org
+L:	linuxsh-dev@lists.sourceforge.net
 S:	Maintained
 
 PPP PROTOCOL DRIVERS AND COMPRESSORS
@@ -1400,13 +1486,13 @@ S:	Maintained
 
 RADEON FRAMEBUFFER DISPLAY DRIVER
 P:	Ani Joshi
-M:	ajoshi@shell.unixbox.com
+M:	ajoshi@kernel.crashing.org
 L:      linux-fbdev-devel@lists.sourceforge.net
 S:      Maintained
 
 RAGE128 FRAMEBUFFER DISPLAY DRIVER
 P:	Ani Joshi
-M:	ajoshi@shell.unixbox.com
+M:	ajoshi@kernel.crashing.org
 L:	linux-fbdev-devel@lists.sourceforge.net
 S:	Maintained
 
@@ -1631,19 +1717,35 @@ W:	http://mpeg.openprojects.net/
 W:	http://www.stradis.com/
 S:	Maintained
 
-SUPERH
+SUPERH (sh)
+P:	Paul Mundt
+M:	lethal@linux-sh.org
 P:	Niibe Yutaka
 M:	gniibe@m17n.org
 P:	Kazumoto Kojima
 M:	kkojima@rr.iij4u.or.jp
+L:	linuxsh-dev@lists.sourceforge.net
 L:	linux-sh@m17n.org
+W:	http://www.linux-sh.org
 W:	http://www.m17n.org/linux-sh/
 W:	http://www.rr.iij4u.or.jp/~kkojima/linux-sh4.html
 S:	Maintained
 
+SUPERH64 (sh64)
+P:	Paul Mundt
+M:	lethal@linux-sh.org
+P:	Richard Curnow
+M:	richard.curnow@superh.com
+P:	Benedict Gaster
+M:	benedict.gaster@superh.com
+L:	linuxsh-shmedia-dev@lists.sourceforge.net
+W:	http://www.linux-sh.org
+W:	http://linux-shmedia.bkbits.net
+S:	Maintained
+
 SUPERH WATCHDOG
 P:	Paul Mundt
-M:	lethal@0xd6.org
+M:	lethal@linux-sh.org
 L:	linuxsh-dev@lists.sourceforge.net
 W:	http://www.linuxsh.org
 S:	Maintained
@@ -1704,6 +1806,12 @@ M:	mikep@linuxtr.net
 L:	linux-net@vger.kernel.org
 L:	linux-tr@linuxtr.net
 W:	http://www.linuxtr.net
+S:	Maintained
+
+TOSHIBA ACPI EXTRAS DRIVER
+P:	John Belmonte
+M:	toshiba_acpi@memebeam.org
+W:	http://memebeam.org/toys/ToshibaAcpiDriver
 S:	Maintained
 
 TOSHIBA SMM DRIVER
@@ -1783,7 +1891,7 @@ L:	linux-usb-users@lists.sourceforge.net
 L:	linux-usb-devel@lists.sourceforge.net
 S:	Maintained
 
-USB BLUETOOTH DRIVER
+USB BLUETOOTH TTY CONVERTER DRIVER
 P:	Greg Kroah-Hartman
 M:	greg@kroah.com
 L:	linux-usb-users@lists.sourceforge.net

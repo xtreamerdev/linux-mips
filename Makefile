@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 4
-SUBLEVEL = 21
-EXTRAVERSION =
+SUBLEVEL = 22
+EXTRAVERSION = -rc2
 
 KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 
@@ -40,10 +40,13 @@ DEPMOD		= /sbin/depmod
 MODFLAGS	= -DMODULE
 CFLAGS_KERNEL	=
 PERL		= perl
+AWK		= awk
+RPM 		:= $(shell if [ -x "/usr/bin/rpmbuild" ]; then echo rpmbuild; \
+		    	else echo rpm; fi)
 
 export	VERSION PATCHLEVEL SUBLEVEL EXTRAVERSION KERNELRELEASE ARCH \
 	CONFIG_SHELL TOPDIR HPATH HOSTCC HOSTCFLAGS CROSS_COMPILE AS LD CC \
-	CPP AR NM STRIP OBJCOPY OBJDUMP MAKE MAKEFILES GENKSYMS MODFLAGS PERL
+	CPP AR NM STRIP OBJCOPY OBJDUMP MAKE MAKEFILES GENKSYMS MODFLAGS PERL AWK
 
 all:	do-it-all
 
@@ -125,7 +128,7 @@ CORE_FILES	=kernel/kernel.o mm/mm.o fs/fs.o ipc/ipc.o
 NETWORKS	=net/network.o
 
 LIBS		=$(TOPDIR)/lib/lib.a
-SUBDIRS		=kernel drivers mm fs net ipc lib
+SUBDIRS		=kernel drivers mm fs net ipc lib crypto
 
 DRIVERS-n :=
 DRIVERS-y :=
@@ -189,6 +192,7 @@ DRIVERS-$(CONFIG_GSC) += drivers/gsc/gscbus.o
 DRIVERS-$(CONFIG_BLUEZ) += drivers/bluetooth/bluetooth.o
 DRIVERS-$(CONFIG_HOTPLUG_PCI) += drivers/hotplug/vmlinux-obj.o
 DRIVERS-$(CONFIG_ISDN_BOOL) += drivers/isdn/vmlinux-obj.o
+DRIVERS-$(CONFIG_CRYPTO) += crypto/crypto.o
 
 DRIVERS := $(DRIVERS-y)
 
@@ -226,6 +230,7 @@ CLEAN_DIRS = \
 # files removed with 'make mrproper'
 MRPROPER_FILES = \
 	include/linux/autoconf.h include/linux/version.h \
+	lib/crc32table.h lib/gen_crc32table \
 	drivers/net/hamradio/soundmodem/sm_tbl_{afsk1200,afsk2666,fsk9600}.h \
 	drivers/net/hamradio/soundmodem/sm_tbl_{hapn4800,psk4800}.h \
 	drivers/net/hamradio/soundmodem/sm_tbl_{afsk2400_7,afsk2400_8}.h \
@@ -571,5 +576,5 @@ rpm:	clean spec
 	rm $(KERNELPATH) ; \
 	cd $(TOPDIR) ; \
 	. scripts/mkversion > .version ; \
-	rpm -ta $(TOPDIR)/../$(KERNELPATH).tar.gz ; \
+	$(RPM) -ta $(TOPDIR)/../$(KERNELPATH).tar.gz ; \
 	rm $(TOPDIR)/../$(KERNELPATH).tar.gz

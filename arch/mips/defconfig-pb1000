@@ -667,6 +667,7 @@ CONFIG_AU1X00_GPIO=m
 # File systems
 #
 # CONFIG_QUOTA is not set
+# CONFIG_QFMT_V2 is not set
 CONFIG_AUTOFS_FS=y
 CONFIG_AUTOFS4_FS=y
 # CONFIG_REISERFS_FS is not set
@@ -676,6 +677,7 @@ CONFIG_AUTOFS4_FS=y
 # CONFIG_ADFS_FS_RW is not set
 # CONFIG_AFFS_FS is not set
 # CONFIG_HFS_FS is not set
+# CONFIG_HFSPLUS_FS is not set
 # CONFIG_BEFS_FS is not set
 # CONFIG_BEFS_DEBUG is not set
 # CONFIG_BFS_FS is not set
@@ -726,6 +728,7 @@ CONFIG_EXT2_FS=y
 # CONFIG_INTERMEZZO_FS is not set
 CONFIG_NFS_FS=y
 # CONFIG_NFS_V3 is not set
+# CONFIG_NFS_DIRECTIO is not set
 CONFIG_ROOT_NFS=y
 # CONFIG_NFSD is not set
 # CONFIG_NFSD_V3 is not set
@@ -918,6 +921,7 @@ CONFIG_USB_HIDINPUT=y
 # CONFIG_USB_RTL8150 is not set
 # CONFIG_USB_KAWETH is not set
 # CONFIG_USB_CATC is not set
+# CONFIG_USB_AX8817X is not set
 # CONFIG_USB_CDCETHER is not set
 # CONFIG_USB_USBNET is not set
 
@@ -956,7 +960,13 @@ CONFIG_CROSSCOMPILE=y
 # CONFIG_MIPS_UNCACHED is not set
 
 #
+# Cryptographic options
+#
+# CONFIG_CRYPTO is not set
+
+#
 # Library routines
 #
+# CONFIG_CRC32 is not set
 CONFIG_ZLIB_INFLATE=y
 CONFIG_ZLIB_DEFLATE=y

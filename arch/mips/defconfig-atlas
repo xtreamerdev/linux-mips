@@ -134,7 +134,6 @@ CONFIG_BINFMT_ELF=y
 # CONFIG_MIPS32_N32 is not set
 # CONFIG_BINFMT_ELF32 is not set
 # CONFIG_BINFMT_MISC is not set
-# CONFIG_PM is not set
 
 #
 # Memory Technology Devices (MTD)
@@ -379,6 +378,7 @@ CONFIG_NET_PCI=y
 # CONFIG_AMD8111_ETH is not set
 # CONFIG_ADAPTEC_STARFIRE is not set
 # CONFIG_APRICOT is not set
+# CONFIG_B44 is not set
 # CONFIG_CS89x0 is not set
 # CONFIG_TULIP is not set
 # CONFIG_DE4X5 is not set
@@ -537,6 +537,7 @@ CONFIG_UNIX98_PTY_COUNT=256
 # File systems
 #
 # CONFIG_QUOTA is not set
+# CONFIG_QFMT_V2 is not set
 # CONFIG_AUTOFS_FS is not set
 # CONFIG_AUTOFS4_FS is not set
 # CONFIG_REISERFS_FS is not set
@@ -546,6 +547,7 @@ CONFIG_UNIX98_PTY_COUNT=256
 # CONFIG_ADFS_FS_RW is not set
 # CONFIG_AFFS_FS is not set
 # CONFIG_HFS_FS is not set
+# CONFIG_HFSPLUS_FS is not set
 # CONFIG_BEFS_FS is not set
 # CONFIG_BEFS_DEBUG is not set
 # CONFIG_BFS_FS is not set
@@ -595,6 +597,7 @@ CONFIG_EXT2_FS=y
 # CONFIG_INTERMEZZO_FS is not set
 CONFIG_NFS_FS=y
 CONFIG_NFS_V3=y
+# CONFIG_NFS_DIRECTIO is not set
 CONFIG_ROOT_NFS=y
 # CONFIG_NFSD is not set
 # CONFIG_NFSD_V3 is not set
@@ -667,7 +670,13 @@ CONFIG_CROSSCOMPILE=y
 # CONFIG_MIPS_UNCACHED is not set
 
 #
+# Cryptographic options
+#
+# CONFIG_CRYPTO is not set
+
+#
 # Library routines
 #
+# CONFIG_CRC32 is not set
 # CONFIG_ZLIB_INFLATE is not set
 # CONFIG_ZLIB_DEFLATE is not set
