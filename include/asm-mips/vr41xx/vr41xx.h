@@ -134,6 +134,11 @@ extern int vr41xx_set_intassign(unsigned int irq, unsigned char intassign);
 extern int vr41xx_cascade_irq(unsigned int irq, int (*get_irq_number)(int irq));
 
 /*
+ * Power Management Unit
+ */
+extern void vr41xx_pmu_init(void);
+
+/*
  * RTC
  */
 extern void vr41xx_set_rtclong1_cycle(uint32_t cycles);
@@ -228,10 +233,6 @@ extern struct pci_ops vr41xx_pci_ops;
  */
 extern void vr41xx_time_init(void);
 extern void vr41xx_timer_setup(struct irqaction *irq);
-
-extern void vr41xx_restart(char *command);
-extern void vr41xx_halt(void);
-extern void vr41xx_power_off(void);
 
 #if defined(CONFIG_IDE) || defined(CONFIG_IDE_MODULE)
 extern struct ide_ops vr41xx_ide_ops;

@@ -1,25 +1,28 @@
 /*
- * FILE NAME
- *	arch/mips/vr41xx/tanbac-tb0226/setup.c
+ *  setup.c, Setup for the TANBAC TB0226.
  *
- * BRIEF MODULE DESCRIPTION
- *	Setup for the TANBAC TB0226.
+ *  Copyright (C) 2002-2004  Yoichi Yuasa <yuasa@hh.iij4u.or.jp>
  *
- * Copyright 2002,2003 Yoichi Yuasa
- *                yuasa@hh.iij4u.or.jp
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
  *
- *  This program is free software; you can redistribute it and/or modify it
- *  under the terms of the GNU General Public License as published by the
- *  Free Software Foundation; either version 2 of the License, or (at your
- *  option) any later version.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include <linux/config.h>
-#include <linux/init.h>
 #include <linux/console.h>
+#include <linux/init.h>
 #include <linux/ioport.h>
 
 #include <asm/pci_channel.h>
-#include <asm/reboot.h>
 #include <asm/time.h>
 #include <asm/vr41xx/tb0226.h>
 
@@ -76,10 +79,6 @@ void __init tanbac_tb0226_setup(void)
 	iomem_resource.start = IO_MEM1_RESOURCE_START;
 	iomem_resource.end = IO_MEM2_RESOURCE_END;
 
-	_machine_restart = vr41xx_restart;
-	_machine_halt = vr41xx_halt;
-	_machine_power_off = vr41xx_power_off;
-
 	board_time_init = vr41xx_time_init;
 	board_timer_setup = vr41xx_timer_setup;
 
@@ -88,8 +87,8 @@ void __init tanbac_tb0226_setup(void)
 #endif
 
 	vr41xx_bcu_init();
-
 	vr41xx_cmu_init();
+	vr41xx_pmu_init();
 
 #ifdef CONFIG_SERIAL
 	vr41xx_siu_init(SIU_RS232C, 0);
