@@ -448,6 +448,17 @@ LOADADDR	:= 0x80000000
 endif
 
 #
+# TANBAC TB0229 (VR4131DIMM)
+#
+ifdef CONFIG_TANBAC_TB0229
+SUBDIRS		+= arch/mips/vr41xx/common \
+		   arch/mips/vr41xx/tanbac-tb0229
+CORE_FILES	+= arch/mips/vr41xx/common/vr41xx.o \
+		   arch/mips/vr41xx/tanbac-tb0229/tb0229.o
+LOADADDR	:= 0x80000000
+endif
+
+#
 # Philips Nino
 #
 ifdef CONFIG_NINO

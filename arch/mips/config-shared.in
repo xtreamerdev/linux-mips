@@ -195,6 +195,11 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
 fi
 bool 'Support for SNI RM200 PCI' CONFIG_SNI_RM200_PCI
 bool 'Support for TANBAC TB0226 (Mbase)' CONFIG_TANBAC_TB0226
+bool 'Support for TANBAC TB0229 (VR4131DIMM)' CONFIG_TANBAC_TB0229
+if [ "$CONFIG_TANBAC_TB0229" = "y" ]; then
+   bool '  Add TANBAC TB0219 Base board support' CONFIG_TANBAC_TB0219
+fi
+
 dep_bool 'Support for Toshiba JMR-TX3927 board' CONFIG_TOSHIBA_JMR3927 $CONFIG_MIPS32
 bool 'Support for Toshiba RBTX49[23]7 Reference Board' CONFIG_TOSHIBA_RBTX4927
 bool 'Support for Victor MP-C303/304' CONFIG_VICTOR_MPC30X
@@ -552,6 +557,18 @@ if [ "$CONFIG_TANBAC_TB0226" = "y" ]; then
    define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_DUMMY_KEYB y
    define_bool CONFIG_SERIAL_MANY_PORTS y
+fi
+if [ "$CONFIG_TANBAC_TB0229" = "y" ]; then
+    define_bool CONFIG_IRQ_CPU y
+    define_bool CONFIG_NEW_TIME_C y
+    define_bool CONFIG_VR41XX_TIME_C y
+    define_bool CONFIG_NONCOHERENT_IO y
+    define_bool CONFIG_ISA n
+    define_bool CONFIG_PCI y
+    define_bool CONFIG_NEW_PCI y
+    define_bool CONFIG_PCI_AUTO y
+    define_bool CONFIG_DUMMY_KEYB y
+    define_bool CONFIG_SERIAL_MANY_PORTS y
 fi
 if [ "$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
    define_bool CONFIG_TOSHIBA_BOARDS y
