@@ -19192,6 +19192,17 @@ CONFIG_RTC
   The module is called rtc.o. If you want to compile it as a module,
   say M here and read <file:Documentation/modules.txt>.
 
+Generic MIPS RTC Support
+CONFIG_MIPS_RTC
+
+  If your machine is a MIPS machine, this option provides a simple,
+  generic RTC driver for /dev/rtc device.  It only implements two IOCTL 
+  operations of the standard PC RTC driver: RTC_RD_TIME and RTC_SET_TIME.
+  It is sufficient to run hwclock program. 
+
+  You should say Y here if there is no machine-specific RTC driver for your
+  MIPS machine but you do want a simple RTC driver for your RTC device.
+
 Tadpole ANA H8 Support
 CONFIG_H8
   The Hitachi H8/337 is a microcontroller used to deal with the power
