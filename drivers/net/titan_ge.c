@@ -786,6 +786,7 @@ static int titan_ge_port_start(struct net_device *netdev,
 	volatile unsigned long reg_data, reg_data1;
 	int count = 0;
 	int port_num = titan_port->port_num;
+	unsigned long reg_data_1;
 
 	if (config_done == 0) {
 		reg_data = TITAN_GE_READ(0x0004);
@@ -1015,6 +1016,27 @@ static int titan_ge_port_start(struct net_device *netdev,
 	 * Step 3:  TRTG block enable 
 	 */
 	reg_data = TITAN_GE_READ(TITAN_GE_TRTG_CONFIG + (port_num << 12));
+	/*
+	 * This is the 1.2 revision of the chip. It has fix for the
+	 * IP header alignment. Now, the IP header begins at an
+	 * aligned address and this wont need an extra copy in the
+	 * driver. This performance drawback existed in the previous
+	 * versions of the silicon
+	 */
+	reg_data_1 = TITAN_GE_READ(0x103c + (port_num << 12));
+	reg_data_1 |= 0x40000000;
+	TITAN_GE_WRITE((0x103c + (port_num << 12)), reg_data_1);
+
+	reg_data_1 |= 0x04000000;
+	TITAN_GE_WRITE((0x103c + (port_num << 12)), reg_data_1);
+
+	mdelay(5);
+
+	reg_data_1 &= ~(0x04000000);
+	TITAN_GE_WRITE((0x103c + (port_num << 12)), reg_data_1);
+
+	mdelay(5);
+
 	reg_data |= 0x0001; 
 	TITAN_GE_WRITE((TITAN_GE_TRTG_CONFIG + (port_num << 12)), reg_data);
 
@@ -1502,45 +1524,6 @@ static int titan_ge_free_tx_queue(titan_ge_port_info *titan_ge_eth)
 }
 
 /*
- * Do the slowpath route. This route is kicked off
- * when the IP header is misaligned. Grrr ..
- */
-static int titan_ge_slowpath(struct sk_buff *skb,
-				titan_ge_packet *packet,
-				struct net_device *netdev)
-{
-	struct sk_buff *copy_skb;
-
-	copy_skb = dev_alloc_skb(packet->len + 2);
-
-	if (!copy_skb) {
-		dev_kfree_skb_any(packet->skb);
-		return -1;
-	}
-
-	copy_skb->dev = netdev;
-	skb_reserve(copy_skb, 2);
-	skb_put(copy_skb, packet->len);
-
-	memcpy(copy_skb->data, skb->data, packet->len);
-
-	/* Titan supports Rx checksum offload */
-	copy_skb->ip_summed = CHECKSUM_HW;
-	copy_skb->csum = packet->checksum;
-
-	copy_skb->protocol = eth_type_trans(copy_skb, netdev);
-
-	dev_kfree_skb_any(packet->skb);
-#ifdef TITAN_RX_NAPI
-	netif_receive_skb(copy_skb);
-#else
-	netif_rx(copy_skb);
-#endif
-
-	return 0;
-}
-
-/*
  * Threshold beyond which we do the cleaning of
  * Tx queue and new allocation for the Rx 
  * queue
@@ -1608,17 +1591,16 @@ int titan_ge_receive_queue(struct net_device *netdev, unsigned int max)
 		 * to fix the IP header alignment issue. Now, do an extra
 		 * copy only if the custom pattern is not present
 		 */
-		skb_put(skb, packet.len);
+		skb_put(skb, packet.len - 2);
 
-		/* Check to make sure this is the custom packet */
-		if (*(skb->data) == 0x0) {
-			skb_reserve(skb, 2);
-			skb->protocol = eth_type_trans(skb, netdev);
-			netif_receive_skb(skb);
-		}
-		else 	
-			if (titan_ge_slowpath(skb, &packet, netdev) < 0) 
-				goto out_next;
+		/*
+		 * Increment data pointer by two since thats where
+		 * the MAC starts
+		 */
+		skb_reserve(skb, 2);
+		skb->protocol = eth_type_trans(skb, netdev);
+		netif_receive_skb(skb);
+
 #ifdef CONFIG_NET_FASTROUTE
 gone:
 #endif
@@ -1634,8 +1616,6 @@ gone:
 		ack = titan_ge_rx_task(netdev, titan_ge_eth);
 		TITAN_GE_WRITE((0x5048 + (port_num << 8)), ack);
 #endif
-
-out_next:
 
 #ifdef TITAN_RX_NAPI
 		if (titan_ge_eth->tx_threshold > TX_THRESHOLD) {
