@@ -1,4 +1,4 @@
-/* $Id: string.h,v 1.9 1998/08/25 09:22:02 ralf Exp $
+/* $Id: string.h,v 1.10 1999/04/11 18:37:56 harald Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
@@ -6,8 +6,8 @@
  *
  * Copyright (c) 1994, 1995, 1996, 1997, 1998 by Ralf Baechle
  */
-#ifndef __ASM_MIPS_STRING_H
-#define __ASM_MIPS_STRING_H
+#ifndef _ASM_STRING_H
+#define _ASM_STRING_H
 
 #define __HAVE_ARCH_STRCPY
 extern __inline__ char *strcpy(char *__dest, __const__ char *__src)
@@ -89,30 +89,31 @@ extern __inline__ int strcmp(__const__ char *__cs, __const__ char *__ct)
 }
 
 #define __HAVE_ARCH_STRNCMP
-extern __inline__ int strncmp(__const__ char *__cs, __const__ char *__ct, size_t __count)
+extern __inline__ int
+strncmp(__const__ char *__cs, __const__ char *__ct, size_t __count)
 {
-  int __res;
+	int __res;
 
-  __asm__ __volatile__(
+	__asm__ __volatile__(
 	".set\tnoreorder\n\t"
 	".set\tnoat\n"
-	"1:\tlbu\t%3,(%1)\n\t"
+	"1:\tlbu\t%3,(%0)\n\t"
 	"beqz\t%2,2f\n\t"
-	"lbu\t$1,(%0)\n\t"
-	"addiu\t%1,1\n\t"
-	"subu\t%3,$1,%3\n\t"
-	"bnez\t%3,2f\n\t"
+	"lbu\t$1,(%1)\n\t"
+	"subu\t%2,1\n\t"
+	"bne\t$1,%3,3f\n\t"
 	"addiu\t%0,1\n\t"
-	"bnez\t%1,1b\n"
-	"addiu\t%2,-1\n"
-	"2:\n\t"
+	"bnez\t%3,1b\n\t"
+	"addiu\t%1,1\n"
+	"2:\tmove\t%3,$1\n"
+	"3:\tsubu\t%3,$1\n\t"
 	".set\tat\n\t"
 	".set\treorder"
 	: "=r" (__cs), "=r" (__ct), "=r" (__count), "=r" (__res)
 	: "0" (__cs), "1" (__ct), "2" (__count)
 	: "$1");
 
-  return __res;
+	return __res;
 }
 
 #define __HAVE_ARCH_MEMSET
@@ -147,4 +148,4 @@ extern __inline__ void *memscan(void *__addr, int __c, size_t __size)
 	return __addr;
 }
 
-#endif /* __ASM_MIPS_STRING_H */
+#endif /* _ASM_STRING_H */
