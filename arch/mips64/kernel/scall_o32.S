@@ -22,9 +22,6 @@
 #include <asm/unistd.h>
 #include <asm/sysmips.h>
 
-/* Highest syscall used of any syscall flavour */
-#define MAX_SYSCALL_NO	__NR_Linux32 + __NR_Linux32_syscalls
-
 	.align  5
 NESTED(handle_sys, PT_SIZE, sp)
 	.set	noat
@@ -263,7 +260,7 @@ LEAF(sys32_sysmips)
 LEAF(sys32_syscall)
 	ld	t0, PT_R29(sp)		# user sp
 
-	sltu	v0, a0, __NR_Linux + __NR_Linux_syscalls + 1
+	sltu	v0, a0, __NR_O32_Linux + __NR_O32_Linux_syscalls + 1
 	beqz	v0, enosys
 
 	dsll	v0, a0, 3
