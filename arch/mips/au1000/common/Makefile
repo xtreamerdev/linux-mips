@@ -18,7 +18,7 @@ O_TARGET := au1000.o
 
 export-objs		= prom.o clocks.o power.o usbdev.o
 
-obj-y := prom.o int-handler.o irq.o puts.o time.o reset.o \
+obj-y := prom.o int-handler.o irq.o puts.o time.o reset.o cputable.o \
 	au1xxx_irqmap.o clocks.o power.o setup.o sleeper.o
   
 ifdef CONFIG_SOC_AU1550
