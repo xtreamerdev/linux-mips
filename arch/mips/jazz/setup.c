@@ -1,4 +1,4 @@
-/* $Id: setup.c,v 1.19 1999/01/03 17:50:48 ralf Exp $
+/* $Id: setup.c,v 1.20 1999/02/25 21:57:47 tsbogend Exp $
  *
  * Setup pointers to hardware-dependent routines.
  *
@@ -99,11 +99,15 @@ __initfunc(void jazz_setup(void))
 	_machine_halt = jazz_machine_halt;
 	_machine_power_off = jazz_machine_power_off;
 
+#ifdef CONFIG_VT
+	conswitchp = &dummy_con;
+#endif
 #ifdef CONFIG_BLK_DEV_IDE
 	ide_ops = &std_ide_ops;
 #endif
-	conswitchp = &dummy_con;
+#ifdef CONFIG_BLK_DEV_FD
+	fd_ops = &jazz_fd_ops;
+#endif
 	rtc_ops = &jazz_rtc_ops;
 	kbd_ops = &jazz_kbd_ops;
-	fd_ops = &jazz_fd_ops;
 }
