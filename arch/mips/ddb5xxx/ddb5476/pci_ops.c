@@ -49,8 +49,6 @@ struct pci_config_swap ext_pci_swap = {
 	DDB_PCI_CONFIG_SIZE
 };
 
-static int pci_config_workaround=1;
-
 /*
  * access config space
  */
@@ -63,27 +61,11 @@ static inline u32 ddb_access_config_base(struct pci_config_swap *swap,
         u32 virt_addr = swap->config_base;
 	u32 option;
 
-	if (pci_config_workaround) {
-		/* [jsun] work around Vrc5476 controller itself, returnning
-		 * slot 0 essentially makes vrc5476 invisible
-		 */
-		if (slot_num == 12) slot_num = 0;
-
-#if 0
-		/* BUG : skip P2P bridge for now */
-		if (slot_num == 5) slot_num = 0;
-#endif
-
-	} else {
-		/* now we have to be hornest, returning the true
-		 * PCI config headers for vrc5476
-		 */
-		if (slot_num == 12) {
-			swap->pdar_backup = ddb_in32(swap->pdar);
-			swap->pmr_backup = ddb_in32(swap->pmr);
-			return DDB_BASE + DDB_PCI_BASE;
-		}
-	}
+	/*
+	 * BUG: skip host PCI controller.  Its BARS are bogus.
+	 */
+	if (slot_num == 12)
+		slot_num = 0;
 
 	/* minimum pdar (window) size is 2MB */
 	db_assert(swap->config_size >= (2 << 20));

@@ -49,8 +49,6 @@ struct pci_config_swap ext_pci_swap = {
 	DDB_PCI_CONFIG_SIZE
 };
 
-static int pci_config_workaround=1;
-
 /*
  * access config space
  */
@@ -63,12 +61,8 @@ static inline u32 ddb_access_config_base(struct pci_config_swap *swap,
         u32 virt_addr = swap->config_base;
 	u32 option;
 
-	if (pci_config_workaround) {
-		if (slot_num == 5) slot_num = 14;
-	}
-	else {
-		if (slot_num == 5) return DDB_BASE + DDB_PCI_BASE;
-	}
+	if (slot_num == 5)
+		slot_num = 14;
 
 	/* minimum pdar (window) size is 2MB */
 	db_assert(swap->config_size >= (2 << 20));
