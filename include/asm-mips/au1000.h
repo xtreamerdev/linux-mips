@@ -578,11 +578,12 @@ extern unsigned int get_au1x00_lcd_clock(void);
 
 
 /* UARTS 0-3 */
-#define UART_BASE                 0xB1100000
 #define UART0_ADDR                0xB1100000
 #define UART1_ADDR                0xB1200000
 #define UART2_ADDR                0xB1300000
 #define UART3_ADDR                0xB1400000
+#define UART_BASE                 UART0_ADDR
+#define UART_DEBUG_BASE           UART2_ADDR
 
 #define UART_RX		0	/* Receive buffer */
 #define UART_TX		4	/* Transmit buffer */
@@ -993,7 +994,7 @@ extern unsigned int get_au1x00_lcd_clock(void);
 
 #endif
 
-#if defined(CONFIG_CPU_AU1100) || (defined(CONFIG_SOC_AU1000) && !defined(CONFIG_MIPS_PB1000))
+#if defined(CONFIG_SOC_AU1100) || (defined(CONFIG_SOC_AU1000) && !defined(CONFIG_MIPS_PB1000))
 /* no PCI bus controller */
 #define PCI_IO_START    0
 #define PCI_IO_END      0

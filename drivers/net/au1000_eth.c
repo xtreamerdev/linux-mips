@@ -122,7 +122,7 @@ static struct au1if {
 #elif defined(CONFIG_SOC_AU1500)
 		{AU1500_ETH0_BASE, AU1000_ETH0_IRQ}, 
 		{AU1500_ETH1_BASE, AU1000_ETH1_IRQ}
-#elif defined(CONFIG_CPU_AU1100)
+#elif defined(CONFIG_SOC_AU1100)
 		{AU1000_ETH0_BASE, AU1000_ETH0_IRQ}, 
 #else
 #error "Unsupported Au1x00 CPU"
