@@ -70,7 +70,7 @@ ifdef CONFIG_CPU_R10000
 GCCFLAGS	+= -mcpu=r8000 -mips4
 endif
 ifdef CONFIG_CPU_SB1
-GCCFLAGS	+= $(call check_gcc, -mcpu=-sb1, -mcpu=r5000) -mips4
+GCCFLAGS	+= $(call check_gcc, -mcpu=sb1, -mcpu=r5000) -mips4
 ifdef CONFIG_SB1_PASS_1_WORKAROUNDS
 MODFLAGS	+= -msb1-pass1-workarounds
 endif
