@@ -615,7 +615,6 @@ sigsegv:
  */
 asmlinkage void do_ri(struct pt_regs *regs)
 {
-
 	if (!user_mode(regs))
 		BUG();
 
@@ -669,11 +668,13 @@ asmlinkage void do_cpu(struct pt_regs *regs)
 	if (current->used_math) {		/* Using the FPU again.  */
 		lazy_fpu_switch(last_task_used_math);
 	} else {				/* First time FPU user.  */
-		if (last_task_used_math != NULL) save_fp(last_task_used_math);
+		if (last_task_used_math != NULL)
+			save_fp(last_task_used_math);
 		init_fpu();
 		current->used_math = 1;
 	}
 	last_task_used_math = current;
+
 	return;
 
 fp_emul:
