@@ -43,10 +43,7 @@ extern struct rtc_ops *rtc_ops;
 extern struct rtc_ops swarm_rtc_ops;
 
 #ifdef CONFIG_BLK_DEV_IDE
-extern struct ide_ops std_ide_ops;
-#ifdef CONFIG_BLK_DEV_IDE_SIBYTE
 extern struct ide_ops sibyte_ide_ops;
-#endif
 #endif
 
 #ifdef CONFIG_L3DEMO
@@ -126,11 +123,7 @@ void __init swarm_setup(void)
 	       " CFE\n");
 
 #ifdef CONFIG_BLK_DEV_IDE
-#ifdef CONFIG_BLK_DEV_IDE_SIBYTE
 	ide_ops = &sibyte_ide_ops;
-#else
-	ide_ops = &std_ide_ops;
-#endif
 #endif
 
 #ifdef CONFIG_VT
