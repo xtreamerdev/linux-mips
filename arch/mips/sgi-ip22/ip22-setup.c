@@ -47,7 +47,6 @@ extern struct hpc3_miscregs *hpc3mregs;
 extern struct rtc_ops indy_rtc_ops;
 extern void indy_reboot_setup(void);
 extern void sgi_volume_set(unsigned char);
-extern void create_gio_proc_entry(void);
 
 #define sgi_kh ((struct hpc_keyb *) &(hpc3mregs->kbdmouse0))
 
@@ -69,11 +68,6 @@ static int sgi_request_irq(void (*handler)(int, void *, struct pt_regs *))
 	 * ip22_setup wouldn't work since kmalloc isn't initialized yet.
 	 */
 	indy_reboot_setup();
-
-	/* Ehm, well... once David used hack above, let's add yet another.
-	 * Register GIO bus proc entry here.
-	 */
-	create_gio_proc_entry();
 
 	return request_irq(SGI_KEYBD_IRQ, handler, 0, "keyboard", NULL);
 }

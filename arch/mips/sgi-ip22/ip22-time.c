@@ -180,14 +180,6 @@ void indy_time_init(void)
 		(int) (r4k_tick / 5000), (int) (r4k_tick % 5000) / 50);
 
 	mips_counter_frequency = r4k_tick * HZ;
-
-	/* HACK ALERT! This get's called after traps initialization
-	 * We piggyback the initialization of GIO bus here even though
-	 * it is technically not related with the timer in any way.
-	 * Doing it from ip22_setup wouldn't work since traps aren't
-	 * initialized yet.
-	 */
-	sgigio_init();
 }
 
 /* Generic SGI handler for (spurious) 8254 interrupts */
