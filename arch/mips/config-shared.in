@@ -182,8 +182,6 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    if [ "$CONFIG_SIBYTE_SWARM" = "y" -o \
         "$CONFIG_SIBYTE_CARMEL" = "y" ]; then
       define_bool CONFIG_SIBYTE_GENBUS_IDE y
-   else
-      define_bool CONFIG_SIBYTE_GENBUS_IDE n
    fi
 
    if [ "$CONFIG_SIBYTE_SB1250" = "y" ]; then
