@@ -139,7 +139,7 @@ static struct termios *serial_termios_locked[NUM_CHANNELS];
  * buffer across all the serial ports, since it significantly saves
  * memory if large numbers of serial ports are open.
  */
-static unsigned char tmp_buf[4096]; /* This is cheating */
+static unsigned char tmp_buf[PAGE_SIZE]; /* This is cheating */
 static DECLARE_MUTEX(tmp_buf_sem);
 
 static inline int serial_paranoia_check(struct sgi_serial *info,

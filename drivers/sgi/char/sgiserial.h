@@ -166,9 +166,9 @@ struct sgi_serial {
 #define SERIAL_MAGIC 0x5301
 
 /*
- * The size of the serial xmit buffer is 1 page, or 4096 bytes
+ * The size of the serial xmit buffer is 1 page.
  */
-#define SERIAL_XMIT_SIZE 4096
+#define SERIAL_XMIT_SIZE PAGE_SIZE
 
 /*
  * Events are used to schedule things to happen at timer-interrupt
