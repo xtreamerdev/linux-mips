@@ -47,7 +47,7 @@ NESTED(handle_sys, PT_SIZE, sp)
 stack_done:
         sw      a3, PT_R26(sp)          # save for syscall restart
 	lw	t0, TASK_PTRACE($28)	# syscall tracing enabled?
-	andi	t0, PT_TRACESYS
+	andi	t0, _PT_TRACESYS
 	bnez	t0, trace_a_syscall
 
 	jalr	t2			# Do The Real Thing (TM)
@@ -83,7 +83,7 @@ FEXPORT(ret_from_fork)
 	move	a0, v0			# prev
 	jal	schedule_tail
 	lw	t0, TASK_PTRACE($28)	# syscall tracing enabled?
-	andi	t0, PT_TRACESYS
+	andi	t0, _PT_TRACESYS
 	bnez	t0, tracesys_exit
 
 static_ret_from_sys_call:
@@ -213,12 +213,12 @@ bad_stack:
 	 */
 illegal_syscall:
 	lw	t0, TASK_PTRACE($28)	# syscall tracing enabled?
-	andi	t0, PT_TRACESYS
+	andi	t0, _PT_TRACESYS
 	beqz	t0, 1f
 
 	SAVE_STATIC
 	jal	syscall_trace
-	li	t0, PT_TRACESYS
+	li	t0, _PT_TRACESYS
 
 1:	li	v0, ENOSYS		# error
 	sw	v0, PT_R0(sp)		# set flag for syscall restarting
@@ -281,7 +281,7 @@ LEAF(mips_atomic_set)
 
 	/* Success, so skip usual error handling garbage.  */
 	lw	t0, TASK_PTRACE($28)	# syscall tracing enabled?
-	andi	t0, PT_TRACESYS
+	andi	t0, _PT_TRACESYS
 	beqz	t0, fast_ret_from_sys_call
 
 	SAVE_STATIC

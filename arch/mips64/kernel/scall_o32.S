@@ -16,16 +16,11 @@
 #include <linux/errno.h>
 #include <asm/current.h>
 #include <asm/mipsregs.h>
+#include <asm/offset.h>
 #include <asm/regdef.h>
 #include <asm/stackframe.h>
 #include <asm/unistd.h>
 #include <asm/sysmips.h>
-
-/* This duplicates the definition from <linux/sched.h> */
-#define PT_TRACESYS	0x00000002	/* tracing system calls */
-
-/* This duplicates the definition from <asm/signal.h> */
-#define SIGILL		4		/* Illegal instruction (ANSI).  */
 
 /* Highest syscall used of any syscall flavour */
 #define MAX_SYSCALL_NO	__NR_Linux32 + __NR_Linux32_syscalls
@@ -61,7 +56,7 @@ NESTED(handle_sys, PT_SIZE, sp)
 
 stack_done:
 		ld	t0, TASK_PTRACE($28)	# syscall tracing enabled?
-		andi	t0, PT_TRACESYS
+		andi	t0, _PT_TRACESYS
 		bnez	t0, trace_a_syscall
 
 		jalr	t2			# Do The Real Thing (TM)
@@ -223,7 +218,7 @@ illegal_syscall:
 
 	/* Success, so skip usual error handling garbage.  */
 	ld	t0, TASK_PTRACE($28)	# syscall tracing enabled?
-	andi	t0, PT_TRACESYS
+	andi	t0, _PT_TRACESYS
 	bnez	t0, 1f
 	b	o32_ret_from_sys_call
 

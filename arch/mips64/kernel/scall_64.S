@@ -15,12 +15,7 @@
 #include <asm/regdef.h>
 #include <asm/stackframe.h>
 #include <asm/unistd.h>
-
-/* This duplicates the definition from <linux/sched.h> */
-#define PT_TRACESYS	0x00000002	/* tracing system calls */
-
-/* This duplicates the definition from <asm/signal.h> */
-#define SIGILL		4		/* Illegal instruction (ANSI).  */
+#include <asm/offset.h>
 
 #ifndef CONFIG_MIPS32_COMPAT
 #define handle_sys64 handle_sys
@@ -49,7 +44,7 @@ NESTED(handle_sys64, PT_SIZE, sp)
 	sd	a3, PT_R26(sp)		# save a3 for syscall restarting
 
 	ld	t0, TASK_PTRACE($28)	# syscall tracing enabled?
-	andi	t0, PT_TRACESYS
+	andi	t0, _PT_TRACESYS
 	bnez	t0, trace_a_syscall
 
 	jalr	t2			# Do The Real Thing (TM)
