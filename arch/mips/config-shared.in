@@ -23,7 +23,6 @@ if [ "$CONFIG_MIPS_PB1000" = "y" ]; then
 fi
 dep_bool 'Support for Alchemy Semi PB1100 board' CONFIG_MIPS_PB1100 $CONFIG_MIPS32
 dep_bool 'Support for Alchemy Semi PB1500 board' CONFIG_MIPS_PB1500 $CONFIG_MIPS32
-dep_bool 'Support for Algorithmics P4032 (EXPERIMENTAL)' CONFIG_ALGOR_P4032 $CONFIG_EXPERIMENTAL
 dep_bool 'Support for BAGET MIPS series (EXPERIMENTAL)' CONFIG_BAGET_MIPS $CONFIG_MIPS32 $CONFIG_EXPERIMENTAL
 bool 'Support for CASIO CASSIOPEIA E-10/15/55/65' CONFIG_CASIO_E55
 dep_bool 'Support for Cobalt Server (EXPERIMENTAL)' CONFIG_MIPS_COBALT $CONFIG_EXPERIMENTAL
@@ -137,7 +136,6 @@ if [ "$CONFIG_ACER_PICA_61" = "y" ]; then
 fi
 if [ "$CONFIG_CASIO_E55" = "y" ]; then
    define_bool CONFIG_CPU_VR41XX y
-   define_bool CONFIG_CPU_LITTLE_ENDIAN y
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_VR41XX_TIME_C y
@@ -173,11 +171,6 @@ if [ "$CONFIG_MIPS_PB1500" = "y" ]; then
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_AU1000_USB_DEVICE y
-fi
-if [ "$CONFIG_ALGOR_P4032" = "y" ]; then
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_OLD_TIME_C y
 fi
 if [ "$CONFIG_MIPS_COBALT" = "y" ]; then
    define_bool CONFIG_COBALT_LCD y
@@ -224,7 +217,6 @@ if [ "$CONFIG_HP_LASERJET" = "y" ]; then
 fi
 if [ "$CONFIG_IBM_WORKPAD" = "y" ]; then
    define_bool CONFIG_CPU_VR41XX y
-   define_bool CONFIG_CPU_LITTLE_ENDIAN y
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_VR41XX_TIME_C y
@@ -234,6 +226,7 @@ if [ "$CONFIG_IBM_WORKPAD" = "y" ]; then
    define_bool CONFIG_SCSI n
 fi
 if [ "$CONFIG_LASAT" = "y" ]; then
+   define_bool CONFIG_BOARD_SCACHE y
    define_bool CONFIG_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_NEW_TIME_C y
@@ -362,7 +355,6 @@ if [ "$CONFIG_NINO" = "y" ]; then
 fi
 if [ "$CONFIG_SGI_IP22" = "y" ]; then
    define_bool CONFIG_ARC32 y
-   define_bool CONFIG_ARC_CONSOLE y
    define_bool CONFIG_ARC_MEMORY y
    define_bool CONFIG_ARC_PROMLIB y
    define_bool CONFIG_BOARD_SCACHE y
@@ -370,7 +362,6 @@ if [ "$CONFIG_SGI_IP22" = "y" ]; then
    define_bool CONFIG_SWAP_IO_SPACE y
    define_bool CONFIG_IRQ_CPU y
    define_int CONFIG_L1_CACHE_SHIFT 5
-   define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
@@ -423,7 +414,6 @@ if [ "$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
 fi
 if [ "$CONFIG_VICTOR_MPC30X" = "y" ]; then
    define_bool CONFIG_CPU_VR41XX y
-   define_bool CONFIG_CPU_LITTLE_ENDIAN y
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_VR41XX_TIME_C y
@@ -437,7 +427,6 @@ if [ "$CONFIG_VICTOR_MPC30X" = "y" ]; then
 fi
 if [ "$CONFIG_ZAO_CAPCELLA" = "y" ]; then
    define_bool CONFIG_CPU_VR41XX y
-   define_bool CONFIG_CPU_LITTLE_ENDIAN y
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_VR41XX_TIME_C y
@@ -478,14 +467,6 @@ choice 'CPU type' \
 
 if [ "$CONFIG_SMP_CAPABLE" = "y" ]; then
    bool '  Multi-Processing support' CONFIG_SMP
-fi
-
-if [ "$CONFIG_CPU_R5000" = "y" ]; then
-   define_bool CONFIG_BOARD_SCACHE y
-fi
-
-if [ "$CONFIG_CPU_NEVADA" = "y" ]; then
-   define_bool CONFIG_BOARD_SCACHE y
 fi
  
 if [ "$CONFIG_CPU_MIPS32" = "y" ]; then
@@ -573,15 +554,45 @@ else
 fi
 endmenu
 
+#
+# Choose endianess of code to generate.  It's a frequent trap for users so the
+# config file tries it's best to choose the right endianess for those systems
+# where we know about their endianess.  We only ask the user for systems
+# known to be bi-endian; for those systems the defconfig file should defaults
+# to the common endianess used for that system.
+#
 mainmenu_option next_comment
 comment 'General setup'
-if [ "$CONFIG_DECSTATION"  = "y" -o \
-     "$CONFIG_DDB5074"     = "y" -o \
-     "$CONFIG_NINO"        = "y" -o \
-     "$CONFIG_MIPS_COBALT" = "y" ]; then
-   define_bool CONFIG_CPU_LITTLE_ENDIAN y
-else
+if [ "$CONFIG_MIPS_ATLAS" = "y" -o \
+     "$CONFIG_MIPS_MALTA" = "y" -o \
+     "$CONFIG_MIPS_SEAD" = "y" -o \
+     "$CONFIG_MIPS_MAGNUM_4000" = "y" -o \
+     "$CONFIG_DDB5476" = "y" -o \
+     "$CONFIG_DDB5477" = "y" ]; then
    bool 'Generate little endian code' CONFIG_CPU_LITTLE_ENDIAN
+else
+   if [ "$CONFIG_CASIO_E55" = "y" -o \
+	"$CONFIG_DECSTATION"  = "y" -o \
+	"$CONFIG_DDB5074"     = "y" -o \
+	"$CONFIG_HP_LASERJET" = "y" -o \
+	"$CONFIG_IBM_WORKPAD" = "y" -o \
+	"$CONFIG_LASAT" = "y" -o \
+	"$CONFIG_MIPS_IVR" = "y" -o \
+	"$CONFIG_MIPS_COBALT" = "y" -o \
+	"$CONFIG_MIPS_ITE8172" = "y" -o \
+	"$CONFIG_MIPS_PB1000" = "y" -o \
+	"$CONFIG_MIPS_PB1100" = "y" -o \
+	"$CONFIG_MIPS_PB1500" = "y" -o \
+	"$CONFIG_NEC_EAGLE" = "y" -o \
+	"$CONFIG_NEC_OSPREY" = "y" -o \
+	"$CONFIG_NINO"        = "y" -o \
+	"$CONFIG_SNI_RM200_PCI" = "y" -o \
+	"$CONFIG_VICTOR_MPC30X" = "y" -o \
+	"$CONFIG_ZAO_CAPCELLA" = "y" ]; then
+      define_bool CONFIG_CPU_LITTLE_ENDIAN y
+   else
+      define_bool CONFIG_CPU_LITTLE_ENDIAN n
+   fi
 fi
 
 if [ "$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
