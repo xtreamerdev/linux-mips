@@ -47,6 +47,12 @@
 #define AC97_PSC_BASE		PSC_BASE1
 #define SMBUS_PSC_BASE		PSC_BASE2
 #endif
+#ifdef CONFIG_MIPS_DB1550
+#define SPI_PSC_BASE		PSC_BASE0
+#define AC97_PSC_BASE		PSC_BASE1
+#define SMBUS_PSC_BASE		PSC_BASE2
+#endif
+
 
 /* The PSC select and control registers are common to
  * all protocols.

@@ -48,6 +48,7 @@
 
 extern struct rtc_ops no_rtc_ops;
 
+/* not correct for db1550 */
 static BCSR * const bcsr = (BCSR *)0xAE000000;
 
 void __init board_setup(void)
@@ -56,6 +57,7 @@ void __init board_setup(void)
 
 	rtc_ops = &no_rtc_ops;
 
+	/* not valid for 1550 */
 #ifdef CONFIG_AU1X00_USB_DEVICE
 	// 2nd USB port is USB device
 	pin_func = au_readl(SYS_PINFUNC) & (u32)(~0x8000);
@@ -116,5 +118,8 @@ void __init board_setup(void)
 #endif
 #ifdef CONFIG_MIPS_MIRAGE
     printk("AMD Alchemy Mirage Board\n");
+#endif
+#ifdef CONFIG_MIPS_DB1550
+    printk("AMD Alchemy Au1550/Db1550 Board\n");
 #endif
 }

@@ -262,6 +262,11 @@ u32 au1xxx_dbdma_chan_alloc(u32 srcid, u32 destid,
 #define DBDMA_AC97_TX_CHAN DSCR_CMD0_PSC1_TX
 #define DBDMA_AC97_RX_CHAN DSCR_CMD0_PSC1_RX
 #endif
+#ifdef CONFIG_MIPS_DB1550
+#define DBDMA_AC97_TX_CHAN DSCR_CMD0_PSC1_TX
+#define DBDMA_AC97_RX_CHAN DSCR_CMD0_PSC1_RX
+#endif
+
 
 /* Set the device width of a in/out fifo.
 */
