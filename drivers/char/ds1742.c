@@ -150,7 +150,7 @@ static int rtc_ds1742_set_time(unsigned long t)
 		CMOS_WRITE(year,RTC_YEAR);
 	}
 
-	month = BIN_TO_BCD(tm.tm_mon);
+	month = BIN_TO_BCD(tm.tm_mon + 1);
 	if (month != (cmos_month & 0x1f)) {
 		CMOS_WRITE((month & 0x1f) | (cmos_month & ~0x1f),RTC_MONTH);
 	}
