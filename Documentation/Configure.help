@@ -20482,6 +20482,13 @@ CONFIG_LL_DEBUG
   Currently used only by the time services code in the MIPS port.
   Don't turn this on unless you know what you are doing.
 
+Enable run-time debugging
+CONFIG_DEBUG
+  If you say Y here, some debugging macros will do run-time checking.
+  If you say N here, those macros will mostly turn to no-ops.  For
+  MIPS boards only.  See include/asm-mips/debug.h for debuging macros.
+  If unsure, say N.
+
 Remote GDB kernel debugging
 CONFIG_REMOTE_DEBUG
   If you say Y here, it will be possible to remotely debug the MIPS
