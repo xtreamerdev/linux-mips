@@ -142,7 +142,8 @@
  *   MIPS 5Kc,5Kf	RTL revision <2.3, PRID revision <8
  *   MIPS 20Kc		RTL revision <4.0, PRID revision <?
  */
-#if defined(CONFIG_MIPS_MALTA) || defined(CONFIG_MIPS_ATLAS) || defined(CONFIG_MIPS_SEAD)
+#if defined(CONFIG_MIPS_MALTA) || defined(CONFIG_MIPS_ATLAS) || \
+    defined(CONFIG_MIPS_SEAD)
 #define MIPS_CACHE_SYNC_WAR 1
 #endif
 
@@ -168,7 +169,7 @@
 #define MIPS4K_ICACHE_REFILL_WAR	0
 #endif
 #ifndef MIPS_CACHE_SYNC_WAR
-#deifne MIPS_CACHE_SYNC_WAR		0
+#define MIPS_CACHE_SYNC_WAR		0
 #endif
 
 #endif /* _ASM_WAR_H */
