@@ -13,7 +13,7 @@
 #include <asm/addrspace.h>
 #include <asm/page.h>
 
-#ifndef _LANGUAGE_ASSEMBLY
+#ifndef __ASSEMBLY__
 
 #include <linux/linkage.h>
 #include <linux/mmzone.h>
@@ -128,7 +128,7 @@ extern void (*_flush_icache_page)(struct vm_area_struct *vma, struct page *page)
  * vmalloc range translations, which the fault handler looks at.
  */
 
-#endif /* !defined (_LANGUAGE_ASSEMBLY) */
+#endif /* !__ASSEMBLY__ */
 
 /* PMD_SHIFT determines the size of the area a second-level page table can map */
 #define PMD_SHIFT	(PAGE_SHIFT + (PAGE_SHIFT - 3))
@@ -247,7 +247,7 @@ extern void (*_flush_icache_page)(struct vm_area_struct *vma, struct page *page)
 #define __S110	PAGE_SHARED
 #define __S111	PAGE_SHARED
 
-#if !defined (_LANGUAGE_ASSEMBLY)
+#ifndef __ASSEMBLY__
 
 #define pte_ERROR(e) \
 	printk("%s:%d: bad pte %016lx.\n", __FILE__, __LINE__, pte_val(e))
@@ -583,6 +583,6 @@ static inline pte_t mk_swap_pte(unsigned long type, unsigned long offset)
  */
 #define HAVE_ARCH_UNMAPPED_AREA
 
-#endif /* !defined (_LANGUAGE_ASSEMBLY) */
+#endif /* !__ASSEMBLY__ */
 
 #endif /* _ASM_PGTABLE_H */
