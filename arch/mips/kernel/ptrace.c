@@ -72,7 +72,7 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 
 	ret = -EPERM;
 	if (pid == 1)		/* you may not mess with init */
-		goto out;
+		goto out_tsk;
 
 	if (request == PTRACE_ATTACH) {
 		ret = ptrace_attach(child);
@@ -94,8 +94,7 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 		if (copied != sizeof(tmp))
 			break;
 		ret = put_user(tmp,(unsigned long *) data);
-
-		goto out;
+		break;
 		}
 
 	/* Read the word at location addr in the USER area.  */
@@ -164,10 +163,10 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 		default:
 			tmp = 0;
 			ret = -EIO;
-			goto out;
+			goto out_tsk;
 		}
 		ret = put_user(tmp, (unsigned long *) data);
-		goto out;
+		break;
 		}
 
 	case PTRACE_POKETEXT: /* write the word at location addr. */
@@ -177,7 +176,7 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 		    == sizeof(data))
 			break;
 		ret = -EIO;
-		goto out;
+		break;
 
 	case PTRACE_POKEUSR: {
 		struct pt_regs *regs;
@@ -277,7 +276,7 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 
 	default:
 		ret = -EIO;
-		goto out;
+		break;
 	}
 out_tsk:
 	free_task_struct(child);
