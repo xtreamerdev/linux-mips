@@ -160,8 +160,8 @@ struct tty_struct zs_ttys[NUM_CHANNELS];
 #ifdef CONFIG_SERIAL_DEC_CONSOLE
 static struct console sercons;
 #endif
-#if defined(CONFIG_SERIAL_DEC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) \
-    && !defined(MODULE)
+#if defined(CONFIG_SERIAL_DEC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && \
+   !defined(MODULE)
 static unsigned long break_pressed; /* break, really ... */
 #endif
 
@@ -196,7 +196,6 @@ static int serial_refcount;
 /*
  * Debugging.
  */
-#undef SERIAL_DEBUG_INTR
 #undef SERIAL_DEBUG_OPEN
 #undef SERIAL_DEBUG_FLOW
 #undef SERIAL_DEBUG_THROTTLE
@@ -386,8 +385,6 @@ static inline void rs_recv_clear(struct dec_zschannel *zsc)
  * -----------------------------------------------------------------------
  */
 
-static int tty_break;	/* Set whenever BREAK condition is detected.  */
-
 /*
  * This routine is used by the interrupt handler to schedule
  * processing in the software interrupt portion of the driver.
@@ -414,20 +411,14 @@ static _INLINE_ void receive_chars(struct dec_serial *info,
 		if (!tty && (!info->hook || !info->hook->rx_char))
 			continue;
 
-		if (tty_break) {
-			tty_break = 0;
-#if defined(CONFIG_SERIAL_DEC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && !defined(MODULE)
-			if (info->line == sercons.index) {
-				if (!break_pressed) {
-					break_pressed = jiffies;
-					goto ignore_char;
-				}
-				break_pressed = 0;
-			}
-#endif
+		if (info->tty_break) {
+			info->tty_break = 0;
 			flag = TTY_BREAK;
 			if (info->flags & ZILOG_SAK)
 				do_SAK(tty);
+			/* Ignore the null char got when BREAK is removed.  */
+			if (ch == 0)
+				continue;
 		} else {
 			if (stat & Rx_OVR) {
 				flag = TTY_OVERRUN;
@@ -442,13 +433,16 @@ static _INLINE_ void receive_chars(struct dec_serial *info,
 				write_zsreg(info->zs_channel, R0, ERR_RES);
 		}
 
-#if defined(CONFIG_SERIAL_DEC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && !defined(MODULE)
+#if defined(CONFIG_SERIAL_DEC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && \
+   !defined(MODULE)
 		if (break_pressed && info->line == sercons.index) {
-			if (ch != 0 &&
-			    time_before(jiffies, break_pressed + HZ*5)) {
+			/* Ignore the null char got when BREAK is removed.  */
+			if (ch == 0)
+				continue;
+			if (time_before(jiffies, break_pressed + HZ * 5)) {
 				handle_sysrq(ch, regs, NULL, NULL);
 				break_pressed = 0;
-				goto ignore_char;
+				continue;
 			}
 			break_pressed = 0;
 		}
@@ -473,9 +467,6 @@ static _INLINE_ void receive_chars(struct dec_serial *info,
 
 		*tty->flip.flag_buf_ptr++ = flag;
 		*tty->flip.char_buf_ptr++ = ch;
-#if defined(CONFIG_SERIAL_DEC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && !defined(MODULE)
-	ignore_char:
-#endif
 	}
 	if (tty)
 		tty_flip_buffer_push(tty);
@@ -517,11 +508,15 @@ static _INLINE_ void status_handle(struct dec_serial *info)
 	/* Get status from Read Register 0 */
 	stat = read_zsreg(info->zs_channel, R0);
 
-	if (stat & BRK_ABRT) {
-#ifdef SERIAL_DEBUG_INTR
-		printk("handling break....");
+	if ((stat & BRK_ABRT) && !(info->read_reg_zero & BRK_ABRT)) {
+#if defined(CONFIG_SERIAL_DEC_CONSOLE) && defined(CONFIG_MAGIC_SYSRQ) && \
+   !defined(MODULE)
+		if (info->line == sercons.index) {
+			if (!break_pressed)
+				break_pressed = jiffies;
+		} else
 #endif
-		tty_break = 1;
+			info->tty_break = 1;
 	}
 
 	if (info->zs_channel != info->zs_chan_a) {
@@ -1721,7 +1716,7 @@ int rs_open(struct tty_struct *tty, struct file * filp)
 
 static void __init show_serial_version(void)
 {
-	printk("DECstation Z8530 serial driver version 0.08\n");
+	printk("DECstation Z8530 serial driver version 0.09\n");
 }
 
 /*  Initialize Z8530s zs_channels
