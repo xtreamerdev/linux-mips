@@ -249,7 +249,7 @@ static void r49_flush_cache_page_d32i32(struct vm_area_struct *vma,
 	}
 }
 
-static tx49_flush_dcache_page_impl(struct page *page)
+static void tx49_flush_dcache_page_impl(struct page *page)
 {
 	unsigned long addr;
 
@@ -443,7 +443,7 @@ void __init ld_mmu_tx49(void)
 	___flush_cache_all = _flush_cache_all;
 
 	_flush_icache_page = r4k_flush_icache_page;
-	_flush_dcache_page = r49_flush_dcache_page;
+	_flush_dcache_page = r4k_flush_dcache_page;
 
 	_dma_cache_wback_inv = r4k_dma_cache_wback_inv;
 	_dma_cache_wback = r4k_dma_cache_wback;
