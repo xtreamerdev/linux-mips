@@ -56,7 +56,6 @@ static struct sbprof_tb sbp;
  *
  ************************************************************************/
 
-/* 100 samples per second on a 500 Mhz 1250 (default) */
 static u_int64_t tb_period;
 
 static void arm_tb(void)
