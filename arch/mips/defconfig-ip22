@@ -499,13 +499,6 @@ CONFIG_SGI_DS1286=y
 # CONFIG_DRM is not set
 
 #
-# SGI Character devices
-#
-CONFIG_SGI_NEWPORT_CONSOLE=y
-CONFIG_FONT_8x16=y
-CONFIG_DUMMY_CONSOLE=y
-
-#
 # File systems
 #
 # CONFIG_QUOTA is not set
@@ -616,6 +609,9 @@ CONFIG_SGI_PARTITION=y
 # Console drivers
 #
 # CONFIG_VGA_CONSOLE is not set
+CONFIG_SGI_NEWPORT_CONSOLE=y
+CONFIG_FONT_8x16=y
+CONFIG_DUMMY_CONSOLE=y
 # CONFIG_MDA_CONSOLE is not set
 
 #
