@@ -4628,6 +4628,11 @@ CONFIG_FB_MAXINE
   DECstation series (Personal DECstation 5000/20, /25, /33, /50,
   Codename "Maxine").
 
+PMAG-AA TURBOchannel framebuffer support
+CONFIG_FB_PMAG_AA
+  Support for the PMAG-AA TURBOchannel framebuffer card (1280x1024x1)
+  used mainly in the MIPS-based DECstation series.
+
 PMAG-BA TURBOchannel framebuffer support
 CONFIG_FB_PMAG_BA
   Support for the PMAG-BA TURBOchannel framebuffer card (1024x864x8)
