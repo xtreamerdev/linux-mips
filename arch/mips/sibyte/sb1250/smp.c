@@ -142,7 +142,7 @@ void __init smp_boot_cpus(void)
 	for (i = 1; i < smp_num_cpus && cur_cpu < NR_CPUS; i++) {
 		struct task_struct *p;
 		struct pt_regs regs;
-		printk("Starting CPU %d... ", i);
+		printk("Starting CPU %d...\n", i);
 
 		/* Spawn a new process normally.  Grab a pointer to
 		   its task struct so we can mess with it */
