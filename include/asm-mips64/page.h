@@ -107,10 +107,6 @@ extern __inline__ int get_order(unsigned long size)
 #define PAGE_OFFSET	0xffffffff80000000UL
 #define UNCAC_BASE	0xffffffffa0000000UL
 #endif
-#if defined(CONFIG_SGI_IP32)
-#define PAGE_OFFSET	0x9800000000000000UL
-#define UNCAC_BASE	0x9000000000000000UL
-#endif
 #if defined(CONFIG_SGI_IP27)
 #define PAGE_OFFSET	0xa800000000000000UL
 #define UNCAC_BASE	0x9600000000000000UL

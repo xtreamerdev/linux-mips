@@ -99,7 +99,6 @@ if [ "$CONFIG_SGI_IP27" = "y" ]; then
    define_bool CONFIG_SMP_CAPABLE y
    #bool '  IP27 XXL' CONFIG_SGI_SN0_XXL
 fi
-dep_bool 'Support for SGI IP32 (O2) (EXPERIMENTAL)' CONFIG_SGI_IP32 $CONFIG_EXPERIMENTAL
 dep_bool 'Support for Broadcom BCM1xxx SOCs (EXPERIMENTAL)' CONFIG_SIBYTE_SB1xxx_SOC $CONFIG_EXPERIMENTAL
 if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    choice '   BCM1xxx SOC-based board' \
@@ -525,19 +524,6 @@ if [ "$CONFIG_SGI_IP27" = "y" ]; then
    define_bool CONFIG_PCI y
    define_bool CONFIG_QL_ISP_A64 y
 fi
-if [ "$CONFIG_SGI_IP32" = "y" ]; then
-   define_bool CONFIG_ARC_MEMORY y
-   define_bool CONFIG_ARC_PROMLIB y
-   define_bool CONFIG_ARC32 y
-   define_bool CONFIG_BOARD_SCACHE y
-   define_bool CONFIG_R5000_CPU_SCACHE y
-   define_bool CONFIG_BOOT_ELF32 y
-   define_int CONFIG_L1_CACHE_SHIFT 5
-   define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PC_KEYB y
-   define_bool CONFIG_PCI y
-fi
 if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_DUMMY_KEYB y
@@ -777,7 +763,6 @@ else
 	"$CONFIG_MOMENCO_OCELOT_G" = "y" -o \
 	"$CONFIG_SGI_IP22" = "y" -o \
 	"$CONFIG_SGI_IP27" = "y" -o \
-	"$CONFIG_SGI_IP32" = "y" -o \
 	"$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
       define_bool CONFIG_CPU_LITTLE_ENDIAN n
    else
