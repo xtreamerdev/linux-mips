@@ -68,7 +68,6 @@ extern void * __rd_start, * __rd_end;
 extern struct rtc_ops no_rtc_ops;
 struct rtc_ops *rtc_ops;
 
-extern struct kbd_ops no_kbd_ops;
 struct kbd_ops *kbd_ops;
 
 /*

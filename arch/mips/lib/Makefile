@@ -19,6 +19,6 @@ endif
 
 obj-$(CONFIG_BLK_DEV_FD)	+= floppy-no.o floppy-std.o
 obj-$(subst m,y,$(CONFIG_IDE))	+= ide-std.o ide-no.o	# needed for ide module
-obj-$(CONFIG_PC_KEYB)		+= kbd-std.o kbd-no.o
+obj-$(CONFIG_PC_KEYB)		+= kbd-std.o
 
 include $(TOPDIR)/Rules.make
