@@ -26,6 +26,7 @@
 
 #define fd_enable_irq(irq)		enable_irq(irq)
 #define fd_disable_irq(irq)		disable_irq(irq)
+#define fd_cacheflush(addr,size)	/* nothing */
 #define fd_request_irq(irq)		request_irq(irq, \
 					            floppy_interrupt, \
 					            SA_INTERRUPT \

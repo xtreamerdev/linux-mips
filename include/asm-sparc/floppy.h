@@ -73,6 +73,7 @@ static struct sun_floppy_ops sun_fdops;
 
 #define fd_enable_irq(irq)		/* nothing... */
 #define fd_disable_irq(irq)		/* nothing... */
+#define fd_cacheflush(addr, size)	/* nothing... */
 #define fd_request_irq(irq)		sun_fd_request_irq()
 #define fd_free_irq(irq)		/* nothing... */
 

@@ -1094,8 +1094,7 @@ static void setup_DMA(void)
 	release_dma_lock(f);
 #else
 	fd_clear_dma_ff(FLOPPY_DMA);
-	dma_cache_wback_inv((unsigned long)raw_cmd->kernel_data,
-	                    raw_cmd->length);
+	fd_cacheflush(raw_cmd->kernel_data, raw_cmd->length);
 	fd_set_dma_mode(FLOPPY_DMA, (raw_cmd->flags & FD_RAW_READ)
 	                            ? DMA_MODE_READ
 	                            : DMA_MODE_WRITE);

@@ -195,10 +195,6 @@ ifeq ($(CONFIG_IRDA),y)
 DRIVERS := $(DRIVERS) drivers/net/irda/irda_drivers.a
 endif
 
-ifeq ($(CONFIG_TC),y)
-DRIVERS := $(DRIVERS) drivers/tc/tc.a
-endif
-
 include arch/$(ARCH)/Makefile
 
 .S.s:

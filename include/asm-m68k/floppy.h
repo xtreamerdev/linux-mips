@@ -37,20 +37,20 @@ static __inline__ void release_dma_lock(unsigned long flags)
 #define fd_outb(port,value)		outb_p(port,value)
 
 
-#define fd_request_dma()        vdma_request_dma(FLOPPY_DMA,"floppy")
+#define fd_request_dma(channel)        vdma_request_dma(channel,"floppy")
 /*#define fd_free_dma()           */
 
 
-#define fd_get_dma_residue()    vdma_get_dma_residue(FLOPPY_DMA)
+#define fd_get_dma_residue(channel)    vdma_get_dma_residue(channel)
 #define fd_dma_mem_alloc(size)	vdma_mem_alloc(size)
 #define fd_dma_setup(addr, size, mode, io) vdma_dma_setup(addr, size, mode, io)
 
 
-#define fd_enable_irq()           /* nothing... */
-#define fd_disable_irq()          /* nothing... */
-#define fd_free_irq()		free_irq(FLOPPY_IRQ, NULL)
+#define fd_enable_irq(irq)	/* nothing... */
+#define fd_disable_irq(irq)	/* nothing... */
+#define fd_free_irq(irq)	free_irq(irq, NULL)
 
-#define fd_free_dma()             /* nothing */
+#define fd_free_dma(irq)	/* nothing */
 
 /* No 64k boundary crossing problems on Q40 - no DMA at all */
 #define CROSS_64KB(a,s) (0)
@@ -234,6 +234,3 @@ static void fd_disable_dma(void)
 	virtual_dma_residue += virtual_dma_count;
 	virtual_dma_count=0;
 }
-
-
-

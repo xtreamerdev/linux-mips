@@ -1,7 +1,17 @@
+/*
+ * Architecture specific parts of the Floppy driver
+ *
+ * This file is subject to the terms and conditions of the GNU General Public
+ * License.  See the file "COPYING" in the main directory of this archive
+ * for more details.
+ *
+ * Copyright (C) 1995
+ */
 #ifndef __ASM_I386_FLOPPY_H
 #define __ASM_I386_FLOPPY_H
 
 #include <linux/vmalloc.h>
+
 
 /*
  * The DMA channel used by the floppy controller cannot access data at
@@ -23,8 +33,8 @@
 
 #define fd_inb(port)			inb_p(port)
 #define fd_outb(port,value)		outb_p(port,value)
-#define fd_request_dma()		CSW._request_dma(FLOPPY_DMA,"floppy")
-#define fd_free_dma()			CSW._free_dma(FLOPPY_DMA)
+#define fd_request_dma(channel)		CSW._request_dma(channel,"floppy")
+#define fd_free_dma(channel)		CSW._free_dma(channel)
 #define fd_enable_irq(irq)		enable_irq(irq)
 #define fd_disable_irq(irq)		disable_irq(irq)
 #define fd_free_irq(irq)		free_irq(irq, NULL)
@@ -140,10 +150,10 @@ static void floppy_hardint(int irq, void *dev_id, struct pt_regs * regs)
 #endif
 }
 
-static void fd_disable_dma(void)
+static void fd_disable_dma(int channel)
 {
 	if(! (can_use_virtual_dma & 1))
-		disable_dma(FLOPPY_DMA);
+		disable_dma(channel);
 	doing_pdma = 0;
 	virtual_dma_residue += virtual_dma_count;
 	virtual_dma_count=0;
@@ -165,13 +175,13 @@ static int vdma_get_dma_residue(unsigned int dummy)
 }
 
 
-static int fd_request_irq(void)
+static int fd_request_irq(unsigned int irq)
 {
 	if(can_use_virtual_dma)
-		return request_irq(FLOPPY_IRQ, floppy_hardint,SA_INTERRUPT,
+		return request_irq(irq, floppy_hardint,SA_INTERRUPT,
 						   "floppy", NULL);
 	else
-		return request_irq(FLOPPY_IRQ, floppy_interrupt,
+		return request_irq(irq, floppy_interrupt,
 						   SA_INTERRUPT|SA_SAMPLE_RANDOM,
 						   "floppy", NULL);	
 

@@ -1,4 +1,4 @@
-/* $Id: floppy.h,v 1.5 1998/06/30 00:23:09 ralf Exp $
+/* $Id: floppy.h,v 1.6 1999/01/04 16:09:21 ralf Exp $
  *
  * Architecture specific parts of the Floppy driver
  *
@@ -66,6 +66,7 @@ extern struct fd_ops *fd_ops;
 #define fd_dma_mem_alloc(size) fd_ops->fd_dma_mem_alloc(size)
 #define fd_dma_mem_free(mem,size) fd_ops->fd_dma_mem_free(mem,size)
 #define fd_drive_type(n)		fd_ops->fd_drive_type(n)
+#define fd_cacheflush(addr,size)	dma_cache_wback_inv(addr,size)
 
 #define MAX_BUFFER_SECTORS 24
 
