@@ -30,10 +30,10 @@
 #include <asm/stackframe.h>
 
 	.text
-	/* Special Cache Error handler for SB1 for now*/
+	/* Special Cache Error handler for SB1 for now */
 	LEAF(except_vec2_sb1)
 	.set	noat
-	.set    mips0
+	.set	mips0
 	/*
 	 * This is a very bad place to be.  Our cache error detection has
 	 * triggered.  If we have write-back data in the cache, we may not be
@@ -46,6 +46,12 @@
 	.set	reorder
 	# look for signature of spurious CErr
 	mfc0	k1, $26				# mfc0	k1, $26, 0
+	# check if error was recoverable
+	# XXXKW - count them
+	bltz	k1,leave_cerr
+	 nop
+#ifdef CONFIG_SB1_PASS_1_WORKAROUNDS
+	# look for signature of spurious CErr
 	lui	k0, 0x4000
 	bne	k0, k1, real_cerr
 	.word	0x401Bd801			# mfc0	k1, $27, 1
@@ -53,22 +59,36 @@
 	and	k1, k0, k1
 	lui	k0, 0x0200
 	bne	k0, k1, real_cerr
+	 nop
+#else
+	j	real_cerr
+	 nop
+#endif
+	# XXXKW - count spurious errors
+leave_cerr:
 	# clear/unlock the registers
 	mtc0	zero, $26			# mtc0	zero, $26, 0
+	mtc0	zero, $27			# mtc0	zero, $27, 0
 	.word	0x4080d801			# mtc0	zero, $27, 1
+	.word	0x4080d803			# mtc0	zero, $27, 3
 	eret
 
-	# XXXXPK -  this is a real error.  set the LEDs and spin for now
 real_cerr:
-	lui	k0, 0xb00A
-	li	k1, 'C'
-	sb	k1, 56(k0)
-	li	k1, 'E'
-	sb	k1, 48(k0)
-	li	k1, 'R'
-	sb	k1, 40(k0)
-	li	k1, 'R'
-	sb	k1, 32(k0)
-2:	b	2b
+	mfc0	k0,CP0_CONFIG
+	li	k1,~CONF_CM_CMASK
+	and	k0,k0,k1
+	ori	k0,k0,CONF_CM_UNCACHED
+	mtc0	k0,CP0_CONFIG
+	/* Give it a few cycles to sink in... */
+	sll     zero, zero, 0x1			# ssnop
+	sll     zero, zero, 0x1			# ssnop
+	sll     zero, zero, 0x1			# ssnop
+	sll     zero, zero, 0x1			# ssnop
+	sll     zero, zero, 0x1			# ssnop
+	sll     zero, zero, 0x1			# ssnop
+
+	j	sb1_cache_error
+	 nop
+
 	.set	pop
 	END(except_vec2_sb1)
