@@ -2,6 +2,7 @@
  * Copyright (C) 1996 David S. Miller (dm@engr.sgi.com)
  * Copyright (C) 1997, 2001 Ralf Baechle (ralf@gnu.org)
  * Copyright (C) 2000 SiByte, Inc.
+ * Copyright (C) 2002, 2003 Broadcom Corporation
  *
  * Written by Justin Carlson of SiByte, Inc.
  *         and Kip Walker of Broadcom Corp.
@@ -82,8 +83,6 @@ void clear_page(void *page)
 		: "memory");
 
 }
-
-#endif /* CONFIG_SIBYTE_DMA_PAGEOPS */
 
 #ifdef CONFIG_SIBYTE_DMA_PAGEOPS
 static inline void copy_page_cpu(void *to, void *from)
@@ -222,6 +221,3 @@ void copy_page(void *to, void *from)
 }
 
 #endif /* CONFIG_SIBYTE_DMA_PAGEOPS */
-
-EXPORT_SYMBOL(clear_page);
-EXPORT_SYMBOL(copy_page);
