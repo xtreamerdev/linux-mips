@@ -85,7 +85,7 @@ CONFIG_CPU_MIPS32=y
 # CONFIG_CPU_SB1 is not set
 CONFIG_CPU_HAS_PREFETCH=y
 # CONFIG_VTAG_ICACHE is not set
-# CONFIG_64BIT_PHYS_ADDR is not set
+CONFIG_64BIT_PHYS_ADDR=y
 CONFIG_CPU_ADVANCED=y
 CONFIG_CPU_HAS_LLSC=y
 # CONFIG_CPU_HAS_LLDSCD is not set
@@ -114,7 +114,7 @@ CONFIG_PCMCIA=m
 # CONFIG_I82092 is not set
 # CONFIG_I82365 is not set
 CONFIG_PCMCIA_AU1000=m
-# CONFIG_PCMCIA_PB1X00 is not set
+CONFIG_PCMCIA_PB1X00=y
 
 #
 # PCI Hotplug Support
@@ -224,7 +224,7 @@ CONFIG_MTD_PB1000=y
 # CONFIG_CISS_SCSI_TAPE is not set
 # CONFIG_BLK_DEV_DAC960 is not set
 # CONFIG_BLK_DEV_UMEM is not set
-CONFIG_BLK_DEV_LOOP=y
+# CONFIG_BLK_DEV_LOOP is not set
 # CONFIG_BLK_DEV_NBD is not set
 # CONFIG_BLK_DEV_RAM is not set
 # CONFIG_BLK_DEV_INITRD is not set
@@ -442,7 +442,18 @@ CONFIG_MIPS_AU1000_ENET=y
 #
 # PCMCIA network device support
 #
-# CONFIG_NET_PCMCIA is not set
+CONFIG_NET_PCMCIA=y
+CONFIG_PCMCIA_3C589=m
+# CONFIG_PCMCIA_3C574 is not set
+# CONFIG_PCMCIA_FMVJ18X is not set
+# CONFIG_PCMCIA_PCNET is not set
+# CONFIG_PCMCIA_AXNET is not set
+# CONFIG_PCMCIA_NMCLAN is not set
+# CONFIG_PCMCIA_SMC91C92 is not set
+# CONFIG_PCMCIA_XIRC2PS is not set
+# CONFIG_ARCNET_COM20020_CS is not set
+# CONFIG_PCMCIA_IBMTR is not set
+# CONFIG_NET_PCMCIA_RADIO is not set
 
 #
 # Amateur Radio support
@@ -452,7 +463,49 @@ CONFIG_MIPS_AU1000_ENET=y
 #
 # IrDA (infrared) support
 #
-# CONFIG_IRDA is not set
+CONFIG_IRDA=y
+
+#
+# IrDA protocols
+#
+CONFIG_IRLAN=m
+# CONFIG_IRNET is not set
+CONFIG_IRCOMM=m
+# CONFIG_IRDA_ULTRA is not set
+
+#
+# IrDA options
+#
+CONFIG_IRDA_CACHE_LAST_LSAP=y
+CONFIG_IRDA_FAST_RR=y
+# CONFIG_IRDA_DEBUG is not set
+
+#
+# Infrared-port device drivers
+#
+
+#
+# SIR device drivers
+#
+# CONFIG_IRTTY_SIR is not set
+# CONFIG_IRPORT_SIR is not set
+
+#
+# Dongle support
+#
+# CONFIG_DONGLE is not set
+
+#
+# FIR device drivers
+#
+# CONFIG_USB_IRDA is not set
+# CONFIG_NSC_FIR is not set
+# CONFIG_WINBOND_FIR is not set
+# CONFIG_TOSHIBA_FIR is not set
+CONFIG_AU1000_FIR=m
+# CONFIG_SMC_IRCC_FIR is not set
+# CONFIG_ALI_FIR is not set
+# CONFIG_VLSI_FIR is not set
 
 #
 # ISDN subsystem
@@ -462,7 +515,8 @@ CONFIG_MIPS_AU1000_ENET=y
 #
 # Character devices
 #
-# CONFIG_VT is not set
+CONFIG_VT=y
+CONFIG_VT_CONSOLE=y
 # CONFIG_SERIAL is not set
 # CONFIG_SERIAL_EXTENDED is not set
 CONFIG_SERIAL_NONSTANDARD=y
@@ -627,6 +681,58 @@ CONFIG_MSDOS_PARTITION=y
 # Multimedia devices
 #
 # CONFIG_VIDEO_DEV is not set
+
+#
+# Console drivers
+#
+# CONFIG_VGA_CONSOLE is not set
+# CONFIG_MDA_CONSOLE is not set
+
+#
+# Frame-buffer support
+#
+CONFIG_FB=y
+CONFIG_DUMMY_CONSOLE=y
+# CONFIG_FB_RIVA is not set
+# CONFIG_FB_CLGEN is not set
+# CONFIG_FB_PM2 is not set
+# CONFIG_FB_PM3 is not set
+# CONFIG_FB_CYBER2000 is not set
+# CONFIG_FB_MATROX is not set
+# CONFIG_FB_ATY is not set
+# CONFIG_FB_RADEON is not set
+# CONFIG_FB_ATY128 is not set
+# CONFIG_FB_SIS is not set
+# CONFIG_FB_NEOMAGIC is not set
+# CONFIG_FB_3DFX is not set
+# CONFIG_FB_VOODOO1 is not set
+# CONFIG_FB_TRIDENT is not set
+CONFIG_FB_E1356=y
+CONFIG_PB1000_CRT=y
+# CONFIG_PB1000_NTSC is not set
+# CONFIG_PB1000_TFT is not set
+# CONFIG_FB_VIRTUAL is not set
+CONFIG_FBCON_ADVANCED=y
+# CONFIG_FBCON_MFB is not set
+# CONFIG_FBCON_CFB2 is not set
+# CONFIG_FBCON_CFB4 is not set
+CONFIG_FBCON_CFB8=y
+CONFIG_FBCON_CFB16=y
+# CONFIG_FBCON_CFB24 is not set
+# CONFIG_FBCON_CFB32 is not set
+# CONFIG_FBCON_AFB is not set
+# CONFIG_FBCON_ILBM is not set
+# CONFIG_FBCON_IPLAN2P2 is not set
+# CONFIG_FBCON_IPLAN2P4 is not set
+# CONFIG_FBCON_IPLAN2P8 is not set
+# CONFIG_FBCON_MAC is not set
+# CONFIG_FBCON_VGA_PLANES is not set
+# CONFIG_FBCON_VGA is not set
+# CONFIG_FBCON_HGA is not set
+# CONFIG_FBCON_FONTWIDTH8_ONLY is not set
+# CONFIG_FBCON_FONTS is not set
+CONFIG_FONT_8x8=y
+CONFIG_FONT_8x16=y
 
 #
 # Sound
