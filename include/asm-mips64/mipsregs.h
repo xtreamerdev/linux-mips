@@ -879,7 +879,7 @@ static inline void tlb_write_random(void)
 /*
  * Manipulate bits in a c0 register.
  */
-#define __BUILD_SET_C0(name,register)				\
+#define __BUILD_SET_C0(name)					\
 static inline unsigned int					\
 set_c0_##name(unsigned int set)					\
 {								\
@@ -917,9 +917,9 @@ change_c0_##name(unsigned int change, unsigned int new)		\
 	return res;						\
 }
 
-__BUILD_SET_C0(status,CP0_STATUS)
-__BUILD_SET_C0(cause,CP0_CAUSE)
-__BUILD_SET_C0(config,CP0_CONFIG)
+__BUILD_SET_C0(status)
+__BUILD_SET_C0(cause)
+__BUILD_SET_C0(config)
 
 #endif /* !__ASSEMBLY__ */
 
