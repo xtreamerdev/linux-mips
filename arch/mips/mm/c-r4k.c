@@ -390,28 +390,9 @@ static void r4k_flush_cache_page_r4600(struct vm_area_struct *vma,
 	}
 }
 
-static void r4k_flush_dcache_page_impl(struct page *page)
+static void r4k_flush_data_cache_page(unsigned long addr)
 {
-	unsigned long addr = (unsigned long) page_address(page);
-
 	r4k_blast_dcache_page(addr);
-}
-
-static void r4k_flush_dcache_page(struct page *page)
-{
-	if (page->mapping && page->mapping->i_mmap == NULL &&
-	    page->mapping->i_mmap_shared == NULL) {
-		SetPageDcacheDirty(page);
-
-		return;
-	}
-
-	/*
-	 * We could delay the flush for the !page->mapping case too.  But that
-	 * case is for exec env/arg pages and those are %99 certainly going to
-	 * get faulted into the tlb (and thus flushed) anyways.
-	 */
-	r4k_flush_dcache_page_impl(page);
 }
 
 static void r4k_flush_icache_range(unsigned long start, unsigned long end)
@@ -576,20 +557,6 @@ static void r4600v20k_flush_cache_sigtramp(unsigned long addr)
 #ifdef R4600_V2_HIT_CACHEOP_WAR
 	local_irq_restore(flags);
 #endif
-}
-
-void __update_cache(struct vm_area_struct *vma, unsigned long address,
-	pte_t pte)
-{
-	struct page *page = pte_page(pte);
-	unsigned long pg_flags;
-
-	if (VALID_PAGE(page) && page->mapping &&
-	    ((pg_flags = page->flags) & (1UL << PG_dcache_dirty))) {
-		r4k_flush_dcache_page_impl(page);
-
-		ClearPageDcacheDirty(page);
-	}
 }
 
 static void __init probe_icache(unsigned long config)
@@ -804,6 +771,7 @@ void __init ld_mmu_r4xx0(void)
 {
 	unsigned long config = read_c0_config();
 	extern char except_vec2_generic;
+	unsigned int sets;
 
 	/* Default cache error handler for R4000 family */
 
@@ -822,13 +790,22 @@ void __init ld_mmu_r4xx0(void)
 	case CPU_R5000:
 	case CPU_NEVADA:
 		_flush_cache_page = r4k_flush_cache_page_r4600;
+		sets = 1;
+		break;
+
+	default:
+		sets = 0;
+		break;
 	}
 
-	_flush_dcache_page = r4k_flush_dcache_page;
+	shm_align_mask = max_t(unsigned long,
+	                       (dcache_size >> sets) - 1, PAGE_SIZE - 1);
+
 	_flush_cache_sigtramp = r4k_flush_cache_sigtramp;
 	if ((read_c0_prid() & 0xfff0) == 0x2020) {
 		_flush_cache_sigtramp = r4600v20k_flush_cache_sigtramp;
 	}
+	_flush_data_cache_page = r4k_flush_data_cache_page;
 	_flush_icache_range = r4k_flush_icache_range;	/* Ouch */
 
 	__flush_cache_all();

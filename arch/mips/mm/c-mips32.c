@@ -251,31 +251,12 @@ static void mips32_flush_cache_page_pc(struct vm_area_struct *vma,
 	}
 }
 
-static void mips32_flush_dcache_page_impl(struct page *page)
+static void mips32_flush_data_cache_page(unsigned long addr)
 {
-	unsigned long addr = (unsigned long)page_address(page);
-
 	if (sc_lsize)
 		blast_scache_page(addr);
 	else
 		blast_dcache_page(addr);
-}
-
-static void mips32_flush_dcache_page(struct page *page)
-{
-	if (page->mapping && page->mapping->i_mmap == NULL &&
-	    page->mapping->i_mmap_shared == NULL) {
-		SetPageDcacheDirty(page);
-
-		return;
-	}
-
-	/*
-	 * We could delay the flush for the !page->mapping case too.  But that
-	 * case is for exec env/arg pages and those are %99 certainly going to
-	 * get faulted into the tlb (and thus flushed) anyways.
-	 */
-	mips32_flush_dcache_page_impl(page);
 }
 
 static void
@@ -418,21 +399,6 @@ static void mips32_flush_icache_all(void)
 		blast_icache();
 	}
 }
-
-void __update_cache(struct vm_area_struct *vma, unsigned long address,
-	pte_t pte)
-{
-	struct page *page = pte_page(pte);
-	unsigned long pg_flags;
-
-	if (VALID_PAGE(page) && page->mapping &&
-	    ((pg_flags = page->flags) & (1UL << PG_dcache_dirty))) {
-		mips32_flush_dcache_page_impl(page);
-
-		ClearPageDcacheDirty(page);
-	}
-}
-
 
 /* Detect and size the various caches. */
 static void __init probe_icache(unsigned long config)
@@ -695,9 +661,17 @@ void __init ld_mmu_mips32(void)
 	probe_dcache(config);
 	setup_scache(config);
 
+	/*
+	 * XXX Some MIPS32 processors have physically indexed caches.  This
+	 * code supports virtually indexed processors and will be unnecessarily
+	 * unefficient on physically indexed processors.
+	 */
+	shm_align_mask = max_t(unsigned long, mips_cpu.dcache.sets * dc_lsize,
+	                       PAGE_SIZE) - 1;
+
 	_flush_cache_sigtramp = mips32_flush_cache_sigtramp;
-	_flush_dcache_page = mips32_flush_dcache_page;
 	_flush_icache_range = mips32_flush_icache_range;	/* Ouch */
+	_flush_data_cache_page = mips32_flush_data_cache_page;
 	_flush_icache_all = mips32_flush_icache_all;
 
 	__flush_cache_all();

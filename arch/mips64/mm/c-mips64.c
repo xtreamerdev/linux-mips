@@ -256,42 +256,12 @@ static void mips64_flush_cache_page_pc(struct vm_area_struct *vma,
 	}
 }
 
-/* If the addresses passed to these routines are valid, they are
- * either:
- *
- * 1) In KSEG0, so we can do a direct flush of the page.
- * 2) In KSEG2, and since every process can translate those
- *    addresses all the time in kernel mode we can do a direct
- *    flush.
- * 3) In KSEG1, no flush necessary.
- */
-static void mips64_flush_dcache_page_impl(struct page *page)
+static void mips64_flush_data_cache_page(unsigned long addr)
 {
-	unsigned long addr;
-
-	addr = page_address(page);
-
 	if (sc_lsize)
-		blast_scache_page((unsigned long)page_address(page));
+		blast_scache_page(addr);
 	else
-		blast_dcache_page((unsigned long)page_address(page));
-}
-
-static void mips64_flush_dcache_page(struct page *page)
-{
-	if (page->mapping && page->mapping->i_mmap == NULL &&
-	    page->mapping->i_mmap_shared == NULL) {
-	        SetPageDcacheDirty(page);
-
-		return;
-	}
-
-	/*
-	 * We could delay the flush for the !page->mapping case too.  But that
-	 * case is for exec env/arg pages and those are %99 certainly going to
-	 * get faulted into the tlb (and thus flushed) anyways.
-	 */
-	mips64_flush_dcache_page_impl(page);
+		blast_dcache_page(addr);
 }
 
 static void
@@ -433,20 +403,6 @@ mips64_flush_icache_all(void)
 {
 	if (mips_cpu.icache.flags | MIPS_CACHE_VTAG_CACHE) {
 		blast_icache();
-	}
-}
-
-void __update_cache(struct vm_area_struct *vma, unsigned long address,
-        pte_t pte)
-{
-	struct page *page = pte_page(pte);
-	unsigned long pg_flags;
-
-	if (VALID_PAGE(page) && page->mapping &&
-	    ((pg_flags = page->flags) & (1UL << PG_dcache_dirty))) {
-		mips64_flush_dcache_page_impl(page);
-
-		ClearPageDcacheDirty(page);
 	}
 }
 
@@ -633,7 +589,6 @@ static void __init setup_noscache_funcs(void)
 	_flush_cache_mm = mips64_flush_cache_mm_pc;
 	_flush_cache_range = mips64_flush_cache_range_pc;
 	_flush_cache_page = mips64_flush_cache_page_pc;
-	_flush_dcache_page = mips64_flush_dcache_page;
 
 	_clear_page = (void *)mips64_clear_page_dc;
 	_copy_page = (void *)mips64_copy_page_dc;
@@ -652,7 +607,6 @@ static void __init setup_scache_funcs(void)
 	_flush_cache_mm = mips64_flush_cache_mm_sc;
 	_flush_cache_range = mips64_flush_cache_range_sc;
 	_flush_cache_page = mips64_flush_cache_page_sc;
-	_flush_dcache_page = mips64_flush_dcache_page;
 
 	_clear_page = (void *)mips64_clear_page_sc;
 	_copy_page = (void *)mips64_copy_page_sc;
@@ -708,6 +662,7 @@ void __init ld_mmu_mips64(void)
 	setup_scache(config);
 
 	_flush_cache_sigtramp = mips64_flush_cache_sigtramp;
+	_flush_data_cache_page = mips64_flush_data_cache_page;
 	_flush_icache_range = mips64_flush_icache_range;	/* Ouch */
 	_flush_icache_all = mips64_flush_icache_all;
 

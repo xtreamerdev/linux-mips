@@ -11,7 +11,8 @@ USE_STANDARD_AS_RULE := true
 O_TARGET := mm.o
 
 export-objs			+= ioremap.o loadmmu.o remap.o
-obj-y				+= extable.o init.o ioremap.o fault.o loadmmu.o
+obj-y				+= cache.o extable.o init.o ioremap.o fault.o \
+				   loadmmu.o
 
 obj-$(CONFIG_CPU_R3000)		+= pg-r3k.o c-r3k.o tlb-r3k.o tlbex-r3k.o
 obj-$(CONFIG_CPU_TX39XX)	+= pg-r3k.o c-tx39.o tlb-r3k.o tlbex-r3k.o

@@ -110,14 +110,6 @@ int do_check_pgt_cache(int low, int high)
 	return freed;
 }
 
-
-asmlinkage int sys_cacheflush(void *addr, int bytes, int cache)
-{
-	/* XXX Just get it working for now... */
-	__flush_cache_all();
-	return 0;
-}
-
 /*
  * We have up to 8 empty zeroed pages so we can map one of the right colour
  * when needed.  This is necessary only on R4000 / R4400 SC and MC versions

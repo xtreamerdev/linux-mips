@@ -21,6 +21,8 @@
 
 #ifndef __ASSEMBLY__
 
+#include <asm/cacheflush.h>
+
 #define BUG() do { printk("kernel BUG at %s:%d!\n", __FILE__, __LINE__); *(int *)0=0; } while (0)
 #define PAGE_BUG(page) do {  BUG(); } while (0)
 
@@ -64,8 +66,32 @@ extern void (*_copy_page)(void * to, void * from);
 
 #define clear_page(page)	_clear_page(page)
 #define copy_page(to, from)	_copy_page(to, from)
-#define clear_user_page(page, vaddr)	clear_page(page)
-#define copy_user_page(to, from, vaddr)	copy_page(to, from)
+
+extern unsigned long shm_align_mask;
+
+static inline unsigned long pages_do_alias(unsigned long addr1,
+	unsigned long addr2)
+{
+	return (addr1 ^ addr2) & shm_align_mask;
+}
+
+static inline void clear_user_page(void *page, unsigned long vaddr)
+{
+	unsigned long kaddr = (unsigned long) page;
+
+	clear_page(page);
+	if (pages_do_alias(kaddr, vaddr))
+		flush_data_cache_page(kaddr);
+}
+
+static inline void copy_user_page(void * to, void * from, unsigned long vaddr)
+{
+	unsigned long kto = (unsigned long) to;
+
+	copy_page(to, from);
+	if (pages_do_alias(kto, vaddr))
+		flush_data_cache_page(kto);
+}
 
 /*
  * These are used to make use of C type-checking..

@@ -6,7 +6,8 @@ USE_STANDARD_AS_RULE := true
 
 O_TARGET := mm.o
 
-obj-y				:= extable.o init.o fault.o loadmmu.o \
+export-objs			:= loadmmu.o
+obj-y				:= cache.o extable.o init.o fault.o loadmmu.o \
 				   tlbex-r4k.o
 
 obj-$(CONFIG_CPU_R4300)		+= c-r4k.o pg-r4k.o tlb-r4k.o tlb-glue-r4k.o

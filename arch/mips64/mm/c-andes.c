@@ -50,7 +50,7 @@ static void andes_flush_cache_page(struct vm_area_struct *vma,
 {
 }
 
-static void andes_flush_dcache_page(struct page * page)
+static void andes_flush_data_cache_page(unsigned long addr)
 {
 }
 
@@ -110,11 +110,11 @@ void __init ld_mmu_andes(void)
 	_flush_cache_mm = andes_flush_cache_mm;
 	_flush_cache_range = andes_flush_cache_range;
 	_flush_cache_page = andes_flush_cache_page;
-	_flush_dcache_page = andes_flush_dcache_page;
 	_flush_icache_range = andes_flush_icache_range;
 	_flush_icache_page = andes_flush_icache_page;
 
 	_flush_cache_sigtramp = andes_flush_cache_sigtramp;
+	_flush_data_cache_page = andes_flush_data_cache_page;
 
 	__flush_cache_all();
 }
