@@ -38,12 +38,12 @@
 	bltz	\tmp, \kaddr
 	 ld	\ptr, (\ptr)
 	dsrl	\tmp, (PGDIR_SHIFT-3)		# get pgd offset in bytes
-	andi	\tmp, ((PTRS_PER_PGD - 1)<<3)
+	andi	\tmp, ((_PTRS_PER_PGD - 1)<<3)
 	daddu	\ptr, \tmp			# add in pgd offset
 	dmfc0	\tmp, CP0_BADVADDR
 	ld	\ptr, (\ptr)			# get pmd pointer
 	dsrl	\tmp, (PMD_SHIFT-3)		# get pmd offset in bytes
-	andi	\tmp, ((PTRS_PER_PMD - 1)<<3)
+	andi	\tmp, ((_PTRS_PER_PMD - 1)<<3)
 	daddu	\ptr, \tmp			# add in pmd offset
 	dmfc0	\tmp, CP0_XCONTEXT
 	ld	\ptr, (\ptr)			# get pte pointer
