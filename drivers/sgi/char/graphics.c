@@ -53,12 +53,6 @@ static int boards;
 
 #define GRAPHICS_CARD(inode) 0
 
-/*
-void enable_gconsole(void) {};
-void disable_gconsole(void) {};
-*/
-
-
 int
 sgi_graphics_open (struct inode *inode, struct file *file)
 {
