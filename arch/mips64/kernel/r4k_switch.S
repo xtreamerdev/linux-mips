@@ -10,7 +10,6 @@
  */
 #include <asm/asm.h>
 #include <asm/cachectl.h>
-#include <asm/current.h>
 #include <asm/fpregdef.h>
 #include <asm/mipsregs.h>
 #include <asm/offset.h>
@@ -89,11 +88,11 @@ LEAF(lazy_fpu_switch)
 
 	sll	t0, t0, 5			# load new fp state
 	bgez	t0, 1f
-	 ldc1	$f0, (THREAD_FPU + 0x00)($28)
-	fpu_restore_16odd $28
+	 ldc1	$f0, (THREAD_FPU + 0x00)(a1)
+	fpu_restore_16odd a1
 1:
 	.set	reorder
-	fpu_restore_16even $28, t0		# clobbers t0
+	fpu_restore_16even a1, t0		# clobbers t0
 3:
 	jr	ra
 	END(lazy_fpu_switch)
@@ -123,10 +122,10 @@ LEAF(restore_fp)
 	bgez	t0, 1f				# 16 register mode?
 	 nop
 
-	fpu_restore_16odd $28
+	fpu_restore_16odd a0
 1:
 	.set	reorder
-	fpu_restore_16even $28, t0		# clobbers t0
+	fpu_restore_16even a0, t0		# clobbers t0
 
 	jr	ra
 	END(restore_fp)
