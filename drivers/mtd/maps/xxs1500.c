@@ -3,7 +3,7 @@
  * 
  * (C) 2003 Pete Popov <ppopov@mvista.com>
  * 
- * $Id: xxs1500.c,v 1.1.2.1 2003/06/05 00:00:35 ppopov Exp $
+ * $Id: xxs1500.c,v 1.1.2.1 2003/06/13 21:15:46 ppopov Exp $
  */
 
 #include <linux/config.h>
@@ -105,9 +105,13 @@ static unsigned long flash_size = 0x00800000;
 static unsigned char flash_buswidth = 4;
 static struct mtd_partition xxs1500_partitions[] = {
         {
-                name: "user fs 0",
-                size: 0x00C00000,
+                name: "kernel image",
+                size: 0x00200000,
                 offset: 0,
+        },{
+                name: "user fs 0",
+                size: (0x00C00000-0x200000),
+                offset: MTDPART_OFS_APPEND,
         },{
                 name: "yamon",
                 size: 0x00100000,
