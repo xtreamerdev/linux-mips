@@ -105,18 +105,18 @@ struct sgi_vino {
 	u32 _pad_control;
 	volatile u32 control;
 
-#define VINO_INTSTAT_A_FIELD_TRANS	(1<<0)	/* Field transferred int */
-#define VINO_INTSTAT_A_FIFO_OF		(1<<1)	/* FIFO overflow int */
-#define VINO_INTSTAT_A_END_DESC_TBL	(1<<2)	/* End of desc table int */
-#define VINO_INTSTAT_A			(VINO_INTSTAT_A_FIELD_TRANS | \
-					 VINO_INTSTAT_A_FIFO_OF | \
-					 VINO_INTSTAT_A_END_DESC_TBL)
-#define VINO_INTSTAT_B_FIELD_TRANS	(1<<3)	/* Field transferred int */
-#define VINO_INTSTAT_B_FIFO_OF		(1<<4)	/* FIFO overflow int */
-#define VINO_INTSTAT_B_END_DESC_TBL	(1<<5)	/* End of desc table int */
-#define VINO_INTSTAT_B			(VINO_INTSTAT_B_FIELD_TRANS | \
-					 VINO_INTSTAT_B_FIFO_OF | \
-					 VINO_INTSTAT_B_END_DESC_TBL)
+#define VINO_INTSTAT_A_EOF		(1<<0)	/* Field transferred int */
+#define VINO_INTSTAT_A_FIFO		(1<<1)	/* FIFO overflow int */
+#define VINO_INTSTAT_A_EOD		(1<<2)	/* End of desc table int */
+#define VINO_INTSTAT_A			(VINO_INTSTAT_A_EOF | \
+					 VINO_INTSTAT_A_FIFO | \
+					 VINO_INTSTAT_A_EOD)
+#define VINO_INTSTAT_B_EOF		(1<<3)	/* Field transferred int */
+#define VINO_INTSTAT_B_FIFO		(1<<4)	/* FIFO overflow int */
+#define VINO_INTSTAT_B_EOD		(1<<5)	/* End of desc table int */
+#define VINO_INTSTAT_B			(VINO_INTSTAT_B_EOF | \
+					 VINO_INTSTAT_B_FIFO | \
+					 VINO_INTSTAT_B_EOD)
 	u32 _pad_intr_status;
 	volatile u32 intr_status;
 

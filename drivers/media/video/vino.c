@@ -386,7 +386,7 @@ static int dma_setup(struct vino_device *v)
 		       VINO_CLIP_X(VINO_PAL_WIDTH);
 	 */
 	/* init the frame rate and norm (full frame rate only for now...) */
-	ch->frame_rate = VINO_FRAMERT_RT(0x0fff) |
+	ch->frame_rate = VINO_FRAMERT_RT(0x1fff) |
 			 (get_capture_norm(v) == VIDEO_MODE_PAL ?
 			  VINO_FRAMERT_PAL : 0);
 	ctrl = vino->control;
@@ -515,12 +515,12 @@ static void vino_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	ctrl = vino->control;
 	intr = vino->intr_status;
 	DEBUG("VINO: intr status %04x\n", intr);
-	if (intr & (VINO_INTSTAT_A_FIFO_OF | VINO_INTSTAT_A_END_DESC_TBL)) {
+	if (intr & (VINO_INTSTAT_A_FIFO | VINO_INTSTAT_A_EOD)) {
 		ctrl &= ~VINO_CTRL_A_DMA_ENBL;
 		vino->control = ctrl;
 		clear_eod(&Vino->chA);
 	}
-	if (intr & (VINO_INTSTAT_B_FIFO_OF | VINO_INTSTAT_B_END_DESC_TBL)) {
+	if (intr & (VINO_INTSTAT_B_FIFO | VINO_INTSTAT_B_EOD)) {
 		ctrl &= ~VINO_CTRL_B_DMA_ENBL;
 		vino->control = ctrl;
 		clear_eod(&Vino->chB);
