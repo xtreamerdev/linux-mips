@@ -596,16 +596,16 @@ if [ "$CONFIG_TANBAC_TB0226" = "y" ]; then
    define_bool CONFIG_SERIAL_MANY_PORTS y
 fi
 if [ "$CONFIG_TANBAC_TB0229" = "y" ]; then
-    define_bool CONFIG_IRQ_CPU y
-    define_bool CONFIG_NEW_TIME_C y
-    define_bool CONFIG_VR41XX_TIME_C y
-    define_bool CONFIG_NONCOHERENT_IO y
-    define_bool CONFIG_ISA n
-    define_bool CONFIG_PCI y
-    define_bool CONFIG_NEW_PCI y
-    define_bool CONFIG_PCI_AUTO y
-    define_bool CONFIG_DUMMY_KEYB y
-    define_bool CONFIG_SERIAL_MANY_PORTS y
+   define_bool CONFIG_IRQ_CPU y
+   define_bool CONFIG_NEW_TIME_C y
+   define_bool CONFIG_VR41XX_TIME_C y
+   define_bool CONFIG_NONCOHERENT_IO y
+   define_bool CONFIG_ISA n
+   define_bool CONFIG_PCI y
+   define_bool CONFIG_NEW_PCI y
+   define_bool CONFIG_PCI_AUTO y
+   define_bool CONFIG_DUMMY_KEYB y
+   define_bool CONFIG_SERIAL_MANY_PORTS y
 fi
 if [ "$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
    define_bool CONFIG_TOSHIBA_BOARDS y
