@@ -47,8 +47,8 @@
 #define VR4111_CMUCLKMSK	KSEG1ADDR(0x0b000060)
 #define VR4122_CMUCLKMSK	KSEG1ADDR(0x0f000060)
 
-static u32 vr41xx_cmu_base = 0;
-static u16 cmuclkmsk = 0;
+static u32 vr41xx_cmu_base;
+static u16 cmuclkmsk;
 
 #define write_cmu(mask)	writew((mask), vr41xx_cmu_base)
 
