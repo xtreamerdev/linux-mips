@@ -949,7 +949,6 @@ CONFIG_USB=y
 # CONFIG_USB_UHCI is not set
 # CONFIG_USB_UHCI_ALT is not set
 CONFIG_USB_OHCI=y
-CONFIG_USB_NON_PCI_OHCI=y
 
 #
 # USB Device Class drivers
