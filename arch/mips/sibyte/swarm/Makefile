@@ -7,7 +7,7 @@ EXTRA_AFLAGS = -mips3 -mcpu=r4000
 
 all: sbswarm.a
 
-OBJS-y                   = setup.o cmdline.o rtc.o time.o memory.o cfe_api.o 
+OBJS-y                   = setup.o cmdline.o memory.o cfe_api.o rtc_xicor1241.o
 
 OBJS-$(CONFIG_SMP)      += smp.o
 

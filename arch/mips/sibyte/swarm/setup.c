@@ -21,12 +21,12 @@
  */
 
 #include <linux/spinlock.h>
-#include <linux/mc146818rtc.h>
 #include <linux/mm.h>
 #include <linux/bootmem.h>
 #include <linux/blk.h>
 #include <linux/init.h>
 #include <linux/ide.h>
+
 #include <asm/irq.h>
 #include <asm/io.h>
 #include <asm/bootinfo.h>
@@ -229,14 +229,31 @@ void __init bus_error_init(void)
 {
 }
 
-extern void swarm_time_init(void);
+void __init swarm_timer_setup(struct irqaction *irq)
+{
+        /* 
+         * we don't set up irqaction, because we will deliver timer
+         * interrupts through low-level (direct) meachanism.
+         */
+
+        /* We only need to setup the generic timer */
+        sb1250_time_init();
+}
+
+extern int xicor_set_time(unsigned long);
+extern unsigned int xicor_get_time(void);
 
 void __init swarm_setup(void)
 {
 	extern int panic_timeout;
 
-	rtc_ops = &swarm_rtc_ops;
-	panic_timeout = 5;  /* For debug.  This should probably be raised later */
+	panic_timeout = 5;  /* For debug.  */
+
+        board_timer_setup = swarm_timer_setup;
+
+        rtc_get_time = xicor_get_time;
+        rtc_set_time = xicor_set_time;
+
 	_machine_restart   = (void (*)(char *))swarm_linux_exit;
 	_machine_halt      = swarm_linux_exit;
 	_machine_power_off = swarm_linux_exit;
@@ -254,7 +271,7 @@ void __init swarm_setup(void)
 #endif
 	       " runs\n");
 
-	board_timer_setup = swarm_time_init;
+//	board_timer_setup = swarm_time_init;
 
 #ifdef CONFIG_BLK_DEV_IDE_SWARM
 	ide_ops = &swarm_ide_ops;
