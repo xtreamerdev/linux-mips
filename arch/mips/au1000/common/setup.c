@@ -103,7 +103,7 @@ void __init au1x00_setup(void)
 
 		case 0x03030200: printk("Au1550 AA "); break;
 
-		default: printk(L"Unknown Au1x00! "); bclk = 0; break;
+		default: printk("Unknown Au1x00! "); bclk = 0; break;
 	}
 	cpupll = (au_readl(0xB1900060) & 0x3F) * 12;
 	printk("(PRId %08X) @ %dMHZ\n", prid, cpupll);
