@@ -426,7 +426,7 @@ out:	jr	ra
 	sys	sys32_statfs	2
 	sys	sys32_fstatfs	2			/* 4100 */
 	sys	sys_ni_syscall	0	/* sys_ioperm */
-	sys	sys_socketcall	2
+	sys	sys32_socketcall	2
 	sys	sys_syslog	3
 	sys	sys32_setitimer	3
 	sys	sys32_getitimer	2			/* 4105 */
