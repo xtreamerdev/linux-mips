@@ -106,7 +106,7 @@ do_page_fault(struct pt_regs *regs, unsigned long write, unsigned long address)
 	unsigned long fixup;
 	siginfo_t info;
 
-#if 1
+#if 0
 	printk("Cpu%d[%s:%d:%08lx:%ld:%08lx]\n", smp_processor_id(),
 		current->comm, current->pid, address, write, regs->cp0_epc);
 #endif
@@ -188,7 +188,7 @@ bad_area:
 	if (user_mode(regs)) {
 		tsk->thread.cp0_badvaddr = address;
 		tsk->thread.error_code = write;
-#if 1
+#if 0
 		printk("do_page_fault() #2: sending SIGSEGV to %s for illegal %s\n"
 		       "%08lx (epc == %08lx, ra == %08lx)\n",
 		       tsk->comm,

@@ -330,18 +330,13 @@ static void local_sb1_flush_cache_sigtramp(unsigned long addr)
 {
 	unsigned long daddr, iaddr;
 
-printk("local_sb1_flush_cache_sigtramp: addr = %lx\n", addr);
 	
 	daddr = addr & ~(dcache_line_size - 1);
 	protected_writeback_dcache_line(daddr);
-printk("local_sb1_flush_cache_sigtramp #1\n");
 	protected_writeback_dcache_line(daddr + dcache_line_size);
-printk("local_sb1_flush_cache_sigtramp #2\n");
 	iaddr = addr & ~(icache_line_size - 1);
 	protected_flush_icache_line(iaddr);
-printk("local_sb1_flush_cache_sigtramp #3\n");
 	protected_flush_icache_line(iaddr + icache_line_size);
-printk("local_sb1_flush_cache_sigtramp #4\n");
 }
 
 #ifdef CONFIG_SMP
