@@ -678,11 +678,15 @@
 #define __NR_N32_cacheflush		(__NR_N32_Linux + 197)
 #define __NR_N32_cachectl		(__NR_N32_Linux + 198)
 #define __NR_N32_sysmips		(__NR_N32_Linux + 199)
+#define __NR_N32_fcntl64		(__NR_N32_Linux + 212)
+#define __NR_N32_stat64			(__NR_N32_Linux + 213)
+#define __NR_N32_fstat64		(__NR_N32_Linux + 214)
+#define __NR_N32_lstat64		(__NR_N32_Linux + 215)
 
 /*
  * Offset of the last N32 flavoured syscall
  */
-#define __NR_N32_Linux_syscalls		199
+#define __NR_N32_Linux_syscalls		215
 
 #ifndef __ASSEMBLY__
 

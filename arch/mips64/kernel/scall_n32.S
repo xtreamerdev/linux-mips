@@ -320,8 +320,24 @@ EXPORT(sysn32_call_table)
 	PTR	sys_tkill
 	PTR	sys_time
 	PTR	sys_ni_syscall			/* res. for futex */
-	PTR	sys_ni_syscall			/* 5195 rs. sched_setaffinity */
+	PTR	sys_ni_syscall			/* 6195 rs. sched_setaffinity */
 	PTR	sys_ni_syscall			/* res. f. sched_getaffinity */
 	PTR	sys_cacheflush
 	PTR	sys_cachectl
 	PTR	sys_sysmips
+	PTR	sys_ni_syscall			/* 6200 */
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall			/* 6205 */
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall			/* 6210 */
+	PTR	sys_ni_syscall
+	PTR	sys_fcntl
+	PTR	sys_newstat
+	PTR	sys_newfstat
+	PTR	sys_newlstat			/* 6215 */
