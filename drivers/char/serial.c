@@ -420,17 +420,17 @@ static inline int serial_paranoia_check(struct async_struct *info,
 }
 
 #if defined(CONFIG_MIPS_ATLAS) || defined(CONFIG_MIPS_SEAD)
-extern unsigned int atlas_serial_in(struct async_struct *info, int offset);
-extern void atlas_serial_out(struct async_struct *info, int offset, int value);
+
+#include <asm/mips-boards/atlas.h>
 
 static _INLINE_ unsigned int serial_in(struct async_struct *info, int offset)
 {
-        return (atlas_serial_in(info, offset) & 0xff);   
+        return (*(volatile unsigned int *)(mips_io_port_base + ATLAS_UART_REGS_BASE + offset*8) & 0xff);
 }
 
 static _INLINE_ void serial_out(struct async_struct *info, int offset, int value)
 {
-        atlas_serial_out(info, offset, value);
+        *(volatile unsigned int *)(mips_io_port_base + ATLAS_UART_REGS_BASE + offset*8) = value;
 }
 
 #else
