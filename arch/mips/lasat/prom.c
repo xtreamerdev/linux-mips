@@ -13,8 +13,17 @@
 #include <asm/lasat/lasat.h>
 #include <asm/cpu.h>
 
+#include "at93c.h"
+#include <asm/lasat/eeprom.h>
+
 char arcs_cmdline[CL_SIZE];
 
+static struct at93c_defs at93c_defs[N_MACHTYPES] = {
+	{(void *)AT93C_REG_100, (void *)AT93C_RDATA_REG_100, AT93C_RDATA_SHIFT_100,
+	AT93C_WDATA_SHIFT_100, AT93C_CS_M_100, AT93C_CLK_M_100},
+	{(void *)AT93C_REG_200, (void *)AT93C_RDATA_REG_200, AT93C_RDATA_SHIFT_200,
+	AT93C_WDATA_SHIFT_200, AT93C_CS_M_200, AT93C_CLK_M_200},
+};
 
 void __init prom_init(int argc, char **argv, char **envp, int *prom_vec)
 {
@@ -22,6 +31,8 @@ void __init prom_init(int argc, char **argv, char **envp, int *prom_vec)
 		mips_machtype = MACH_LASAT_200;
 	else
 		mips_machtype = MACH_LASAT_100;
+
+	at93c = &at93c_defs[mips_machtype];
 
 	lasat_init_board_info();		/* Read info from EEPROM */
 

@@ -29,6 +29,8 @@
 #include <linux/ctype.h>
 #include <asm/bootinfo.h>
 #include <asm/lasat/lasat_mtd.h>
+#include <asm/addrspace.h>
+#include "at93c.h"
 /* New model description table */
 #include "lasat_models.h"
 struct lasat_info lasat_board_info;
@@ -41,7 +43,7 @@ int EEPROMRead(unsigned int pos, unsigned char *data, int len)
 	int i;
 
 	for (i=0; i<len; i++)
-		*data++ = lasat_eeprom_read(pos++);
+		*data++ = at93c_read(pos++);
 
 	return 0;
 }
@@ -49,10 +51,8 @@ int EEPROMWrite(unsigned int pos, unsigned char *data, int len)
 {
 	int i;
 
-	lasat_eeprom_wp(0);
 	for (i=0; i<len; i++)
-		lasat_eeprom_write(pos++, *data++);
-	lasat_eeprom_wp(1);
+		at93c_write(pos++, *data++);
 
 	return 0;
 }

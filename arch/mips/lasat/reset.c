@@ -28,10 +28,10 @@
 #include <asm/reboot.h>
 #include <asm/system.h>
 #include <asm/lasat/lasat.h>
+#include "picvue.h"
 
 static void lasat_machine_restart(char *command);
 static void lasat_machine_halt(void);
-static void lasat_machine_power_off(void);
 
 /* Used to set machine to boot in service mode via /proc interface */
 int lasat_boot_to_service = 0;
@@ -41,7 +41,7 @@ static void lasat_machine_restart(char *command)
 	cli();
 
 	{
-		volatile unsigned int *softres_reg = (volatile unsigned int *)LASAT_RESET_REG;
+		volatile unsigned int *softres_reg = lasat_misc->reset_reg;
 
 		if (lasat_boot_to_service) {
 			printk("machine_restart: Rebooting to service mode\n");
@@ -53,18 +53,15 @@ static void lasat_machine_restart(char *command)
 	for (;;) ;
 }
 
+#define MESSAGE "System halted"
 static void lasat_machine_halt(void)
 {
 	/* Disable interrupts and loop forever */
-	printk(KERN_NOTICE "System halted.\n");
-	cli();
-	for (;;) ;
-}
-
-static void lasat_machine_power_off(void)
-{
-	/* We can't power off without the user's assistance */
-	printk(KERN_NOTICE "Please turn off the power now.\n");
+	printk(KERN_NOTICE MESSAGE "\n");
+#ifdef CONFIG_PICVUE
+	pvc_clear();
+	pvc_write_string(MESSAGE, 0, 0);
+#endif
 	cli();
 	for (;;) ;
 }
@@ -73,5 +70,5 @@ void lasat_reboot_setup(void)
 {
 	_machine_restart = lasat_machine_restart;
 	_machine_halt = lasat_machine_halt;
-	_machine_power_off = lasat_machine_power_off;
+	_machine_power_off = lasat_machine_halt;
 }

@@ -155,18 +155,6 @@
 #define IVR_SERIAL_PORT_DEFNS
 #endif
 
-#ifdef CONFIG_LASAT
-#include <asm/lasat/lasat.h>
-#define LASAT_SERIAL_PORT_DEFNS						\
-	{ .baud_base = LASAT_BASE_BAUD, .irq = LASATINT_UART,		\
-	  .flags = STD_COM_FLAGS,						\
-	  .port = LASAT_UART_REGS_BASE, /* Only for display */		\
-	  .iomem_base = (u8 *)KSEG1ADDR(LASAT_UART_REGS_BASE),		\
-	  .iomem_reg_shift = LASAT_UART_REGS_SHIFT, .io_type = SERIAL_IO_MEM }
-#else
-#define LASAT_SERIAL_PORT_DEFNS
-#endif
-
 #ifdef CONFIG_AU1X00_UART
 #include <asm/au1000.h>
 #define AU1000_SERIAL_PORT_DEFNS                              \
@@ -330,7 +318,6 @@
 	ATLAS_SERIAL_PORT_DEFNS			\
 	SEAD_SERIAL_PORT_DEFNS			\
 	COBALT_SERIAL_PORT_DEFNS		\
-	LASAT_SERIAL_PORT_DEFNS			\
 	EV96100_SERIAL_PORT_DEFNS		\
 	JAZZ_SERIAL_PORT_DEFNS			\
 	STD_SERIAL_PORT_DEFNS			\

@@ -16,8 +16,6 @@
 
 static struct mtd_info *mymtd;
 
-static volatile unsigned int *wpreg = (void *)(LASAT_FLASHWP_REG);
-
 static __u8 sp_read8(struct map_info *map, unsigned long ofs)
 {
 	return __raw_readb(map->map_priv_1 + ofs);
@@ -83,7 +81,7 @@ static int __init init_sp(void)
 	/* this does not play well with the old flash code which 
 	 * protects and uprotects the flash when necessary */
        	printk(KERN_NOTICE "Unprotecting flash\n");
-	*wpreg |= LASAT_FLASHWP_DIS;
+	*lasat_misc->flash_wp_reg |= 1 << lasat_misc->flash_wp_bit;
 
 	sp_map.map_priv_1 = lasat_flash_partition_start(LASAT_MTD_BOOTLOADER);
 	sp_map.size = lasat_board_info.li_flash_size;

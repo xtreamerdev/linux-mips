@@ -11,9 +11,13 @@ ifndef Version
 endif
 
 MKLASATIMG = mklasatimg
-ifndef MKLASATIMG_ARCH
-MKLASATIMG_ARCH = mqpro
+MKLASATIMG_ARCH = mq2,mqpro
+ifdef CONFIG_LASAT_SERVICE
+MKLASATIMG_FLAG = -s
+else
+MKLASATIMG_FLAG = -k
 endif
+
 KERNEL_IMAGE = $(TOPDIR)/vmlinux
 KERNEL_START = $(shell $(NM) $(KERNEL_IMAGE) | grep _ftext | cut -f1 -d\ )
 KERNEL_ENTRY = $(shell $(NM) $(KERNEL_IMAGE) | grep kernel_entry | cut -f1 -d\ )
@@ -30,7 +34,7 @@ head.o: $(KERNEL_IMAGE)
 OBJECTS= head.o kImage.o
 
 rom.sw:	rom.bin
-	$(MKLASATIMG) -o rom.sw -k rom.bin -m $(MKLASATIMG_ARCH)
+	$(MKLASATIMG) -o rom.sw $(MKLASATIMG_FLAG) rom.bin -m $(MKLASATIMG_ARCH)
 
 rom.bin: rom
 	$(OBJCOPY) -O binary -S rom rom.bin

@@ -47,8 +47,6 @@ bool 'Support for Hewlett Packard LaserJet board' CONFIG_HP_LASERJET
 bool 'Support for IBM WorkPad z50' CONFIG_IBM_WORKPAD
 bool 'Support for LASAT Networks platforms' CONFIG_LASAT
 if [ "$CONFIG_LASAT" = "y" ]; then
-   bool '  Support for LASAT Networks 100 series' CONFIG_LASAT_100
-   bool '  Support for LASAT Networks 200 series' CONFIG_LASAT_200
    tristate '  PICVUE LCD display driver' CONFIG_PICVUE
    dep_tristate '   PICVUE LCD display driver /proc interface' CONFIG_PICVUE_PROC $CONFIG_PICVUE
    bool '  DS1603 RTC driver' CONFIG_DS1603

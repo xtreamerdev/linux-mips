@@ -33,7 +33,7 @@ static void pvc_display(unsigned long data) {
 		pvc_write_string(pvc_lines[i], 0, i);
 }
 
-DECLARE_TASKLET(pvc_display_tasklet, &pvc_display, 0);
+static DECLARE_TASKLET(pvc_display_tasklet, &pvc_display, 0);
 
 static int pvc_proc_read_line(char *page, char **start,
                              off_t off, int count,
@@ -47,9 +47,9 @@ static int pvc_proc_read_line(char *page, char **start,
 		return 0;
 	}
 
-	up(&pvc_sem);
-        page += sprintf(page, "%s\n", pvc_lines[lineno]);
 	down(&pvc_sem);
+        page += sprintf(page, "%s\n", pvc_lines[lineno]);
+	up(&pvc_sem);
 
         return page - origpage; 
 }
@@ -71,10 +71,10 @@ static int pvc_proc_write_line(struct file *file, const char *buffer,
 	if (buffer[count-1] == '\n')
 		count--;
 
-	up(&pvc_sem);
+	down(&pvc_sem);
 	strncpy(pvc_lines[lineno], buffer, count);
 	pvc_lines[lineno][count] = '\0';
-	down(&pvc_sem);
+	up(&pvc_sem);
 
 	tasklet_schedule(&pvc_display_tasklet);
 
@@ -87,7 +87,7 @@ static int pvc_proc_scroll(struct file *file, const char *buffer,
         int origcount = count;
 	int cmd = simple_strtol(buffer, NULL, 10);
 
-	up(&pvc_sem);
+	down(&pvc_sem);
 	if (scroll_interval != 0)
 		del_timer(&timer);
 
@@ -104,7 +104,7 @@ static int pvc_proc_scroll(struct file *file, const char *buffer,
 		}
 		add_timer(&timer);
 	}
-	down(&pvc_sem);
+	up(&pvc_sem);
 
         return origcount;
 }
