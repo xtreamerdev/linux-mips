@@ -617,7 +617,6 @@ au1000_pcmcia_set_mem_map(unsigned int sock, struct pccard_mem_map *map)
 	}
 
 	spin_lock_irqsave(&pcmcia_lock, flags);
-	start=map->sys_start;
 
 	if(map->sys_stop==0)
 		map->sys_stop=MAP_SIZE-1;
@@ -631,7 +630,7 @@ au1000_pcmcia_set_mem_map(unsigned int sock, struct pccard_mem_map *map)
 			map->card_start;
 	}
 
-	map->sys_stop=map->sys_start+(map->sys_stop-start);
+	map->sys_stop=map->sys_start+MAP_SIZE;
 	pcmcia_socket[sock].mem_map[map->map]=*map;
 	spin_unlock_irqrestore(&pcmcia_lock, flags);
 	DEBUG(3, "set_mem_map %d start %x stop %x card_start %x\n", 
