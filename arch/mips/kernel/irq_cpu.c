@@ -51,7 +51,7 @@ static unsigned int mips_cpu_irq_startup(unsigned int irq)
 
 static void mips_cpu_irq_ack(unsigned int irq)
 {
-	/* although we attemp to clear the IP bit in cause reigster, I think
+	/* although we attempt to clear the IP bit in cause register, I think
 	 * usually it is cleared by device (irq source)
 	 */
 	clear_c0_cause(1 << (irq - mips_cpu_irq_base + 8));
