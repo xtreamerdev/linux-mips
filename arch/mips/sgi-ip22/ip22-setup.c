@@ -133,9 +133,7 @@ struct kbd_ops sgi_kbd_ops = {
 
 void __init ip22_setup(void)
 {
-#ifdef CONFIG_SERIAL_CONSOLE
 	char *ctype;
-#endif
 #ifdef CONFIG_REMOTE_DEBUG
 	char *kgdb_ttyd;
 #endif
@@ -160,7 +158,7 @@ void __init ip22_setup(void)
 	 * line and "d2" for the second serial line.
 	 */
 	ctype = ArcGetEnvironmentVariable("console");
-	if(*ctype == 'd') {
+	if (*ctype == 'd') {
 #ifdef CONFIG_SERIAL_CONSOLE
 		if(*(ctype + 1) == '2')
 			console_setup("ttyS1");
