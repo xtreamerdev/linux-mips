@@ -42,7 +42,7 @@ check_gas = $(shell if $(CC) $(1) -Wa,-Z -c -o /dev/null -xassembler /dev/null >
 GCCFLAGS	:= -I $(TOPDIR)/include/asm/gcc
 GCCFLAGS	+= -mabi=64 -G 0 -mno-abicalls -fno-pic -Wa,--trap -pipe
 GCCFLAGS	+= $(call check_gcc, -finline-limit=100000,)
-LINKFLAGS	+= -G 0 -static # -N
+LINKFLAGS	+= -G 0 -static -n
 MODFLAGS	+= -mlong-calls
 
 ifdef CONFIG_DEBUG_INFO
