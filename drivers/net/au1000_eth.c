@@ -241,7 +241,11 @@ int lsi_80227_init(struct net_device *dev, int phy_addr)
 	mdelay(1);
 
 	/* set up LEDs to correct display */
+#ifdef CONFIG_MIPS_MTX1
+	mdio_write(dev, phy_addr, 17, 0xff80);
+#else
 	mdio_write(dev, phy_addr, 17, 0xffc0);
+#endif
 
 	if (au1000_debug > 4)
 		dump_mii(dev, phy_addr);
