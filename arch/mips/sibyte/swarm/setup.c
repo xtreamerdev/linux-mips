@@ -35,6 +35,7 @@
 #include <asm/sibyte/sb1250.h>
 #include <asm/sibyte/sb1250_defs.h>
 #include <asm/sibyte/sb1250_regs.h>
+#include <asm/sibyte/swarm_ide.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
 
@@ -46,7 +47,7 @@ extern struct rtc_ops swarm_rtc_ops;
 extern int cfe_console_handle;
 
 #ifdef CONFIG_BLK_DEV_IDE_SWARM
-struct ide_ops *ide_ops;
+extern struct ide_ops *ide_ops;
 #endif
 
 
@@ -142,6 +143,49 @@ static void swarm_ide_release_region(ide_ioreg_t from, unsigned int extent)
     /* release_region(from, extent); */
 }
 
+
+void swarm_ideproc(ide_ide_action_t action, ide_drive_t *drive,
+		   void *buffer, unsigned int count)
+{
+	/*  slow? vlb_sync? */
+	switch (action) {
+	case ideproc_ide_input_data:
+		if (drive->io_32bit) {
+			swarm_insl(IDE_DATA_REG, buffer, count);
+		} else {
+			swarm_insw(IDE_DATA_REG, buffer, count<<1);
+		}
+		break;
+	case ideproc_ide_output_data:
+		if (drive->io_32bit) {
+			swarm_outsl(IDE_DATA_REG, buffer, count);
+		} else {
+			swarm_outsw(IDE_DATA_REG, buffer, count<<1);
+		}
+		break;
+	case ideproc_atapi_input_bytes:
+		count++;
+		if (drive->io_32bit) {
+			swarm_insl(IDE_DATA_REG, buffer, count>>2);
+		} else {
+			swarm_insw(IDE_DATA_REG, buffer, count>>1);
+		}
+		if ((count & 3) >= 2)
+			swarm_insw(IDE_DATA_REG, (char *)buffer + (count & ~3), 1);
+		break;
+	case ideproc_atapi_output_bytes:
+		count++;
+		if (drive->io_32bit) {
+			swarm_outsl(IDE_DATA_REG, buffer, count>>2);
+		} else {
+			swarm_outsw(IDE_DATA_REG, buffer, count>>1);
+		}
+		if ((count & 3) >= 2)
+			swarm_outsw(IDE_DATA_REG, (char *)buffer + (count & ~3), 1);
+		break;
+	}
+}
+
 struct ide_ops swarm_ide_ops = {
 	&swarm_ide_default_irq,
 	&swarm_ide_default_io_base,
@@ -155,43 +199,26 @@ struct ide_ops swarm_ide_ops = {
 #endif
 
 
-static void stop_this_cpu(void *dummy)
+#ifdef CONFIG_SMP
+static void smp_cpu0_exit(void *unused)
 {
-	printk("Cpu %d stopping\n", smp_processor_id());
-	for (;;);
+	printk("swarm_linux_exit called (cpu1) - passing control back to CFE\n");
+	cfe_exit(1,0);
 }
-
-static void smp_cpu0_exit(void)
-{
-	unsigned long tmp;
-
-	printk("cpu %d poked\n", smp_processor_id());
-	/* XXXKW we are in the mailbox handler... */
-	local_irq_disable();
-	__asm__("#.set mips64\n\t"
-		".set mips4\n\t"
-		"la %0, swarm_linux_exit\n\t"
-		"mtc0 %0, $24\n\t"
-		"eret\n\t"
-		".set pop"
-		: "=r" (tmp));
-}
-
-extern void (*smp_cpu0_finalize)(void);
+#endif
 
 static void swarm_linux_exit(void)
 {
+#ifdef CONFIG_SMP
 	if (smp_processor_id()) {
-		/* Make cpu 0 do the swarm_linux_exit */
-		/* XXXKW this isn't quite there yet */
-		smp_cpu0_finalize = smp_cpu0_exit;
-		stop_this_cpu(NULL);
-	} else {
-		printk("swarm_linux_exit called...passing control back to CFE\n");
-		cfe_exit(1, 0);
-		printk("cfe_exit returned??\n");
+		smp_call_function(smp_cpu0_exit,NULL,1,1);
 		while(1);
 	}
+#endif
+	printk("swarm_linux_exit called...passing control back to CFE\n");
+	cfe_exit(1, 0);
+	printk("cfe_exit returned??\n");
+	while(1);
 }
 
 void __init bus_error_init(void)
