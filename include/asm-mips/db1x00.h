@@ -106,4 +106,13 @@ typedef volatile struct
 #define SET_VCC_VPP(VCC, VPP, SLOT)\
 	((((VCC)<<2) | ((VPP)<<0)) << ((SLOT)*8))
 
+/* MTD CONFIG OPTIONS */
+#if defined(CONFIG_MTD_DB1X00_BOOT) && defined(CONFIG_MTD_DB1X00_USER)
+#define DB1X00_BOTH_BANKS
+#elif defined(CONFIG_MTD_DB1X00_BOOT) && !defined(CONFIG_MTD_DB1X00_USER)
+#define DB1X00_BOOT_ONLY
+#elif !defined(CONFIG_MTD_DB1X00_BOOT) && defined(CONFIG_MTD_DB1X00_USER)
+#define DB1X00_USER_ONLY
+#endif
+
 #endif /* __ASM_DB1X00_H */
