@@ -1462,13 +1462,6 @@ L:	linux-mips@linux-mips.org
 W:	http://www.realitydiluted.com/projects/nino
 S:	Maintained
 
-PHILIPS NINO PALM PC
-P:	Steven Hill
-M:	sjhill@realitydiluted.com
-L:	linux-mips@oss.sgi.com
-W:	http://www.realitydiluted.com/projects/nino
-S:	Maintained
-
 PNP SUPPORT
 P:	Tom Lees
 M:	tom@lpsg.demon.co.uk
