@@ -200,6 +200,13 @@ SUBDIRS       += arch/mips/au1000/db1x00 arch/mips/au1000/common
 LOADADDR      += 0x80100000
 endif
 
+ifdef CONFIG_MIPS_HYDROGEN3
+LIBS          += arch/mips/au1000/hydrogen3/hydrogen3.o \
+                 arch/mips/au1000/common/au1000.o
+SUBDIRS       += arch/mips/au1000/hydrogen3 arch/mips/au1000/common
+LOADADDR      += 0x80100000
+endif
+
 ifdef CONFIG_MIPS_BOSPORUS
 LIBS          += arch/mips/au1000/db1x00/db1x00.o \
                  arch/mips/au1000/common/au1000.o
