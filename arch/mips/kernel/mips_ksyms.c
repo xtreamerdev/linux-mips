@@ -26,7 +26,7 @@
 #include <asm/semaphore.h>
 #include <asm/softirq.h>
 #include <asm/uaccess.h>
-#ifdef CONFIG_BLK_DEV_FD
+#if defined(CONFIG_BLK_DEV_FD) || defined(CONFIG_BLK_DEV_FD_MODULE)
 #include <asm/floppy.h>
 #endif
 

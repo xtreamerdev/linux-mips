@@ -19,7 +19,9 @@
 
 #include <asm/bootinfo.h>
 #include <asm/dma.h>
+#if defined(CONFIG_BLK_DEV_FD) || defined(CONFIG_BLK_DEV_FD_MODULE)
 #include <asm/floppy.h>
+#endif
 #include <asm/io.h>
 #include <asm/page.h>
 #include <asm/pgalloc.h>

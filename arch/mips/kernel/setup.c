@@ -54,8 +54,11 @@ int EISA_bus = 0;
 
 struct screen_info screen_info;
 
+#if defined(CONFIG_BLK_DEV_FD) || defined(CONFIG_BLK_DEV_FD_MODULE)
+#include <asm/floppy.h>
 extern struct fd_ops no_fd_ops;
 struct fd_ops *fd_ops;
+#endif
 
 #if defined(CONFIG_BLK_DEV_IDE) || defined(CONFIG_BLK_DEV_IDE_MODULE)
 extern struct ide_ops no_ide_ops;
@@ -493,7 +496,7 @@ void __init setup_arch(char **cmdline_p)
 	void frame_info_init(void);
 
 	frame_info_init();
-#ifdef CONFIG_BLK_DEV_FD
+#if defined(CONFIG_BLK_DEV_FD) || defined(CONFIG_BLK_DEV_FD_MODULE)
 	fd_ops = &no_fd_ops;
 #endif
 
