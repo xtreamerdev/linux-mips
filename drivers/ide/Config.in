@@ -112,7 +112,7 @@ if [ "$CONFIG_BLK_DEV_IDE" != "n" ]; then
 	 fi
       fi
       if [ "$CONFIG_SIBYTE_SWARM" = "y" ]; then
-	 bool '  SWARM onboard IDE support' CONFIG_BLK_DEV_IDE_SWARM
+	 bool '  Broadcom SiByte onboard IDE support' CONFIG_BLK_DEV_IDE_SIBYTE
       fi
       if [ "$CONFIG_ARCH_ACORN" = "y" ]; then
 	 dep_bool '    ICS IDE interface support' CONFIG_BLK_DEV_IDE_ICSIDE $CONFIG_ARCH_ACORN
