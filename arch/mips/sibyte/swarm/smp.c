@@ -105,6 +105,8 @@ void __init smp_boot_cpus(void)
 	CPUMASK_CLRALL(cpu_online_map);
 	CPUMASK_SETB(cpu_online_map, 0);
 	atomic_set(&cpus_booted, 1);  /* Master CPU is already booted... */
+	__cpu_number_map[0] = 0;
+	__cpu_logical_map[0] = 0;
 	init_idle();
 
 	/* 
@@ -140,6 +142,8 @@ void __init smp_boot_cpus(void)
 			retval = prom_boot_secondary(cur_cpu,
 					    (unsigned long)p + KERNEL_STACK_SIZE - 32,
 					    (unsigned long)p);
+			__cpu_number_map[i] = i;
+			__cpu_logical_map[i] = i;
 		} while (!retval && (cur_cpu < NR_CPUS));
 		if (retval) {
 			i++;
