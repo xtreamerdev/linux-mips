@@ -950,6 +950,11 @@ fi
 tristate 'Kernel support for MISC binaries' CONFIG_BINFMT_MISC
 bool 'Select task to kill on out of memory condition' CONFIG_OOM_KILLER
 
+bool 'Default bootloader kernel arguments' CONFIG_CMDLINE_BOOL
+if [ "$CONFIG_CMDLINE_BOOL" = "y" ] ; then
+  string 'Initial kernel command string' CONFIG_CMDLINE ""
+fi
+
 if [ "$CONFIG_SOC_AU1X00" = "y" ]; then
    bool 'Power Management support' CONFIG_PM
 fi
