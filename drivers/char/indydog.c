@@ -24,7 +24,17 @@
 #include <asm/uaccess.h>
 #include <asm/sgi/sgimc.h>
 
-static int indydog_alive;
+static unsigned long indydog_alive;
+static int expect_close = 0;
+
+#ifdef CONFIG_WATCHDOG_NOWAYOUT
+static int nowayout = 1;
+#else
+static int nowayout = 0;
+#endif
+
+MODULE_PARM(nowayout,"i");
+MODULE_PARM_DESC(nowayout, "Watchdog cannot be stopped once started (default=CONFIG_WATCHDOG_NOWAYOUT)");
 
 static inline void indydog_ping(void)
 {
@@ -39,11 +49,13 @@ static int indydog_open(struct inode *inode, struct file *file)
 {
 	u32 mc_ctrl0;
 	
-	if(indydog_alive)
+	if (test_and_set_bit(0,&indydog_alive))
 		return -EBUSY;
-#ifdef CONFIG_WATCHDOG_NOWAYOUT
-	MOD_INC_USE_COUNT;
-#endif
+
+	if (nowayout) {
+		MOD_INC_USE_COUNT;
+	}
+
 	/*
 	 *	Activate timer
 	 */
@@ -61,20 +73,23 @@ static int indydog_release(struct inode *inode, struct file *file)
 {
 	/*
 	 *	Shut off the timer.
-	 * 	Lock it in if it's a module and we defined ...NOWAYOUT
+	 *	Lock it in if it's a module and we set nowayout.
 	 */
 	lock_kernel();
-#ifndef CONFIG_WATCHDOG_NOWAYOUT
+	if (expect_close)
 	{
-	u32 mc_ctrl0 = mcmisc_regs->cpuctrl0; 
-	mc_ctrl0 &= ~SGIMC_CCTRL0_WDOG;
-	mcmisc_regs->cpuctrl0 = mc_ctrl0;
-	printk("Stopped watchdog timer.\n");
+		u32 mc_ctrl0 = mcmisc_regs->cpuctrl0;
+		mc_ctrl0 &= ~SGIMC_CCTRL0_WDOG;
+		mcmisc_regs->cpuctrl0 = mc_ctrl0;
+		printk("Stopped watchdog timer.\n");
 	}
-#endif
-	indydog_alive = 0;
+	else
+	{
+		printk(KERN_CRIT "WDT device closed unexpectedly.  WDT will not stop!\n");
+	}
+	clear_bit(0, &indydog_alive);
 	unlock_kernel();
-	
+
 	return 0;
 }
 
@@ -88,6 +103,20 @@ static ssize_t indydog_write(struct file *file, const char *data, size_t len, lo
 	 *	Refresh the timer.
 	 */
 	if (len) {
+		if (!nowayout) {
+			size_t i;
+
+			/* In case it was set long ago */
+			expect_close = 0;
+ 
+			for (i = 0; i != len; i++) {
+				char c;
+				if (get_user(c, data + i))
+					return -EFAULT;
+				if (c == 'V')
+					expect_close = 1;
+			}
+		}
 		indydog_ping();
 		return 1;
 	}
@@ -98,6 +127,7 @@ static int indydog_ioctl(struct inode *inode, struct file *file,
 	unsigned int cmd, unsigned long arg)
 {
 	static struct watchdog_info ident = {
+		options: WDIOF_MAGICCLOSE,
 		identity: "Hardware Watchdog for SGI IP22",
 	};
 	switch (cmd) {

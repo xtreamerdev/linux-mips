@@ -1029,15 +1029,6 @@ struct page * find_or_create_page(struct address_space *mapping, unsigned long i
 }
 
 /*
- * Returns locked page at given index in given cache, creating it if needed.
- */
-struct page *grab_cache_page(struct address_space *mapping, unsigned long index)
-{
-	return find_or_create_page(mapping, index, mapping->gfp_mask);
-}
-
-
-/*
  * Same as grab_cache_page, but do not wait if the page is unavailable.
  * This is intended for speculative data generators, where the data can
  * be regenerated if the page couldn't be grabbed.  This routine should
@@ -1557,6 +1548,7 @@ static ssize_t generic_file_direct_IO(int rw, struct file * filp, char * buf, si
 	struct kiobuf * iobuf;
 	struct address_space * mapping = filp->f_dentry->d_inode->i_mapping;
 	struct inode * inode = mapping->host;
+	loff_t size = inode->i_size;
 
 	new_iobuf = 0;
 	iobuf = filp->f_iobuf;
@@ -1581,6 +1573,9 @@ static ssize_t generic_file_direct_IO(int rw, struct file * filp, char * buf, si
 		goto out_free;
 	if (!mapping->a_ops->direct_IO)
 		goto out_free;
+
+	if ((rw == READ) && (offset + count > size))
+		count = size - offset;
 
 	/*
 	 * Flush to disk exclusively the _data_, metadata must remain
@@ -1612,6 +1607,7 @@ static ssize_t generic_file_direct_IO(int rw, struct file * filp, char * buf, si
 		if (retval >= 0) {
 			count -= retval;
 			buf += retval;
+			/* warning: weird semantics here, we're reporting a read behind the end of the file */
 			progress += retval;
 		}
 
@@ -1701,8 +1697,6 @@ ssize_t generic_file_read(struct file * filp, char * buf, size_t count, loff_t *
 			goto out; /* skip atime */
 		size = inode->i_size;
 		if (pos < size) {
-			if (pos + count > size)
-				count = size - pos;
 			retval = generic_file_direct_IO(READ, filp, buf, count, pos);
 			if (retval > 0)
 				*ppos = pos + retval;
@@ -2906,7 +2900,7 @@ repeat:
 	return page;
 }
 
-void remove_suid(struct inode *inode)
+inline void remove_suid(struct inode *inode)
 {
 	unsigned int mode;
 

@@ -14,7 +14,7 @@
  *	Additional Authors:
  *		Florian la Roche <rzsfl@rz.uni-sb.de>
  *		Alan Cox <gw4pts@gw4pts.ampr.org>
- *		David Hinds <dhinds@allegro.stanford.edu>
+ *		David Hinds <dahinds@users.sourceforge.net>
  *		Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>
  *		Adam Sulmicki <adam@cfar.umd.edu>
  *              Pekka Riikonen <priikone@poesidon.pspt.fi>
@@ -700,10 +700,14 @@ int dev_open(struct net_device *dev)
 	 *	Call device private open method
 	 */
 	if (try_inc_mod_count(dev->owner)) {
+		set_bit(__LINK_STATE_START, &dev->state);
 		if (dev->open) {
 			ret = dev->open(dev);
-			if (ret != 0 && dev->owner)
-				__MOD_DEC_USE_COUNT(dev->owner);
+			if (ret != 0) {
+				clear_bit(__LINK_STATE_START, &dev->state);
+				if (dev->owner)
+					__MOD_DEC_USE_COUNT(dev->owner);
+			}
 		}
 	} else {
 		ret = -ENODEV;
@@ -719,8 +723,6 @@ int dev_open(struct net_device *dev)
 		 *	Set the flags.
 		 */
 		dev->flags |= IFF_UP;
-
-		set_bit(__LINK_STATE_START, &dev->state);
 
 		/*
 		 *	Initialize multicasting status 
@@ -912,7 +914,7 @@ void dev_queue_xmit_nit(struct sk_buff *skb, struct net_device *dev)
 
 			if (skb2->nh.raw < skb2->data || skb2->nh.raw > skb2->tail) {
 				if (net_ratelimit())
-					printk(KERN_DEBUG "protocol %04x is buggy, dev %s\n", skb2->protocol, dev->name);
+					printk(KERN_CRIT "protocol %04x is buggy, dev %s\n", skb2->protocol, dev->name);
 				skb2->nh.raw = skb2->data;
 			}
 
@@ -1064,13 +1066,13 @@ int dev_queue_xmit(struct sk_buff *skb)
 			dev->xmit_lock_owner = -1;
 			spin_unlock_bh(&dev->xmit_lock);
 			if (net_ratelimit())
-				printk(KERN_DEBUG "Virtual device %s asks to queue packet!\n", dev->name);
+				printk(KERN_CRIT "Virtual device %s asks to queue packet!\n", dev->name);
 			kfree_skb(skb);
 			return -ENETDOWN;
 		} else {
 			/* Recursion is detected! It is possible, unfortunately */
 			if (net_ratelimit())
-				printk(KERN_DEBUG "Dead loop on virtual device %s, fix it urgently!\n", dev->name);
+				printk(KERN_CRIT "Dead loop on virtual device %s, fix it urgently!\n", dev->name);
 		}
 	}
 	spin_unlock_bh(&dev->queue_lock);
@@ -1376,20 +1378,6 @@ static void net_tx_action(struct softirq_action *h)
 	}
 }
 
-/**
- *	net_call_rx_atomic
- *	@fn: function to call
- *
- *	Make a function call that is atomic with respect to the protocol
- *	layers.
- */
- 
-void net_call_rx_atomic(void (*fn)(void))
-{
-	br_write_lock_bh(BR_NETPROTO_LOCK);
-	fn();
-	br_write_unlock_bh(BR_NETPROTO_LOCK);
-}
 
 #if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
 void (*br_handle_frame_hook)(struct sk_buff *skb) = NULL;

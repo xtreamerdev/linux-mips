@@ -257,7 +257,7 @@ static void usblp_bulk(struct urb *urb)
  * Get and print printer errors.
  */
 
-static char *usblp_messages[] = { "ok", "out of paper", "off-line", "on fire" };
+static char *usblp_messages[] = { "ok", "out of paper", "off-line", "unknown error" };
 
 static int usblp_check_status(struct usblp *usblp, int err)
 {
@@ -562,7 +562,8 @@ done:
 static ssize_t usblp_write(struct file *file, const char *buffer, size_t count, loff_t *ppos)
 {
 	struct usblp *usblp = file->private_data;
-	int timeout, err = 0, writecount = 0;
+	int timeout, err = 0;
+	size_t writecount = 0;
 
 	while (writecount < count) {
 

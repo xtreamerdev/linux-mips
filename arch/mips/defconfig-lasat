@@ -179,7 +179,6 @@ CONFIG_MTD_LASAT=y
 # Self-contained MTD device drivers
 #
 # CONFIG_MTD_PMC551 is not set
-# CONFIG_MTD_MS02NV is not set
 # CONFIG_MTD_SLRAM is not set
 # CONFIG_MTD_MTDRAM is not set
 # CONFIG_MTD_BLKMTD is not set
@@ -455,6 +454,7 @@ CONFIG_PCNET32=y
 # CONFIG_SIS900 is not set
 # CONFIG_EPIC100 is not set
 # CONFIG_SUNDANCE is not set
+# CONFIG_SUNDANCE_MMIO is not set
 # CONFIG_TLAN is not set
 # CONFIG_TC35815 is not set
 # CONFIG_VIA_RHINE is not set
@@ -563,6 +563,7 @@ CONFIG_UNIX98_PTY_COUNT=256
 # Watchdog Cards
 #
 # CONFIG_WATCHDOG is not set
+# CONFIG_AMD_PM768 is not set
 # CONFIG_NVRAM is not set
 # CONFIG_RTC is not set
 # CONFIG_DTLK is not set

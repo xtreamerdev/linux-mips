@@ -171,10 +171,10 @@ __xprt_lock_write_next(struct rpc_xprt *xprt)
 
 	if (xprt->snd_task)
 		return;
-	if (!xprt->nocong && RPCXPRT_CONGESTED(xprt))
-		return;
 	task = rpc_wake_up_next(&xprt->resend);
 	if (!task) {
+		if (!xprt->nocong && RPCXPRT_CONGESTED(xprt))
+			return;
 		task = rpc_wake_up_next(&xprt->sending);
 		if (!task)
 			return;
@@ -949,8 +949,10 @@ tcp_state_change(struct sock *sk)
 }
 
 /*
- * The following 2 routines allow a task to sleep while socket memory is
- * low.
+ * Called when more output buffer space is available for this socket.
+ * We try not to wake our writers until they can make "significant"
+ * progress, otherwise we'll waste resources thrashing sock_sendmsg
+ * with a bunch of small requests.
  */
 static void
 xprt_write_space(struct sock *sk)
@@ -964,8 +966,15 @@ xprt_write_space(struct sock *sk)
 		return;
 
 	/* Wait until we have enough socket memory */
-	if (!sock_writeable(sk))
-		return;
+	if (xprt->stream) {
+		/* from net/ipv4/tcp.c:tcp_write_space */
+		if (tcp_wspace(sk) < tcp_min_write_space(sk))
+			return;
+	} else {
+		/* from net/core/sock.c:sock_def_write_space */
+		if (!sock_writeable(sk))
+			return;
+	}
 
 	if (!test_and_clear_bit(SOCK_NOSPACE, &sock->flags))
 		return;
@@ -1013,7 +1022,6 @@ xprt_timer(struct rpc_task *task)
 		}
 		rpc_inc_timeo(&task->tk_client->cl_rtt);
 		xprt_adjust_cwnd(req->rq_xprt, -ETIMEDOUT);
-		__xprt_put_cong(xprt, req);
 	}
 	req->rq_nresend++;
 
@@ -1150,10 +1158,7 @@ do_xprt_transmit(struct rpc_task *task)
 		req->rq_bytes_sent = 0;
 	}
  out_release:
-	spin_lock_bh(&xprt->sock_lock);
-	__xprt_release_write(xprt, task);
-	__xprt_put_cong(xprt, req);
-	spin_unlock_bh(&xprt->sock_lock);
+	xprt_release_write(xprt, task);
 	return;
  out_receive:
 	dprintk("RPC: %4d xmit complete\n", task->tk_pid);

@@ -24,6 +24,7 @@
 
 static int simcons_init (struct console *, char *);
 static void simcons_write (struct console *, const char *, unsigned);
+static int simcons_wait_key (struct console *);
 static kdev_t simcons_console_device (struct console *);
 
 struct console hpsim_cons = {

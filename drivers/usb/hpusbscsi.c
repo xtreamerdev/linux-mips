@@ -200,14 +200,26 @@ hpusbscsi_usb_probe (struct usb_device *dev, unsigned int interface,
 static void
 hpusbscsi_usb_disconnect (struct usb_device *dev, void *ptr)
 {
-                 usb_unlink_urb(&(((struct hpusbscsi *) ptr)->controlurb));
-	((struct hpusbscsi *) ptr)->dev = NULL;
+	struct hpusbscsi *hp = (struct hpusbscsi *)ptr;
+
+	usb_unlink_urb(&hp->controlurb);
+	usb_unlink_urb(&hp->dataurb);
+
+	spin_lock_irq(&io_request_lock);
+	hp->dev = NULL;
+	spin_unlock_irq(&io_request_lock);
 }
 
 static struct usb_device_id hpusbscsi_usb_ids[] = {
 	{USB_DEVICE (0x03f0, 0x0701)},	/* HP 53xx */
 	{USB_DEVICE (0x03f0, 0x0801)},	/* HP 7400 */
+	{USB_DEVICE (0x0638, 0x0268)},  /*iVina 1200U */
 	{USB_DEVICE (0x0638, 0x026a)},	/*Scan Dual II */
+	{USB_DEVICE (0x0638, 0x0A13)},  /*Avision AV600U */
+	{USB_DEVICE (0x0638, 0x0A16)},  /*Avision DS610CU Scancopier */
+	{USB_DEVICE (0x0638, 0x0A18)},  /*Avision AV600U Plus */
+	{USB_DEVICE (0x0638, 0x0A23)},  /*Avision AV220 */
+	{USB_DEVICE (0x0638, 0x0A24)},  /*Avision AV210 */
 	{USB_DEVICE (0x0686, 0x4004)},  /*Minolta Elite II */
 	{}			/* Terminating entry */
 };
@@ -329,15 +341,13 @@ static int hpusbscsi_scsi_queuecommand (Scsi_Cmnd *srb, scsi_callback callback)
 	usb_urb_callback usb_callback;
 	int res;
 
-	hpusbscsi->use_count++;
+	spin_unlock_irq(&io_request_lock);
 
 	/* we don't answer for anything but our single device on any faked host controller */
 	if ( srb->device->lun || srb->device->id || srb->device->channel ) {
-		if (callback) {
-			srb->result = DID_BAD_TARGET;
-			callback(srb);
-		}
-                	goto out;
+		srb->result = DID_BAD_TARGET;
+		callback(srb);
+		goto out;
 	}
 
 	/* Now we need to decide which callback to give to the urb we send the command with */
@@ -390,19 +400,24 @@ static int hpusbscsi_scsi_queuecommand (Scsi_Cmnd *srb, scsi_callback callback)
 	);
 	hpusbscsi->scallback = callback;
 	hpusbscsi->srb = srb;
+	
+	if (hpusbscsi->dev == NULL) {
+		srb->result = DID_ERROR;
+		callback(srb);
+		goto out;
+	}
 
 	res = usb_submit_urb(&hpusbscsi->dataurb);
 	if (res) {
 		hpusbscsi->state = HP_STATE_FREE;
 		PDEBUG(2, "state= %s", states[hpusbscsi->state]);
-		if (callback) {
-			srb->result = DID_ERROR;
-			callback(srb);
-		}
+		srb->result = DID_ERROR;
+		callback(srb);
+
 	}
 
 out:
-	hpusbscsi->use_count--;
+	spin_lock_irq(&io_request_lock);
 	return 0;
 }
 
@@ -426,7 +441,7 @@ static int hpusbscsi_scsi_abort (Scsi_Cmnd *srb)
 	spin_unlock_irq(&io_request_lock);
 	usb_unlink_urb(&hpusbscsi->dataurb);
 	hpusbscsi->state = HP_STATE_FREE;
-	
+
 	spin_lock_irq(&io_request_lock);
 
 	return SCSI_ABORT_PENDING;

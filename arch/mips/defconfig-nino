@@ -335,6 +335,7 @@ CONFIG_SERIAL_TX3912_CONSOLE=y
 # Watchdog Cards
 #
 # CONFIG_WATCHDOG is not set
+# CONFIG_AMD_PM768 is not set
 # CONFIG_NVRAM is not set
 # CONFIG_RTC is not set
 # CONFIG_DTLK is not set

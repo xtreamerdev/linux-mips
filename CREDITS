@@ -1263,7 +1263,7 @@ S: 14059 Berlin
 S: Germany
 
 N: David Hinds
-E: dhinds@zen.stanford.edu
+E: dahinds@users.sourceforge.net
 W: http://tao.stanford.edu/~dhinds
 D: PCMCIA and CardBus stuff, PCMCIA-HOWTO, PCMCIA client drivers
 S: 2019 W. Middlefield Rd #1
@@ -2346,8 +2346,8 @@ D: implemented kmod
 D: modularized BSD Unix domain sockets
 
 N: Martin Kasper Petersen
-E: mkp@linuxcare.com
 E: mkp@mkp.net
+D: forte FM801 audio driver
 D: PA-RISC port
 D: XFS file system
 D: kiobuf based block I/O work
@@ -3322,14 +3322,10 @@ S: D-73732 Esslingen
 S: Germany
 
 N: Leonard N. Zubkoff
-E: lnz@dandelion.com
 W: http://www.dandelion.com/Linux/
 D: BusLogic SCSI driver
 D: Mylex DAC960 PCI RAID driver
 D: Miscellaneous kernel fixes
-S: 3078 Sulphur Spring Court
-S: San Jose, California 95148
-S: USA
 
 N: Alessandro Zummo
 E: azummo@ita.flashnet.it

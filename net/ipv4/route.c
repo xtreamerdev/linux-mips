@@ -248,7 +248,8 @@ static int rt_cache_get_info(char *buffer, char **start, off_t offset,
 				r->u.dst.__use,
 				0,
 				(unsigned long)r->rt_src,
-				(int)r->u.dst.advmss + 40,
+				(r->u.dst.advmss ?
+				 (int) r->u.dst.advmss + 40 : 0),
 				r->u.dst.window,
 				(int)((r->u.dst.rtt >> 3) + r->u.dst.rttvar),
 				r->key.tos,
@@ -1246,7 +1247,7 @@ static int ip_route_input_mc(struct sk_buff *skb, u32 daddr, u32 saddr,
 		return -EINVAL;
 
 	if (MULTICAST(saddr) || BADCLASS(saddr) || LOOPBACK(saddr) ||
-	    skb->protocol != __constant_htons(ETH_P_IP))
+	    skb->protocol != htons(ETH_P_IP))
 		goto e_inval;
 
 	if (ZERONET(saddr)) {
@@ -1457,7 +1458,7 @@ int ip_route_input_slow(struct sk_buff *skb, u32 daddr, u32 saddr,
 	     inet_addr_onlink(out_dev, saddr, FIB_RES_GW(res))))
 		flags |= RTCF_DOREDIRECT;
 
-	if (skb->protocol != __constant_htons(ETH_P_IP)) {
+	if (skb->protocol != htons(ETH_P_IP)) {
 		/* Not IP (i.e. ARP). Do not create route, if it is
 		 * invalid for proxy arp. DNAT routes are always valid.
 		 */
@@ -1522,7 +1523,7 @@ done:
 out:	return err;
 
 brd_input:
-	if (skb->protocol != __constant_htons(ETH_P_IP))
+	if (skb->protocol != htons(ETH_P_IP))
 		goto e_inval;
 
 	if (ZERONET(saddr))
@@ -2156,7 +2157,7 @@ int inet_rtm_getroute(struct sk_buff *in_skb, struct nlmsghdr* nlh, void *arg)
 		err = -ENODEV;
 		if (!dev)
 			goto out;
-		skb->protocol	= __constant_htons(ETH_P_IP);
+		skb->protocol	= htons(ETH_P_IP);
 		skb->dev	= dev;
 		local_bh_disable();
 		err = ip_route_input(skb, dst, src, rtm->rtm_tos, dev);

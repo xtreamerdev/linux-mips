@@ -32,6 +32,8 @@ CONFIG_6xx=y
 CONFIG_PPC_STD_MMU=y
 CONFIG_ALL_PPC=y
 # CONFIG_APUS is not set
+# CONFIG_SPRUCE is not set
+# CONFIG_PAL4 is not set
 # CONFIG_GEMINI is not set
 # CONFIG_SMP is not set
 # CONFIG_ALTIVEC is not set
@@ -364,6 +366,7 @@ CONFIG_DE4X5=y
 # CONFIG_SIS900 is not set
 # CONFIG_EPIC100 is not set
 # CONFIG_SUNDANCE is not set
+# CONFIG_SUNDANCE_MMIO is not set
 # CONFIG_TLAN is not set
 # CONFIG_TC35815 is not set
 # CONFIG_VIA_RHINE is not set

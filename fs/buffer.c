@@ -731,7 +731,7 @@ static void free_more_memory(void)
 {
 	balance_dirty();
 	wakeup_bdflush();
-	try_to_free_pages_nozone(GFP_NOIO);
+	try_to_free_pages(GFP_NOIO);
 	run_task_queue(&tq_disk);
 	yield();
 }
@@ -749,6 +749,7 @@ static void end_buffer_io_async(struct buffer_head * bh, int uptodate)
 	unsigned long flags;
 	struct buffer_head *tmp;
 	struct page *page;
+	int fullup = 1;
 
 	mark_buffer_uptodate(bh, uptodate);
 
@@ -775,8 +776,11 @@ static void end_buffer_io_async(struct buffer_head * bh, int uptodate)
 	unlock_buffer(bh);
 	tmp = bh->b_this_page;
 	while (tmp != bh) {
-		if (buffer_async(tmp) && buffer_locked(tmp))
-			goto still_busy;
+		if (buffer_locked(tmp)) {
+			if (buffer_async(tmp))
+				goto still_busy;
+		} else if (!buffer_uptodate(tmp))
+			fullup = 0;
 		tmp = tmp->b_this_page;
 	}
 
@@ -784,10 +788,10 @@ static void end_buffer_io_async(struct buffer_head * bh, int uptodate)
 	spin_unlock_irqrestore(&page_uptodate_lock, flags);
 
 	/*
-	 * if none of the buffers had errors then we can set the
-	 * page uptodate:
+	 * If none of the buffers had errors and all were uptodate
+	 * then we can set the page uptodate:
 	 */
-	if (!PageError(page))
+	if (fullup && !PageError(page))
 		SetPageUptodate(page);
 
 	UnlockPage(page);
@@ -1613,8 +1617,20 @@ out:
 	 * Zero out any newly allocated blocks to avoid exposing stale
 	 * data.  If BH_New is set, we know that the block was newly
 	 * allocated in the above loop.
+	 *
+	 * Details the buffer can be new and uptodate because:
+	 * 1) hole in uptodate page, get_block(create) allocate the block,
+	 *    so the buffer is new and additionally we also mark it uptodate
+	 * 2) The buffer is not mapped and uptodate due a previous partial read.
+	 *
+	 * We can always ignore uptodate buffers here, if you mark a buffer
+	 * uptodate you must make sure it contains the right data first.
+	 *
+	 * We must stop the "undo/clear" fixup pass not at the caller "to"
+	 * but at the last block that we successfully arrived in the main loop.
 	 */
 	bh = head;
+	to = block_start; /* stop at the last successfully handled block */
 	block_start = 0;
 	do {
 		block_end = block_start+blocksize;
@@ -1622,10 +1638,9 @@ out:
 			goto next_bh;
 		if (block_start >= to)
 			break;
-		if (buffer_new(bh)) {
-			if (buffer_uptodate(bh))
-				printk(KERN_ERR "%s: zeroing uptodate buffer!\n", __FUNCTION__);
+		if (buffer_new(bh) && !buffer_uptodate(bh)) {
 			memset(kaddr+block_start, 0, bh->b_size);
+			flush_dcache_page(page);
 			set_bit(BH_Uptodate, &bh->b_state);
 			mark_buffer_dirty(bh);
 		}
@@ -1990,7 +2005,12 @@ int block_truncate_page(struct address_space *mapping, loff_t from, get_block_t 
 	flush_dcache_page(page);
 	kunmap(page);
 
-	__mark_buffer_dirty(bh);
+	if (!atomic_set_buffer_dirty(bh)) {
+		__mark_dirty(bh);
+		buffer_insert_inode_data_queue(bh, inode);
+		balance_dirty();
+	}
+
 	err = 0;
 
 unlock:

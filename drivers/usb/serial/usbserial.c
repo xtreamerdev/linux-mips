@@ -469,7 +469,7 @@ int ezusb_writememory (struct usb_serial *serial, int address, unsigned char *da
 		return -ENOMEM;
 	}
 	memcpy (transfer_buffer, data, length);
-	result = usb_control_msg (serial->dev, usb_sndctrlpipe(serial->dev, 0), bRequest, 0x40, address, 0, transfer_buffer, length, 300);
+	result = usb_control_msg (serial->dev, usb_sndctrlpipe(serial->dev, 0), bRequest, 0x40, address, 0, transfer_buffer, length, 3*HZ);
 	kfree (transfer_buffer);
 	return result;
 }
@@ -814,7 +814,7 @@ static int serial_read_proc (char *page, char **start, off_t off, int count, int
 	int length = 0;
 	int i;
 	off_t begin = 0;
-//	char tmp[40];
+	char tmp[40];
 
 	dbg("%s", __FUNCTION__);
 	length += sprintf (page, "usbserinfo:1.0 driver:%s\n", DRIVER_VERSION);
@@ -831,8 +831,8 @@ static int serial_read_proc (char *page, char **start, off_t off, int count, int
 		length += sprintf (page+length, " num_ports:%d", serial->num_ports);
 		length += sprintf (page+length, " port:%d", i - serial->minor + 1);
 
-//		usb_make_path(serial->dev, tmp, sizeof(tmp));
-//		length += sprintf (page+length, " path:%s", tmp);
+		usb_make_path(serial->dev, tmp, sizeof(tmp));
+		length += sprintf (page+length, " path:%s", tmp);
 			
 		length += sprintf (page+length, "\n");
 		if ((length + begin) > (off + count))
@@ -1182,11 +1182,11 @@ static void * usb_serial_probe(struct usb_device *dev, unsigned int ifnum,
 #if defined(CONFIG_USB_SERIAL_PL2303) || defined(CONFIG_USB_SERIAL_PL2303_MODULE)
 	/* BEGIN HORRIBLE HACK FOR PL2303 */ 
 	/* this is needed due to the looney way its endpoints are set up */
-	if (ifnum == 1) {
-		if (((dev->descriptor.idVendor == PL2303_VENDOR_ID) &&
-		     (dev->descriptor.idProduct == PL2303_PRODUCT_ID)) ||
-		    ((dev->descriptor.idVendor == ATEN_VENDOR_ID) &&
-		     (dev->descriptor.idProduct == ATEN_PRODUCT_ID))) {
+	if (((dev->descriptor.idVendor == PL2303_VENDOR_ID) &&
+	     (dev->descriptor.idProduct == PL2303_PRODUCT_ID)) ||
+	    ((dev->descriptor.idVendor == ATEN_VENDOR_ID) &&
+	     (dev->descriptor.idProduct == ATEN_PRODUCT_ID))) {
+		if (ifnum == 1) {
 			/* check out the endpoints of the other interface*/
 			interface = &dev->actconfig->interface[ifnum ^ 1];
 			iface_desc = &interface->altsetting[0];
@@ -1200,6 +1200,15 @@ static void * usb_serial_probe(struct usb_device *dev, unsigned int ifnum,
 					++num_interrupt_in;
 				}
 			}
+		}
+
+		/* Now make sure the PL-2303 is configured correctly.
+		 * If not, give up now and hope this hack will work
+		 * properly during a later invocation of usb_serial_probe
+		 */
+		if (num_bulk_in == 0 || num_bulk_out == 0) {
+			info("PL-2303 hack: descriptors matched but endpoints did not");
+			return NULL;
 		}
 	}
 	/* END HORRIBLE HACK FOR PL2303 */

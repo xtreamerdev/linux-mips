@@ -1261,9 +1261,12 @@ int __devinit HiSax_inithardware(int *busy_flag)
 			foundcards++;
 			i++;
 		} else {
-			printk(KERN_WARNING
-			       "HiSax: Card %s not installed !\n",
-			       CardType[cards[i].typ]);
+			/* make sure we don't oops the module */
+			if (cards[i].typ > 0 && cards[i].typ <= ISDN_CTYPE_COUNT) {
+				printk(KERN_WARNING
+			       		"HiSax: Card %s not installed !\n",
+			       		CardType[cards[i].typ]);
+			}
 			HiSax_shiftcards(i);
 			nrcards--;
 		}
@@ -1523,7 +1526,8 @@ static int __init HiSax_init(void)
 	       nrcards, (nrcards > 1) ? "s" : "");
 
 	/* Install only, if at least one card found */
-	HiSax_inithardware(NULL);
+	if (!HiSax_inithardware(NULL))
+		return -ENODEV;
 	return 0;
 
  out_tei:
@@ -1591,7 +1595,8 @@ int elsa_init_pcmcia(void *pcm_iob, int pcm_irq, int *busy_flag, int prot)
 	printk(KERN_DEBUG "HiSax: Total %d card%s defined\n",
 	       nrcards, (nrcards > 1) ? "s" : "");
 
-	HiSax_inithardware(busy_flag);
+	if (!HiSax_inithardware(busy_flag))
+		return -ENODEV;
 	printk(KERN_NOTICE "HiSax: module installed\n");
 #endif
 	return 0;
@@ -1633,7 +1638,8 @@ int hfc_init_pcmcia(void *pcm_iob, int pcm_irq, int *busy_flag, int prot)
 	printk(KERN_DEBUG "HiSax: Total %d card%s defined\n",
 	       nrcards, (nrcards > 1) ? "s" : "");
 
-	HiSax_inithardware(busy_flag);
+	if (!HiSax_inithardware(busy_flag))
+		return -ENODEV;
 	printk(KERN_NOTICE "HiSax: module installed\n");
 #endif
 	return 0;
@@ -1675,7 +1681,8 @@ int sedl_init_pcmcia(void *pcm_iob, int pcm_irq, int *busy_flag, int prot)
 	printk(KERN_DEBUG "HiSax: Total %d card%s defined\n",
 	       nrcards, (nrcards > 1) ? "s" : "");
 
-	HiSax_inithardware(busy_flag);
+	if (!HiSax_inithardware(busy_flag))
+		return -ENODEV;
 	printk(KERN_NOTICE "HiSax: module installed\n");
 #endif
 	return 0;
@@ -1717,7 +1724,8 @@ int avm_a1_init_pcmcia(void *pcm_iob, int pcm_irq, int *busy_flag, int prot)
 	printk(KERN_DEBUG "HiSax: Total %d card%s defined\n",
 	       nrcards, (nrcards > 1) ? "s" : "");
 
-	HiSax_inithardware(busy_flag);
+	if (!HiSax_inithardware(busy_flag))
+		return -ENODEV;
 	printk(KERN_NOTICE "HiSax: module installed\n");
 #endif
 	return 0;

@@ -333,7 +333,8 @@ int __init pcibios_enable_device(struct pci_dev *dev, int mask)
 	return 0;
 }
 
-void __init pcibios_align_resource(void *data, struct resource *res, unsigned long size)
+void __init pcibios_align_resource(void *data, struct resource *res,
+	unsigned long size, unsigned long align)
 {
 }
 

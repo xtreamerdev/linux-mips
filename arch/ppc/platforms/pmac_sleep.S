@@ -13,11 +13,13 @@
  *
  */
 
+#include <linux/config.h>
 #include <asm/processor.h>
 #include <asm/page.h>
 #include <asm/ppc_asm.h>
 #include <asm/cputable.h>
 #include <asm/ppc_asm.h>
+#include "../kernel/ppc_defs.h" // DAMMIT !
 
 #define MAGIC	0x4c617273	/* 'Lars' */
 
@@ -52,6 +54,8 @@
 
 	.text
 	.align	5
+
+#if defined(CONFIG_PMAC_PBOOK)
 
 /* This gets called by via-pmu.c late during the sleep process.
  * The PMU was already send the sleep command and will shut us down
@@ -133,17 +137,20 @@ _GLOBAL(low_sleep_handler)
 	/* Save 7400/7410/7450 specific registers */
 	mfspr	r3,PVR
 	srwi	r3,r3,16
-	cmpli	cr0,r3,0x8000
-	cmpli	cr1,r3,0x000c
-	cmpli	cr2,r3,0x800c
+	cmpli	cr0,r3,0x8000	/* 7450 */
+	cmpli	cr1,r3,0x000c	/* 7400 */
+	cmpli	cr2,r3,0x800c	/* 7410 */
+	cmpli	cr3,r3,0x8001	/* 7455 */
+	cmpli	cr4,r3,0x7000	/* 750FX */
 	cror	4*cr1+eq,4*cr1+eq,4*cr2+eq
+	cror	4*cr0+eq,4*cr0+eq,4*cr3+eq
 	cror	4*cr0+eq,4*cr0+eq,4*cr1+eq
 	bne	1f
 	mfspr	r4,SPRN_MSSCR0
 	stw	r4,SL_MSSCR0(r1)
 	mfspr	r4,SPRN_MSSSR0
 	stw	r4,SL_MSSSR0(r1)
-	/* Save 7450 specific registers */
+	/* Save 7450/7455 specific registers */
 	beq	cr1,1f
 	mfspr	r4,HID1
 	stw	r4,SL_HID1(r1)
@@ -153,6 +160,12 @@ _GLOBAL(low_sleep_handler)
 	stw	r4,SL_LDSTCR(r1)
 	mfspr	r4,SPRN_LDSTDB
 	stw	r4,SL_LDSTDB(r1)
+1:	
+	/* Save 750FX specific registers */
+	bne	cr4,1f
+	mfspr	r4,HID1
+	stw	r4,SL_HID1(r1)
+	
 1:
 	/* The ROM can wake us up via 2 different vectors:
 	 *  - On wallstreet & lombard, we must write a magic
@@ -188,10 +201,10 @@ _GLOBAL(low_sleep_handler)
 	addi r3,r3,sleep_storage@l
 	stw r5,0(r3)
 
-	BEGIN_FTR_SECTION
+BEGIN_FTR_SECTION
 	DSSALL
 	sync
-	END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
+END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
 
 /*
  * Flush the L1 data cache by reading the first 128kB of RAM
@@ -318,10 +331,13 @@ grackle_wake_up:
 	/* Restore 7400/7410/7450 specific registers */
 	mfspr	r3,PVR
 	srwi	r3,r3,16
-	cmpli	cr0,r3,0x8000
-	cmpli	cr1,r3,0x000c
-	cmpli	cr2,r3,0x800c
+	cmpli	cr0,r3,0x8000	/* 7450 */
+	cmpli	cr1,r3,0x000c	/* 7400 */
+	cmpli	cr2,r3,0x800c	/* 7410 */
+	cmpli	cr3,r3,0x8001	/* 7455 */
+	cmpli	cr4,r3,0x7000	/* 750FX */
 	cror	4*cr1+eq,4*cr1+eq,4*cr2+eq
+	cror	4*cr0+eq,4*cr0+eq,4*cr3+eq
 	cror	4*cr0+eq,4*cr0+eq,4*cr1+eq
 	bne	1f
 	lwz	r4,SL_MSSCR0(r1)
@@ -337,7 +353,7 @@ grackle_wake_up:
 	bne	cr2,1f
 	li	r4,0
 	mtspr	SPRN_L2CR2,r4
-	/* Restore 7450 specific registers */
+	/* Restore 7450/7455 specific registers */
 	beq	cr1,1f
 	lwz	r4,SL_HID1(r1)
 	sync
@@ -359,6 +375,21 @@ grackle_wake_up:
 	mtspr	SPRN_LDSTDB,r4
 	isync
 	sync
+1:	
+	/* Restore 750FX specific registers */
+	bne	cr4,1f
+		/* Read PLL config & switch to PLL 0 */
+	lwz	r4,SL_HID1(r1)
+	rlwinm  r5,r4,0,16,14
+	mtspr	SPRN_HID1,r5
+		/* Wait for PLL to stabilize */
+	mftbl	r5
+2:	mftbl	r6
+	sub	r6,r6,r5
+	cmpli	cr0,r6,10000
+	ble	2b
+		/* Setup final PLL */
+	mtspr	SPRN_HID1,r4
 1:
 	/* Restore the BATs, and SDR1.  Then we can turn on the MMU. */
 	lwz	r4,SL_SDR1(r1)
@@ -445,6 +476,8 @@ turn_on_mmu:
 	sync
 	isync
 	rfi
+
+#endif /* defined(CONFIG_PMAC_PBOOK) */
 
 	.data
 	.globl sleep_storage

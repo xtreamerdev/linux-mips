@@ -863,6 +863,12 @@ static int read_super_block (struct super_block * s, int size, int offset)
 	s->s_blocksize_bits ++;
 
     brelse (bh);
+
+    if (s->s_blocksize != 4096) {
+	printk("Unsupported reiserfs blocksize: %d on %s, only 4096 bytes "
+	       "blocksize is supported.\n", s->s_blocksize, kdevname (s->s_dev));
+	return 1;
+    }
     
     if (s->s_blocksize != size)
 	set_blocksize (s->s_dev, s->s_blocksize);
@@ -1266,7 +1272,6 @@ static struct super_block * reiserfs_read_super (struct super_block * s, void * 
     reiserfs_proc_register( s, "oidmap", reiserfs_oidmap_in_proc );
     reiserfs_proc_register( s, "journal", reiserfs_journal_in_proc );
     init_waitqueue_head (&(s->u.reiserfs_sb.s_wait));
-    s->u.reiserfs_sb.bitmap_lock = SPIN_LOCK_UNLOCKED;
 
     printk("%s\n", reiserfs_get_version_string()) ;
     return s;

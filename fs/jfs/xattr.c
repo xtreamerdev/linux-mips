@@ -78,6 +78,68 @@ struct ea_buffer {
 #define EA_NEW		0x0004
 #define EA_MALLOC	0x0008
 
+/* Namespaces */
+#define XATTR_SYSTEM_PREFIX "system."
+#define XATTR_SYSTEM_PREFIX_LEN (sizeof (XATTR_SYSTEM_PREFIX) - 1)
+
+#define XATTR_USER_PREFIX "user."
+#define XATTR_USER_PREFIX_LEN (sizeof (XATTR_USER_PREFIX) - 1)
+
+#define XATTR_OS2_PREFIX "os2."
+#define XATTR_OS2_PREFIX_LEN (sizeof (XATTR_OS2_PREFIX) - 1)
+
+/*
+ * These three routines are used to recognize on-disk extended attributes
+ * that are in a recognized namespace.  If the attribute is not recognized,
+ * "os2." is prepended to the name
+ */
+static inline int is_os2_xattr(struct jfs_ea *ea)
+{
+	/*
+	 * Check for "system."
+	 */
+	if ((ea->namelen >= XATTR_SYSTEM_PREFIX_LEN) &&
+	    !strncmp(ea->name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
+		return FALSE;
+	/*
+	 * Check for "user."
+	 */
+	if ((ea->namelen >= XATTR_USER_PREFIX_LEN) &&
+	    !strncmp(ea->name, XATTR_USER_PREFIX, XATTR_USER_PREFIX_LEN))
+		return FALSE;
+	/*
+	 * Add any other valid namespace prefixes here
+	 */
+
+	/*
+	 * We assume it's OS/2's flat namespace
+	 */
+	return TRUE;
+}
+
+static inline int name_size(struct jfs_ea *ea)
+{
+	if (is_os2_xattr(ea))
+		return ea->namelen + XATTR_OS2_PREFIX_LEN;
+	else
+		return ea->namelen;
+}
+
+static inline int copy_name(char *buffer, struct jfs_ea *ea)
+{
+	int len = ea->namelen;
+
+	if (is_os2_xattr(ea)) {
+		memcpy(buffer, XATTR_OS2_PREFIX, XATTR_OS2_PREFIX_LEN);
+		buffer += XATTR_OS2_PREFIX_LEN;
+		len += XATTR_OS2_PREFIX_LEN;
+	}
+	memcpy(buffer, ea->name, ea->namelen);
+	buffer[ea->namelen] = 0;
+
+	return len;
+}
+
 /* Forward references */
 static void ea_release(struct inode *inode, struct ea_buffer *ea_buf);
 
@@ -174,7 +236,7 @@ static int ea_write(struct inode *ip, struct jfs_ea_list *ealist, int size,
 	char *cp;
 	s32 nbytes, nb;
 	s32 bytes_to_write;
-	metapage_t *mp;
+	struct metapage *mp;
 
 	/*
 	 * Quick check to see if this is an in-linable EA.  Short EAs
@@ -241,7 +303,7 @@ static int ea_write(struct inode *ip, struct jfs_ea_list *ealist, int size,
 	}
 
 	ea->flag = DXD_EXTENT;
-	DXDsize(ea, ealist->size);
+	DXDsize(ea, le32_to_cpu(ealist->size));
 	DXDlength(ea, nblocks);
 	DXDaddress(ea, blkno);
 
@@ -280,7 +342,8 @@ static int ea_read_inline(struct inode *ip, struct jfs_ea_list *ealist)
 	/* Sanity Check */
 	if ((sizeDXD(&ji->ea) > sizeof (ji->i_inline_ea)))
 		return -EIO;
-	if (((struct jfs_ea_list *) &ji->i_inline_ea)->size != ea_size)
+	if (le32_to_cpu(((struct jfs_ea_list *) &ji->i_inline_ea)->size)
+	    != ea_size)
 		return -EIO;
 
 	memcpy(ealist, ji->i_inline_ea, ea_size);
@@ -311,7 +374,7 @@ static int ea_read(struct inode *ip, struct jfs_ea_list *ealist)
 	int i;
 	int nbytes, nb;
 	s32 bytes_to_read;
-	metapage_t *mp;
+	struct metapage *mp;
 
 	/* quick check for in-line EA */
 	if (ji->ea.flag & DXD_INLINE)
@@ -577,6 +640,26 @@ static int ea_put(struct inode *inode, struct ea_buffer *ea_buf, int new_size)
 	return rc;
 }
 
+static int can_set_xattr(struct inode *inode, const char *name,
+			 void *value, size_t value_len)
+{
+	if (IS_RDONLY(inode))
+		return -EROFS;
+
+	if (IS_IMMUTABLE(inode) || IS_APPEND(inode) || S_ISLNK(inode->i_mode))
+		return -EPERM;
+
+	if((strncmp(name, XATTR_USER_PREFIX, XATTR_USER_PREFIX_LEN) != 0) &&
+	   (strncmp(name, XATTR_OS2_PREFIX, XATTR_OS2_PREFIX_LEN) != 0))
+		return -EOPNOTSUPP;
+
+	if (!S_ISREG(inode->i_mode) &&
+	    (!S_ISDIR(inode->i_mode) || inode->i_mode &S_ISVTX))
+		return -EPERM;
+
+	return permission(inode, MAY_WRITE);
+}
+
 int __jfs_setxattr(struct inode *inode, const char *name, void *value,
 		   size_t value_len, int flags)
 {
@@ -587,9 +670,23 @@ int __jfs_setxattr(struct inode *inode, const char *name, void *value,
 	int xattr_size;
 	int new_size;
 	int namelen = strlen(name);
+	char *os2name = NULL;
 	int found = 0;
-	int rc = 0;
+	int rc;
 	int length;
+
+	if ((rc = can_set_xattr(inode, name, value, value_len)))
+		return rc;
+
+	if (strncmp(name, XATTR_OS2_PREFIX, XATTR_OS2_PREFIX_LEN) == 0) {
+		os2name = kmalloc(namelen - XATTR_OS2_PREFIX_LEN + 1,
+				  GFP_KERNEL);
+		if (!os2name)
+			return -ENOMEM;
+		strcpy(os2name, name + XATTR_OS2_PREFIX_LEN);
+		name = os2name;
+		namelen -= XATTR_OS2_PREFIX_LEN;
+	}
 
 	xattr_size = ea_get(inode, &ea_buf, 0);
 	if (xattr_size < 0) {
@@ -696,6 +793,9 @@ int __jfs_setxattr(struct inode *inode, const char *name, void *value,
       release:
 	ea_release(inode, &ea_buf);
       out:
+	if (os2name)
+		kfree(os2name);
+
 	return rc;
 }
 
@@ -710,6 +810,11 @@ int jfs_setxattr(struct dentry *dentry, const char *name, void *value,
 	return __jfs_setxattr(dentry->d_inode, name, value, value_len, flags);
 }
 
+static inline int can_get_xattr(struct inode *inode, const char *name)
+{
+	return permission(inode, MAY_READ);
+}
+
 ssize_t __jfs_getxattr(struct inode *inode, const char *name, void *data,
 		       size_t buf_size)
 {
@@ -719,7 +824,22 @@ ssize_t __jfs_getxattr(struct inode *inode, const char *name, void *data,
 	int xattr_size;
 	ssize_t size;
 	int namelen = strlen(name);
+	char *os2name = NULL;
+	int rc;
 	char *value;
+
+	if ((rc = can_get_xattr(inode, name)))
+		return rc;
+
+	if (strncmp(name, XATTR_OS2_PREFIX, XATTR_OS2_PREFIX_LEN) == 0) {
+		os2name = kmalloc(namelen - XATTR_OS2_PREFIX_LEN + 1,
+				  GFP_KERNEL);
+		if (!os2name)
+			return -ENOMEM;
+		strcpy(os2name, name + XATTR_OS2_PREFIX_LEN);
+		name = os2name;
+		namelen -= XATTR_OS2_PREFIX_LEN;
+	}
 
 	xattr_size = ea_get(inode, &ea_buf, 0);
 	if (xattr_size < 0) {
@@ -753,6 +873,8 @@ ssize_t __jfs_getxattr(struct inode *inode, const char *name, void *data,
       release:
 	ea_release(inode, &ea_buf);
       out:
+	if (os2name)
+		kfree(os2name);
 
 	return size;
 }
@@ -786,7 +908,7 @@ ssize_t jfs_listxattr(struct dentry * dentry, char *data, size_t buf_size)
 
 	/* compute required size of list */
 	for (ea = FIRST_EA(ealist); ea < END_EALIST(ealist); ea = NEXT_EA(ea))
-		size += ea->namelen + 1;
+		size += name_size(ea) + 1;
 
 	if (!data)
 		goto release;
@@ -799,9 +921,8 @@ ssize_t jfs_listxattr(struct dentry * dentry, char *data, size_t buf_size)
 	/* Copy attribute names to buffer */
 	buffer = data;
 	for (ea = FIRST_EA(ealist); ea < END_EALIST(ealist); ea = NEXT_EA(ea)) {
-		memcpy(buffer, ea->name, ea->namelen);
-		buffer[ea->namelen] = 0;
-		buffer += ea->namelen + 1;
+		int namelen = copy_name(buffer, ea);
+		buffer += namelen + 1;
 	}
 
       release:

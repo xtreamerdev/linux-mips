@@ -470,6 +470,7 @@ CONFIG_WATCHDOG=y
 # CONFIG_MACHZ_WDT is not set
 CONFIG_INDYDOG=y
 # CONFIG_AMD7XX_TCO is not set
+# CONFIG_AMD_PM768 is not set
 # CONFIG_NVRAM is not set
 # CONFIG_RTC is not set
 # CONFIG_DTLK is not set

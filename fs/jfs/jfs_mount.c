@@ -249,7 +249,7 @@ int jfs_mount(struct super_block *sb)
 int jfs_mount_rw(struct super_block *sb, int remount)
 {
 	struct jfs_sb_info *sbi = JFS_SBI(sb);  
-	log_t *log;
+	struct jfs_log *log;
 	int rc;
 
 	/*
@@ -478,12 +478,12 @@ int readSuper(struct super_block *sb, struct buffer_head **bpp)
 {
 	/* read in primary superblock */
 	*bpp = sb_bread(sb, SUPER1_OFF >> sb->s_blocksize_bits);
-	if (bpp)
+	if (*bpp)
 		return 0;
 
 	/* read in secondary/replicated superblock */
 	*bpp = sb_bread(sb, SUPER2_OFF >> sb->s_blocksize_bits);
-	if (bpp)
+	if (*bpp)
 		return 0;
 
 	return -EIO;
@@ -506,8 +506,8 @@ int readSuper(struct super_block *sb, struct buffer_head **bpp)
  */
 static int logMOUNT(struct super_block *sb)
 {
-	log_t *log = JFS_SBI(sb)->log;
-	lrd_t lrd;
+	struct jfs_log *log = JFS_SBI(sb)->log;
+	struct lrd lrd;
 
 	lrd.logtid = 0;
 	lrd.backchain = 0;
