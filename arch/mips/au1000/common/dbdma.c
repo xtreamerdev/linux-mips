@@ -596,10 +596,9 @@ _au1xxx_dbdma_put_source(u32 chanid, void *buf, int nbytes, u32 flags)
 	 * */
 	dma_cache_wback_inv(buf,nbytes);
         dp->dscr_cmd0 |= DSCR_CMD0_V;        /* Let it rip */
+	au_sync();
 	dma_cache_wback_inv(dp, sizeof(dp));
-
         ctp->chan_ptr->ddma_dbell = 0;
-		au_sync();
 
 	/* return something not zero.
 	*/
@@ -658,10 +657,9 @@ _au1xxx_dbdma_put_dest(u32 chanid, void *buf, int nbytes, u32 flags)
 	 * */
 	dma_cache_inv(buf,nbytes);
 	dp->dscr_cmd0 |= DSCR_CMD0_V;	/* Let it rip */
-	dma_cache_wback_inv(dp, sizeof(dp));
-
-        ctp->chan_ptr->ddma_dbell = 0;
 	au_sync();
+	dma_cache_wback_inv(dp, sizeof(dp));
+        ctp->chan_ptr->ddma_dbell = 0;
 	
 	/* Get next descriptor pointer.
 	*/
