@@ -352,10 +352,12 @@ CONFIG_BLK_DEV_IDE=y
 #
 # CONFIG_BLK_DEV_HD_IDE is not set
 # CONFIG_BLK_DEV_HD is not set
+# CONFIG_BLK_DEV_IDE_SATA is not set
 CONFIG_BLK_DEV_IDEDISK=y
 # CONFIG_IDEDISK_MULTI_MODE is not set
 # CONFIG_IDEDISK_STROKE is not set
 # CONFIG_BLK_DEV_IDECS is not set
+# CONFIG_BLK_DEV_DELKIN is not set
 # CONFIG_BLK_DEV_IDECD is not set
 # CONFIG_BLK_DEV_IDETAPE is not set
 # CONFIG_BLK_DEV_IDEFLOPPY is not set
@@ -549,6 +551,11 @@ CONFIG_NET_RADIO=y
 # CONFIG_PLX_HERMES is not set
 # CONFIG_TMD_HERMES is not set
 # CONFIG_PCI_HERMES is not set
+
+#
+# Prism54 PCI/PCMCIA GT/Duette Driver - 802.11(a/b/g)
+#
+# CONFIG_PRISM54 is not set
 CONFIG_NET_WIRELESS=y
 
 #

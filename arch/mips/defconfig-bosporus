@@ -459,10 +459,13 @@ CONFIG_SCSI_CONSTANTS=y
 # CONFIG_SCSI_MEGARAID2 is not set
 # CONFIG_SCSI_SATA is not set
 # CONFIG_SCSI_SATA_SVW is not set
+# CONFIG_SCSI_ATA_PIIX is not set
+# CONFIG_SCSI_SATA_NV is not set
 # CONFIG_SCSI_SATA_PROMISE is not set
 # CONFIG_SCSI_SATA_SX4 is not set
 # CONFIG_SCSI_SATA_SIL is not set
 # CONFIG_SCSI_SATA_SIS is not set
+# CONFIG_SCSI_SATA_ULI is not set
 # CONFIG_SCSI_SATA_VIA is not set
 # CONFIG_SCSI_SATA_VITESSE is not set
 # CONFIG_SCSI_BUSLOGIC is not set
@@ -598,6 +601,11 @@ CONFIG_NET_RADIO=y
 # CONFIG_PLX_HERMES is not set
 # CONFIG_TMD_HERMES is not set
 # CONFIG_PCI_HERMES is not set
+
+#
+# Prism54 PCI/PCMCIA GT/Duette Driver - 802.11(a/b/g)
+#
+# CONFIG_PRISM54 is not set
 CONFIG_NET_WIRELESS=y
 
 #
