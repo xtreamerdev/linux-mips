@@ -24,7 +24,8 @@ obj-y	 += mem.o tty_io.o n_tty.o tty_ioctl.o raw.o pty.o misc.o random.o
 export-objs     :=	busmouse.o console.o keyboard.o sysrq.o \
 			misc.o pty.o random.o selection.o serial.o \
 			sonypi.o tty_io.o tty_ioctl.o generic_serial.o \
-			au1000_gpio.o vac-serial.o hp_psaux.o nvram.o
+			au1000_gpio.o au1x00-serial.o vac-serial.o \
+			hp_psaux.o nvram.o
 
 mod-subdirs	:=	joystick ftape drm drm-4.0 pcmcia
 
