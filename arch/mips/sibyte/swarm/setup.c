@@ -43,7 +43,6 @@
 #include "cfe_api.h"
 #include "cfe_error.h"
 
-extern struct rtc_ops swarm_rtc_ops;
 extern int cfe_console_handle;
 
 #ifdef CONFIG_BLK_DEV_IDE_SWARM
@@ -270,8 +269,6 @@ void __init swarm_setup(void)
 	       "board"
 #endif
 	       " runs\n");
-
-//	board_timer_setup = swarm_time_init;
 
 #ifdef CONFIG_BLK_DEV_IDE_SWARM
 	ide_ops = &swarm_ide_ops;
