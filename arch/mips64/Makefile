@@ -215,7 +215,7 @@ endif
 # ELF files from 32-bit files by conversion.
 #
 ifdef CONFIG_BOOT_ELF64
-GCCFLAGS += -Wa,-32 $(shell if $(CC) $(1) -c -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
+GCCFLAGS += -Wa,-32 $(shell if $(CC) -Wa,-mgp64 -c -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "-Wa,-mgp64"; fi)
 LINKFLAGS += -T arch/mips64/ld.script.elf32
 #AS += -64
 #LD += -m elf64bmip
@@ -238,9 +238,9 @@ LIBS := arch/mips64/lib/lib.a $(LIBS)
 MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
 
 ifdef CONFIG_CPU_LITTLE_ENDIAN
-64bit-bfd = elf64-littlemips
+64bit-bfd = elf64-tradlittlemips
 else
-64bit-bfd = elf64-bigmips
+64bit-bfd = elf64-tradbigmips
 endif
 
 vmlinux: arch/mips64/ld.script.elf32
@@ -249,10 +249,10 @@ arch/mips64/ld.script.elf32: arch/mips64/ld.script.elf32.S
 
 ifdef CONFIG_MAPPED_KERNEL
 vmlinux.64: vmlinux
-	$(OBJCOPY) -O $(64bit-bfd) --change-addresses=0xbfffffff40000000 $< $@
+	$(OBJCOPY) -O $(64bit-bfd) --remove-section=.reginfo --change-addresses=0xbfffffff40000000 $< $@
 else
 vmlinux.64: vmlinux
-	$(OBJCOPY) -O $(64bit-bfd) --change-addresses=0xa7ffffff80000000 $< $@
+	$(OBJCOPY) -O $(64bit-bfd) --remove-section=.reginfo --change-addresses=0xa800000080000000 $< $@
 endif
 
 zImage: vmlinux
