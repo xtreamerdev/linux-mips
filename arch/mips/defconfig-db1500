@@ -770,8 +770,8 @@ CONFIG_USB_HID=y
 # Kernel hacking
 #
 CONFIG_CROSSCOMPILE=y
-# CONFIG_DEBUG is not set
-# CONFIG_REMOTE_DEBUG is not set
+# CONFIG_RUNTIME_DEBUG is not set
+# CONFIG_KGDB is not set
 # CONFIG_GDB_CONSOLE is not set
 # CONFIG_MAGIC_SYSRQ is not set
 # CONFIG_MIPS_UNCACHED is not set

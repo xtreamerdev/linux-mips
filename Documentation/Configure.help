@@ -20601,26 +20601,12 @@ CONFIG_NINO_16MB
   Palm PCs from Philips (INCOMPLETE).
 Model-300/301/302/319
 
-Low-level debugging
-CONFIG_LL_DEBUG
-  Enable low-level debugging assertion macros in the kernel code.
-  Currently used only by the time services code in the MIPS port.
-  Don't turn this on unless you know what you are doing.
-
 Enable run-time debugging
-CONFIG_DEBUG
+CONFIG_RUNTIME_DEBUG
   If you say Y here, some debugging macros will do run-time checking.
-  If you say N here, those macros will mostly turn to no-ops.  For
-  MIPS boards only.  See include/asm-mips/debug.h for debuging macros.
+  If you say N here, those macros will mostly turn to no-ops.  Currently
+  supported by MIPS arch.  See include/asm-mips/debug.h for debuging macros.
   If unsure, say N.
-
-Remote GDB kernel debugging
-CONFIG_REMOTE_DEBUG
-  If you say Y here, it will be possible to remotely debug the MIPS
-  kernel using gdb. This enlarges your kernel image disk size by
-  several megabytes and requires a machine with more than 16 MB,
-  better 32 MB RAM to avoid excessive linking time. This is only
-  useful for kernel hackers. If unsure, say N.
 
 Run uncached
 CONFIG_MIPS_UNCACHED
@@ -25953,7 +25939,7 @@ CONFIG_DEBUG_BUGVERBOSE
 Include kgdb kernel debugger
 CONFIG_KGDB
   Include in-kernel hooks for kgdb, the Linux kernel source level
-  debugger.  This project has a web page at
+  debugger.  For i386 architecture there is project page at
   <http://kgdb.sourceforge.net/>.
 
 Include xmon kernel debugger

@@ -975,11 +975,11 @@ mainmenu_option next_comment
 comment 'Kernel hacking'
 
 bool 'Are you using a crosscompiler' CONFIG_CROSSCOMPILE
-bool 'Enable run-time debugging' CONFIG_DEBUG
-bool 'Remote GDB kernel debugging' CONFIG_REMOTE_DEBUG
-dep_bool '  Console output to GDB' CONFIG_GDB_CONSOLE $CONFIG_REMOTE_DEBUG
+bool 'Enable run-time debugging' CONFIG_RUNTIME_DEBUG
+bool 'Remote GDB kernel debugging' CONFIG_KGDB
+dep_bool '  Console output to GDB' CONFIG_GDB_CONSOLE $CONFIG_KGDB
 if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
-   dep_bool 'Compile for Corelis Debugger' CONFIG_SB1XXX_CORELIS $CONFIG_DEBUG
+   bool 'Compile for Corelis Debugger' CONFIG_SB1XXX_CORELIS
 fi
 bool 'Magic SysRq key' CONFIG_MAGIC_SYSRQ
 if [ "$CONFIG_SMP" != "y" ]; then

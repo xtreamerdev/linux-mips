@@ -107,7 +107,7 @@ if [ "$CONFIG_SERIAL_NONSTANDARD" = "y" ]; then
             if [ "$CONFIG_SIBYTE_SB1250_DUART_CONSOLE" = "y" ]; then
                define_bool CONFIG_SERIAL_CONSOLE y
             fi
-            if [ "$CONFIG_REMOTE_DEBUG" = "y" ]; then
+            if [ "$CONFIG_KGDB" = "y" ]; then
                define_bool CONFIG_SIBYTE_SB1250_DUART_NO_PORT_1 y
             fi
          fi

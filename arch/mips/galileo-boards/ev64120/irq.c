@@ -421,7 +421,7 @@ void galileo_irq_setup(void)
 	set_c0_status(IE_IRQ2);
 
 
-#ifdef CONFIG_REMOTE_DEBUG
+#ifdef CONFIG_KGDB
 	{
 		extern int DEBUG_CHANNEL;
 		serial_init(DEBUG_CHANNEL);

@@ -66,7 +66,7 @@
  *      with nothing in between. 
  *  v0.14.10a
  *      June 21 2002 Muli Ben-Yehuda <mulix@actcom.co.il> 
- *      use a debug macro instead of #ifdef CONFIG_DEBUG, trim to 80 columns 
+ *      use a debug macro instead of #ifdef CONFIG_RUNTIME_DEBUG, trim to 80 columns 
  *      per line, use 'do {} while (0)' in statement macros. 
  *  v0.14.10
  *      June 6 2002 Lei Hu <Lei_hu@ali.com.tw>
