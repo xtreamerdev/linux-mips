@@ -22,16 +22,19 @@ CONFIG_KMOD=y
 #
 # CONFIG_ACER_PICA_61 is not set
 # CONFIG_MIPS_BOSPORUS is not set
+# CONFIG_MIPS_FICMMP is not set
 # CONFIG_MIPS_MIRAGE is not set
 # CONFIG_MIPS_DB1000 is not set
 # CONFIG_MIPS_DB1100 is not set
 # CONFIG_MIPS_DB1500 is not set
 CONFIG_MIPS_DB1550=y
+# CONFIG_MIPS_DB1200 is not set
 # CONFIG_MIPS_PB1000 is not set
 # CONFIG_MIPS_PB1100 is not set
 # CONFIG_MIPS_PB1500 is not set
-# CONFIG_MIPS_HYDROGEN3 is not set
 # CONFIG_MIPS_PB1550 is not set
+# CONFIG_MIPS_PB1200 is not set
+# CONFIG_MIPS_HYDROGEN3 is not set
 # CONFIG_MIPS_XXS1500 is not set
 # CONFIG_MIPS_MTX1 is not set
 # CONFIG_COGENT_CSB250 is not set
@@ -883,7 +886,6 @@ CONFIG_DUMMY_CONSOLE=y
 # CONFIG_FB_ATY128 is not set
 # CONFIG_FB_INTEL is not set
 # CONFIG_FB_SIS is not set
-CONFIG_FB_SMI501=y
 # CONFIG_FB_NEOMAGIC is not set
 # CONFIG_FB_3DFX is not set
 # CONFIG_FB_VOODOO1 is not set
@@ -965,7 +967,7 @@ CONFIG_USB=y
 # CONFIG_USB_UHCI is not set
 # CONFIG_USB_UHCI_ALT is not set
 CONFIG_USB_OHCI=y
-CONFIG_USB_NON_PCI_OHCI=y
+
 #
 # USB Device Class drivers
 #

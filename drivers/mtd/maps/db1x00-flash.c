@@ -28,8 +28,6 @@ static unsigned long window_addr;
 static unsigned long window_size;
 static unsigned long flash_size;
 
-static BCSR * const bcsr = (BCSR *)0xAE000000;
-
 __u8 physmap_read8(struct map_info *map, unsigned long ofs)
 {
 	__u8 ret;

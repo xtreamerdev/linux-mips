@@ -210,7 +210,7 @@ static int __init button_init(void)
 	
 	/* register all button irq handler */
 	
-	for(i=0; i< izeof(button_map)/sizeof(button_map[0]); i++)
+	for(i=0; i< sizeof(button_map)/sizeof(button_map[0]); i++)
 	{
 		/* register irq <-- gpio 1 ,6 ,12 , 17 ,19 , 26 ,28 */
 		if(button_map[i] != 0)	
