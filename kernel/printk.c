@@ -423,7 +423,6 @@ asmlinkage int printk(const char *fmt, ...)
 	va_start(args, fmt);
 	printed_len = vsnprintf(printk_buf, sizeof(printk_buf), fmt, args);
 	va_end(args);
-//ser_console_write(NULL, printk_buf, printed_len);
 
 	/*
 	 * Copy the output into log_buf.  If the caller didn't provide
