@@ -66,7 +66,7 @@ extern void addrflt_init(void);
 void __init bus_error_init(void) { /* nothing */ }
 
 #ifdef CONFIG_PICVUE
-#include <linux/picvue.h>
+#include "picvue.h"
 
 static int lasat_panic_event(struct notifier_block *this,
 			     unsigned long event, void *ptr)
