@@ -25,7 +25,7 @@
 	.align  5
 NESTED(handle_sys64, PT_SIZE, sp)
 /* When 32-bit compatibility is configured scall_o32.S already did this.  */
-#ifndef CONFIG_MIPS32_COMPAT
+#if !defined(CONFIG_MIPS32_O32) && !defined(CONFIG_MIPS32_N32)
 	.set	noat
 	SAVE_SOME
 	STI
