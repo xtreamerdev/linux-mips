@@ -125,6 +125,7 @@ typedef struct au1xxx_ddma_desc {
 
 /* Command 0 device IDs.
 */
+#ifdef CONFIG_SOC_AU1550
 #define DSCR_CMD0_UART0_TX	0
 #define DSCR_CMD0_UART0_RX	1
 #define DSCR_CMD0_UART3_TX	2
@@ -153,6 +154,38 @@ typedef struct au1xxx_ddma_desc {
 #define DSCR_CMD0_MAC0_TX	25
 #define DSCR_CMD0_MAC1_RX	26
 #define DSCR_CMD0_MAC1_TX	27
+#endif /* CONFIG_SOC_AU1550 */
+
+#ifdef CONFIG_SOC_AU1200
+#define DSCR_CMD0_UART0_TX	0
+#define DSCR_CMD0_UART0_RX	1
+#define DSCR_CMD0_UART1_TX	2
+#define DSCR_CMD0_UART1_RX	3
+#define DSCR_CMD0_DMA_REQ0	4
+#define DSCR_CMD0_DMA_REQ1	5
+#define DSCR_CMD0_MAE_BE	6
+#define DSCR_CMD0_MAE_FE	7
+#define DSCR_CMD0_SDMS_TX0	8
+#define DSCR_CMD0_SDMS_RX0	9
+#define DSCR_CMD0_SDMS_TX1	10
+#define DSCR_CMD0_SDMS_RX1	11
+#define DSCR_CMD0_AES_TX	12
+#define DSCR_CMD0_AES_RX	13
+#define DSCR_CMD0_PSC0_TX	14
+#define DSCR_CMD0_PSC0_RX	15
+#define DSCR_CMD0_PSC1_TX	16
+#define DSCR_CMD0_PSC1_RX	17
+#define DSCR_CMD0_CIM_RXA	18
+#define DSCR_CMD0_CIM_RXB	19
+#define DSCR_CMD0_CIM_RXC	20
+#define DSCR_CMD0_MAE_BOTH	21
+#define DSCR_CMD0_LCD		22
+#define DSCR_CMD0_NAND_FLASH	23
+#define DSCR_CMD0_PSC0_SYNC	24
+#define DSCR_CMD0_PSC1_SYNC	25
+#define DSCR_CMD0_CIM_SYNC	26
+#endif /* CONFIG_SOC_AU1200 */
+
 #define DSCR_CMD0_THROTTLE	30
 #define DSCR_CMD0_ALWAYS	31
 #define DSCR_NDEV_IDS		32
