@@ -170,13 +170,13 @@
 #ifdef CONFIG_AU1000_UART
 #include <asm/au1000.h>
 #define AU1000_SERIAL_PORT_DEFNS                              \
-    { .baud_base = 0, port: UART0_ADDR, irq: AU1000_UART0_INT,  \
+    { .baud_base = 0, .port = UART0_ADDR, .irq = AU1000_UART0_INT,  \
       .flags = STD_COM_FLAGS, type: 1 },                        \
-    { .baud_base = 0, port: UART1_ADDR, irq: AU1000_UART1_INT,  \
+    { .baud_base = 0, .port = UART1_ADDR, .irq = AU1000_UART1_INT,  \
       .flags = STD_COM_FLAGS, type: 1 },     \
-    { .baud_base = 0, port: UART2_ADDR, irq: AU1000_UART2_INT,  \
+    { .baud_base = 0, .port = UART2_ADDR, .irq = AU1000_UART2_INT,  \
       .flags = STD_COM_FLAGS, type: 1 },    \
-    { .baud_base = 0, port: UART3_ADDR, irq: AU1000_UART3_INT,  \
+    { .baud_base = 0, .port = UART3_ADDR, .irq = AU1000_UART3_INT,  \
       .flags = STD_COM_FLAGS, type: 1 },
 #else
 #define AU1000_SERIAL_PORT_DEFNS
