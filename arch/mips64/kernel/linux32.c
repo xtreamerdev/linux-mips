@@ -488,7 +488,7 @@ sys32_execve(abi64_no_regargs, struct pt_regs regs)
 	 *  on a kernel address (simplifies `get_user').  Instead we
 	 *  do an mmap to get a user address.  Note that since a successful
 	 *  `execve' frees all current memory we only have to do an
-	 *  `munmap' if the `execve' failes.
+	 *  `munmap' if the `execve' fails.
 	 */
 	down_write(&current->mm->mmap_sem);
 	av = (char **) do_mmap_pgoff(0, 0, len, PROT_READ | PROT_WRITE,
