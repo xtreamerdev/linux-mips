@@ -65,7 +65,7 @@ extern void au1000_halt(void);
 extern void au1000_power_off(void);
 extern struct resource ioport_resource;
 extern struct resource iomem_resource;
-#if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_SOC_AU1500)
+#if defined(CONFIG_64BIT_PHYS_ADDR) && (defined(CONFIG_SOC_AU1500) || defined(CONFIG_SOC_AU1550))
 extern phys_t (*fixup_bigphys_addr)(phys_t phys_addr, phys_t size);
 static phys_t au1500_fixup_bigphys_addr(phys_t phys_addr, phys_t size);
 #endif
