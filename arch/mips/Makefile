@@ -632,6 +632,9 @@ MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
 vmlinux.ecoff: vmlinux
 	@$(MAKEBOOT) $@
 
+vmlinux.srec: vmlinux
+	@$(MAKEBOOT) $@
+
 archclean:
 	@$(MAKEBOOT) clean
 	rm -f arch/$(ARCH)/ld.script
