@@ -208,9 +208,9 @@ extern void vr41xx_dsiu_init(void);
  * PCI Control Unit
  */
 struct vr41xx_pci_address_space {
-	u32 internal_base;
-	u32 address_mask;
-	u32 pci_base;
+	uint32_t internal_base;
+	uint32_t address_mask;
+	uint32_t pci_base;
 };
 
 struct vr41xx_pci_address_map {
