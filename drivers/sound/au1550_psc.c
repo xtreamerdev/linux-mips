@@ -55,6 +55,14 @@
 #include <asm/au1xxx_psc.h>
 #include <asm/au1xxx_dbdma.h>
 
+#ifdef CONFIG_MIPS_PB1550
+#include <asm/pb1550.h>
+#endif
+
+#ifdef CONFIG_MIPS_DB1550
+#include <asm/db1x00.h>
+#endif
+
 #undef OSS_DOCUMENTED_MIXER_SEMANTICS
 
 #define AU1550_MODULE_NAME "Au1550 psc audio"
