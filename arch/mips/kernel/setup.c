@@ -39,9 +39,7 @@
 #include <asm/ptrace.h>
 #include <asm/system.h>
 
-#ifndef CONFIG_SMP
-struct cpuinfo_mips cpu_data[1];
-#endif
+struct cpuinfo_mips cpu_data[NR_CPUS];
 
 /*
  * There are several bus types available for MIPS machines.  "RISC PC"

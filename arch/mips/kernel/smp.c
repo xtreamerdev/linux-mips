@@ -43,7 +43,6 @@
 spinlock_t kernel_flag __cacheline_aligned_in_smp = SPIN_LOCK_UNLOCKED;
 int smp_threads_ready;	/* Not used */
 atomic_t smp_commenced = ATOMIC_INIT(0);
-struct cpuinfo_mips cpu_data[NR_CPUS];
 
 atomic_t cpus_booted = ATOMIC_INIT(0);
 
