@@ -36,6 +36,7 @@
 #include <linux/elevator.h>
 #include <linux/auto_fs.h>
 #include <linux/auto_fs4.h>
+#include <linux/devfs_fs.h>
 #include <linux/ext2_fs.h>
 #include <linux/videodev.h>
 #include <linux/raid/md_u.h>
@@ -1821,6 +1822,12 @@ static struct ioctl32_list ioctl32_handler_table[] = {
 	IOCTL32_HANDLER(AUTOFS_IOC_SETTIMEOUT32, ioc_settimeout),
 	IOCTL32_DEFAULT(AUTOFS_IOC_EXPIRE),
 	IOCTL32_DEFAULT(AUTOFS_IOC_EXPIRE_MULTI),
+
+	/* DEVFS */
+	IOCTL32_DEFAULT(DEVFSDIOC_GET_PROTO_REV),
+	IOCTL32_DEFAULT(DEVFSDIOC_SET_EVENT_MASK),
+	IOCTL32_DEFAULT(DEVFSDIOC_RELEASE_EVENT_QUEUE),
+	IOCTL32_DEFAULT(DEVFSDIOC_SET_DEBUG_MASK),
 
 	/* Little p (/dev/rtc, /dev/envctrl, etc.) */
 	IOCTL32_DEFAULT(_IOR('p', 20, int[7])), /* RTCGET */
