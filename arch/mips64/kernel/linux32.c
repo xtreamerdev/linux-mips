@@ -452,10 +452,10 @@ static int nargs(unsigned int arg, char **ap)
 		/* egcs is stupid */
 		if (!access_ok(VERIFY_READ, arg, sizeof (unsigned int)))
 			return -EFAULT;
-		if (IS_ERR(ret = __get_user((long)ptr,(int *)A(arg))))
+		if ((ret = __get_user((long)ptr,(int *)A(arg))))
 			return ret;
 		if (ap)		/* no access_ok needed, we allocated */
-			if (IS_ERR(ret = __put_user(ptr, ap++)))
+			if ((ret = __put_user(ptr, ap++)))
 				return ret;
 		arg += sizeof(unsigned int);
 		n++;
@@ -476,12 +476,13 @@ sys32_execve(abi64_no_regargs, struct pt_regs regs)
 	char * filename;
 
 	na = nargs(argv, NULL);
-	if (IS_ERR(na))
-		return(na);
+	if (na < 0)
+		return na;
 	ne = nargs(envp, NULL);
-	if (IS_ERR(ne))
-		return(ne);
+	if (ne < 0)
+		return ne;
 	len = (na + ne + 2) * sizeof(*av);
+
 	/*
 	 *  kmalloc won't work because the `sys_exec' code will attempt
 	 *  to do a `get_user' on the arg list and `get_user' will fail
@@ -498,13 +499,15 @@ sys32_execve(abi64_no_regargs, struct pt_regs regs)
 	if (IS_ERR(av))
 		return (long) av;
 	ae = av + na + 1;
-	if (IS_ERR(r = __put_user(0, (av + na))))
+	r = __put_user(0, (av + na));
+	r |= __put_user(0, (ae + ne));
+	if (r)
 		goto out;
-	if (IS_ERR(r = __put_user(0, (ae + ne))))
+	r = nargs(argv, av);
+	if (r < 0)
 		goto out;
-	if (IS_ERR(r = nargs(argv, av)))
-		goto out;
-	if (IS_ERR(r = nargs(envp, ae)))
+	r = nargs(envp, ae);
+	if (r < 0)
 		goto out;
 	filename = getname((char *) (long)regs.regs[4]);
 	r = PTR_ERR(filename);
@@ -513,10 +516,10 @@ sys32_execve(abi64_no_regargs, struct pt_regs regs)
 
 	r = do_execve(filename, av, ae, &regs);
 	putname(filename);
-	if (IS_ERR(r))
+	if (r)
 out:
 		sys_munmap((unsigned long)av, len);
-	return(r);
+	return r ;
 }
 #endif
 
