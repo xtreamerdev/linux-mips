@@ -34,6 +34,7 @@
 #include <linux/smp.h>
 
 #include <asm/cachectl.h>
+#include <asm/cpu.h>
 #include <asm/mipsregs.h>
 #include <asm/reg.h>
 #include <asm/system.h>

@@ -8,31 +8,21 @@
  * found in some MIPS systems.
  *
  */
-#include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
+#include <linux/irq.h>
 #include <linux/kernel.h>
-#include <linux/mm.h>
+#include <linux/mc146818rtc.h>
 #include <linux/param.h>
-#include <linux/sched.h>
-#include <linux/string.h>
-#include <linux/types.h>
+#include <linux/time.h>
 
-#include <asm/bootinfo.h>
-#include <asm/cpu.h>
-#include <asm/div64.h>
-#include <asm/io.h>
-#include <asm/irq.h>
-#include <asm/mipsregs.h>
+#include <asm/processor.h>
 #include <asm/time.h>
 
 #include <asm/dec/interrupts.h>
 #include <asm/dec/ioasic.h>
 #include <asm/dec/ioasic_addrs.h>
 #include <asm/dec/machtype.h>
-
-#include <linux/mc146818rtc.h>
-#include <linux/timex.h>
 
 
 static unsigned long dec_rtc_get_time(void)
