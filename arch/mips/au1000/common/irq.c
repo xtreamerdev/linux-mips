@@ -430,14 +430,10 @@ void __init init_IRQ(void)
 			case AU1000_IRDA_RX_INT:
 
 			case AU1000_MAC0_DMA_INT:
-#if defined(CONFIG_MIPS_PB1000) || defined(CONFIG_MIPS_DB1000) || defined(CONFIG_MIPS_DB1500)
-			case AU1000_MAC1_DMA_INT:
-#endif
-#ifdef CONFIG_MIPS_PB1500
+#if defined(CONFIG_MIPS_PB1000) || defined(CONFIG_MIPS_DB1000) || defined(CONFIG_MIPS_PB1500) || defined(CONFIG_MIPS_DB1500)
 			case AU1000_MAC1_DMA_INT:
 #endif
 			case AU1500_GPIO_204:
-
 				setup_local_irq(i, INTC_INT_HIGH_LEVEL, 0);
 				irq_desc[i].handler = &level_irq_type;
 				break;
@@ -446,7 +442,7 @@ void __init init_IRQ(void)
 			case AU1000_GPIO_15:
 #endif
 		        case AU1000_USB_HOST_INT:
-#ifdef CONFIG_MIPS_PB1500
+#if defined(CONFIG_MIPS_PB1500) || defined(CONFIG_MIPS_DB1500)
 			case AU1000_PCI_INTA:
 			case AU1000_PCI_INTB:
 			case AU1000_PCI_INTC:
@@ -488,9 +484,9 @@ void __init init_IRQ(void)
 			case AU1000_RTC_MATCH0_INT:
 			case AU1000_RTC_MATCH1_INT:
 			case AU1000_RTC_MATCH2_INT:
-			        setup_local_irq(i, INTC_INT_RISE_EDGE, 0);
-                                irq_desc[i].handler = &rise_edge_irq_type;
-                                break;
+				setup_local_irq(i, INTC_INT_RISE_EDGE, 0);
+				irq_desc[i].handler = &rise_edge_irq_type;
+				break;
 
 				 // Careful if you change match 2 request!
 				 // The interrupt handler is called directly

@@ -1414,8 +1414,11 @@ void au1000_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 		printk(KERN_ERR "%s: isr: null dev ptr\n", dev->name);
 		return;
 	}
-	au1000_tx_ack(dev);
+
+	/* Handle RX interrupts first to minimize chance of overrun */
+
 	au1000_rx(dev);
+	au1000_tx_ack(dev);
 }
 
 
