@@ -431,6 +431,7 @@ void __init init_IRQ(void)
 			panic("Unknown au1xxx irq map");
 			break;
 		}
+		imp++;
 	}
 
 	set_c0_status(ALLINTS);
