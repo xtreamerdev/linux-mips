@@ -216,6 +216,9 @@ void __init au1x00_setup(void)
 #ifdef CONFIG_MIPS_BOSPORUS
     printk("AMD Alchemy Bosporus Board\n");
 #endif
+#ifdef CONFIG_MIPS_MIRAGE
+    printk("AMD Alchemy Mirage Board\n");
+#endif
 }
 
 #if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_SOC_AU1500)
