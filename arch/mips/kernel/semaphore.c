@@ -61,66 +61,79 @@ EXPORT_SYMBOL(__up_wakeup);
  *
  */
 
-#define DOWN_VAR				\
-	struct task_struct *tsk = current;	\
-	wait_queue_t wait;			\
-	init_waitqueue_entry(&wait, tsk);
-
-#define DOWN_HEAD(task_state)						\
-									\
-									\
-	tsk->state = (task_state);					\
-	add_wait_queue_exclusive(&sem->wait, &wait);			\
-									\
-	/*								\
-	 * Ok, we're set up.  sem->count is known to be less than zero	\
-	 * so we must wait.						\
-	 *								\
-	 * We can let go the lock for purposes of waiting.		\
-	 * We re-acquire it after awaking so as to protect		\
-	 * all semaphore operations.					\
-	 *								\
-	 * If "up()" is called before we call waking_non_zero() then	\
-	 * we will catch it right away.  If it is called later then	\
-	 * we will have to go through a wakeup cycle to catch it.	\
-	 *								\
-	 * Multiple waiters contend for the semaphore lock to see	\
-	 * who gets to gate through and who has to wait some more.	\
-	 */								\
-	for (;;) {
-
-#define DOWN_TAIL(task_state)			\
-		tsk->state = (task_state);	\
-	}					\
-	tsk->state = TASK_RUNNING;		\
-	remove_wait_queue(&sem->wait, &wait);
-
 void __down(struct semaphore * sem)
 {
-	DOWN_VAR
-	DOWN_HEAD(TASK_UNINTERRUPTIBLE)
-	if (waking_non_zero(sem))
-		break;
-	schedule();
-	DOWN_TAIL(TASK_UNINTERRUPTIBLE)
+	struct task_struct *tsk = current;
+	wait_queue_t wait;
+	init_waitqueue_entry(&wait, tsk);
+
+	tsk->state = TASK_UNINTERRUPTIBLE;
+	add_wait_queue_exclusive(&sem->wait, &wait);
+
+	/*
+	 * Ok, we're set up.  sem->count is known to be less than zero
+	 * so we must wait.
+	 *
+	 * We can let go the lock for purposes of waiting.
+	 * We re-acquire it after awaking so as to protect
+	 * all semaphore operations.
+	 *
+	 * If "up()" is called before we call waking_non_zero() then
+	 * we will catch it right away.  If it is called later then
+	 * we will have to go through a wakeup cycle to catch it.
+	 *
+	 * Multiple waiters contend for the semaphore lock to see
+	 * who gets to gate through and who has to wait some more.
+	 */
+	for (;;) {
+		if (waking_non_zero(sem))
+			break;
+		schedule();
+		tsk->state = TASK_UNINTERRUPTIBLE;
+	}
+	tsk->state = TASK_RUNNING;
+	remove_wait_queue(&sem->wait, &wait);
 }
 
 int __down_interruptible(struct semaphore * sem)
 {
 	int ret = 0;
-	DOWN_VAR
-	DOWN_HEAD(TASK_INTERRUPTIBLE)
+	struct task_struct *tsk = current;
+	wait_queue_t wait;
+	init_waitqueue_entry(&wait, tsk);
 
-	ret = waking_non_zero_interruptible(sem, tsk);
-	if (ret)
-	{
-		if (ret == 1)
-			/* ret != 0 only if we get interrupted -arca */
-			ret = 0;
-		break;
+	tsk->state = TASK_INTERRUPTIBLE;
+	add_wait_queue_exclusive(&sem->wait, &wait);
+
+	/*
+	 * Ok, we're set up.  sem->count is known to be less than zero
+	 * so we must wait.
+	 *
+	 * We can let go the lock for purposes of waiting.
+	 * We re-acquire it after awaking so as to protect
+	 * all semaphore operations.
+	 *
+	 * If "up()" is called before we call waking_non_zero() then
+	 * we will catch it right away.  If it is called later then
+	 * we will have to go through a wakeup cycle to catch it.
+	 *
+	 * Multiple waiters contend for the semaphore lock to see
+	 * who gets to gate through and who has to wait some more.
+	 */
+	for (;;) {
+		ret = waking_non_zero_interruptible(sem, tsk);
+		if (ret) {
+			if (ret == 1)
+				/* ret != 0 only if we get interrupted -arca */
+				ret = 0;
+			break;
+		}
+		schedule();
+		tsk->state = TASK_INTERRUPTIBLE;
 	}
-	schedule();
-	DOWN_TAIL(TASK_INTERRUPTIBLE)
+	tsk->state = TASK_RUNNING;
+	remove_wait_queue(&sem->wait, &wait);
+
 	return ret;
 }
 
