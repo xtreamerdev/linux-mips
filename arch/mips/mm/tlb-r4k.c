@@ -76,16 +76,10 @@ void local_flush_tlb_mm(struct mm_struct *mm)
 	int cpu = smp_processor_id();
 
 	if (cpu_context(cpu, mm) != 0) {
-		unsigned long flags;
-
 #ifdef DEBUG_TLB
 		printk("[tlbmm<%d>]", cpu_context(cpu, mm));
 #endif
-		local_irq_save(flags);
-		get_new_mmu_context(mm, smp_processor_id());
-		if (mm == current->active_mm)
-			write_c0_entryhi(cpu_asid(cpu, mm));
-		local_irq_restore(flags);
+		drop_mmu_context(mm,cpu);
 	}
 }
 
@@ -133,9 +127,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 			}
 			write_c0_entryhi(oldpid);
 		} else {
-			get_new_mmu_context(mm, smp_processor_id());
-			if (mm == current->active_mm)
-				write_c0_entryhi(cpu_asid(cpu, mm));
+			drop_mmu_context(mm, cpu);
 		}
 		local_irq_restore(flags);
 	}
