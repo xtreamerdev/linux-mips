@@ -173,6 +173,36 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 }
 
 /*
+ * Remove one kernel space TLB entry.  This entry is assumed to be marked
+ * global so we don't do the ASID thing.
+ */
+void local_flush_tlb_one(unsigned long page)
+{
+	unsigned long flags;
+	int oldpid, idx;
+
+	page &= (PAGE_MASK << 1);
+	oldpid = read_c0_entryhi() & ASID_MASK;
+
+	local_irq_save(flags);
+	write_c0_entryhi(page);
+	BARRIER;
+	tlb_probe();
+	BARRIER;
+	idx = read_c0_index();
+	write_c0_entrylo0(0);
+	write_c0_entrylo1(0);
+	if (idx >= 0) {
+		/* Make sure all entries differ. */
+		write_c0_entryhi(KSEG0+idx*0x2000);
+		tlb_write_indexed();
+	}
+	BARRIER;
+	write_c0_entryhi(oldpid);
+	local_irq_restore(flags);
+}
+
+/*
  * Updates the TLB with the new pte(s).
  */
 void __update_tlb(struct vm_area_struct * vma, unsigned long address, pte_t pte)

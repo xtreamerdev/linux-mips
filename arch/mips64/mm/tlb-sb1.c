@@ -211,6 +211,33 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 	local_irq_restore(flags);
 }
 
+/*
+ * Remove one kernel space TLB entry.  This entry is assumed to be marked
+ * global so we don't do the ASID thing.
+ */
+void local_flush_tlb_one(unsigned long page)
+{
+	unsigned long flags;
+	int oldpid, idx;
+
+	page &= (PAGE_MASK << 1);
+	oldpid = read_c0_entryhi() & ASID_MASK;
+
+	local_irq_save(flags);
+	write_c0_entryhi(page);
+	tlb_probe();
+	idx = read_c0_index();
+	write_c0_entrylo0(0);
+	write_c0_entrylo1(0);
+	if (idx > 0) {
+		/* Make sure all entries differ. */
+		write_c0_entryhi(KSEG0 + (idx<<(PAGE_SHIFT+1)));
+		tlb_write_indexed();
+	}
+
+	write_c0_entryhi(oldpid);
+	local_irq_restore(flags);
+}
 
 /* All entries common to a mm share an asid.  To effectively flush
    these entries, we just bump the asid. */
