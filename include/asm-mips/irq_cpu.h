@@ -15,4 +15,4 @@
 
 extern void mips_cpu_irq_init(int irq_base);
 
-#endif __ASM_MIPS_IRQ_CPU_H
+#endif /* __ASM_MIPS_IRQ_CPU_H */
