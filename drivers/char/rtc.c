@@ -70,7 +70,7 @@
  *	ioctls.
  */
 
-static DECLARE_WAIT_QUEUE_HEAD(rtc_wait);
+static struct wait_queue *rtc_wait;
 
 static struct timer_list rtc_irq_timer;
 
@@ -151,7 +151,7 @@ static long long rtc_llseek(struct file *file, loff_t offset, int origin)
 static ssize_t rtc_read(struct file *file, char *buf,
 			size_t count, loff_t *ppos)
 {
-	DECLARE_WAITQUEUE(wait, current);
+	struct wait_queue wait = { current, NULL };
 	unsigned long data;
 	ssize_t retval;
 	
@@ -571,6 +571,7 @@ __initfunc(int rtc_init(void))
 #endif
 	init_timer(&rtc_irq_timer);
 	rtc_irq_timer.function = rtc_dropped_irq;
+	rtc_wait = NULL;
 	save_flags(flags);
 	cli();
 	/* Initialize periodic freq. to CMOS reset default, which is 1024Hz */

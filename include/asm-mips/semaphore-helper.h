@@ -1,4 +1,4 @@
-/* $Id: semaphore-helper.h,v 1.3 1999/06/11 14:30:15 ralf Exp $
+/* $Id: semaphore-helper.h,v 1.2.2.1 1999/06/11 08:47:54 ralf Exp $
  *
  * SMP- and interrupt-safe semaphores helper functions.
  *

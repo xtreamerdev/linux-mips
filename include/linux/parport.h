@@ -163,7 +163,7 @@ struct pardevice {
 	struct pardevice *next;
 	struct pardevice *prev;
 	struct parport_state *state;     /* saved status over preemption */
-	wait_queue_head_t wait_q;
+	struct wait_queue *wait_q;
 	unsigned long int time;
 	unsigned long int timeslice;
 	unsigned int waiting;

@@ -85,7 +85,7 @@ void kbd_reset_setup(char *str, int *ints)
 }
 
 #ifndef CONFIG_PCI
-DECLARE_WAIT_QUEUE_HEAD(keypress_wait);
+struct wait_queue * keypress_wait = NULL;
 #endif
 
 int keyboard_wait_for_keypress(struct console *co)
@@ -1261,7 +1261,7 @@ static Firm_event kbd_queue [KBD_QSIZE];
 static int kbd_head, kbd_tail;
 char kbd_opened;
 static int kbd_active = 0;
-static DECLARE_WAIT_QUEUE_HEAD(kbd_wait);
+static struct wait_queue *kbd_wait;
 static struct fasync_struct *kb_fasync;
 
 void
@@ -1285,7 +1285,7 @@ push_kbd (int scan)
 static ssize_t
 kbd_read (struct file *f, char *buffer, size_t count, loff_t *ppos)
 {
-	DECLARE_WAITQUEUE(wait, current);
+	struct wait_queue wait = { current, NULL };
 	char *end, *p;
 
 	/* Return EWOULDBLOCK, because this is what the X server expects */

@@ -155,6 +155,6 @@ void init_fifo(struct inode * inode)
 	PIPE_BASE(*inode) = NULL;
 	PIPE_START(*inode) = PIPE_LEN(*inode) = 0;
 	PIPE_RD_OPENERS(*inode) = PIPE_WR_OPENERS(*inode) = 0;
-	init_waitqueue_head(&PIPE_WAIT(*inode));
+	PIPE_WAIT(*inode) = NULL;
 	PIPE_READERS(*inode) = PIPE_WRITERS(*inode) = 0;
 }

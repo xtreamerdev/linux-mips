@@ -79,7 +79,7 @@ struct ip_masq_mfw {
 };
 
 
-static DECLARE_MUTEX(mfw_sema);
+static struct semaphore mfw_sema = MUTEX;
 #ifdef __SMP__
 static rwlock_t mfw_lock = RW_LOCK_UNLOCKED;
 #endif

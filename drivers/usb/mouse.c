@@ -48,7 +48,7 @@ struct mouse_state {
 	int present; /* this mouse is plugged in */
 	int active; /* someone is has this mouse's device open */
 	int ready; /* the mouse has changed state since the last read */
-	wait_queue_head_t wait; /* for polling */
+	struct wait_queue *wait; /* for polling */
 	struct fasync_struct *fasync;
 	/* later, add a list here to support multiple mice */
 	/* but we will also need a list of file pointers to identify it */
@@ -277,7 +277,7 @@ int usb_mouse_init(void)
 	misc_register(&usb_mouse);
 
 	mouse->present = mouse->active = 0;
-	init_waitqueue_head(&mouse->wait);
+	mouse->wait = NULL;
 	mouse->fasync = NULL;
 
 	usb_register(&mouse_driver);

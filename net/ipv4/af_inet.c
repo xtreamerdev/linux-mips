@@ -5,7 +5,7 @@
  *
  *		PF_INET protocol family socket handler.
  *
- * Version:	$Id: af_inet.c,v 1.88 1999/05/12 11:24:27 davem Exp $
+ * Version:	$Id: af_inet.c,v 1.87.2.1 1999/05/29 04:32:01 davem Exp $
  *
  * Authors:	Ross Biro, <bir7@leland.Stanford.Edu>
  *		Fred N. van Kempen, <waltje@uWalt.NL.Mugnet.ORG>
@@ -147,14 +147,8 @@ static __inline__ void kill_sk_queues(struct sock *sk)
 	struct sk_buff *skb;
 
 	/* First the read buffer. */
-	while((skb = skb_dequeue(&sk->receive_queue)) != NULL) {
-		/* This will take care of closing sockets that were
-		 * listening and didn't accept everything.
-		 */
-		if (skb->sk != NULL && skb->sk != sk)
-			skb->sk->prot->close(skb->sk, 0);
+	while((skb = skb_dequeue(&sk->receive_queue)) != NULL)
 		kfree_skb(skb);
-	}
 
 	/* Next, the error queue. */
 	while((skb = skb_dequeue(&sk->error_queue)) != NULL)
@@ -212,12 +206,6 @@ void destroy_sock(struct sock *sk)
 		sk->prot->destroy(sk);
 
 	kill_sk_queues(sk);
-
-	/* Now if it has a half accepted/ closed socket. */
-	if (sk->pair) {
-		sk->pair->prot->close(sk->pair, 0);
-		sk->pair = NULL;
-  	}
 
 	/* Now if everything is gone we can free the socket
 	 * structure, otherwise we need to keep it around until
@@ -578,7 +566,7 @@ int inet_dgram_connect(struct socket *sock, struct sockaddr * uaddr,
 
 static void inet_wait_for_connect(struct sock *sk)
 {
-	DECLARE_WAITQUEUE(wait, current);
+	struct wait_queue wait = { current, NULL };
 
 	add_wait_queue(sk->sleep, &wait);
 	current->state = TASK_INTERRUPTIBLE;
@@ -684,14 +672,8 @@ int inet_accept(struct socket *sock, struct socket *newsock, int flags)
 	if (sk1->prot->accept == NULL)
 		goto do_err;
 
-	/* Restore the state if we have been interrupted, and then returned. */
-	if (sk1->pair != NULL) {
-		sk2 = sk1->pair;
-		sk1->pair = NULL;
-	} else {
-		if((sk2 = sk1->prot->accept(sk1,flags)) == NULL)
-			goto do_sk1_err;
-	}
+	if((sk2 = sk1->prot->accept(sk1,flags)) == NULL)
+		goto do_sk1_err;
 
 	/*
 	 *	We've been passed an extra socket.

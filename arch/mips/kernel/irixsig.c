@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1996 David S. Miller (dm@engr.sgi.com)
  *
- * $Id: irixsig.c,v 1.10 1999/01/03 17:50:50 ralf Exp $
+ * $Id: irixsig.c,v 1.10.2.1 1999/06/14 21:40:55 ralf Exp $
  */
 
 #include <linux/kernel.h>
@@ -272,6 +272,7 @@ asmlinkage int do_irix_signal(sigset_t *oldset, struct pt_regs *regs)
 			default:
 				lock_kernel();
 				sigaddset(&current->signal, signr);
+				recalc_sigpending(current);
 				current->flags |= PF_SIGNALED;
 				do_exit(exit_code);
 				/* NOTREACHED */
@@ -666,7 +667,7 @@ asmlinkage int irix_waitsys(int type, int pid, struct irix5_siginfo *info,
 			    int options, struct rusage *ru)
 {
 	int flag, retval;
-	DECLARE_WAITQUEUE(wait, current);
+	struct wait_queue wait = { current, NULL };
 	struct task_struct *p;
 
 	lock_kernel();

@@ -19,7 +19,6 @@
 #define _LINUX_NET_H
 
 #include <linux/socket.h>
-#include <linux/wait.h>
 
 struct poll_table_struct;
 
@@ -69,7 +68,7 @@ struct socket
 	struct fasync_struct	*fasync_list;	/* Asynchronous wake up list	*/
 	struct file		*file;		/* File back pointer for gc	*/
 	struct sock		*sk;
-	wait_queue_head_t	wait;
+	struct wait_queue	*wait;
 
 	short			type;
 	unsigned char		passcred;

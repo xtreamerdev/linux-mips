@@ -423,7 +423,6 @@ static unsigned int isofs_get_last_session(kdev_t dev)
        */
       mm_segment_t old_fs=get_fs();
       inode_fake.i_rdev=dev;
-      init_waitqueue_head(&inode_fake.i_wait);
       ms_info.addr_format=CDROM_LBA;
       set_fs(KERNEL_DS);
       i=get_blkfops(MAJOR(dev))->ioctl(&inode_fake,
@@ -1211,9 +1210,12 @@ void isofs_read_inode(struct inode * inode)
 	    inode->i_op = &isofs_dir_inode_operations;
 	  else if (S_ISLNK(inode->i_mode))
 	    inode->i_op = &isofs_symlink_inode_operations;
-	  else
-	    /* XXX - parse_rock_ridge_inode() had already set i_rdev. */
-	    init_special_inode(inode, inode->i_mode, kdev_t_to_nr(inode->i_rdev));
+	  else if (S_ISCHR(inode->i_mode))
+	    inode->i_op = &chrdev_inode_operations;
+	  else if (S_ISBLK(inode->i_mode))
+	    inode->i_op = &blkdev_inode_operations;
+	  else if (S_ISFIFO(inode->i_mode))
+	    init_fifo(inode);
 	}
 	return;
 

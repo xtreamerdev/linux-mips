@@ -9,6 +9,7 @@
  *	Al Longyear <longyear@netcom.com>, Paul Mackerras <Paul.Mackerras@cs.anu.edu.au>
  *
  * Original release 01/11/99
+ * ==FILEDATE 19990524==
  *
  * This code is released under the GNU General Public License (GPL)
  *
@@ -72,7 +73,7 @@
  */
 
 #define HDLC_MAGIC 0x239e
-#define HDLC_VERSION "1.0"
+#define HDLC_VERSION "1.2"
 
 #include <linux/version.h>
 #include <linux/config.h>
@@ -221,8 +222,8 @@ struct n_hdlc {
 	struct tty_struct *backup_tty;	/* TTY to use if tty gets closed */
 	
 	/* Queues for select() functionality */
-	wait_queue_head_t read_wait;
-	wait_queue_head_t write_wait;
+	struct wait_queue *read_wait;
+	struct wait_queue *write_wait;
 
 	int		tbusy;		/* reentrancy flag for tx wakeup code */
 	int		woke_up;
@@ -724,7 +725,7 @@ static rw_ret_t n_hdlc_tty_write (struct tty_struct *tty, struct file *file,
 {
 	struct n_hdlc *n_hdlc = tty2n_hdlc (tty);
 	int error = 0;
-	DECLARE_WAITQUEUE(wait, current);
+	struct wait_queue wait = {current, NULL};
 	N_HDLC_BUF *tbuf;
 
 	if (debuglevel >= DEBUG_LEVEL_INFO)	
@@ -813,6 +814,8 @@ static int n_hdlc_tty_ioctl (struct tty_struct *tty, struct file * file,
 {
 	struct n_hdlc *n_hdlc = tty2n_hdlc (tty);
 	int error = 0;
+	int count;
+	unsigned long flags;
 	
 	if (debuglevel >= DEBUG_LEVEL_INFO)	
 		printk("%s(%d)n_hdlc_tty_ioctl() called %d\n",
@@ -824,21 +827,29 @@ static int n_hdlc_tty_ioctl (struct tty_struct *tty, struct file * file,
 
 	switch (cmd) {
 	case FIONREAD:
-		{
-			/* report count of read data available */
-			/* in next available frame (if any) */
-			int count;
-			unsigned long flags;
-			spin_lock_irqsave(&n_hdlc->rx_buf_list.spinlock,flags);
-			if (n_hdlc->rx_buf_list.head)
-				count = n_hdlc->rx_buf_list.head->count;
-			else
-				count = 0;
-			spin_unlock_irqrestore(&n_hdlc->rx_buf_list.spinlock,flags);
-			PUT_USER (error, count, (int *) arg);
-		}
+		/* report count of read data available */
+		/* in next available frame (if any) */
+		spin_lock_irqsave(&n_hdlc->rx_buf_list.spinlock,flags);
+		if (n_hdlc->rx_buf_list.head)
+			count = n_hdlc->rx_buf_list.head->count;
+		else
+			count = 0;
+		spin_unlock_irqrestore(&n_hdlc->rx_buf_list.spinlock,flags);
+		PUT_USER (error, count, (int *) arg);
 		break;
-		
+
+	case TIOCOUTQ:
+		/* get the pending tx byte count in the driver */
+		count = tty->driver.chars_in_buffer ?
+				tty->driver.chars_in_buffer(tty) : 0;
+		/* add size of next output frame in queue */
+		spin_lock_irqsave(&n_hdlc->tx_buf_list.spinlock,flags);
+		if (n_hdlc->tx_buf_list.head)
+			count += n_hdlc->tx_buf_list.head->count;
+		spin_unlock_irqrestore(&n_hdlc->tx_buf_list.spinlock,flags);
+		PUT_USER (error, count, (int*)arg);
+		break;
+
 	default:
 		error = n_tty_ioctl (tty, file, cmd, arg);
 		break;
@@ -1006,8 +1017,8 @@ static struct n_hdlc *n_hdlc_alloc (void)
 	n_hdlc->magic  = HDLC_MAGIC;
 
 	n_hdlc->flags  = 0;
-	init_waitqueue_head(&n_hdlc->read_wait);
-	init_waitqueue_head(&n_hdlc->write_wait);
+	n_hdlc->read_wait  = NULL;
+	n_hdlc->write_wait = NULL;
 	
 	return n_hdlc;
 	

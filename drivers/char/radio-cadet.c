@@ -1,7 +1,7 @@
 /* cadet.c - A video4linux driver for the ADS Cadet AM/FM Radio Card 
  *
  * by Fred Gleason <fredg@wava.com>
- * Version 0.3.1
+ * Version 0.3.2
  *
  * (Loosely) based on code for the Aztech radio card by
  *
@@ -34,7 +34,7 @@ static int users=0;
 static int curtuner=0;
 static int tunestat=0;
 static int sigstrength=0;
-static wait_queue_head_t tunerq,rdsq,readq;
+struct wait_queue *tunerq,*rdsq,*readq;
 struct timer_list tunertimer,rdstimer,readtimer;
 static __u8 rdsin=0,rdsout=0,rdsstat=0;
 static unsigned char rdsbuf[RDS_BUFFER];
@@ -75,7 +75,7 @@ static int cadet_getrds(void)
 	rdstimer.function=cadet_wake;
 	rdstimer.data=(unsigned long)1;
 	rdstimer.expires=jiffies+(HZ/10);
-	init_waitqueue_head(&rdsq);
+	rdsq=NULL;
 	add_timer(&rdstimer);
 	sleep_on(&rdsq);
 	
@@ -260,7 +260,7 @@ static void cadet_setfreq(unsigned freq)
 		tunertimer.function=cadet_wake;
 		tunertimer.data=(unsigned long)0;
 		tunertimer.expires=jiffies+(HZ/10);
-		init_waitqueue_head(&tunerq);
+		tunerq=NULL;
 		add_timer(&tunertimer);
 		sleep_on(&tunerq);
 		cadet_gettune();
@@ -327,7 +327,7 @@ void cadet_handler(unsigned long data)
 	/*
 	 * Service pending read
 	 */
-	if( rdsin!=rdsout) {
+	if((rdsin!=rdsout)&&(readq!=NULL)) {
 	        wake_up_interruptible(&readq);
 	}
 
@@ -369,6 +369,7 @@ static long cadet_read(struct video_device *v,char *buf,unsigned long count,
 		        return -EWOULDBLOCK;
 		}
 	        interruptible_sleep_on(&readq);
+       		readq=NULL;
 	}		
 	while((i<count)&&(rdsin!=rdsout)) {
 	        readbuf[i++]=rdsbuf[rdsout++];
@@ -516,7 +517,7 @@ static int cadet_open(struct video_device *dev, int flags)
 		return -EBUSY;
 	users++;
 	MOD_INC_USE_COUNT;
-	init_waitqueue_head(&readq);
+	readq=NULL;
 	return 0;
 }
 
@@ -557,7 +558,7 @@ __initfunc(int cadet_init(struct video_init *v))
 		return -EINVAL;
 		
 	request_region(io,2,"cadet");
-	printk(KERN_INFO "ADS Cadet Radio Card at %x\n",io);
+	printk(KERN_INFO "ADS Cadet Radio Card at 0x%x\n",io);
 	return 0;
 }
 
@@ -570,12 +571,11 @@ static int cadet_probe(void)
 
 	for(i=0;i<8;i++) {
 	        io=iovals[i];
-	        if(check_region(io,2)) {
-	                return -1;
-		}  
-		cadet_setfreq(1410);
-		if(cadet_getfreq()==1410) {
-		        return io;
+	        if(check_region(io,2)>=0) {
+		        cadet_setfreq(1410);
+			if(cadet_getfreq()==1410) {
+			        return io;
+			}
 		}
 	}
 	return -1;

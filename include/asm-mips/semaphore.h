@@ -1,4 +1,4 @@
-/* $Id: semaphore.h,v 1.7 1999/06/11 14:30:15 ralf Exp $
+/* $Id: semaphore.h,v 1.5.2.1 1999/06/14 21:43:01 ralf Exp $
  *
  * SMP- and interrupt-safe semaphores..
  *
@@ -15,67 +15,27 @@
 #include <asm/system.h>
 #include <asm/atomic.h>
 #include <asm/spinlock.h>
-#include <linux/wait.h>
 
 struct semaphore {
 	atomic_t count;
 	atomic_t waking;
-	wait_queue_head_t wait;
-#if WAITQUEUE_DEBUG
-	long __magic;
-#endif
+	struct wait_queue * wait;
 };
 
-#if WAITQUEUE_DEBUG
-# define __SEM_DEBUG_INIT(name) \
-		, (long)&(name).__magic
-#else
-# define __SEM_DEBUG_INIT(name)
-#endif
-
-#define __SEMAPHORE_INITIALIZER(name,count) \
-{ ATOMIC_INIT(count), ATOMIC_INIT(0), __WAIT_QUEUE_HEAD_INITIALIZER((name).wait) \
-	__SEM_DEBUG_INIT(name) }
-
-#define __MUTEX_INITIALIZER(name) \
-	__SEMAPHORE_INITIALIZER(name,1)
-
-#define __DECLARE_SEMAPHORE_GENERIC(name,count) \
-	struct semaphore name = __SEMAPHORE_INITIALIZER(name,count)
-
-#define DECLARE_MUTEX(name) __DECLARE_SEMAPHORE_GENERIC(name,1)
-#define DECLARE_MUTEX_LOCKED(name) __DECLARE_SEMAPHORE_GENERIC(name,0)
-
-extern inline void sema_init (struct semaphore *sem, int val)
-{
-	atomic_set(&sem->count, val);
-	atomic_set(&sem->waking, 0);
-	init_waitqueue_head(&sem->wait);
-#if WAITQUEUE_DEBUG
-	sem->__magic = (long)&sem->__magic;
-#endif
-}
-
-static inline void init_MUTEX (struct semaphore *sem)
-{
-	sema_init(sem, 1);
-}
-
-static inline void init_MUTEX_LOCKED (struct semaphore *sem)
-{
-	sema_init(sem, 0);
-}
+#define MUTEX ((struct semaphore) { ATOMIC_INIT(1), ATOMIC_INIT(0), NULL })
+#define MUTEX_LOCKED ((struct semaphore) { ATOMIC_INIT(0), ATOMIC_INIT(0), NULL })
 
 asmlinkage void __down(struct semaphore * sem);
 asmlinkage int  __down_interruptible(struct semaphore * sem);
 asmlinkage int __down_trylock(struct semaphore * sem);
 asmlinkage void __up(struct semaphore * sem);
 
+extern spinlock_t semaphore_wake_lock;
+
+#define sema_init(sem, val)	atomic_set(&((sem)->count), val)
+
 extern inline void down(struct semaphore * sem)
 {
-#if WAITQUEUE_DEBUG
-	CHECK_MAGIC(sem->__magic);
-#endif
 	if (atomic_dec_return(&sem->count) < 0)
 		__down(sem);
 }
@@ -83,10 +43,6 @@ extern inline void down(struct semaphore * sem)
 extern inline int down_interruptible(struct semaphore * sem)
 {
 	int ret = 0;
-
-#if WAITQUEUE_DEBUG
-	CHECK_MAGIC(sem->__magic);
-#endif
 	if (atomic_dec_return(&sem->count) < 0)
 		ret = __down_interruptible(sem);
 	return ret;
@@ -102,9 +58,6 @@ extern inline int down_trylock(struct semaphore * sem)
 {
 	long ret, tmp, tmp2, sub;
 
-#if WAITQUEUE_DEBUG
-	CHECK_MAGIC(sem->__magic);
-#endif
 #ifdef __MIPSEB__
 	__asm__ __volatile__("
 			.set	mips3
@@ -145,9 +98,6 @@ extern inline int down_trylock(struct semaphore * sem)
  */
 extern inline void up(struct semaphore * sem)
 {
-#if WAITQUEUE_DEBUG
-	CHECK_MAGIC(sem->__magic);
-#endif
 	if (atomic_inc_return(&sem->count) <= 0)
 		__up(sem);
 }

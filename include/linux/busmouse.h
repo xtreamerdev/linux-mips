@@ -94,7 +94,7 @@ struct mouse_status {
 	int 		present;
 	int		ready;
 	int		active;
-	wait_queue_head_t wait;
+	struct wait_queue *wait;
 	struct fasync_struct *fasyncptr;
 };
 

@@ -30,7 +30,7 @@ static int msghdrs = 0;
 static unsigned short msg_seq = 0;
 static int used_queues = 0;
 static int max_msqid = 0;
-static DECLARE_WAIT_QUEUE_HEAD(msg_lock);
+static struct wait_queue *msg_lock = NULL;
 
 void __init msg_init (void)
 {
@@ -39,7 +39,7 @@ void __init msg_init (void)
 	for (id = 0; id < MSGMNI; id++) 
 		msgque[id] = (struct msqid_ds *) IPC_UNUSED;
 	msgbytes = msghdrs = msg_seq = max_msqid = used_queues = 0;
-	init_waitqueue_head(&msg_lock);
+	msg_lock = NULL;
 	return;
 }
 
@@ -284,8 +284,7 @@ found:
 	ipcp->gid = ipcp->cgid = current->egid;
 	msq->msg_perm.seq = msg_seq;
 	msq->msg_first = msq->msg_last = NULL;
-	init_waitqueue_head(&msq->wwait);
-	init_waitqueue_head(&msq->rwait);
+	msq->rwait = msq->wwait = NULL;
 	msq->msg_cbytes = msq->msg_qnum = 0;
 	msq->msg_lspid = msq->msg_lrpid = 0;
 	msq->msg_stime = msq->msg_rtime = 0;

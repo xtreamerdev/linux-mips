@@ -88,7 +88,7 @@ smb_iget(struct super_block *sb, struct smb_fattr *fattr)
 		result->i_op = &smb_dir_inode_operations;
 	else
 		result->i_op = NULL;
-	insert_inode_hash(result)
+	insert_inode_hash(result);
 	return result;
 }
 
@@ -354,8 +354,8 @@ smb_read_super(struct super_block *sb, void *raw_data, int silent)
 	sb->s_op = &smb_sops;
 
 	sb->u.smbfs_sb.sock_file = NULL;
-	init_MUTEX(&sb->u.smbfs_sb.sem);
-	init_waitqueue_head(&sb->u.smbfs_sb.wait);
+	sb->u.smbfs_sb.sem = MUTEX;
+	sb->u.smbfs_sb.wait = NULL;
 	sb->u.smbfs_sb.conn_pid = 0;
 	sb->u.smbfs_sb.state = CONN_INVALID; /* no connection yet */
 	sb->u.smbfs_sb.generation = 0;
@@ -376,9 +376,6 @@ smb_read_super(struct super_block *sb, void *raw_data, int silent)
 	*mnt = *((struct smb_mount_data *) raw_data);
 	/* ** temp ** pass config flags in file mode */
 	mnt->version = (mnt->file_mode >> 9);
-#ifdef CONFIG_SMB_WIN95
-	mnt->version |= SMB_FIX_WIN95;
-#endif
 	mnt->file_mode &= (S_IRWXU | S_IRWXG | S_IRWXO);
 	mnt->file_mode |= S_IFREG;
 	mnt->dir_mode  &= (S_IRWXU | S_IRWXG | S_IRWXO);
@@ -387,8 +384,6 @@ smb_read_super(struct super_block *sb, void *raw_data, int silent)
 	/*
 	 * Display the enabled options
 	 */
-	if (mnt->version & SMB_FIX_WIN95)
-		printk("SMBFS: Win 95 bug fixes enabled\n");
 	if (mnt->version & SMB_FIX_OLDATTR)
 		printk("SMBFS: Using core getattr (Win 95 speedup)\n");
 	else if (mnt->version & SMB_FIX_DIRATTR)

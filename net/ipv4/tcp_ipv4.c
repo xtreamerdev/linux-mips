@@ -5,7 +5,7 @@
  *
  *		Implementation of the Transmission Control Protocol(TCP).
  *
- * Version:	$Id: tcp_ipv4.c,v 1.176 1999/05/12 11:24:46 davem Exp $
+ * Version:	$Id: tcp_ipv4.c,v 1.175.2.2 1999/06/02 04:06:15 davem Exp $
  *
  *		IPv4 specific functions
  *
@@ -1328,7 +1328,6 @@ struct sock *tcp_create_openreq_child(struct sock *sk, struct open_request *req,
 
 		newsk->done = 0;
 		newsk->proc = 0;
-		newsk->pair = NULL;
 		skb_queue_head_init(&newsk->back_log);
 		skb_queue_head_init(&newsk->error_queue);
 #ifdef CONFIG_FILTER
@@ -1648,6 +1647,7 @@ int tcp_v4_rcv(struct sk_buff *skb, unsigned short len)
 	/* Count it even if it's bad */
 	tcp_statistics.TcpInSegs++;
 
+	len = skb->len;
 	if (len < sizeof(struct tcphdr))
 		goto bad_packet;
 
@@ -1673,6 +1673,10 @@ int tcp_v4_rcv(struct sk_buff *skb, unsigned short len)
 	default:
 		/* CHECKSUM_UNNECESSARY */
 	}
+
+	if((th->doff * 4) < sizeof(struct tcphdr) ||
+	   len < (th->doff * 4))
+		goto bad_packet;
 
 #ifdef CONFIG_IP_TRANSPARENT_PROXY
 	if (IPCB(skb)->redirport)
@@ -1944,8 +1948,6 @@ __initfunc(void tcp_v4_init(struct net_proto_family *ops))
 	tcp_inode.i_sock = 1;
 	tcp_inode.i_uid = 0;
 	tcp_inode.i_gid = 0;
-	init_waitqueue_head(&tcp_inode.i_wait);
-	init_waitqueue_head(&tcp_inode.u.socket_i.wait);
 
 	tcp_socket->inode = &tcp_inode;
 	tcp_socket->state = SS_UNCONNECTED;

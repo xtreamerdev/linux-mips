@@ -10,7 +10,7 @@ static struct fs_struct init_fs = INIT_FS;
 static struct file * init_fd_array[NR_OPEN] = { NULL, };
 static struct files_struct init_files = INIT_FILES;
 static struct signal_struct init_signals = INIT_SIGNALS;
-struct mm_struct init_mm = INIT_MM(init_mm);
+struct mm_struct init_mm = INIT_MM;
 
 /*
  * Initial task structure.
@@ -20,6 +20,5 @@ struct mm_struct init_mm = INIT_MM(init_mm);
  * "init_task" linker map entry..
  */
 union task_union init_task_union 
-	__attribute__((__section__(".data.init_task"))) =
-		{ INIT_TASK(init_task_union.task) };
+	__attribute__((__section__(".data.init_task"))) = { INIT_TASK };
  

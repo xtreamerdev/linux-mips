@@ -1,4 +1,4 @@
-/* $Id: spinlock.h,v 1.4 1998/08/25 16:45:46 tsbogend Exp $
+/* $Id: spinlock.h,v 1.4.2.1 1999/06/14 21:43:01 ralf Exp $
  */
 #ifndef __ASM_MIPS_SPINLOCK_H
 #define __ASM_MIPS_SPINLOCK_H
@@ -10,10 +10,10 @@
  */
 #if (__GNUC__ > 2) || (__GNUC__ == 2 && __GNUC_MINOR__ >= 8)
   typedef struct { } spinlock_t;
-  #define SPIN_LOCK_UNLOCKED (spinlock_t) { }
+  #define SPIN_LOCK_UNLOCKED { }
 #else
   typedef struct { int gcc_is_buggy; } spinlock_t;
-  #define SPIN_LOCK_UNLOCKED (spinlock_t) { 0 }
+  #define SPIN_LOCK_UNLOCKED { 0 }
 #endif
 
 #define spin_lock_init(lock)	do { } while(0)

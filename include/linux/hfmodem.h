@@ -155,7 +155,7 @@ struct hfmodem_state {
 	} clk;
 
 	int active;
-	wait_queue_head_t wait;
+	struct wait_queue *wait;
 
 	struct {
 		__s16 *kbuf;

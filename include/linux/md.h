@@ -274,7 +274,7 @@ struct md_dev
 struct md_thread {
 	void			(*run) (void *data);
 	void			*data;
-	wait_queue_head_t	wqueue;
+	struct wait_queue	*wqueue;
 	unsigned long           flags;
 	struct semaphore	*sem;
 	struct task_struct	*tsk;

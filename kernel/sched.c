@@ -866,48 +866,52 @@ scheduling_in_interrupt:
 	return;
 }
 
-void __wake_up(wait_queue_head_t *q, unsigned int mode)
+rwlock_t waitqueue_lock = RW_LOCK_UNLOCKED;
+
+/*
+ * wake_up doesn't wake up stopped processes - they have to be awakened
+ * with signals or similar.
+ *
+ * Note that we only need a read lock for the wait queue (and thus do not
+ * have to protect against interrupts), as the actual removal from the
+ * queue is handled by the process itself.
+ */
+void __wake_up(struct wait_queue **q, unsigned int mode)
 {
-	struct list_head *tmp, *head;
 	struct task_struct *p;
-	unsigned long flags;
+	struct wait_queue *head, *next;
 
         if (!q)
 		goto out;
+	/*
+	 * this is safe to be done before the check because it
+	 * means no deference, just pointer operations.
+	 */
+	head = WAIT_QUEUE_HEAD(q);
 
-	wq_write_lock_irqsave(&q->lock, flags);
+	read_lock(&waitqueue_lock);
+	next = *q;
+	if (!next)
+		goto out_unlock;
 
-#if WAITQUEUE_DEBUG
-	CHECK_MAGIC_WQHEAD(q);
-#endif
-
-	head = &q->task_list;
-#if WAITQUEUE_DEBUG
-        if (!head->next || !head->prev)
-                WQ_BUG();
-#endif
-	tmp = head->next;
-	while (tmp != head) {
-		unsigned int state;
-                wait_queue_t *curr = list_entry(tmp, wait_queue_t, task_list);
-
-		tmp = tmp->next;
-
-#if WAITQUEUE_DEBUG
-		CHECK_MAGIC(curr->__magic);
-#endif
-		p = curr->task;
-		state = p->state;
-		if (state & mode) {
-#if WAITQUEUE_DEBUG
-			curr->__waker = (long)__builtin_return_address(0);
-#endif
+	while (next != head) {
+		p = next->task;
+		next = next->next;
+		if (p->state & mode) {
+			/*
+			 * We can drop the read-lock early if this
+			 * is the only/last process.
+			 */
+			if (next == head) {
+				read_unlock(&waitqueue_lock);
+				wake_up_process(p);
+				goto out;
+			}
 			wake_up_process(p);
-			if (state & TASK_EXCLUSIVE)
-				break;
 		}
 	}
-	wq_write_unlock_irqrestore(&q->lock, flags);
+out_unlock:
+	read_unlock(&waitqueue_lock);
 out:
 	return;
 }
@@ -968,8 +972,7 @@ void __up(struct semaphore *sem)
 
 #define DOWN_VAR				\
 	struct task_struct *tsk = current;	\
-	wait_queue_t wait;			\
-	init_waitqueue_entry(&wait, tsk);
+	struct wait_queue wait = { tsk, NULL };
 
 #define DOWN_HEAD(task_state)						\
 									\
@@ -1012,8 +1015,8 @@ void __down(struct semaphore * sem)
 
 int __down_interruptible(struct semaphore * sem)
 {
-	int ret = 0;
 	DOWN_VAR
+	int ret = 0;
 	DOWN_HEAD(TASK_INTERRUPTIBLE)
 
 	ret = waking_non_zero_interruptible(sem, tsk);
@@ -1036,20 +1039,20 @@ int __down_trylock(struct semaphore * sem)
 
 #define	SLEEP_ON_VAR				\
 	unsigned long flags;			\
-	wait_queue_t wait;			\
-	init_waitqueue_entry(&wait, current);
+	struct wait_queue wait;
 
 #define	SLEEP_ON_HEAD					\
-	wq_write_lock_irqsave(&q->lock,flags);		\
-	__add_wait_queue(q, &wait);			\
-	wq_write_unlock(&q->lock);
+	wait.task = current;				\
+	write_lock_irqsave(&waitqueue_lock,flags);	\
+	__add_wait_queue(p, &wait);			\
+	write_unlock(&waitqueue_lock);
 
 #define	SLEEP_ON_TAIL						\
-	wq_write_lock_irq(&q->lock);				\
-	__remove_wait_queue(q, &wait);				\
-	wq_write_unlock_irqrestore(&q->lock,flags);
+	write_lock_irq(&waitqueue_lock);			\
+	__remove_wait_queue(p, &wait);				\
+	write_unlock_irqrestore(&waitqueue_lock,flags);
 
-void interruptible_sleep_on(wait_queue_head_t *q)
+void interruptible_sleep_on(struct wait_queue **p)
 {
 	SLEEP_ON_VAR
 
@@ -1060,7 +1063,7 @@ void interruptible_sleep_on(wait_queue_head_t *q)
 	SLEEP_ON_TAIL
 }
 
-long interruptible_sleep_on_timeout(wait_queue_head_t *q, long timeout)
+long interruptible_sleep_on_timeout(struct wait_queue **p, long timeout)
 {
 	SLEEP_ON_VAR
 
@@ -1073,7 +1076,7 @@ long interruptible_sleep_on_timeout(wait_queue_head_t *q, long timeout)
 	return timeout;
 }
 
-void sleep_on(wait_queue_head_t *q)
+void sleep_on(struct wait_queue **p)
 {
 	SLEEP_ON_VAR
 	
@@ -1084,7 +1087,7 @@ void sleep_on(wait_queue_head_t *q)
 	SLEEP_ON_TAIL
 }
 
-long sleep_on_timeout(wait_queue_head_t *q, long timeout)
+long sleep_on_timeout(struct wait_queue **p, long timeout)
 {
 	SLEEP_ON_VAR
 	
@@ -1196,8 +1199,8 @@ static unsigned long count_active_tasks(void)
 	read_lock(&tasklist_lock);
 	for_each_task(p) {
 		if ((p->state == TASK_RUNNING ||
-		     (p->state & TASK_UNINTERRUPTIBLE) ||
-		     (p->state & TASK_SWAPPING)))
+		     p->state == TASK_UNINTERRUPTIBLE ||
+		     p->state == TASK_SWAPPING))
 			nr += FIXED_1;
 	}
 	read_unlock(&tasklist_lock);

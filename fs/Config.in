@@ -74,9 +74,9 @@ if [ "$CONFIG_INET" = "y" ]; then
   fi
   if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
     tristate 'NFS server support' CONFIG_NFSD
-  fi
-  if [ "$CONFIG_NFSD" != "n" ]; then
-    bool '   Emulate SUN NFS server' CONFIG_NFSD_SUN
+    if [ "$CONFIG_NFSD" != "n" ]; then
+      bool '   Emulate SUN NFS server' CONFIG_NFSD_SUN
+    fi
   fi
   if [ "$CONFIG_NFS_FS" = "y" -o "$CONFIG_NFSD" = "y" ]; then
     define_bool CONFIG_SUNRPC y
@@ -91,9 +91,6 @@ if [ "$CONFIG_INET" = "y" ]; then
     fi
   fi
   tristate 'SMB filesystem support (to mount WfW shares etc.)' CONFIG_SMB_FS
-  if [ "$CONFIG_SMB_FS" != "n" ]; then
-    bool 'SMB Win95 bug work-around' CONFIG_SMB_WIN95
-  fi
 fi
 if [ "$CONFIG_IPX" != "n" -o "$CONFIG_INET" != "n" ]; then
   tristate 'NCP filesystem support (to mount NetWare volumes)' CONFIG_NCP_FS

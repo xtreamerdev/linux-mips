@@ -91,11 +91,6 @@ S: 20 Ames Street
 S: Cambridge, Massachusetts 02139
 S: USA
 
-N: Michel Aubry
-E: giovanni <giovanni@sudfr.com>
-D: Aladdin 1533/1543(C) chipset IDE
-D: VIA MVP-3/TX Pro III chipset IDE
-
 N: Jens Axboe
 E: axboe@image.dk
 D: Linux CD-ROM maintainer
@@ -628,6 +623,13 @@ S: 1123 North Oak Park Avenue
 S: Oak Park, Illinois 60302
 S: USA
 
+N: Daniel J. Frasnelli
+E: dfrasnel@alphalinux.org   
+W: http://www.alphalinux.org/
+P: 1024/3EF87611 B9 F1 44 50 D3 E8 C2 80  DA E5 55 AA 56 7C 42 DA
+D: DEC Alpha hacker
+D: Miscellaneous bug squisher
+
 N: Jim Freeman
 E: jfree@sovereign.org
 W: http://www.sovereign.org/
@@ -673,7 +675,7 @@ N: Richard E. Gooch
 E: rgooch@atnf.csiro.au
 D: parent process death signal to children
 D: prctl() syscall
-D: /proc/mtrr support to manipulate MTRRs on Pentium Pro's
+D: /proc/mtrr support to manipulate MTRRs on Intel P6 family
 S: CSIRO Australia Telescope National Facility
 S: P.O. Box 76, Epping
 S: New South Wales, 2121
@@ -771,6 +773,13 @@ S: 77 Clarence Mews
 S: London SE16 1GD
 S: United Kingdom
 
+N: Bart Hartgers
+E: bart@etpmod.phys.tue.nl
+D: MTRR emulation with Centaur MCRs
+S: Gen Stedmanstraat 212
+S: 5623 HZ Eindhoven
+S: The Netherlands
+
 N: Kai Harrekilde-Petersen
 E: khp@dolphinics.no
 D: Original author of the ftape-HOWTO, i82078 fdc detection code.
@@ -781,17 +790,6 @@ S: Norway
 N: Andrew Haylett
 E: ajh@primag.co.uk
 D: Selection mechanism
-
-N: Andre Hedrick
-E: hedrick@astro.dyer.vanderbilt.edu
-D: Uniform Multi-Platform E-IDE driver
-D: Aladdin 1533/1543(C) chipset IDE
-D: HighPoint HPT343/5 chipset IDE
-D: PIIX chipset IDE
-D: Promise Ultra/33 chipset IDE
-D: Promise Ultra/66 chipset IDE
-S: Nashville, TN
-S: USA
 
 N: Jochen Hein
 E: jochen.hein@delphi.central.de
@@ -829,7 +827,7 @@ S: 14059 Berlin
 S: Germany
 
 N: Michael Hipp
-E: mhipp@student.uni-tuebingen.de
+E: hippm@informatik.uni-tuebingen.de
 D: drivers for the racal ni5210 & ni6510 Ethernet-boards
 S: Talstr. 1
 S: D - 72072 Tuebingen
@@ -956,10 +954,6 @@ S: Na Orechovce 7
 S: 160 00 Praha 6
 S: Czech Republic
 
-N: Andreas S. Krebs
-E: akrebs@altavista.net
-D: CYPRESS CY82C693 chipset IDE, Digital's PC-Alpha 164SX boards
-
 N: Niels Kristian Bech Jensen
 E: nkbj@image.dk
 W: http://www.image.dk/~nkbj
@@ -969,13 +963,6 @@ D: Danish HOWTO, Linux+FreeBSD mini-HOWTO.
 S: Dr. Holsts Vej 34, lejl. 164
 S: DK-8230 Åbyhøj
 S: Denmark
-
-N: Andrzej Krzysztofowicz
-E: ankry@green.mif.pg.gda.pl
-D: Aladdin 1533/1543(C) chipset IDE
-D: PIIX chipset IDE
-S: Faculty of Applied Phys. & Math.
-S: Technical University of Gdansk
 
 N: Michael K. Johnson
 E: johnsonm@redhat.com
@@ -1768,10 +1755,6 @@ E: hps@tanstaafl.de
 D: added PCI support to the serial driver
 S: Buckenhof, Germany
 
-N: Michael Schmitz
-E:
-D: Macintosh IDE Driver
-
 N: Martin Schulze
 E: joey@linux.de
 W: http://home.pages.de/~joey/
@@ -2058,9 +2041,6 @@ D: m68k/Amiga and PPC/CHRP Longtrail coordinator
 D: Frame buffer device and XF68_FBDev maintainer
 D: m68k IDE maintainer
 D: Amiga Zorro maintainer
-D: Amiga Buddha and Catweasel chipset IDE
-D: Atari Falcon chipset IDE
-D: Amiga Gayle chipset IDE
 S: C. Huysmansstraat 12
 S: B-3128 Baal
 S: Belgium

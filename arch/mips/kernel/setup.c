@@ -1,4 +1,4 @@
-/* $Id: setup.c,v 1.15 1999/05/01 22:40:37 ralf Exp $
+/* $Id: setup.c,v 1.15.2.1 1999/06/14 21:40:56 ralf Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
@@ -28,7 +28,6 @@
 #ifdef CONFIG_BLK_DEV_RAM
 #include <linux/blk.h>
 #endif
-#include <linux/ide.h>
 #ifdef CONFIG_RTC
 #include <linux/ioport.h>
 #include <linux/timex.h>
@@ -37,6 +36,7 @@
 #include <asm/asm.h>
 #include <asm/bootinfo.h>
 #include <asm/cachectl.h>
+#include <asm/ide.h>
 #include <asm/io.h>
 #include <asm/stackframe.h>
 #include <asm/system.h>
@@ -106,13 +106,6 @@ unsigned long mips_machgroup = MACH_GROUP_UNKNOWN;
 
 unsigned char aux_device_present;
 extern int _end;
-
-extern char empty_zero_page[PAGE_SIZE];
-
-/*
- * This is set up by the setup-routine at boot-time
- */
-#define PARAM	empty_zero_page
 
 static char command_line[CL_SIZE] = { 0, };
        char saved_command_line[CL_SIZE];

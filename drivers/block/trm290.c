@@ -134,9 +134,10 @@
 #include <linux/hdreg.h>
 #include <linux/pci.h>
 #include <linux/delay.h>
-#include <linux/ide.h>
 
 #include <asm/io.h>
+
+#include "ide.h"
 
 static void trm290_prepare_drive (ide_drive_t *drive, unsigned int use_dma)
 {
@@ -184,7 +185,7 @@ static int trm290_dmaproc (ide_dma_action_t func, ide_drive_t *drive)
 			break;	/* always use PIO for writes */
 #endif
 		case ide_dma_read:
-			if (!(count = ide_build_dmatable(drive, func)))
+			if (!(count = ide_build_dmatable(drive)))
 				break;		/* try PIO instead of DMA */
 			trm290_prepare_drive(drive, 1);	/* select DMA xfer */
 			outl(virt_to_bus(hwif->dmatable)|reading|writing, hwif->dma_base);

@@ -414,7 +414,7 @@ static struct inode * get_pipe_inode(void)
 		} else {
 			PIPE_BASE(*inode) = (char *) page;
 			inode->i_op = &pipe_inode_operations;
-			init_waitqueue_head(&PIPE_WAIT(*inode));
+			PIPE_WAIT(*inode) = NULL;
 			PIPE_START(*inode) = PIPE_LEN(*inode) = 0;
 			PIPE_RD_OPENERS(*inode) = PIPE_WR_OPENERS(*inode) = 0;
 			PIPE_READERS(*inode) = PIPE_WRITERS(*inode) = 1;

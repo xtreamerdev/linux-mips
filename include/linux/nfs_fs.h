@@ -100,7 +100,7 @@ struct nfs_wreq {
 	struct rpc_task		wb_task;	/* RPC task */
 	struct file *		wb_file;	/* dentry referenced */
 	struct page *		wb_page;	/* page to be written */
-	wait_queue_head_t	wb_wait;	/* wait for completion */
+	struct wait_queue *	wb_wait;	/* wait for completion */
 	unsigned int		wb_offset;	/* offset within page */
 	unsigned int		wb_bytes;	/* dirty range */
 	unsigned int		wb_count;	/* user count */

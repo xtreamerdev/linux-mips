@@ -7,7 +7,7 @@
  *		handler for protocols to use and generic option handler.
  *
  *
- * Version:	$Id: sock.c,v 1.81 1999/05/12 11:24:19 davem Exp $
+ * Version:	$Id: sock.c,v 1.80 1999/05/08 03:04:34 davem Exp $
  *
  * Authors:	Ross Biro, <bir7@leland.Stanford.Edu>
  *		Fred N. van Kempen, <waltje@uWalt.NL.Mugnet.ORG>
@@ -650,7 +650,7 @@ unsigned long sock_rspace(struct sock *sk)
  */
 static void sock_wait_for_wmem(struct sock * sk)
 {
-	DECLARE_WAITQUEUE(wait, current);
+	struct wait_queue wait = { current, NULL };
 
 	sk->socket->flags &= ~SO_NOSPACE;
 	add_wait_queue(sk->sleep, &wait);
@@ -1036,8 +1036,7 @@ void sock_init_data(struct socket *sock, struct sock *sk)
 		sk->type	=	sock->type;
 		sk->sleep	=	&sock->wait;
 		sock->sk	=	sk;
-	} else
-		sk->sleep	=	NULL;
+	}
 
 	sk->state_change	=	sock_def_wakeup;
 	sk->data_ready		=	sock_def_readable;

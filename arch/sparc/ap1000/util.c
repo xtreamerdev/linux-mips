@@ -355,7 +355,7 @@ void ap_exit_irq(int irq)
 }
 
 
-static DECLARE_WAIT_QUEUE_HEAD(timer_wait);
+static struct wait_queue *timer_wait = NULL;
 
 static void wait_callback(unsigned long _ignored)
 {

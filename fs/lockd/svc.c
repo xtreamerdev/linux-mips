@@ -40,14 +40,14 @@
 
 extern struct svc_program	nlmsvc_program;
 struct nlmsvc_binding *		nlmsvc_ops = NULL;
-static DECLARE_MUTEX(nlmsvc_sema);
+static struct semaphore 	nlmsvc_sema = MUTEX;
 static unsigned int		nlmsvc_users = 0;
 static pid_t			nlmsvc_pid = 0;
 unsigned long			nlmsvc_grace_period = 0;
 unsigned long			nlmsvc_timeout = 0;
 
-static DECLARE_MUTEX_LOCKED(lockd_start);
-static DECLARE_WAIT_QUEUE_HEAD(lockd_exit);
+static struct semaphore lockd_start = MUTEX_LOCKED;
+static struct wait_queue *	lockd_exit = NULL;
 
 /*
  * Currently the following can be set only at insmod time.
@@ -319,9 +319,10 @@ int
 init_module(void)
 {
 	/* Init the static variables */
-	init_MUTEX(&nlmsvc_sema);
+	nlmsvc_sema = MUTEX;
 	nlmsvc_users = 0;
 	nlmsvc_pid = 0;
+	lockd_exit = NULL;
 	nlmxdr_init();
 	return 0;
 }

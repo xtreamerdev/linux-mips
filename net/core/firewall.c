@@ -13,7 +13,7 @@
 #include <linux/interrupt.h>
 #include <asm/semaphore.h>
 
-DECLARE_MUTEX(firewall_sem);
+struct semaphore firewall_sem = MUTEX; 
 static int firewall_policy[NPROTO];
 static struct firewall_ops *firewall_chain[NPROTO];
 

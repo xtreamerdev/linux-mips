@@ -1,4 +1,4 @@
-/* $Id: irixelf.c,v 1.16.2.1 1999/06/13 21:52:12 ralf Exp $
+/* $Id: irixelf.c,v 1.16.2.2 1999/06/14 21:40:54 ralf Exp $
  *
  * irixelf.c: Code to load IRIX ELF executables which conform to
  *            the MIPS ABI.
@@ -618,7 +618,7 @@ static inline int do_load_irix_binary(struct linux_binprm * bprm,
 	unsigned int load_addr, elf_bss, elf_brk;
 	unsigned int elf_entry, interp_load_addr = 0;
 	unsigned int start_code, end_code, end_data, elf_stack;
-	int elf_exec_fileno, retval, has_interp, has_ephdr, i;
+	int elf_exec_fileno, retval, has_interp, has_ephdr, size, i;
 	char *elf_interpreter;
 	mm_segment_t old_fs;
 	
@@ -635,13 +635,13 @@ static inline int do_load_irix_binary(struct linux_binprm * bprm,
 #endif
 
 	/* Now read in all of the header information */
-	elf_phdata = (struct elf_phdr *) kmalloc(elf_ex.e_phentsize * 
-						 elf_ex.e_phnum, GFP_KERNEL);
+	size = elf_ex.e_phentsize * elf_ex.e_phnum;
+	elf_phdata = (struct elf_phdr *) kmalloc(size, GFP_KERNEL);
 	if (elf_phdata == NULL)
 		return -ENOMEM;
 	
-	retval = read_exec(bprm->dentry, elf_ex.e_phoff, (char *) elf_phdata,
-			   elf_ex.e_phentsize * elf_ex.e_phnum, 1);
+	retval = read_exec(bprm->dentry, elf_ex.e_phoff,
+	                   (char *) elf_phdata, size, 1);
 	if (retval < 0) {
 		kfree (elf_phdata);
 		return retval;
@@ -1114,7 +1114,6 @@ static int writenote(struct memelfnote *men, struct file *file)
 #define DUMP_SEEK(off)	\
 	if (!dump_seek(file, (off))) \
 		goto close_coredump;
-
 /* Actual dumper.
  *
  * This is a two-pass process; first we find the offsets of the bits,

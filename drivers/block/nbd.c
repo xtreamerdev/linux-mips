@@ -75,7 +75,7 @@ static int nbd_open(struct inode *inode, struct file *file)
 	nbdev = &nbd_dev[dev];
 	nbd_dev[dev].refcnt++;
 	if (!(nbdev->flags & NBD_INITIALISED)) {
-		init_MUTEX(&nbdev->queue_lock);
+		nbdev->queue_lock = MUTEX;
 		nbdev->flags |= NBD_INITIALISED;
 	}
 	MOD_INC_USE_COUNT;

@@ -638,7 +638,6 @@ __initfunc(int init_module(void))
 	hfmodem_state[0].ptt_out.seriobase = serio;
 	hfmodem_state[0].ptt_out.pariobase = pario;
 	hfmodem_state[0].ptt_out.midiiobase = midiio;
-	init_waitqueue_head(&hfmodem_state[0].wait);
 	hfmodem_refclock_probe();
 	output_check(&hfmodem_state[0]);
 #if defined(CONFIG_HFMODEM_WSS) && defined(CONFIG_HFMODEM_SBC)
@@ -704,8 +703,7 @@ __initfunc(void hfmodem_init(void))
         int i;
 
 	printk(hfmodem_drvinfo);
- 	init_waitqueue_head(&hfmode_state[0].wait);
-       hfmodem_refclock_probe();
+        hfmodem_refclock_probe();
         output_check(&hfmodem_state[0]);
 #if defined(CONFIG_HFMODEM_WSS) && defined(CONFIG_HFMODEM_SBC)
         if (hw) 

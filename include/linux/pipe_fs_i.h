@@ -2,7 +2,7 @@
 #define _LINUX_PIPE_FS_I_H
 
 struct pipe_inode_info {
-	wait_queue_head_t wait;
+	struct wait_queue * wait;
 	char * base;
 	unsigned int start;
 	unsigned int lock;

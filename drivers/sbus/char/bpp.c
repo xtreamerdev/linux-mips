@@ -81,7 +81,7 @@ struct inst {
       unsigned char repeat_byte;
 
       /* These members manage timeouts for programmed delays */
-      wait_queue_head_t wait_queue;
+      struct wait_queue *wait_queue;
       struct timer_list timer_list;
 };
 

@@ -57,7 +57,7 @@ extern int ncp_symlink(struct inode*, struct dentry*, const char*);
 #endif
 
 static struct nw_file_info *read_nwinfo = NULL;
-static DECLARE_MUTEX(read_sem);
+static struct semaphore read_sem = MUTEX;
 
 /*
  * Fill in the ncpfs-specific information in the inode.
@@ -346,11 +346,12 @@ ncp_read_super(struct super_block *sb, void *raw_data, int silent)
 						   GFP_KERNEL);
 	if (server == NULL)
 		goto out_no_server;
+	memset(server, 0, sizeof(*server));
 	NCP_SBP(sb) = server;
 
 	server->ncp_filp = ncp_filp;
 	server->lock = 0;
-	init_waitqueue_head(&server->wait);
+	sema_init(&server->sem, 1);
 	server->packet = NULL;
 	server->buffer_size = 0;
 	server->conn_status = 0;
@@ -687,7 +688,7 @@ int ncp_notify_change(struct dentry *dentry, struct iattr *attr)
 		if ((result = ncp_make_open(inode, O_RDWR)) < 0) {
 			return -EACCES;
 		}
-		ncp_write(NCP_SERVER(inode), NCP_FINFO(inode)->file_handle,
+		ncp_write_kernel(NCP_SERVER(inode), NCP_FINFO(inode)->file_handle,
 			  attr->ia_size, 0, "", &written);
 
 		/* According to ndir, the changes only take effect after
@@ -723,7 +724,7 @@ int init_module(void)
 {
 	DPRINTK(KERN_DEBUG "ncpfs: init_module called\n");
 
-	init_MUTEX(&read_sem);
+	read_sem = MUTEX;
 	read_nwinfo = NULL;
 
 #ifdef DEBUG_NCP_MALLOC

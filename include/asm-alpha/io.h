@@ -29,15 +29,16 @@
  */
 static inline void __set_hae(unsigned long new_hae)
 {
-	unsigned long ipl = swpipl(7);
+	unsigned long flags;
+	__save_and_cli(flags);
 
 	alpha_mv.hae_cache = new_hae;
 	*alpha_mv.hae_register = new_hae;
 	mb();
-
 	/* Re-read to make sure it was written.  */
 	new_hae = *alpha_mv.hae_register;
-	setipl(ipl);
+
+	__restore_flags(flags);
 }
 
 static inline void set_hae(unsigned long new_hae)
@@ -355,12 +356,6 @@ out:
 # endif
 #endif
 #define RTC_ALWAYS_BCD	0
-
-/* Nothing to do */
-
-#define dma_cache_inv(_start,_size)		do { } while (0)
-#define dma_cache_wback(_start,_size)		do { } while (0)
-#define dma_cache_wback_inv(_start,_size)	do { } while (0)
 
 #endif /* __KERNEL__ */
 

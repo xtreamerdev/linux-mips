@@ -289,9 +289,9 @@ CONFIG_BLK_DEV_NBD
 Enhanced IDE/MFM/RLL disk/cdrom/tape/floppy support
 CONFIG_BLK_DEV_IDE
   If you say Y here, you will use the full-featured IDE driver to
-  control up to eight IDE interfaces, each being able to serve a
-  "master" and a "slave" device, for a total of up to sixteen (16)
-  IDE disk/cdrom/tape/floppy drives.  People with SCSI-only systems
+  control up to four IDE interfaces, each being able to serve a
+  "master" and a "slave" device, for a total of up to eight IDE
+  disk/cdrom/tape/floppy drives. People with SCSI-only systems
   can say N here.
 
   Useful information about large (>540 MB) IDE disks, multiple
@@ -370,15 +370,6 @@ CONFIG_BLK_DEV_IDEDISK
   root filesystem (the one containing the directory /) is located on
   the IDE disk. If unsure, say Y.
 
-Use multi-mode by default
-CONFIG_IDEDISK_MULTI_MODE
-  If you get this error, try to enable this option.
-
-  hda: set_multmode: status=0x51 { DriveReady SeekComplete Error }
-  hda: set_multmode: error=0x04 { DriveStatusError }
-
-  If in doubt, say N.
-
 Include IDE/ATAPI CDROM support
 CONFIG_BLK_DEV_IDECD
   If you have a CDROM drive using the ATAPI protocol, say Y. ATAPI is
@@ -404,17 +395,6 @@ CONFIG_BLK_DEV_IDECD
   inserted in and removed from the running kernel whenever you want),
   say M here and read Documentation/modules.txt. The module will be
   called ide-cd.o.
-
-Include CD-Changer Reporting
-CONFIG_IDECD_SLOTS
-  If you have an IDE/ATAPI multi-slot cd-changer and you want
-  to report which slots have disk-present, say Y.  If you say Y
-  and there is not a multi-slot cdrom present, this code is skipped.
-
-  This could be the bases of multi-disk access based on multi-mounts.
-  This is still pie-in-the-sky.
-
-  If unsure, say N.
 
 Include IDE/ATAPI TAPE support
 CONFIG_BLK_DEV_IDETAPE
@@ -658,109 +638,20 @@ CONFIG_BLK_DEV_NS87415
 
   Please read the comments at the top of drivers/block/ns87415.c.
 
-CY82C693 chipset support (EXPERIMENTAL)
-CONFIG_BLK_DEV_CY82C693
-
-  This driver adds detection and support for the CY82C693 chipset
-  used on Digital's PC-Alpha 164SX boards.
-
-  This requires CONFIG_IDEDMA_AUTO to be enabled.
-
-  Please read the comments at the top of drivers/block/cy82c693.c
-
 VIA82C586 chipset support (EXPERIMENTAL)
 CONFIG_BLK_DEV_VIA82C586
-  This allows you to to configure your chipset for a better use while
-  running (U)DMA: it will allow you to enable efficiently the second
-  channel dma usage, as it is may not be set by BIOS. It allows you to
-  run a kernel command line at boot time in order to set fifo config.
-  If no command line is provided, it will try to set fifo configuration
-  at its best. It will allow you to get a proc/ide/via display
-  (while running a "cat") provided you enabled "proc" support and
-  set DISPLAY_APOLLO_TIMINGS in via82c586.c
+  This adds initial timing settings for VIA (U)DMA onboard ide
+  controllers that are ATA3 compliant. May work with ATA4 systems, but
+  not tested to date.
 
-  This requires CONFIG_IDEDMA_AUTO to be enabled.
+  If you say Y here, you also need to say Y to "Use DMA by default
+  when available", above.
 
   If unsure, say N.
 
 CMD646 chipset support (EXPERIMENTAL)
 CONFIG_BLK_DEV_CMD646
   Say Y here if you have an IDE controller like this.
-
-ALI M15x3 chipset support (EXPERIMENTAL)
-CONFIG_BLK_DEV_ALI15X3
-  This driver ensures (U)DMA support for ALI 1533, 1543 and 1543C
-  onboard chipsets.  It also tests for Simplex mode and enables
-  normal dual channel support.
-
-  This requires CONFIG_IDEDMA_AUTO to be enabled.
-
-  Please read the comments at the top of drivers/block/alim15x3.c
-
-  If unsure, say N.
-
-PROMISE PDC20246 support (EXPERIMENTAL)
-CONFIG_BLK_DEV_PDC20246
-  This driver adds up to 4 more eide devices sharing a single interrupt.
-  This add-on card is a bootable PCI UDMA controller.
-  Since multiple cards can be installed and there are BIOS ROM problems
-  that happen if the BIOS revisions of all installed cards (three-max)
-  do not match.  Should you be unable to make new BIOS chips with a burner,
-  the driver attempts to dynamic tuning of the chipset at boot-time
-  for max-speed.  Ultra33 BIOS 1.25 or new required for more than one card.
-
-  This requires CONFIG_IDEDMA_AUTO to be enabled.
-
-  Please read the comments at the top of drivers/block/pdc202xx.c
-
-  If unsure, say N.
-
-PROMISE PDC20262 support (EXPERIMENTAL)
-CONFIG_BLK_DEV_PDC20262
-  This driver adds up to 4 more eide devices sharing a single interrupt.
-  This add-on card is a bootable PCI UDMA ATA-66 controller.
-  The driver attempts to dynamic tuning of the chipset at boot-time
-  for max-speed.  Note tested limits are UDMA-2.
-  Ultra66 BIOS 1.11 or newer required.
-
-  This requires CONFIG_IDEDMA_AUTO to be enabled.
-
-  Please read the comments at the top of drivers/block/pdc202xx.c
-
-  If unsure, say N.
-
-AEC6210 chipset support
-CONFIG_BLK_DEV_AEC6210
-  This driver adds up to 4 more eide devices sharing a single interrupt.
-  This add-on card is a bootable PCI UDMA controller.  In order to get this
-  card to initialize correctly in some cases, you should include this driver.
-
-  This prefers CONFIG_IDEDMA_AUTO to be enabled, regardless.
-
-  Please read the comments at the top of drivers/block/aec6210.c
-
-Intel PIIXn chipsets support (EXPERIMENTAL)
-CONFIG_BLK_DEV_PIIX
-  This driver adds PIO mode setting and tuning for all PIIX IDE
-  controllers by Intel.  Since the BIOS can sometimes improperly tune
-  PIO 0-4 mode settings, this allows dynamic tuning of the chipset
-  via the standard end-user tool 'hdparm'.
-
-  Please read the comments at the top of drivers/block/piix.c
-
-  If unsure, say N.
-
-HPT343 chipset support (EXPERIMENTAL)
-CONFIG_BLK_DEV_HPT343
-  This driver adds up to 4 more EIDE devices sharing a single
-  interrupt. The HPT343 chipset in its current form is a non-bootable
-  PCI UDMA controller. This driver requires dynamic tuning of the
-  chipset during the ide-probe at boot. It is reported to support DVD
-  II drives, by the manufacturer.
-
-  This requires CONFIG_IDEDMA_AUTO to be enabled.
-
-  Please read the comments at the top of drivers/block/hpt343.c
 
 QDI QD6580 support
 CONFIG_BLK_DEV_QD6580
@@ -784,68 +675,6 @@ CONFIG_BLK_DEV_ALI14XX
   of the ALI M1439/1443/1445/1487/1489 chipsets, and permits faster
   I/O speeds to be set as well. See the files Documentation/ide.txt
   and drivers/block/ali14xx.c for more info.
-
-Amiga builtin Gayle IDE interface support
-CONFIG_BLK_DEV_GAYLE
-  This is the IDE driver for the builtin IDE interface on some Amiga
-  models.  It supports both the `A1200 style' (used in A600 and A1200)
-  and `A4000 style' (used in A4000 and A4000T) of the Gayle IDE interface.
-  Say Y if you have such an Amiga model and want to use IDE devices
-  (hard disks, CD-ROM drives, etc.) that are connected to the builtin
-  IDE interface.
-
-Falcon IDE interface support
-CONFIG_BLK_DEV_FALCON_IDE
-  This is the IDE driver for the builtin IDE interface on the Atari Falcon.
-  Say Y if you have a Falcon and want to use IDE devices (hard disks,
-  CD-ROM drives, etc.) that are connected to the builtin IDE interface.
-
-Amiga Buddha/Catweasel IDE interface support (EXPERIMENTAL)
-CONFIG_BLK_DEV_BUDDHA
-  This is the IDE driver for the IDE interfaces on the Buddha and
-  Catweasel expansion boards.  It supports up to two interfaces on the
-  Buddha and three on the Catweasel.
-  Say Y if you have a Buddha or Catweasel expansion board and want to
-  use IDE devices (hard disks, CD-ROM drives, etc.) that are connected
-  to one of its IDE interfaces.
-
-Amiga IDE Doubler support (EXPERIMENTAL)
-CONFIG_BLK_DEV_IDEDOUBLER
-  This driver provides support for the so called `IDE doublers' (made by
-  various manufacturers, e.g. Eyetech) that can be connected to the
-  builtin IDE interface of some Amiga models. Using such an IDE doubler,
-  you can connect up to four instead of two IDE devices on the Amiga's
-  builtin IDE interface.
-  Note that the normal Amiga Gayle IDE driver may not work correctly if
-  you have an IDE doubler and don't enable this driver!
-  Say Y if you have an IDE doubler.  The driver is enabled at kernel
-  runtime using the "ide=doubler" kernel boot parameter.
-
- Support for PowerMac IDE devices (must also enable IDE)
- CONFIG_BLK_DEV_IDE_PMAC
-   No help for CONFIG_BLK_DEV_IDE_PMAC
-
- PowerMac IDE DMA support
- CONFIG_BLK_DEV_IDEDMA_PMAC
-   No help for CONFIG_BLK_DEV_IDEDMA_PMAC
-
- Use DMA by default
- CONFIG_PMAC_IDEDMA_AUTO
-   No help for CONFIG_PMAC_IDEDMA_AUTO
-
-Macintosh Quadra/Powerbook IDE interface support
-CONFIG_BLK_DEV_MAC_IDE
-  This is the IDE driver for the builtin IDE interface on the some m68k
-  Macintosh models. It supports both the `Quadra style' (used in Quadra/
-  Centris 630 and Performa 588 models) and `Powerbook style' (used in the
-  Powerbook 150 and 190 models) IDE interface.
-  Say Y if you have such an Macintosh model and want to use IDE devices
-  (hard disks, CD-ROM drives, etc.) that are connected to the builtin
-  IDE interface.
-
- RapIDE interface support
- CONFIG_BLK_DEV_IDE_RAPIDE
-   No help for CONFIG_BLK_DEV_IDE_RAPIDE
 
 XT hard disk support
 CONFIG_BLK_DEV_XD
@@ -3920,34 +3749,49 @@ CONFIG_SCSI_AIC7XXX
   say M here and read Documentation/modules.txt. The module will be
   called aic7xxx.o.
 
-Override driver defaults for commands per LUN
-CONFIG_OVERRIDE_CMDS
-  Say Y here if you want to override the default maximum number of
-  commands that a single device on the aic7xxx controller is allowed
-  to have active at one time. This option only affects tagged queueing
-  capable devices. The driver uses a value of 24 by default.
-  If you say Y here, you can adjust the number of commands per LUN
-  with the following configuration option.
+Enable or Disable Tagged Command Queueing by default
+CONFIG_AIC7XXX_TCQ_ON_BY_DEFAULT
+  This option causes the aic7xxx driver to attempt to use tagged command
+  queueing on any devices that claim to support it.  If this is set to yes,
+  you can still turn off TCQ on troublesome devices with the use of the
+  tag_info boot parameter.  See /usr/src/linux/drivers/scsi/README.aic7xxx
+  for more information on that and other aic7xxx setup commands.  If this
+  option is turned off, you may still enable TCQ on known good devices by
+  use of the tag_info boot parameter.
   
-  If unsure, say N.
+  If you are unsure about your devices then it is safest to say N here.
+  
+  However, TCQ can increase performance on some hard drives by as much
+  as 50% or more, so I would recommend that if you say N here, that you
+  at least read the README.aic7xxx file so you will know how to enable
+  this option manually should your drives prove to be safe in regards
+  to TCQ.
 
-Maximum number of commands per LUN
-CONFIG_AIC7XXX_CMDS_PER_LUN
-  Specify the maximum number of commands you would like to allocate
-  per LUN (a LUN is a Logical Unit Number -- some physical SCSI
-  devices, e.g. CD jukeboxes, act logically as several separate units,
-  each of which gets its own number).
+  Conversely, certain drives are known to lock up or cause bus resets when
+  TCQ is enabled on them.  If you have a Western Digital Enterprise SCSI
+  drive for instance, then don't even bother to enable TCQ on it as the
+  drive will become unreliable, and it will actually reduce performance.
 
-  Reasonable figures are in the range of 14 to 32 commands per device,
+Default number of TCQ commands per device
+CONFIG_AIC7XXX_CMDS_PER_DEVICE
+  Specify the number of commands you would like to allocate per SCSI
+  device when Tagged Command Queueing (TCQ) is enabled on that device.
+
+  Reasonable figures are in the range of 8 to 24 commands per device,
   but depending on hardware could be increased or decreased from that
   figure. If the number is too high for any particular device, the
   driver will automatically compensate usually after only 10 minutes
-  of uptime and will issue a message to alert you to the fact that the
-  number of commands for that device has been reduced. It will not
-  hinder performance if some of your devices eventually have their
-  commands per LUN reduced, but is a waste of memory if all of your
-  devices end up reducing this number down to a more reasonable
-  figure. Default: 24
+  of uptime. It will not hinder performance if some of your devices
+  eventually have their command depth reduced, but is a waste of memory
+  if all of your devices end up reducing this number down to a more
+  reasonable figure.
+  
+  NOTE: Certain very broken drives are known to lock up when given more
+  commands than they like to deal with.  Quantum Fireball drives are the
+  most common in this category.  For the Quantum Fireball drives I would
+  suggest no more than 8 commands per device.
+
+  Default: 8
 
 Collect statistics to report in /proc
 CONFIG_AIC7XXX_PROC_STATS
@@ -5384,7 +5228,7 @@ CONFIG_NET_FASTROUTE
   section (except for CONFIG_IP_ROUTE_TOS and CONFIG_IP_ROUTE_FWMARK).
   At the moment, few devices support fast switching (tulip is one of
   them, modified 8390 can be found at
-  ftp://ftp.inr.ac.ru/ip-routing/fastroute-8390.tar.gz).
+  ftp://ftp.inr.ac.ru/ip-routing/fastroute/fastroute-8390.tar.gz).
 
   If unsure, say N.
 
@@ -5394,8 +5238,8 @@ CONFIG_NET_HW_FLOWCONTROL
   during periods of extremal congestion. At the moment only a couple
   of device drivers support it (really only one -- tulip, modified
   8390 can be found at
-  ftp://ftp.inr.ac.ru/ip-routing/fastroute-8390.tar.gz). Really, this
-  option is applicable to any machine attached to a fast enough
+  ftp://ftp.inr.ac.ru/ip-routing/fastroute/fastroute-8390.tar.gz).
+  Really, this option is applicable to any machine attached to a fast enough
   network, and even a 10 Mb NIC is able to kill a not very slow box,
   such as a 120MHz Pentium.
 
@@ -6331,6 +6175,20 @@ CONFIG_NE2_MCA
   module, say M here and read Documentation/modules.txt as well as
   Documentation/networking/net-modules.txt.
 
+SKnet MCA support
+CONFIG_SKMC
+  This are Micro Channel ethernet adapters.  You need to set CONFIG_MCA
+  to use this driver.  It's both available as an in-kernel driver and
+  as a module ( = code which can be inserted in and removed from the
+  running kernel whenever you want). If you want to compile it as a module,
+  say M here and read Documentation/modules.txt as well as
+  Documentation/networking/net-modules.txt. If you plan to use more than
+  one network card under linux, read the Multiple-Ethernet-mini-HOWTO,
+  available from sunsite.unc.edu:/pub/Linux/docs/HOWTO/mini.  Supported
+  cards are the SKnet Junior MC2 and the SKnet MC2(+).  Distinguishing
+  both cards is done automatically.  Note that using multiple boards
+  of different type hasn't been tested with this driver.
+
 EISA, VLB, PCI and on board controllers
 CONFIG_NET_EISA
   This is another class of network cards which attach directly to the
@@ -6688,16 +6546,6 @@ CONFIG_HIPPI
   under Linux, say Y here (you must also remember to enable the driver
   for your HIPPI card below). Most people will say N here.
   
-CERN HIPPI PCI adapter support
-CONFIG_CERN_HIPPI
-  Say Y here if this is your PCI HIPPI network card.
-
-  This driver is also available as a module ( = code which can be
-  inserted in and removed from the running kernel whenever you want).
-  The module will be called cern_hippi.o. If you want to compile it as
-  a module, say M here and read Documentation/modules.txt. If unsure,
-  say N.
-
 Essential RoadRunner HIPPI PCI adapter support
 CONFIG_ROADRUNNER
   Say Y here if this is your PCI HIPPI network card.
@@ -6797,9 +6645,6 @@ CONFIG_MCD
   Note that this driver does not support XA or MultiSession CDs
   (PhotoCDs). There is a new driver (next question) which can do
   this. If you want that one, say N here.
-
-  If the driver doesn't work out of the box, you might want to have a
-  look at drivers/cdrom/mcd.h. 
 
   If you say Y here, you should also say Y or M to "ISO 9660 CDROM
   filesystem support" below, because that's the filesystem used on
@@ -7633,13 +7478,6 @@ CONFIG_SMB_FS
   can be inserted in and removed from the running kernel whenever you
   want), say M here and read Documentation/modules.txt. The module
   will be called smbfs.o. Most people say N, however.
-
-SMB Win95 bug work-around
-CONFIG_SMB_WIN95
-  If you want to connect to a share exported by Windows 95, you should
-  say Y here. The Windows 95 server contains a bug that makes listing
-  directories unreliable. This option slows down the listing of
-  directories. This makes the Windows 95 server a bit more stable.
 
 Coda filesystem support
 CONFIG_CODA_FS
@@ -8855,6 +8693,9 @@ CONFIG_MTRR
 
   The AMD K6-2 (stepping 8 and above) and K6-3 processors have two
   MTRRs. These are supported.
+  
+  The Centaur C6 (WinChip) has 8 MCRs, allowing write-combining. These
+  are supported.
 
   Saying Y here also fixes a problem with buggy SMP BIOSes which only
   set the MTRRs for the boot CPU and not the secondary CPUs. This can
@@ -10930,6 +10771,30 @@ CONFIG_RADIO_AZTECH_PORT
   haven't changed the setting of jumper JP3 on the card. Removing the
   jumper sets the card to 0x358.
 
+ADS Cadet AM/FM Radio Tuner Card
+CONFIG_RADIO_CADET
+  Choose Y here if you have one of these AM/FM radio cards, and then fill
+  in the port address below.
+  
+  In order to control your radio card, you will need to use programs
+  that are compatible with the Video for Linux API. Information on 
+  this API and pointers to "v4l" programs may be found on the WWW at
+  http://roadrunner.swansea.uk.linux.org/v4l.shtml; to browse the WWW,
+  you need to have access to a machine on the Internet that has a 
+  program like lynx or netscape.
+
+  Further documentation on this driver can be found on the WWW at
+  http://linux.blackhawke.net/cadet.html. 
+
+  If you want to compile this driver as a module ( = code which can be
+  inserted in and removed from the running kernel whenever you want),
+  say M here and read Documentation/modules.txt. The module will be
+  called radio-cadet.o.
+
+ADS Cadet AM/FM Radio Tuner Card I/O Port
+CONFIG_RADIO_CADET_PORT
+  Enter the I/O address of the card here (most commonly 330). 
+
 SF16FMI Radio
 CONFIG_RADIO_SF16FMI
   Choose Y here if you have one of these FM radio cards, and then fill
@@ -11111,6 +10976,15 @@ CONFIG_VIDEO_PMS
   module called pms.o ( = code which can be inserted in and removed
   from the running kernel whenever you want). If you want to compile
   it as a module, say M here and read Documentation/modules.txt.
+
+PlanB Video-In for PowerMacs
+CONFIG_VIDEO_PLANB
+  PlanB is the V4L driver for the PowerMac 7x00/8x00 series video
+  input hardware. If you want to experiment with this, say Y.
+  Otherwise, or if you don't understand a word, say N.
+  See http://www.cpu.lu/~mlan/planb.html for more info.
+
+  Saying M will compile this driver as a module (planb.o).
 
 #
 # ARM options
@@ -11409,6 +11283,21 @@ CONFIG_IRTTY_SIR
 
   If unsure, say Y.
 
+IrPORT IrDA Device Driver
+CONFIG_IRPORT_SIR
+  Say Y here if you want to build support for the IrPORT IrDA device
+  driver. If you want to compile it as a module, say M here and
+  read Documentation/modules.txt. IrPORT can be used instead of
+  IrTTY and sometimes this can be better. One example is if your
+  IrDA port does not have echo-canceling, which will work OK with
+  IrPORT since this driver is working in half-duplex mode only. You
+  don't need to use irattach with IrPORT, but you just insert it 
+  the same way as FIR drivers (insmod irport io=0x3e8 irq=11).
+  Notice that IrPORT is a SIR device driver which means that speed
+  is limited to 115200 bps.
+
+  If unsure, say Y.
+
 Winbond W83977AF IrDA Device Driver
 CONFIG_WINBOND_FIR
   Say Y here if you want to build IrDA support for the Winbond
@@ -11431,6 +11320,13 @@ CONFIG_SHARP_FIR
   chipset. If you want to compile it as a module, say M here and
   read Documentation/modules.txt. This chipset is used by the Toshiba
   Tecra laptops.
+
+Toshiba Type-O IR Port Device Driver
+CONFIG_TOSHIBA_FIR
+  Say Y here if you want to build support for the Toshiba Type-O IR
+  chipset. If you want to compile it as a module, say M here and
+  read Documentation/modules.txt. This chipset is used by the Toshiba
+  Libretto 100CT, and many more laptops.
 
 ESI JetEye PC Dongle
 CONFIG_ESI_DONGLE
@@ -11468,6 +11364,15 @@ CONFIG_GIRBIL_DONGLE
   normal 9-pin serial port connector, and can currently only be used
   by IrTTY. To activate support for Greenwich dongles you will have to
   insert "irattach -d girbil" in the /etc/irda/drivers script.
+
+Parallax Litelink dongle
+CONFIG_LITELINK_DONGLE
+  Say Y here if you want to build support for the Parallax Litelink
+  dongle. If you want to compile it as a module, say M here and read
+  Documentation/modules.txt. The Parallax dongle attaches to the
+  normal 9-pin serial port connector, and can currently only be used
+  by IrTTY. To activate support for Parallax dongles you will have to
+  insert "irattach -d litelink" in the /etc/irda/drivers script.
 
 VME (Motorola and BVM) support
 CONFIG_VME

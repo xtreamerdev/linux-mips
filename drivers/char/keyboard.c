@@ -64,7 +64,7 @@ EXPORT_SYMBOL(handle_scancode);
 
 extern void ctrl_alt_del(void);
 
-DECLARE_WAIT_QUEUE_HEAD(keypress_wait);
+struct wait_queue * keypress_wait = NULL;
 struct console;
 
 int keyboard_wait_for_keypress(struct console *co)

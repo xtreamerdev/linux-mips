@@ -466,9 +466,7 @@ static int probing = 0;
 #define FD_COMMAND_OKAY 3
 
 static volatile int command_status = FD_COMMAND_NONE, fdc_busy = 0;
-static DECLARE_WAIT_QUEUE_HEAD(fdc_wait);
-static DECLARE_WAIT_QUEUE_HEAD(command_done);
-
+static struct wait_queue *fdc_wait = NULL, *command_done = NULL;
 #define NO_SIGNAL (!interruptible || !signal_pending(current))
 #define CALL(x) if ((x) == -EINTR) return -EINTR
 #define ECALL(x) if ((ret = (x))) return ret;
@@ -1928,8 +1926,6 @@ static int start_motor(void (*function)(void) )
 
 static void floppy_ready(void)
 {
-	unsigned long flags;
-	
 	CHECK_RESET;
 	if (start_motor(floppy_ready)) return;
 	if (fdc_dtr()) return;
@@ -1949,7 +1945,7 @@ static void floppy_ready(void)
 	if ((raw_cmd->flags & FD_RAW_READ) || 
 	    (raw_cmd->flags & FD_RAW_WRITE))
 	{
-		flags=claim_dma_lock();
+		unsigned long flags = claim_dma_lock();
 		fd_chose_dma_mode(raw_cmd->kernel_data,
 				  raw_cmd->length);
 		release_dma_lock(flags);

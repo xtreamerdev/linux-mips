@@ -1567,7 +1567,8 @@ isdn_tty_set_termios(struct tty_struct *tty, struct termios *old_termios)
 static int
 isdn_tty_block_til_ready(struct tty_struct *tty, struct file *filp, modem_info * info)
 {
-	DECLARE_WAITQUEUE(wait, current); 
+	struct wait_queue wait =
+	{current, NULL};
 	int do_clocal = 0;
 	unsigned long flags;
 	int retval;
@@ -2003,8 +2004,8 @@ isdn_tty_modem_init(void)
 		info->blocked_open = 0;
 		info->callout_termios = m->cua_modem.init_termios;
 		info->normal_termios = m->tty_modem.init_termios;
-		init_waitqueue_head(&info->open_wait);
-		init_waitqueue_head(&info->close_wait);
+		info->open_wait = 0;
+		info->close_wait = 0;
 		info->isdn_driver = -1;
 		info->isdn_channel = -1;
 		info->drv_index = -1;

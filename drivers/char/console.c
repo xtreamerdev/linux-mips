@@ -2269,7 +2269,7 @@ static void vc_init(unsigned int currcons, unsigned int rows, unsigned int cols,
 	def_color       = 0x07;   /* white */
 	ulcolor		= 0x0f;   /* bold white */
 	halfcolor       = 0x08;   /* grey */
-	init_waitqueue_head(&vt_cons[currcons]->paste_wait);
+	vt_cons[currcons]->paste_wait = 0;
 	reset_terminal(currcons, do_clear);
 }
 

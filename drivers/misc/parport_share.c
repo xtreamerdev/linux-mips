@@ -1,4 +1,4 @@
-/* $Id: parport_share.c,v 1.13 1999/01/04 16:06:01 ralf Exp $
+/* $Id: parport_share.c,v 1.15 1998/01/11 12:06:17 philip Exp $
  * Parallel-port resource manager code.
  * 
  * Authors: David Campbell <campbell@tirian.che.curtin.edu.au>
@@ -277,7 +277,7 @@ struct pardevice *parport_register_device(struct parport *port, const char *name
 	inc_parport_count();
 	port->ops->inc_use_count();
 
-	init_waitqueue_head(&tmp->wait_q);
+	init_waitqueue(&tmp->wait_q);
 	tmp->timeslice = PARPORT_DEFAULT_TIMESLICE;
 	tmp->waitnext = tmp->waitprev = NULL;
 
@@ -298,9 +298,9 @@ void parport_unregister_device(struct pardevice *dev)
 	port = dev->port;
 
 	if (port->cad == dev) {
-		printk(KERN_WARNING "%s: refused to unregister "
-		       "currently active device %s.\n", port->name, dev->name);
-		return;
+		printk(KERN_DEBUG "%s: %s forgot to release port\n",
+		       port->name, dev->name);
+		parport_release (dev);
 	}
 
 	spin_lock(&port->pardevice_lock);

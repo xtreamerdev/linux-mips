@@ -89,7 +89,7 @@ struct inode_operations hfs_nat_ndir_inode_operations = {
 	NULL,			/* symlink */
 	hfs_mkdir,		/* mkdir */
 	nat_rmdir,		/* rmdir */
-	NULL,			/* mknod */
+	hfs_mknod,		/* mknod */
 	hfs_rename,		/* rename */
 	NULL,			/* readlink */
 	NULL,			/* follow_link */

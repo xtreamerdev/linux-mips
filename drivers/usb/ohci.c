@@ -57,7 +57,7 @@ static int handle_apm_event(apm_event_t event);
 static int apm_resume = 0;
 #endif
 
-static DECLARE_WAIT_QUEUE_HEAD(ohci_configure);
+static struct wait_queue *ohci_configure = NULL;
 
 #ifdef OHCI_TIMER
 static struct timer_list ohci_timer;	/* timer for root hub polling */
@@ -476,7 +476,7 @@ static int ohci_request_irq(struct usb_device *usb, unsigned int pipe,
 /*
  * Control thread operations:
  */
-static DECLARE_WAIT_QUEUE_HEAD(control_wakeup);
+static struct wait_queue *control_wakeup;
 
 /*
  *  This is the handler that gets called when a control transaction
@@ -515,7 +515,7 @@ static int ohci_control_msg(struct usb_device *usb, unsigned int pipe, void *cmd
 	 */
 	struct ohci_ed *control_ed = &dev->ohci->root_hub->ed[ED_CONTROL];
 	struct ohci_td *setup_td, *data_td, *status_td;
-	DECLARE_WAITQUEUE(wait, current);
+	struct wait_queue wait = { current, NULL };
 
 #if 0
 	printk(KERN_DEBUG "entering ohci_control_msg %p (ohci_dev: %p) pipe 0x%x, cmd %p, data %p, len %d\n", usb, dev, pipe, cmd, data, len);

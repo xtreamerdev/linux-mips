@@ -371,12 +371,12 @@ static int parport_SPP_supported(struct parport *pb)
 	 * copy. Some ports _do_ allow reads, so bypass the software
 	 * copy here.  In addition, some bits aren't writable. */
 	r = inb (pb->base+CONTROL);
-	if ((r & 0x3f) == w) {
+	if ((r & 0xf) == w) {
 		w = 0xe;
 		parport_pc_write_control (pb, w);
 		r = inb (pb->base+CONTROL);
 		parport_pc_write_control (pb, 0xc);
-		if ((r & 0x3f) == w)
+		if ((r & 0xf) == w)
 			return PARPORT_MODE_PCSPP;
 	}
 
@@ -832,8 +832,11 @@ static int probe_one_port(unsigned long int base, int irq, int dma)
 		 * Put the ECP detected port in the more SPP like mode.
 		 */
 		parport_pc_write_econtrol(p, 0x0);
-	parport_pc_write_control(p, 0xc);
+	parport_pc_write_control(p, 0x8);
 	parport_pc_write_data(p, 0);
+	udelay (50);
+	parport_pc_write_control(p, 0xc);
+	udelay (50);
 
 	if (parport_probe_hook)
 		(*parport_probe_hook)(p);

@@ -41,7 +41,7 @@
 
 struct irix_usema {
 	struct file *filp;
-	wait_queue_head_t proc_list;
+	struct wait_queue *proc_list;
 };
 
 
@@ -157,11 +157,10 @@ sgi_usemaclone_open(struct inode *inode, struct file *filp)
 		return -ENOMEM;
 	
 	usema->filp        = filp;
-	init_waitqueue_head(&usema->proc_list);
+	usema->proc_list   = NULL;
 	filp->private_data = usema;
-
 	return 0;
-}
+}	
 
 static int
 sgi_usemaclone_release(struct inode *inode, struct file *filp)

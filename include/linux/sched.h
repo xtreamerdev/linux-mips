@@ -79,7 +79,6 @@ extern int last_pid;
 #define TASK_ZOMBIE		4
 #define TASK_STOPPED		8
 #define TASK_SWAPPING		16
-#define TASK_EXCLUSIVE		32
 
 /*
  * Scheduling policies
@@ -185,11 +184,11 @@ struct mm_struct {
 	void * segments;
 };
 
-#define INIT_MM(name) {					\
+#define INIT_MM {					\
 		&init_mmap, NULL, NULL,			\
 		swapper_pg_dir, 			\
 		ATOMIC_INIT(1), 1,			\
-		__MUTEX_INITIALIZER(name.mmap_sem),	\
+		MUTEX,					\
 		0,					\
 		0, 0, 0, 0,				\
 		0, 0, 0, 				\
@@ -268,7 +267,7 @@ struct task_struct {
 	/* Pointer to task[] array linkage. */
 	struct task_struct **tarray_ptr;
 
-	wait_queue_head_t wait_chldexit;	/* for wait4() */
+	struct wait_queue *wait_chldexit;	/* for wait4() */
 	struct semaphore *vfork_sem;		/* for vfork() */
 	unsigned long policy, rt_priority;
 	unsigned long it_real_value, it_prof_value, it_virt_value;
@@ -346,7 +345,7 @@ struct task_struct {
  *  INIT_TASK is used to set up the first task table, touch at
  * your own risk!. Base=0, limit=0x1fffff (=2MB)
  */
-#define INIT_TASK(name) \
+#define INIT_TASK \
 /* state etc */	{ 0,0,0,KERNEL_DS,&default_exec_domain,0, \
 /* counter */	DEF_PRIORITY,DEF_PRIORITY,0, \
 /* SMP */	0,0,0,-1, \
@@ -357,7 +356,7 @@ struct task_struct {
 /* proc links*/ &init_task,&init_task,NULL,NULL,NULL, \
 /* pidhash */	NULL, NULL, \
 /* tarray */	&task[0], \
-/* chld wait */	__WAIT_QUEUE_HEAD_INITIALIZER(name.wait_chldexit), NULL, \
+/* chld wait */	NULL, NULL, \
 /* timeout */	SCHED_OTHER,0,0,0,0,0,0,0, \
 /* timer */	{ NULL, NULL, 0, 0, it_real_fn }, \
 /* utime */	{0,0,0,0},0, \
@@ -465,12 +464,12 @@ extern unsigned long prof_shift;
 
 #define CURRENT_TIME (xtime.tv_sec)
 
-extern void FASTCALL(__wake_up(wait_queue_head_t *q, unsigned int mode));
-extern void FASTCALL(sleep_on(wait_queue_head_t *q));
-extern long FASTCALL(sleep_on_timeout(wait_queue_head_t *q,
+extern void FASTCALL(__wake_up(struct wait_queue ** p, unsigned int mode));
+extern void FASTCALL(sleep_on(struct wait_queue ** p));
+extern long FASTCALL(sleep_on_timeout(struct wait_queue ** p,
 				      signed long timeout));
-extern void FASTCALL(interruptible_sleep_on(wait_queue_head_t *q));
-extern long FASTCALL(interruptible_sleep_on_timeout(wait_queue_head_t *q,
+extern void FASTCALL(interruptible_sleep_on(struct wait_queue ** p));
+extern long FASTCALL(interruptible_sleep_on_timeout(struct wait_queue ** p,
 						    signed long timeout));
 extern void FASTCALL(wake_up_process(struct task_struct * tsk));
 
@@ -632,39 +631,54 @@ extern void exit_sighand(struct task_struct *);
 extern int do_execve(char *, char **, char **, struct pt_regs *);
 extern int do_fork(unsigned long, unsigned long, struct pt_regs *);
 
-extern inline void add_wait_queue(wait_queue_head_t *q, wait_queue_t * wait)
+/*
+ * The wait-queues are circular lists, and you have to be *very* sure
+ * to keep them correct. Use only these two functions to add/remove
+ * entries in the queues.
+ */
+extern inline void __add_wait_queue(struct wait_queue ** p, struct wait_queue * wait)
 {
-	unsigned long flags;
-
-	wq_write_lock_irqsave(&q->lock, flags);
-	__add_wait_queue(q, wait);
-	wq_write_unlock_irqrestore(&q->lock, flags);
+	wait->next = *p ? : WAIT_QUEUE_HEAD(p);
+	*p = wait;
 }
 
-extern inline void add_wait_queue_exclusive(wait_queue_head_t *q,
-							wait_queue_t * wait)
+extern rwlock_t waitqueue_lock;
+
+extern inline void add_wait_queue(struct wait_queue ** p, struct wait_queue * wait)
 {
 	unsigned long flags;
 
-	wq_write_lock_irqsave(&q->lock, flags);
-	__add_wait_queue_tail(q, wait);
-	wq_write_unlock_irqrestore(&q->lock, flags);
+	write_lock_irqsave(&waitqueue_lock, flags);
+	__add_wait_queue(p, wait);
+	write_unlock_irqrestore(&waitqueue_lock, flags);
 }
 
-extern inline void remove_wait_queue(wait_queue_head_t *q, wait_queue_t * wait)
+extern inline void __remove_wait_queue(struct wait_queue ** p, struct wait_queue * wait)
+{
+	struct wait_queue * next = wait->next;
+	struct wait_queue * head = next;
+	struct wait_queue * tmp;
+
+	while ((tmp = head->next) != wait) {
+		head = tmp;
+	}
+	head->next = next;
+}
+
+extern inline void remove_wait_queue(struct wait_queue ** p, struct wait_queue * wait)
 {
 	unsigned long flags;
 
-	wq_write_lock_irqsave(&q->lock, flags);
-	__remove_wait_queue(q, wait);
-	wq_write_unlock_irqrestore(&q->lock, flags);
+	write_lock_irqsave(&waitqueue_lock, flags);
+	__remove_wait_queue(p, wait);
+	write_unlock_irqrestore(&waitqueue_lock, flags); 
 }
 
 #define __wait_event(wq, condition) 					\
 do {									\
-	wait_queue_t __wait;						\
-	init_waitqueue_entry(&__wait, current);				\
+	struct wait_queue __wait;					\
 									\
+	__wait.task = current;						\
 	add_wait_queue(&wq, &__wait);					\
 	for (;;) {							\
 		current->state = TASK_UNINTERRUPTIBLE;			\
@@ -685,9 +699,9 @@ do {									\
 
 #define __wait_event_interruptible(wq, condition, ret)			\
 do {									\
-	wait_queue_t __wait;						\
-	init_waitqueue_entry(&__wait, current);				\
+	struct wait_queue __wait;					\
 									\
+	__wait.task = current;						\
 	add_wait_queue(&wq, &__wait);					\
 	for (;;) {							\
 		current->state = TASK_INTERRUPTIBLE;			\

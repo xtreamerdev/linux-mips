@@ -32,106 +32,27 @@ __start:
 
 #ifdef __SMP__
 	.align 3
-	.globl	__start_cpu
-	.ent	__start_cpu
-	/* On entry here from SRM console, the HWPCB of this processor
-	   has been loaded, and $27 contains the task pointer */
-__start_cpu:
-	.prologue 0
-	/* First order of business, load the GP */
-	br	$26,1f
-1:	ldgp	$29,0($26)
-	/* We need to get current loaded up with our first task...  */
-	mov	$27,$8
-	/* Set FEN */
-	lda	$16,1($31)
-	call_pal PAL_wrfen
-	/* ... and then we can start the processor.  */
-	jsr	$26,start_secondary
+	.globl	__smp_callin
+	.ent	__smp_callin
+	/* On entry here from SRM console, the HWPCB of the per-cpu
+	   slot for this processor has been loaded.  We've arranged
+	   for the UNIQUE value for this process to contain the PCBB
+	   of the target idle task.  */
+__smp_callin:
+	.prologue 1
+	ldgp	$29,0($27)	# First order of business, load the GP.
+
+	call_pal PAL_rduniq	# Grab the target PCBB.
+	mov	$0,$16		# Install it.
+	call_pal PAL_swpctx
+
+	lda	$8,0x3fff	# Find "current".
+	bic	$30,$8,$8
+	
+	jsr	$26,smp_callin
 	call_pal PAL_halt
-	.end __start_cpu
+	.end __smp_callin
 #endif /* __SMP__ */
-
-	.align 3
-	.globl	wrent
-	.ent	wrent
-wrent:
-	.prologue 0
-	call_pal PAL_wrent
-	ret	($26)
-	.end wrent
-
-	.align 3
-	.globl	wrkgp
-	.ent	wrkgp
-wrkgp:
-	.prologue 0
-	call_pal PAL_wrkgp
-	ret	($26)
-	.end wrkgp
-
-	.align 3
-	.globl	wrusp
-	.ent	wrusp
-wrusp:
-	.prologue 0
-	call_pal PAL_wrusp
-	ret	($26)
-	.end wrusp
-
-	.align 3
-	.globl	rdusp
-	.ent	rdusp
-rdusp:
-	.prologue 0
-	call_pal PAL_rdusp
-	ret	($26)
-	.end rdusp
-
-	.align 3
-	.globl	rdmces
-	.ent	rdmces
-rdmces:
-	.prologue 0
-	call_pal PAL_rdmces
-	ret	($26)
-	.end rdmces
-
-	.align 3
-	.globl	wrmces
-	.ent	wrmces
-wrmces:
-	.prologue 0
-	call_pal PAL_wrmces
-	ret	($26)
-	.end wrmces
-
-	.align 3
-	.globl  whami
-	.ent    whami
-whami:
-	.prologue 0
-	call_pal PAL_whami
-	ret     ($26)
-	.end whami
- 
-	.align 3
-	.globl  wripir
-	.ent    wripir
-wripir:
-	.prologue 0
-	call_pal PAL_wripir
-	ret     ($26)
-	.end wripir
-
-	.align 3
-	.globl wrvptptr
-	.ent wrvptptr
-wrvptptr:
-	.prologue 0
-	call_pal PAL_wrvptptr
-	ret	($26)
-	.end wrvptptr
 
 	#
 	# The following two functions are needed for supporting SRM PALcode

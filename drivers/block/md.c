@@ -817,12 +817,12 @@ struct md_thread *md_register_thread (void (*run) (void *), void *data)
 	struct md_thread *thread = (struct md_thread *)
 		kmalloc(sizeof(struct md_thread), GFP_KERNEL);
 	int ret;
-	DECLARE_MUTEX_LOCKED(sem);
+	struct semaphore sem = MUTEX_LOCKED;
 	
 	if (!thread) return NULL;
 	
 	memset(thread, 0, sizeof(struct md_thread));
-	init_waitqueue_head(&thread->wqueue);
+	init_waitqueue(&thread->wqueue);
 	
 	thread->sem = &sem;
 	thread->run = run;
@@ -838,7 +838,7 @@ struct md_thread *md_register_thread (void (*run) (void *), void *data)
 
 void md_unregister_thread (struct md_thread *thread)
 {
-	DECLARE_MUTEX_LOCKED(sem);
+	struct semaphore sem = MUTEX_LOCKED;
 	
 	thread->sem = &sem;
 	thread->run = NULL;

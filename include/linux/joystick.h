@@ -217,7 +217,7 @@ struct js_dev {
 	struct js_dev *next;
 	struct js_list *list;
 	struct js_port *port;
-	wait_queue_head_t wait;
+	struct wait_queue *wait;
 	struct js_data cur;
 	struct js_data new;
 	struct js_corr *corr;

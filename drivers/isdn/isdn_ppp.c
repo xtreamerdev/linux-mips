@@ -359,7 +359,8 @@ isdn_ppp_wakeup_daemon(isdn_net_local * lp)
 
 	ippp_table[lp->ppp_slot]->state = IPPP_OPEN | IPPP_CONNECT | IPPP_NOBLOCK;
 
-	wake_up_interruptible(&ippp_table[lp->ppp_slot]->wq);
+	if (ippp_table[lp->ppp_slot]->wq)
+		wake_up_interruptible(&ippp_table[lp->ppp_slot]->wq);
 }
 
 /*
@@ -376,7 +377,7 @@ isdn_ppp_closewait(int slot)
 		return 0;
 	is = ippp_table[slot];
 
-	if (is->state)
+	if (is->state && is->wq)
 		wake_up_interruptible(&is->wq);
 
 	is->state = IPPP_CLOSEWAIT;
@@ -436,9 +437,8 @@ isdn_ppp_open(int min, struct file *file)
 	is->mru = 1524;         /* MRU, default 1524 */
 	is->maxcid = 16;        /* VJ: maxcid */
 	is->tk = current;
-	/* next two are redundant, but be paranoid */ 
-	init_waitqueue_head(&is->wq);  /* read() wait queue */
-	init_waitqueue_head(&is->wql);  /* select() wait queue */
+	is->wq = NULL;          /* read() wait queue */
+	is->wq1 = NULL;         /* select() wait queue */
 	is->first = is->rq + NUM_RCV_BUFFS - 1;	/* receive queue */
 	is->last = is->rq;
 	is->minor = min;
@@ -777,7 +777,8 @@ isdn_ppp_fill_rq(unsigned char *buf, int len, int proto, int slot)
 	is->last = bl->next;
 	restore_flags(flags);
 
-	wake_up_interruptible(&is->wq);
+	if (is->wq)
+		wake_up_interruptible(&is->wq);
 
 	return len;
 }
@@ -910,8 +911,6 @@ isdn_ppp_init(void)
 			return -1;
 		}
 		memset((char *) ippp_table[i], 0, sizeof(struct ippp_struct));
-		init_waitqueue_head(&ippp_table[i]->wq); 
-		init_waitqueue_head(&ippp_table[i]->wql); 
 		ippp_table[i]->state = 0;
 		ippp_table[i]->first = ippp_table[i]->rq + NUM_RCV_BUFFS - 1;
 		ippp_table[i]->last = ippp_table[i]->rq;

@@ -429,10 +429,6 @@ static struct dev_name_struct {
 	{ "hdj",     0x3840 },
 	{ "hdk",     0x3900 },
 	{ "hdl",     0x3940 },
-	{ "hdm",     0x5800 },
-	{ "hdn",     0x5840 },
-	{ "hdo",     0x5900 },
-	{ "hdp",     0x5940 },
 #endif
 #ifdef CONFIG_BLK_DEV_SD
 	{ "sda",     0x0800 },
@@ -946,11 +942,7 @@ static int __init checksetup(char *line)
 
 #ifdef CONFIG_BLK_DEV_IDE
 	/* ide driver needs the basic string, rather than pre-processed values */
-	if (!strncmp(line,"ide",3) ||
-#ifdef CONFIG_BLK_DEV_VIA82C586
-	    !strncmp(line,"splitfifo",9) ||
-#endif /* CONFIG_BLK_DEV_VIA82C586 */
-	    (!strncmp(line,"hd",2) && line[2] != '=')) {
+	if (!strncmp(line,"ide",3) || (!strncmp(line,"hd",2) && line[2] != '=')) {
 		ide_setup(line);
 		return 1;
 	}

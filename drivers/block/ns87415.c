@@ -17,9 +17,9 @@
 #include <linux/hdreg.h>
 #include <linux/pci.h>
 #include <linux/delay.h>
-#include <linux/ide.h>
-
 #include <asm/io.h>
+#include "ide.h"
+
 
 static unsigned int ns87415_count = 0, ns87415_control[MAX_HWIFS] = { 0 };
 
@@ -49,8 +49,25 @@ static void ns87415_prepare_drive (ide_drive_t *drive, unsigned int use_dma)
 	new = use_dma ? ((new & ~other) | bit) : (new & ~bit);
 
 	if (new != *old) {
+		unsigned char stat;
+
+		/*
+		 * Don't change DMA engine settings while Write Buffers
+		 * are busy.
+		 */
+		(void) pci_read_config_byte(dev, 0x43, &stat);
+		while (stat & 0x03) {
+			udelay(1);
+			(void) pci_read_config_byte(dev, 0x43, &stat);
+		}
+
 		*old = new;
 		(void) pci_write_config_dword(dev, 0x40, new);
+
+		/*
+		 * And let things settle...
+		 */
+		udelay(10);
 	}
 
 	__restore_flags(flags);	/* local CPU only */

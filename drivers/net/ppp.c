@@ -2834,7 +2834,7 @@ ppp_alloc(void)
 	ppp->magic = PPP_MAGIC;
 	ppp->next = NULL;
 	ppp->inuse = 1;
-	init_waitqueue_head(&ppp->read_wait);
+	ppp->read_wait = NULL;
 
 	/*
 	 * Make up a suitable name for this device

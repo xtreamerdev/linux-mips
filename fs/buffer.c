@@ -70,7 +70,7 @@ static kmem_cache_t *bh_cachep;
 
 static struct buffer_head * unused_list = NULL;
 static struct buffer_head * reuse_list = NULL;
-static DECLARE_WAIT_QUEUE_HEAD(buffer_wait);
+static struct wait_queue * buffer_wait = NULL;
 
 static int nr_buffers = 0;
 static int nr_buffers_type[NR_LIST] = {0,};
@@ -129,9 +129,10 @@ void wakeup_bdflush(int);
 void __wait_on_buffer(struct buffer_head * bh)
 {
 	struct task_struct *tsk = current;
-	DECLARE_WAITQUEUE(wait, tsk);
+	struct wait_queue wait;
 
 	bh->b_count++;
+	wait.task = tsk;
 	add_wait_queue(&bh->b_wait, &wait);
 repeat:
 	tsk->state = TASK_UNINTERRUPTIBLE;
@@ -927,7 +928,6 @@ static void put_unused_buffer_head(struct buffer_head * bh)
 	}
 
 	memset(bh,0,sizeof(*bh));
-	init_waitqueue_head(&bh->b_wait);
 	nr_unused_buffer_heads++;
 	bh->b_next_free = unused_list;
 	unused_list = bh;
@@ -985,7 +985,6 @@ static struct buffer_head * get_unused_buffer_head(int async)
 	 */
 	if((bh = kmem_cache_alloc(bh_cachep, SLAB_BUFFER)) != NULL) {
 		memset(bh, 0, sizeof(*bh));
-		init_waitqueue_head(&bh->b_wait);
 		nr_buffer_heads++;
 		return bh;
 	}
@@ -1010,7 +1009,6 @@ static struct buffer_head * get_unused_buffer_head(int async)
 	if(!async &&
 	   (bh = kmem_cache_alloc(bh_cachep, SLAB_KERNEL)) != NULL) {
 		memset(bh, 0, sizeof(*bh));
-		init_waitqueue_head(&bh->b_wait);
 		nr_buffer_heads++;
 		return bh;
 	}
@@ -1031,7 +1029,7 @@ static struct buffer_head * get_unused_buffer_head(int async)
 static struct buffer_head * create_buffers(unsigned long page, 
 						unsigned long size, int async)
 {
-	DECLARE_WAITQUEUE(wait, current);
+	struct wait_queue wait = { current, NULL };
 	struct buffer_head *bh, *head;
 	long offset;
 
@@ -1555,8 +1553,8 @@ void __init buffer_init(unsigned long memory_size)
  * response to dirty buffers.  Once this process is activated, we write back
  * a limited number of buffers to the disks and then go back to sleep again.
  */
-static DECLARE_WAIT_QUEUE_HEAD(bdflush_wait);
-static DECLARE_WAIT_QUEUE_HEAD(bdflush_done);
+static struct wait_queue * bdflush_wait = NULL;
+static struct wait_queue * bdflush_done = NULL;
 struct task_struct *bdflush_tsk = 0;
 
 void wakeup_bdflush(int wait)
