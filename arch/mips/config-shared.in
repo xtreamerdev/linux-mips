@@ -176,6 +176,10 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    fi
 
    bool '   Support for Bus Watcher statistics' CONFIG_SIBYTE_BUS_WATCHER
+   if [ "$CONFIG_SIBYTE_TBPROF" = "n" ]; then
+      dep_bool '     Capture bus trace before bus error' CONFIG_SIBYTE_BW_TRACE $CONFIG_SIBYTE_BUS_WATCHER
+   fi
+
    bool '   Support for SB1/SOC profiling - SB1/SCD perf counters' CONFIG_SIBYTE_SB1250_PROF
    bool '   Support for ZBbus profiling' CONFIG_SIBYTE_TBPROF
 

@@ -2173,6 +2173,13 @@ CONFIG_SIBYTE_BUS_WATCHER
   Handle and keep statistics on the bus error interrupts (COR_ECC,
   BAD_ECC, IO_BUS).
 
+Bus trace dump on bus error
+CONFIG_SIBYTE_BW_TRACE
+  Run a continuous bus trace, dumping the raw data as soon as a ZBbus
+  error is detected.  Cannot work if ZBbus profiling is turned on, and
+  also will interfere with JTAG-based trace buffer activity.  Raw
+  buffer data is dumped to console, and must be processed off-line.
+
 Corelis Debugger
 CONFIG_SB1XXX_CORELIS
   Select compile flags that produce code that can be processed by the
