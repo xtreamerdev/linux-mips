@@ -345,3 +345,6 @@ sys_call_table:
 	PTR	sys_ni_syscall
 	PTR	sys_ni_syscall			/* 5210 */
 	PTR	sys_rt_sigreturn
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_semtimedop

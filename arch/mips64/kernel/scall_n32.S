@@ -348,7 +348,7 @@ EXPORT(sysn32_call_table)
 	PTR	sys_fcntl
 	PTR	sys_ni_syscall
 	PTR	sys_ni_syscall
-	PTR	sys_ni_syscall			/* 6215 */
+	PTR	sys_semtimedop			/* 6215 */
 	PTR	sys_ni_syscall
 	PTR	sys_ni_syscall
 	PTR	sys_ni_syscall

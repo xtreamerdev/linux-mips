@@ -480,11 +480,14 @@
 #define __NR_unused209			(__NR_Linux + 209)
 #define __NR_unused210			(__NR_Linux + 210)
 #define __NR_rt_sigreturn		(__NR_Linux + 211)
+#define __NR_unused212			(__NR_Linux + 212)
+#define __NR_unused213			(__NR_Linux + 213)
+#define __NR_semtimedop			(__NR_Linux + 214)
 
 /*
  * Offset of the last Linux flavoured syscall
  */
-#define __NR_Linux_syscalls		211
+#define __NR_Linux_syscalls		214
 
 /*
  * Linux N32 syscalls are in the range from 6000 to 6999.
@@ -705,7 +708,7 @@
 #define __NR_N32_fcntl64		(__NR_N32_Linux + 212)
 #define __NR_N32_unused213		(__NR_N32_Linux + 213)
 #define __NR_N32_unused214		(__NR_N32_Linux + 214)
-#define __NR_N32_unused215		(__NR_N32_Linux + 215)
+#define __NR_N32_restart_syscall	(__NR_N32_Linux + 215)
 #define __NR_N32_unused216		(__NR_N32_Linux + 216)
 #define __NR_N32_unused217		(__NR_N32_Linux + 217)
 #define __NR_N32_unused218		(__NR_N32_Linux + 218)
