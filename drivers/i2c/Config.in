@@ -54,7 +54,9 @@ if [ "$CONFIG_I2C" != "n" ]; then
       dep_tristate '  MAX1617 Temperature Sensor' CONFIG_I2C_MAX1617 $CONFIG_I2C_ALGO_SIBYTE
    fi
 
-  dep_tristate 'I2C SGI interfaces' CONFIG_I2C_ALGO_SGI $CONFIG_I2C
+  if [ "$CONFIG_SGI_IP22" = "y" ]; then
+     dep_tristate 'I2C SGI interfaces' CONFIG_I2C_ALGO_SGI $CONFIG_I2C
+  fi
  
 # This is needed for automatic patch generation: sensors code starts here
 # This is needed for automatic patch generation: sensors code ends here
