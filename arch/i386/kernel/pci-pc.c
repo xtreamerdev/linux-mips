@@ -1016,7 +1016,8 @@ struct irq_routing_table * __devinit pcibios_get_irq_routing_table(void)
 		"xor %%ah, %%ah\n"
 		"1:"
 		: "=a" (ret),
-		  "=b" (map)
+		  "=b" (map),
+		  "+m" (opt)
 		: "0" (PCIBIOS_GET_ROUTING_OPTIONS),
 		  "1" (0),
 		  "D" ((long) &opt),
@@ -1414,7 +1415,13 @@ void __devinit pcibios_config_init(void)
 	return;
 }
 
-int use_acpi_pci __initdata = 1;
+static int use_acpi_pci __initdata = 1;
+
+__init void pci_disable_acpi(void)
+{
+	use_acpi_pci = 0;
+	return;
+}
 
 void __init pcibios_init(void)
 {
@@ -1426,6 +1433,8 @@ void __init pcibios_init(void)
 		printk(KERN_WARNING "PCI: System does not support PCI\n");
 		return;
 	}
+
+	pcibios_set_cacheline_size();
 
 	printk(KERN_INFO "PCI: Probing PCI hardware\n");
 #ifdef CONFIG_ACPI_PCI
@@ -1502,7 +1511,7 @@ char * __devinit  pcibios_setup(char *str)
 		pcibios_last_bus = simple_strtol(str+8, NULL, 0);
 		return NULL;
 	} else if (!strncmp(str, "noacpi", 6)) {
-		use_acpi_pci = 0;
+		pci_disable_acpi();
 		return NULL;
 	}
 	return str;

@@ -116,6 +116,9 @@ extern int acpi_lapic;
 #ifdef CONFIG_X86_IO_APIC
 extern int acpi_ioapic;
 #else
+static inline void disable_ioapic_setup(void)
+{ }
+
 #define acpi_ioapic 0
 #endif
 
@@ -141,6 +144,8 @@ extern void acpi_reserve_bootmem(void);
 #define boot_cpu_physical_apicid boot_cpu_id
 
 extern void mp_config_ioapic_for_sci(int irq);
+
+extern int use_acpi_pci;
 
 #endif /*__KERNEL__*/
 

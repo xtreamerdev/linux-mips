@@ -44,6 +44,7 @@
 #include <asm/io_apic.h>
 #include <asm/proto.h>
 
+extern int acpi_disabled;
 
 #define PREFIX			"ACPI: "
 
@@ -113,7 +114,6 @@ __acpi_map_table (
 	return ((unsigned char *) base + offset);
 #endif
 }
-
 
 #ifdef CONFIG_X86_LOCAL_APIC
 
@@ -291,6 +291,33 @@ acpi_parse_hpet (
 	return 0;
 } 
 
+#ifdef CONFIG_ACPI_BUS
+/*
+ * Set specified PIC IRQ to level triggered mode.
+ *
+ * Port 0x4d0-4d1 are ECLR1 and ECLR2, the Edge/Level Control Registers
+ * for the 8259 PIC.  bit[n] = 1 means irq[n] is Level, otherwise Edge.
+ * ECLR1 is IRQ's 0-7 (IRQ 0, 1, 2 must be 0)
+ * ECLR2 is IRQ's 8-15 (IRQ 8, 13 must be 0)
+ *
+ * As the BIOS should have done this for us,
+ * print a warning if the IRQ wasn't already set to level.
+ */
+
+void acpi_pic_set_level_irq(unsigned int irq)
+{
+	unsigned char mask = 1 << (irq & 7);
+	unsigned int port = 0x4d0 + (irq >> 3);
+	unsigned char val = inb(port);
+
+	if (!(val & mask)) {
+		printk(KERN_WARNING PREFIX "IRQ %d was Edge Triggered, "
+			"setting to Level Triggerd\n", irq);
+		outb(val | mask, port);
+	}
+}
+#endif /* CONFIG_ACPI_BUS */
+
 static unsigned long __init
 acpi_scan_rsdp (
 	unsigned long		start,
@@ -352,6 +379,28 @@ acpi_boot_init (void)
 #ifdef CONFIG_X86_LOCAL_APIC
 
 	/* 
+	 * ACPI interpreter is required to complete interrupt setup,
+	 * so if it is off, don't enumerate the io-apics with ACPI.
+	 * If MPS is present, it will handle them,
+	 * otherwise the system will stay in PIC mode
+	 */
+	if (acpi_disabled) {
+		return 1;
+	}
+
+	if (!use_acpi_pci)
+		return 0; 
+
+	/* If "nolocalapic" is specified don't look further */
+	extern int apic_disabled;
+	if (apic_disabled) {
+		printk(KERN_INFO PREFIX "Skipping Local/IO-APIC probe due to \"nolocalapic\"\n");
+		return 0;	
+	}	
+	printk(KERN_INFO PREFIX "Parsing Local APIC info in MADT\n"); 
+	
+
+	/* 
 	 * MADT
 	 * ----
 	 * Parse the Multiple APIC Description Table (MADT), if exists.
@@ -410,6 +459,15 @@ acpi_boot_init (void)
 #endif /*CONFIG_X86_LOCAL_APIC*/
 
 #ifdef CONFIG_X86_IO_APIC
+
+	/* 
+	 * if "noapic" boot option, don't look for IO-APICs
+	 */
+	if (ioapic_setup_disabled()) {
+		printk(KERN_INFO PREFIX "Skipping IOAPIC probe "
+			"due to 'noapic' option.\n");
+		return 1;
+	}
 
 	/* 
 	 * I/O APIC 

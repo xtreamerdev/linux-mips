@@ -1353,9 +1353,9 @@ pcnet32_rx(struct net_device *dev)
 		    skb_reserve(skb,2); /* 16 byte align */
 		    skb_put(skb,pkt_len);	/* Make room */
                     pci_dma_sync_single(lp->pci_dev, 
-				    lp->rx_dma_addr[entry],
-				    pkt_len,
-				    PCI_DMA_FROMDEVICE);
+		                        lp->rx_dma_addr[entry],
+		                        pkt_len,
+		                        PCI_DMA_FROMDEVICE);
 		    eth_copy_and_sum(skb,
 				     (unsigned char *)(lp->rx_skbuff[entry]->tail),
 				     pkt_len,0);

@@ -583,22 +583,25 @@ void clear_inode(struct inode *inode)
  * Dispose-list gets a local list with local inodes in it, so it doesn't
  * need to worry about list corruption and SMP locks.
  */
-static void dispose_list(struct list_head * head)
+static void dispose_list(struct list_head *head)
 {
-	struct list_head * inode_entry;
-	struct inode * inode;
+	int nr_disposed = 0;
 
-	while ((inode_entry = head->next) != head)
-	{
-		list_del(inode_entry);
+	while (!list_empty(head)) {
+		struct inode *inode;
 
-		inode = list_entry(inode_entry, struct inode, i_list);
+		inode = list_entry(head->next, struct inode, i_list);
+		list_del(&inode->i_list);
+
 		if (inode->i_data.nrpages)
 			truncate_inode_pages(&inode->i_data, 0);
 		clear_inode(inode);
 		destroy_inode(inode);
-		inodes_stat.nr_inodes--;
+		nr_disposed++;
 	}
+	spin_lock(&inode_lock);
+	inodes_stat.nr_inodes -= nr_disposed;
+	spin_unlock(&inode_lock);
 }
 
 /*
@@ -942,6 +945,37 @@ retry:
 	}
 	goto retry;
 	
+}
+
+/**
+ *	ilookup - search for an inode in the inode cache
+ *	@sb:         super block of file system to search
+ *	@ino:        inode number to search for
+ *
+ *	If the inode is in the cache, the inode is returned with an
+ *	incremented reference count.
+ *
+ *	Otherwise, %NULL is returned.
+ *
+ *	This is almost certainly not the function you are looking for.
+ *	If you think you need to use this, consult an expert first.
+ */
+struct inode *ilookup(struct super_block *sb, unsigned long ino)
+{
+	struct list_head * head = inode_hashtable + hash(sb,ino);
+	struct inode * inode;
+
+	spin_lock(&inode_lock);
+	inode = find_inode(sb, ino, head, NULL, NULL);
+	if (inode) {
+		__iget(inode);
+		spin_unlock(&inode_lock);
+		wait_on_inode(inode);
+		return inode;
+	}
+	spin_unlock(&inode_lock);
+
+	return inode;
 }
 
 struct inode *igrab(struct inode *inode)

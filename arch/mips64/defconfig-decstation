@@ -27,6 +27,7 @@ CONFIG_EXPERIMENTAL=y
 # CONFIG_MIPS_PB1000 is not set
 # CONFIG_MIPS_PB1100 is not set
 # CONFIG_MIPS_PB1500 is not set
+# CONFIG_MIPS_HYDROGEN3 is not set
 # CONFIG_MIPS_XXS1500 is not set
 # CONFIG_MIPS_MTX1 is not set
 # CONFIG_COGENT_CSB250 is not set
@@ -157,6 +158,7 @@ CONFIG_BINFMT_ELF32=y
 # CONFIG_BLK_CPQ_DA is not set
 # CONFIG_BLK_CPQ_CISS_DA is not set
 # CONFIG_CISS_SCSI_TAPE is not set
+# CONFIG_CISS_MONITOR_THREAD is not set
 # CONFIG_BLK_DEV_DAC960 is not set
 # CONFIG_BLK_DEV_UMEM is not set
 # CONFIG_BLK_DEV_LOOP is not set
@@ -200,6 +202,12 @@ CONFIG_IP_PNP_BOOTP=y
 # CONFIG_SYN_COOKIES is not set
 # CONFIG_IPV6 is not set
 # CONFIG_KHTTPD is not set
+
+#
+#    SCTP Configuration (EXPERIMENTAL)
+#
+CONFIG_IPV6_SCTP__=y
+# CONFIG_IP_SCTP is not set
 # CONFIG_ATM is not set
 # CONFIG_VLAN_8021Q is not set
 
@@ -290,6 +298,7 @@ CONFIG_SCSI_DECNCR=y
 # CONFIG_SCSI_IN2000 is not set
 # CONFIG_SCSI_AM53C974 is not set
 # CONFIG_SCSI_MEGARAID is not set
+# CONFIG_SCSI_MEGARAID2 is not set
 # CONFIG_SCSI_BUSLOGIC is not set
 # CONFIG_SCSI_DMX3191D is not set
 # CONFIG_SCSI_DTC3280 is not set
@@ -482,6 +491,7 @@ CONFIG_UNIX98_PTY_COUNT=256
 # CONFIG_NVRAM is not set
 # CONFIG_RTC is not set
 # CONFIG_MIPS_RTC is not set
+# CONFIG_DS1742 is not set
 # CONFIG_DTLK is not set
 # CONFIG_R3964 is not set
 # CONFIG_APPLICOM is not set
@@ -491,6 +501,10 @@ CONFIG_UNIX98_PTY_COUNT=256
 #
 # CONFIG_FTAPE is not set
 # CONFIG_AGP is not set
+
+#
+# Direct Rendering Manager (XFree86 DRI support)
+#
 # CONFIG_DRM is not set
 
 #
@@ -614,6 +628,11 @@ CONFIG_ULTRIX_PARTITION=y
 # CONFIG_USB is not set
 
 #
+# Support for USB gadgets
+#
+# CONFIG_USB_GADGET is not set
+
+#
 # Bluetooth support
 #
 # CONFIG_BLUEZ is not set
@@ -627,16 +646,3 @@ CONFIG_CROSSCOMPILE=y
 # CONFIG_GDB_CONSOLE is not set
 # CONFIG_DEBUG_INFO is not set
 # CONFIG_MAGIC_SYSRQ is not set
-# CONFIG_MIPS_UNCACHED is not set
-
-#
-# Cryptographic options
-#
-# CONFIG_CRYPTO is not set
-
-#
-# Library routines
-#
-# CONFIG_CRC32 is not set
-# CONFIG_ZLIB_INFLATE is not set
-# CONFIG_ZLIB_DEFLATE is not set
