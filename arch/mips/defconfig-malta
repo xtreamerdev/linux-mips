@@ -225,7 +225,6 @@ CONFIG_IP_PNP_BOOTP=y
 #
 #    SCTP Configuration (EXPERIMENTAL)
 #
-CONFIG_IPV6_SCTP__=y
 # CONFIG_IP_SCTP is not set
 # CONFIG_ATM is not set
 # CONFIG_VLAN_8021Q is not set
@@ -421,6 +420,7 @@ CONFIG_PCNET32=y
 # CONFIG_FEALNX is not set
 # CONFIG_NATSEMI is not set
 # CONFIG_NE2K_PCI is not set
+# CONFIG_FORCEDETH is not set
 # CONFIG_NE3210 is not set
 # CONFIG_ES3210 is not set
 # CONFIG_8139CP is not set
