@@ -582,9 +582,9 @@ static __inline__ int __test_and_change_bit(int nr, volatile void * addr)
  * @nr: bit number to test
  * @addr: Address to start counting from
  */
-static __inline__ int test_bit(int nr, volatile void *addr)
+static inline int test_bit(int nr, volatile void *addr)
 {
-	return ((1UL << (nr & 31)) & (((const unsigned int *) addr)[nr >> 5])) != 0;
+	return 1UL & (((const volatile unsigned long *) addr)[nr >> SZLONG_LOG] >> (nr & SZLONG_MASK));
 }
 
 /*
