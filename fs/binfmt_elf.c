@@ -98,10 +98,16 @@ static void set_brk(unsigned long start, unsigned long end)
 static void padzero(unsigned long elf_bss)
 {
 	unsigned long nbyte;
+printk("%s, %d\n", __FILE__, __LINE__);
 
 	nbyte = ELF_PAGEOFFSET(elf_bss);
+printk("%s, %d\n", __FILE__, __LINE__);
 	if (nbyte) {
+printk("%s, %d: nbyte = %d\n", __FILE__, __LINE__, nbyte);
 		nbyte = ELF_MIN_ALIGN - nbyte;
+printk("%s, %d: elf_bss = %lx, nbyte = %d\n", __FILE__, __LINE__, elf_bss, nbyte);
+put_user(0, (char *) elf_bss);
+printk("%s, %d\n", __FILE__, __LINE__);
 		clear_user((void *) elf_bss, nbyte);
 	}
 }
@@ -254,15 +260,19 @@ static unsigned long load_elf_interp(struct elfhdr * interp_elf_ex,
 	unsigned long last_bss = 0, elf_bss = 0;
 	unsigned long error = ~0UL;
 	int retval, i, size;
+printk("%s, %d\n", __FILE__, __LINE__);
 
 	/* First of all, some simple consistency checks */
 	if (interp_elf_ex->e_type != ET_EXEC &&
 	    interp_elf_ex->e_type != ET_DYN)
 		goto out;
+printk("%s, %d\n", __FILE__, __LINE__);
 	if (!elf_check_arch(interp_elf_ex))
 		goto out;
+printk("%s, %d\n", __FILE__, __LINE__);
 	if (!interpreter->f_op || !interpreter->f_op->mmap)
 		goto out;
+printk("%s, %d\n", __FILE__, __LINE__);
 
 	/*
 	 * If the size of this structure has changed, then punt, since
@@ -270,24 +280,31 @@ static unsigned long load_elf_interp(struct elfhdr * interp_elf_ex,
 	 */
 	if (interp_elf_ex->e_phentsize != sizeof(struct elf_phdr))
 		goto out;
+printk("%s, %d\n", __FILE__, __LINE__);
 	if (interp_elf_ex->e_phnum > 65536U / sizeof(struct elf_phdr))
 		goto out;
+printk("%s, %d\n", __FILE__, __LINE__);
 
 	/* Now read in all of the header information */
 
 	size = sizeof(struct elf_phdr) * interp_elf_ex->e_phnum;
 	if (size > ELF_MIN_ALIGN)
 		goto out;
+printk("%s, %d\n", __FILE__, __LINE__);
 	elf_phdata = (struct elf_phdr *) kmalloc(size, GFP_KERNEL);
+printk("%s, %d\n", __FILE__, __LINE__);
 	if (!elf_phdata)
 		goto out;
+printk("%s, %d\n", __FILE__, __LINE__);
 
 	retval = kernel_read(interpreter,interp_elf_ex->e_phoff,(char *)elf_phdata,size);
+printk("%s, %d\n", __FILE__, __LINE__);
 	error = retval;
 	if (retval < 0)
 		goto out_close;
 
 	eppnt = elf_phdata;
+printk("%s, %d\n", __FILE__, __LINE__);
 	for (i=0; i<interp_elf_ex->e_phnum; i++, eppnt++) {
 	  if (eppnt->p_type == PT_LOAD) {
 	    int elf_type = MAP_PRIVATE | MAP_DENYWRITE;
@@ -310,6 +327,7 @@ static unsigned long load_elf_interp(struct elfhdr * interp_elf_ex,
 		load_addr = map_addr - ELF_PAGESTART(vaddr);
 		load_addr_set = 1;
 	    }
+printk("%s, %d\n", __FILE__, __LINE__);
 
 	    /*
 	     * Find the end of the file mapping for this phdr, and keep
@@ -328,6 +346,7 @@ static unsigned long load_elf_interp(struct elfhdr * interp_elf_ex,
 		last_bss = k;
 	  }
 	}
+printk("%s, %d\n", __FILE__, __LINE__);
 
 	/* Now use mmap to map the library into memory. */
 
@@ -338,14 +357,18 @@ static unsigned long load_elf_interp(struct elfhdr * interp_elf_ex,
 	 * last bss page.
 	 */
 	padzero(elf_bss);
+printk("%s, %d\n", __FILE__, __LINE__);
 	elf_bss = ELF_PAGESTART(elf_bss + ELF_MIN_ALIGN - 1);	/* What we have mapped so far */
+printk("%s, %d\n", __FILE__, __LINE__);
 
 	/* Map the last of the bss segment */
 	if (last_bss > elf_bss)
 		do_brk(elf_bss, last_bss - elf_bss);
+printk("%s, %d\n", __FILE__, __LINE__);
 
 	*interp_load_addr = load_addr;
 	error = ((unsigned long) interp_elf_ex->e_entry) + load_addr;
+printk("%s, %d\n", __FILE__, __LINE__);
 
 out_close:
 	kfree(elf_phdata);
@@ -428,6 +451,7 @@ static int load_elf_binary(struct linux_binprm * bprm, struct pt_regs * regs)
 	struct elfhdr interp_elf_ex;
   	struct exec interp_ex;
 	char passed_fileno[6];
+printk("%s, %d\n", __FILE__, __LINE__);
 	
 	/* Get the exec-header */
 	elf_ex = *((struct elfhdr *) bprm->buf);
@@ -811,6 +835,7 @@ static int load_elf_library(struct file *file)
 	unsigned long elf_bss, bss, len;
 	int retval, error, i, j;
 	struct elfhdr elf_ex;
+printk("%s, %d\n", __FILE__, __LINE__);
 
 	error = -ENOEXEC;
 	retval = kernel_read(file, 0, (char *) &elf_ex, sizeof(elf_ex));

@@ -746,7 +746,8 @@ MODULE_AUTHOR("Justin Carlson <carlson@sibyte.com>");
  * Worst that can happen for now, though, is dropped characters.
  */
 
-static void ser_console_write(struct console *cons, const char *str,
+//static 
+void ser_console_write(struct console *cons, const char *str,
                               unsigned int count)
 {
 	unsigned int i;

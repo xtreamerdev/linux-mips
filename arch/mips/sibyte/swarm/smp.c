@@ -50,8 +50,6 @@ int prom_boot_secondary(int cpu, unsigned long sp, unsigned long gp)
 
 void prom_init_secondary(void)
 {
-	
-
 	/* Set up kseg0 to be cachable coherent */
 	clear_cp0_config(CONF_CM_CMASK);
 	set_cp0_config(0x5);
@@ -86,7 +84,6 @@ void __init smp_boot_cpus(void)
 {
 	int i;
 
-	set_context(0);
 	smp_num_cpus = prom_setup_smp();
 	init_new_context(current, &init_mm);
 	current->processor = 0;

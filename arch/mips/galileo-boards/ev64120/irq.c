@@ -406,7 +406,7 @@ void galileo_irq_setup(void)
 	/*
 	 * Clear all of the interrupts while we change the able around a bit.
 	 */
-	clear_cp0_status(ST0_IM | ST0_BEV);
+	clear_cp0_status(ST0_IM);
 
 	/* Sets the exception_handler array. */
 	set_except_vector(0, galileo_handle_int);

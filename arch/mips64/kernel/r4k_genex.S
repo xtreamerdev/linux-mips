@@ -18,16 +18,16 @@
 #include <asm/exception.h>
 #include <asm/r4kcacheops.h>
 
-	BUILD_HANDLER adel ade ade silent		/* #4  */
-	BUILD_HANDLER ades ade ade silent		/* #5  */
-	BUILD_HANDLER ibe ibe cli silent		/* #6  */
-	BUILD_HANDLER dbe dbe cli silent		/* #7  */
-	BUILD_HANDLER bp bp sti silent			/* #9  */
-	BUILD_HANDLER ri ri sti silent			/* #10 */
-	BUILD_HANDLER cpu cpu sti silent		/* #11 */
-	BUILD_HANDLER ov ov sti silent			/* #12 */
-	BUILD_HANDLER tr tr sti silent			/* #13 */
-	BUILD_HANDLER fpe fpe fpe silent		/* #15 */
+	BUILD_HANDLER adel ade ade verbose		/* #4  */
+	BUILD_HANDLER ades ade ade verbose		/* #5  */
+	BUILD_HANDLER ibe ibe cli verbose		/* #6  */
+	BUILD_HANDLER dbe dbe cli verbose		/* #7  */
+	BUILD_HANDLER bp bp sti verbose			/* #9  */
+	BUILD_HANDLER ri ri sti verbose			/* #10 */
+	BUILD_HANDLER cpu cpu sti verbose		/* #11 */
+	BUILD_HANDLER ov ov sti verbose			/* #12 */
+	BUILD_HANDLER tr tr sti verbose			/* #13 */
+	BUILD_HANDLER fpe fpe fpe verbose		/* #15 */
 	BUILD_HANDLER watch watch sti verbose		/* #23 */
 	BUILD_HANDLER mcheck mcheck cli verbose		/* #24 */
 	BUILD_HANDLER reserved reserved sti verbose	/* others */
