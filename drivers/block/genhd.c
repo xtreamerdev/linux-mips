@@ -840,7 +840,7 @@ static int sgi_partition(struct gendisk *hd, kdev_t dev, unsigned long first_sec
 	 */
 	for(i = 0; i < 16; i++, p++) {
 		blocks = be32_to_cpu(p->num_blocks);
-                start  = be32_to_cpu(p->first_block);
+		start  = be32_to_cpu(p->first_block);
 		if(!blocks)
 			continue;
 		add_partition(hd, current_minor, start, blocks);

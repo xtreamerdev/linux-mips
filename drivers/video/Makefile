@@ -214,10 +214,6 @@ ifdef CONFIG_FB_G364
 L_OBJS := $(L_OBJS) g364fb.o
 endif
 
-ifdef CONFIG_FB_G364
-L_OBJS := $(L_OBJS) g364fb.o
-endif
-
 ifdef CONFIG_FB_FM2
 L_OBJS := $(L_OBJS) fm2fb.o
 endif
