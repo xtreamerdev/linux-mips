@@ -752,7 +752,6 @@ fi
 
 if [ "$CONFIG_CPU_LITTLE_ENDIAN" = "n" ]; then
    bool 'Include IRIX binary compatibility' CONFIG_BINFMT_IRIX
-   bool 'Include forward keyboard' CONFIG_FORWARD_KEYBOARD
 fi
 
 if [ "$CONFIG_CPU_R10000" = "y" ]; then
