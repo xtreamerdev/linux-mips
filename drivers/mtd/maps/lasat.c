@@ -83,7 +83,9 @@ static int __init init_sp(void)
        	printk(KERN_NOTICE "Unprotecting flash\n");
 	*lasat_misc->flash_wp_reg |= 1 << lasat_misc->flash_wp_bit;
 
-	sp_map.map_priv_1 = lasat_flash_partition_start(LASAT_MTD_BOOTLOADER);
+	sp_map.map_priv_1 = ioremap_nocache(
+		lasat_flash_partition_start(LASAT_MTD_BOOTLOADER),
+		lasat_board_info.li_flash_size);
 	sp_map.size = lasat_board_info.li_flash_size;
 
        	printk(KERN_NOTICE "sp flash device: %lx at %lx\n", 
