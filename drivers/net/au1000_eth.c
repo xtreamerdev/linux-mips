@@ -1284,11 +1284,11 @@ static int au1000_tx(struct sk_buff *skb, struct net_device *dev)
 
 	pDB = aup->tx_db_inuse[aup->tx_head];
 	memcpy((void *)pDB->vaddr, skb->data, skb->len);
-	if (skb->len < MAC_MIN_PKT_SIZE) {
-		for (i=skb->len; i<MAC_MIN_PKT_SIZE; i++) { 
+	if (skb->len < ETH_ZLEN) {
+		for (i=skb->len; i<ETH_ZLEN; i++) { 
 			((char *)pDB->vaddr)[i] = 0;
 		}
-		ptxd->len = MAC_MIN_PKT_SIZE;
+		ptxd->len = ETH_ZLEN;
 	}
 	else
 		ptxd->len = skb->len;
