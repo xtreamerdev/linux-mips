@@ -65,8 +65,8 @@ NESTED(handle_sys64, PT_SIZE, sp)
 
 ret_from_sys_call:
 	mfc0	t0, CP0_STATUS
-	xori	t0, t0, 1
 	ori	t0, t0, 1
+	xori	t0, t0, 1
 	mtc0	t0, CP0_STATUS
 	SSNOP; SSNOP; SSNOP
 
