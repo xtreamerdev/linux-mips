@@ -261,9 +261,9 @@ static void r5432_flush_cache_range_d32i32(struct mm_struct *mm,
 					 unsigned long start,
 					 unsigned long end)
 {
-	if (mm->context != 0) {
+	if (cpu_context(smp_processor_id(), mm) != 0) {
 #ifdef DEBUG_CACHE
-		printk("crange[%d,%08lx,%08lx]", (int)mm->context, start, end);
+		printk("crange[%d,%08lx,%08lx]", cpu_context(smp_processor_id(), mm), start, end);
 #endif
 		blast_dcache32(); blast_icache32();
 	}
@@ -276,9 +276,9 @@ static void r5432_flush_cache_range_d32i32(struct mm_struct *mm,
  */
 static void r5432_flush_cache_mm_d32i32(struct mm_struct *mm)
 {
-	if (mm->context != 0) {
+	if (cpu_context(smp_processor_id(), mm) != 0) {
 #ifdef DEBUG_CACHE
-		printk("cmm[%d]", (int)mm->context);
+		printk("cmm[%d]", cpu_context(smp_processor_id(), mm));
 #endif
 		r5432_flush_cache_all_d32i32();
 	}
@@ -296,11 +296,11 @@ static void r5432_flush_cache_page_d32i32(struct vm_area_struct *vma,
 	 * If ownes no valid ASID yet, cannot possibly have gotten
 	 * this page into the cache.
 	 */
-	if (mm->context == 0)
+	if (cpu_context(smp_processor_id(), mm) == 0)
 		return;
 
 #ifdef DEBUG_CACHE
-	printk("cpage[%d,%08lx]", (int)mm->context, page);
+	printk("cpage[%d,%08lx]", cpu_context(smp_processor_id(), mm), page);
 #endif
 	page &= PAGE_MASK;
 	pgdp = pgd_offset(mm, page);
