@@ -1058,8 +1058,8 @@ S:	Maintained
 JFS FILESYSTEM
 P:	Dave Kleikamp
 M:	shaggy@austin.ibm.com
-L:	jfs-discussion@oss.software.ibm.com
-W:	http://oss.software.ibm.com/developerworks/opensource/jfs/
+L:	jfs-discussion@lists.sourceforge.net
+W:	http://jfs.sourceforge.net/
 S:	Supported
 
 JOYSTICK DRIVER
@@ -1532,7 +1532,7 @@ S:	Maintained
 
 PPP OVER ETHERNET
 P:	Michal Ostrowski
-M:	mostrows@styx.uwaterloo.ca
+M:	mostrows@speakeasy.net
 S:	Maintained
 
 PRISM54 WIRELESS DRIVER
