@@ -6,7 +6,6 @@ USE_STANDARD_AS_RULE := true
 
 O_TARGET := mm.o
 
-export-objs			+= umap.o
 obj-y				:= extable.o init.o fault.o loadmmu.o \
 				   tlbex-r4k.o
 
@@ -25,8 +24,6 @@ obj-$(CONFIG_R5000_CPU_SCACHE)	+= r5k-sc.o
 # Debug TLB exception handler, currently unused
 #
 #obj-y				+=  tlb-dbg-r4k.o
-
-obj-$(CONFIG_SGI_IP22)		+= umap.o
 
 AFLAGS_tlb-glue-r4k.o := -P
 

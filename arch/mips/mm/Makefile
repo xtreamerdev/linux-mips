@@ -10,8 +10,9 @@ USE_STANDARD_AS_RULE := true
 
 O_TARGET := mm.o
 
-export-objs			+= ioremap.o loadmmu.o umap.o
-obj-y				+= extable.o init.o ioremap.o fault.o loadmmu.o
+export-objs			+= ioremap.o loadmmu.o
+obj-y				+= extable.o init.o ioremap.o fault.o \
+				   pg.o loadmmu.o
 
 obj-$(CONFIG_CPU_R3000)		+= pg-r3k.o c-r3k.o tlb-r3k.o tlbex-r3k.o
 obj-$(CONFIG_CPU_TX39XX)	+= pg-r3k.o c-tx39.o tlb-r3k.o tlbex-r3k.o
@@ -28,8 +29,5 @@ obj-$(CONFIG_CPU_MIPS64)	+= pg-mips32.o c-mips32.o tlb-r4k.o tlbex-r4k.o
 obj-$(CONFIG_CPU_SB1)		+= pg-sb1.o c-sb1.o tlb-sb1.o tlbex-r4k.o cex-sb1.o cerr-sb1.o
 
 obj-$(CONFIG_R5000_CPU_SCACHE)	+= r5k-sc.o
-
-obj-$(CONFIG_SGI_IP22)		+= umap.o
-obj-$(CONFIG_BAGET_MIPS)	+= umap.o
 
 include $(TOPDIR)/Rules.make
