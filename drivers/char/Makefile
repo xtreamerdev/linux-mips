@@ -51,6 +51,9 @@ ifeq ($(ARCH),mips)
     ifeq ($(CONFIG_IBM_WORKPAD),y)
       KEYMAP = ibm_workpad_keymap.o
     endif
+    ifeq ($(CONFIG_VICTOR_MPC30X),y)
+      KEYMAP = victor_mpc30x_keymap.o
+    endif
     KEYBD    = vr41xx_keyb.o
   endif
 endif
@@ -357,4 +360,7 @@ qtronixmap.c: qtronixmap.map
 	set -e ; loadkeys --mktable $< | sed -e 's/^static *//' > $@
 
 ibm_workpad_keymap.c: ibm_workpad_keymap.map
+	set -e ; loadkeys --mktable $< | sed -e 's/^static *//' > $@
+
+victor_mpc30x_keymap.c: victor_mpc30x_keymap.map
 	set -e ; loadkeys --mktable $< | sed -e 's/^static *//' > $@

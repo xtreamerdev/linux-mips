@@ -3,4 +3,5 @@
 conmakehash
 consolemap_deftbl.c
 ibm_workpad_keymap.c
+victor_mpc30x_keymap.c
 uni_hash.tbl
