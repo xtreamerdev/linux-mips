@@ -59,10 +59,13 @@
 #define MII_ANLPAR  0x0005
 #define MII_AEXP    0x0006
 #define MII_ANEXT   0x0007
-#define MII_LSI_CONFIG 0x0011
-#define MII_LSI_STAT   0x0012
-#define MII_AUX_CNTRL  0x0018
+#define MII_LSI_PHY_CONFIG 0x0011
+/* Status register */
+#define MII_LSI_PHY_STAT   0x0012
+#define MII_AMD_PHY_STAT   MII_LSI_PHY_STAT
+#define MII_INTEL_PHY_STAT 0x0011
 
+#define MII_AUX_CNTRL  0x0018
 /* mii registers specific to AMD 79C901 */
 #define	MII_STATUS_SUMMARY = 0x0018
 
@@ -125,9 +128,17 @@
 #define	MII_STSSUM_AUTO  0x0002
 #define MII_STSSUM_SPD   0x0001
 
-/* lsi status register */
-#define MII_LSI_STAT_FDX	0x0040
-#define MII_LSI_STAT_SPD	0x0080
+/* lsi phy status register */
+#define MII_LSI_PHY_STAT_FDX	0x0040
+#define MII_LSI_PHY_STAT_SPD	0x0080
+
+/* amd phy status register */
+#define MII_AMD_PHY_STAT_FDX	0x0800
+#define MII_AMD_PHY_STAT_SPD	0x0400
+
+/* intel phy status register */
+#define MII_INTEL_PHY_STAT_FDX	0x0200
+#define MII_INTEL_PHY_STAT_SPD	0x4000
 
 /* Auxilliary Control/Status Register */
 #define MII_AUX_FDX      0x0001

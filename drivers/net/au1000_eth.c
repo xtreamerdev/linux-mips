@@ -252,8 +252,8 @@ int lsi_80227_init(struct net_device *dev, int phy_addr)
 		printk("lsi_80227_init\n");
 
 	/* restart auto-negotiation */
-	mdio_write(dev, phy_addr, 0, 0x3200);
-
+	mdio_write(dev, phy_addr, MII_CONTROL,
+		   MII_CNTL_F100 | MII_CNTL_AUTO | MII_CNTL_RST_AUTO); // | MII_CNTL_FDX);
 	mdelay(1);
 
 	/* set up LEDs to correct display */
@@ -304,9 +304,9 @@ lsi_80227_status(struct net_device *dev, int phy_addr, u16 *link, u16 *speed)
 	mii_data = mdio_read(dev, aup->phy_addr, MII_STATUS);
 	if (mii_data & MII_STAT_LINK) {
 		*link = 1;
-		mii_data = mdio_read(dev, aup->phy_addr, MII_LSI_STAT);
-		if (mii_data & MII_LSI_STAT_SPD) {
-			if (mii_data & MII_LSI_STAT_FDX) {
+		mii_data = mdio_read(dev, aup->phy_addr, MII_LSI_PHY_STAT);
+		if (mii_data & MII_LSI_PHY_STAT_SPD) {
+			if (mii_data & MII_LSI_PHY_STAT_FDX) {
 				*speed = IF_PORT_100BASEFX;
 				dev->if_port = IF_PORT_100BASEFX;
 			}
@@ -368,6 +368,7 @@ int am79c874_init(struct net_device *dev, int phy_addr)
 	/* Restart auto-negotiation */
 	data = mdio_read(dev, phy_addr, MII_CONTROL);
 	data |= MII_CNTL_RST_AUTO | MII_CNTL_AUTO;
+
 	mdio_write(dev, phy_addr, MII_CONTROL, data);
 
 	if (au1000_debug > 4) dump_mii(dev, phy_addr);
@@ -414,9 +415,91 @@ am79c874_status(struct net_device *dev, int phy_addr, u16 *link, u16 *speed)
 
 	if (mii_data & MII_STAT_LINK) {
 		*link = 1;
-		mii_data = mdio_read(dev, aup->phy_addr, MII_AUX_CNTRL);
-		if (mii_data & MII_AUX_100) {
-			if (mii_data & MII_AUX_FDX) {
+		mii_data = mdio_read(dev, aup->phy_addr, MII_AMD_PHY_STAT);
+		if (mii_data & MII_AMD_PHY_STAT_SPD) {
+			if (mii_data & MII_AMD_PHY_STAT_FDX) {
+				*speed = IF_PORT_100BASEFX;
+				dev->if_port = IF_PORT_100BASEFX;
+			}
+			else {
+				*speed = IF_PORT_100BASETX;
+				dev->if_port = IF_PORT_100BASETX;
+			}
+		}
+		else {
+			*speed = IF_PORT_10BASET;
+			dev->if_port = IF_PORT_10BASET;
+		}
+
+	}
+	else {
+		*link = 0;
+		*speed = 0;
+		dev->if_port = IF_PORT_UNKNOWN;
+	}
+	return 0;
+}
+
+int lxt971a_init(struct net_device *dev, int phy_addr)
+{
+	if (au1000_debug > 4)
+		printk("lxt971a_init\n");
+
+	/* restart auto-negotiation */
+	mdio_write(dev, phy_addr, MII_CONTROL,
+		   MII_CNTL_F100 | MII_CNTL_AUTO | MII_CNTL_RST_AUTO | MII_CNTL_FDX);
+
+	/* set up LEDs to correct display */
+	mdio_write(dev, phy_addr, 20, 0x0422);
+
+	if (au1000_debug > 4)
+		dump_mii(dev, phy_addr);
+	return 0;
+}
+
+int lxt971a_reset(struct net_device *dev, int phy_addr)
+{
+	s16 mii_control, timeout;
+	
+	if (au1000_debug > 4) {
+		printk("lxt971a_reset\n");
+		dump_mii(dev, phy_addr);
+	}
+
+	mii_control = mdio_read(dev, phy_addr, MII_CONTROL);
+	mdio_write(dev, phy_addr, MII_CONTROL, mii_control | MII_CNTL_RESET);
+	mdelay(1);
+	for (timeout = 100; timeout > 0; --timeout) {
+		mii_control = mdio_read(dev, phy_addr, MII_CONTROL);
+		if ((mii_control & MII_CNTL_RESET) == 0)
+			break;
+		mdelay(1);
+	}
+	if (mii_control & MII_CNTL_RESET) {
+		printk(KERN_ERR "%s PHY reset timeout !\n", dev->name);
+		return -1;
+	}
+	return 0;
+}
+
+int
+lxt971a_status(struct net_device *dev, int phy_addr, u16 *link, u16 *speed)
+{
+	u16 mii_data;
+	struct au1000_private *aup;
+
+	if (!dev) {
+		printk(KERN_ERR "lxt971a_status error: NULL dev\n");
+		return -1;
+	}
+	aup = (struct au1000_private *) dev->priv;
+
+	mii_data = mdio_read(dev, aup->phy_addr, MII_STATUS);
+	if (mii_data & MII_STAT_LINK) {
+		*link = 1;
+		mii_data = mdio_read(dev, aup->phy_addr, MII_INTEL_PHY_STAT);
+		if (mii_data & MII_INTEL_PHY_STAT_SPD) {
+			if (mii_data & MII_INTEL_PHY_STAT_FDX) {
 				*speed = IF_PORT_100BASEFX;
 				dev->if_port = IF_PORT_100BASEFX;
 			}
@@ -445,22 +528,28 @@ struct phy_ops bcm_5201_ops = {
 	bcm_5201_status,
 };
 
-struct phy_ops am79c901_ops = {
-	am79c901_init,
-	am79c901_reset,
-	am79c901_status,
-};
-
 struct phy_ops am79c874_ops = {
 	am79c874_init,
 	am79c874_reset,
 	am79c874_status,
 };
 
+struct phy_ops am79c901_ops = {
+	am79c901_init,
+	am79c901_reset,
+	am79c901_status,
+};
+
 struct phy_ops lsi_80227_ops = { 
 	lsi_80227_init,
 	lsi_80227_reset,
 	lsi_80227_status,
+};
+
+struct phy_ops lxt971a_ops = { 
+	lxt971a_init,
+	lxt971a_reset,
+	lxt971a_status,
 };
 
 static struct mii_chip_info {
@@ -474,6 +563,7 @@ static struct mii_chip_info {
 	{"AMD 79C901 HomePNA PHY",  0x0000, 0x35c8, &am79c901_ops },
 	{"AMD 79C874 10/100 BaseT PHY",  0x0022, 0x561b, &am79c874_ops },
 	{"LSI 80227 10/100 BaseT PHY", 0x0016, 0xf840, &lsi_80227_ops },
+	{"Intel LXT971A Dual Speed PHY", 0x0013, 0x78e2, &lxt971a_ops },
 	{0,},
 };
 
