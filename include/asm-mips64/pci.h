@@ -213,7 +213,7 @@ static inline int pci_map_sg(struct pci_dev *hwdev, struct scatterlist *sg,
 			out_of_line_bug();
 
 		dma_cache_wback_inv((unsigned long)sg->address, sg->length);
-		sg->address = bus_to_baddr[hwdev->bus->number] |
+		sg->address = bus_to_baddr(hwdev->bus->number) |
 		              virt_to_bus(sg->address);
 	}
 
@@ -251,7 +251,7 @@ static inline void pci_dma_sync_single(struct pci_dev *hwdev,
 	if (direction == PCI_DMA_NONE)
 		out_of_line_bug();
 
-	dma_cache_wback_inv((unsigned long)__va(dma_handle - bus_to_baddr[hwdev->bus->number]), size);
+	dma_cache_wback_inv((unsigned long)__va(dma_handle - bus_to_baddr(hwdev->bus->number)), size);
 }
 
 /*
