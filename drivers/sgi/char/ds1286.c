@@ -1,8 +1,8 @@
-/* $Id: ds1286.c,v 1.2 1998/08/25 09:18:57 ralf Exp $
+/* $Id: ds1286.c,v 1.3 1999/01/04 16:07:19 ralf Exp $
  *
  *	Real Time Clock interface for Linux	
  *
- *	Copyright (C) 1998 Ralf Baechle
+ *	Copyright (C) 1998, 1999 Ralf Baechle
  *	
  *	Based on code written by Paul Gortmaker.
  *
@@ -381,6 +381,7 @@ static struct file_operations ds1286_fops = {
 	ds1286_ioctl,
 	NULL,		/* No mmap */
 	ds1286_open,
+	NULL,		/* No flush */
 	ds1286_release
 };
 
@@ -432,7 +433,7 @@ int get_ds1286_status(char *buf)
 	 * greater than a valid time, but less than 0xc0 shouldn't appear.
 	 */
 	get_rtc_alm_time(&tm);
-	p += sprintf(p, "alarm\t\t\t: %s ", days[tm.tm_wday]);
+	p += sprintf(p, "alarm\t\t: %s ", days[tm.tm_wday]);
 	if (tm.tm_hour <= 24)
 		p += sprintf(p, "%02d:", tm.tm_hour);
 	else
@@ -462,7 +463,7 @@ int get_ds1286_status(char *buf)
 
 	cmd = CMOS_READ(RTC_CMD);
 	p += sprintf(p,
-	             "alarm\t\t\t: %s\n"
+	             "alarm_enable\t: %s\n"
 	             "wdog_alarm\t: %s\n"
 	             "alarm_mask\t: %s\n"
 	             "wdog_alarm_mask\t: %s\n"

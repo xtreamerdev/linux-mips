@@ -1,4 +1,4 @@
-/* $Id: irixelf.c,v 1.15 1999/01/04 16:03:48 ralf Exp $
+/* $Id: irixelf.c,v 1.16 1999/06/13 16:30:31 ralf Exp $
  *
  * irixelf.c: Code to load IRIX ELF executables which conform to
  *            the MIPS ABI.
@@ -1109,10 +1109,10 @@ static int writenote(struct memelfnote *men, struct file *file)
 #undef DUMP_SEEK
 
 #define DUMP_WRITE(addr, nr)	\
-	if (!dump_write(&file, (addr), (nr))) \
+	if (!dump_write(file, (addr), (nr))) \
 		goto close_coredump;
 #define DUMP_SEEK(off)	\
-	if (!dump_seek(&file, (off))) \
+	if (!dump_seek(file, (off))) \
 		goto close_coredump;
 /* Actual dumper.
  *
