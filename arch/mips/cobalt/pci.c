@@ -6,8 +6,7 @@
  * for more details.
  *
  * Copyright (C) 1995, 1996, 1997 by Ralf Baechle
- * Copyright (C) 2001 by Liam Davies (ldavies@agile.tv)
- *
+ * Copyright (C) 2001, 2002, 2003 by Liam Davies (ldavies@agile.tv)
  */
 
 #include <linux/config.h>
@@ -16,9 +15,11 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 
-#include <asm/cobalt/cobalt.h>
 #include <asm/pci.h>
 #include <asm/io.h>
+#include <asm/gt64120.h>
+
+#include <asm/cobalt/cobalt.h>
 
 #ifdef CONFIG_PCI
 
@@ -219,13 +220,13 @@ static void qube_raq_galileo_fixup(struct pci_dev *dev)
 	galileo_id &= 0xff;     /* mask off class info */
 	if (galileo_id >= 0x10) {
 		/* New Galileo, assumes PCI stop line to VIA is connected. */
-		*((volatile unsigned int *)0xb4000c04) = 0x00004020;
+		GALILEO_OUTL(0x4020, GT_PCI0_TOR_OFS);
 	} else if (galileo_id == 0x1 || galileo_id == 0x2) {
 		signed int timeo;
 		/* XXX WE MUST DO THIS ELSE GALILEO LOCKS UP! -DaveM */
-		timeo = *((volatile unsigned int *)0xb4000c04);
+		timeo = GALILEO_INL(GT_PCI0_TOR_OFS);
 		/* Old Galileo, assumes PCI STOP line to VIA is disconnected. */
-		*((volatile unsigned int *)0xb4000c04) = 0x0000ffff;
+		GALILEO_OUTL(0xffff, GT_PCI0_TOR_OFS);
 	}
 }
 
@@ -264,12 +265,9 @@ static __inline__ int pci_range_ck(struct pci_dev *dev)
 	return -1;  /* NOT ok device number */
 }
 
-#define PCI_CFG_DATA	((volatile unsigned long *)0xb4000cfc)
-#define PCI_CFG_CTRL	((volatile unsigned long *)0xb4000cf8)
-
 #define PCI_CFG_SET(dev,where) \
-       ((*PCI_CFG_CTRL) = (0x80000000 | (PCI_SLOT ((dev)->devfn) << 11) | \
-                           (PCI_FUNC ((dev)->devfn) << 8) | (where)))
+       GALILEO_OUTL((0x80000000 | (((dev)->devfn) << 8) | \
+                           (where)), GT_PCI0_CFGADDR_OFS)
 
 static int qube_pci_read_config_dword (struct pci_dev *dev,
                                           int where,
@@ -282,7 +280,7 @@ static int qube_pci_read_config_dword (struct pci_dev *dev,
 		return PCIBIOS_DEVICE_NOT_FOUND;
 	}
 	PCI_CFG_SET(dev, where);
-	*val = *PCI_CFG_DATA;
+	*val = GALILEO_INL(GT_PCI0_CFGDATA_OFS);
 	return PCIBIOS_SUCCESSFUL;
 }
 
@@ -297,7 +295,7 @@ static int qube_pci_read_config_word (struct pci_dev *dev,
 		return PCIBIOS_DEVICE_NOT_FOUND;
 	}
 	PCI_CFG_SET(dev, (where & ~0x3));
-	*val = *PCI_CFG_DATA >> ((where & 3) * 8);
+	*val = GALILEO_INL(GT_PCI0_CFGDATA_OFS) >> ((where & 3) * 8);
 	return PCIBIOS_SUCCESSFUL;
 }
 
@@ -310,7 +308,7 @@ static int qube_pci_read_config_byte (struct pci_dev *dev,
 		return PCIBIOS_DEVICE_NOT_FOUND;
 	}
 	PCI_CFG_SET(dev, (where & ~0x3));
-	*val = *PCI_CFG_DATA >> ((where & 3) * 8);
+	*val = GALILEO_INL(GT_PCI0_CFGDATA_OFS) >> ((where & 3) * 8);
 	return PCIBIOS_SUCCESSFUL;
 }
 
@@ -323,7 +321,7 @@ static int qube_pci_write_config_dword (struct pci_dev *dev,
 	if (pci_range_ck (dev))
 		return PCIBIOS_DEVICE_NOT_FOUND;
 	PCI_CFG_SET(dev, where);
-	*PCI_CFG_DATA = val;
+	GALILEO_OUTL(val, GT_PCI0_CFGDATA_OFS);
 	return PCIBIOS_SUCCESSFUL;
 }
 
@@ -339,10 +337,10 @@ qube_pci_write_config_word (struct pci_dev *dev,
 	if (pci_range_ck (dev))
 		return PCIBIOS_DEVICE_NOT_FOUND;
 	PCI_CFG_SET(dev, (where & ~0x3));
-	tmp = *PCI_CFG_DATA;
+	tmp = GALILEO_INL(GT_PCI0_CFGDATA_OFS);
 	tmp &= ~(0xffff << ((where & 0x3) * 8));
 	tmp |=  (val << ((where & 0x3) * 8));
-	*PCI_CFG_DATA = tmp;
+	GALILEO_OUTL(tmp, GT_PCI0_CFGDATA_OFS);
 	return PCIBIOS_SUCCESSFUL;
 }
 
@@ -356,10 +354,10 @@ qube_pci_write_config_byte (struct pci_dev *dev,
 	if (pci_range_ck (dev))
 		return PCIBIOS_DEVICE_NOT_FOUND;
 	PCI_CFG_SET(dev, (where & ~0x3));
-	tmp = *PCI_CFG_DATA;
+	tmp = GALILEO_INL(GT_PCI0_CFGDATA_OFS);
 	tmp &= ~(0xff << ((where & 0x3) * 8));
 	tmp |=  (val << ((where & 0x3) * 8));
-	*PCI_CFG_DATA = tmp;
+	GALILEO_OUTL(tmp, GT_PCI0_CFGDATA_OFS);
 	return PCIBIOS_SUCCESSFUL;
 }
 
@@ -382,7 +380,7 @@ void __init pcibios_init(void)
 	/* Read the cobalt id register out of the PCI config space */
 	dev.devfn = PCI_DEVFN(COBALT_PCICONF_VIA, 0);
 	PCI_CFG_SET(&dev, (VIA_COBALT_BRD_ID_REG & ~0x3));
-	cobalt_board_id = *PCI_CFG_DATA >> ((VIA_COBALT_BRD_ID_REG & 3) * 8);
+	cobalt_board_id = GALILEO_INL(GT_PCI0_CFGDATA_OFS) >> ((VIA_COBALT_BRD_ID_REG & 3) * 8);
 	cobalt_board_id = VIA_COBALT_BRD_REG_to_ID(cobalt_board_id);
 
 	printk("Cobalt Board ID: %d\n", cobalt_board_id);
@@ -421,7 +419,7 @@ void pcibios_align_resource(void *data, struct resource *res,
 }
 
 void pcibios_update_resource(struct pci_dev *dev, struct resource *root,
-		struct resource *res, int resource)
+	struct resource *res, int resource)
 {
 
 	panic("Uhhoh called pcibios_update_resource\n");
