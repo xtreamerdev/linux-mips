@@ -163,7 +163,7 @@ void __init smp_boot_cpus(void)
 			prom_boot_secondary(cur_cpu,
 					    (unsigned long)p + KERNEL_STACK_SIZE - 32,
 					    (unsigned long)p);
-		} while (cur_cpu < NR_CPUS);
+		} while (cur_cpu < smp_num_cpus - 1);
 		__cpu_number_map[cur_cpu] = i;
 		__cpu_logical_map[i] = cur_cpu;
 		i++;
