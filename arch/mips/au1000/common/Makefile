@@ -23,8 +23,10 @@ obj-y := prom.o int-handler.o irq.o puts.o time.o reset.o cputable.o \
   
 ifdef CONFIG_SOC_AU1550
 obj-y += dbdma.o
+export-objs += dbdma.o
 else
 obj-y += dma.o
+export-objs += dma.o
 endif
 
 obj-$(CONFIG_AU1X00_USB_DEVICE) += usbdev.o
