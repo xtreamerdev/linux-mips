@@ -50,11 +50,6 @@
 #include <asm/time.h>
 #include <asm/vr41xx/eagle.h>
 
-#ifdef CONFIG_BLK_DEV_INITRD
-extern unsigned long initrd_start, initrd_end;
-extern void * __rd_start, * __rd_end;
-#endif
-
 extern void eagle_irq_init(void);
 
 #ifdef CONFIG_PCI
@@ -114,12 +109,6 @@ void __init nec_eagle_setup(void)
 	ioport_resource.end = IO_PORT_RESOURCE_END;
 	iomem_resource.start = IO_MEM1_RESOURCE_START;
 	iomem_resource.end = IO_MEM2_RESOURCE_END;
-
-#ifdef CONFIG_BLK_DEV_INITRD
-	ROOT_DEV = MKDEV(RAMDISK_MAJOR, 0);
-	initrd_start = (unsigned long)&__rd_start;
-	initrd_end = (unsigned long)&__rd_end;
-#endif
 
 	_machine_restart = vr41xx_restart;
 	_machine_halt = vr41xx_halt;

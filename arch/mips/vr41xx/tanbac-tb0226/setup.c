@@ -23,11 +23,6 @@
 #include <asm/time.h>
 #include <asm/vr41xx/tb0226.h>
 
-#ifdef CONFIG_BLK_DEV_INITRD
-extern unsigned long initrd_start, initrd_end;
-extern void * __rd_start, * __rd_end;
-#endif
-
 #ifdef CONFIG_PCI
 static struct resource vr41xx_pci_io_resource = {
 	"PCI I/O space",
@@ -82,12 +77,6 @@ void __init tanbac_tb0226_setup(void)
 	ioport_resource.end = IO_PORT_RESOURCE_END;
 	iomem_resource.start = IO_MEM1_RESOURCE_START;
 	iomem_resource.end = IO_MEM2_RESOURCE_END;
-
-#ifdef CONFIG_BLK_DEV_INITRD
-	ROOT_DEV = MKDEV(RAMDISK_MAJOR, 0);
-	initrd_start = (unsigned long)&__rd_start;
-	initrd_end = (unsigned long)&__rd_end;
-#endif
 
 	_machine_restart = vr41xx_restart;
 	_machine_halt = vr41xx_halt;
