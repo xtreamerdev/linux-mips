@@ -1040,7 +1040,7 @@ extern au1xxx_irq_map_t au1xxx_irq_map[];
 #define Au1500_PCI_IO_START       0x500000000
 #define Au1500_PCI_IO_END         0x5000FFFFF
 #define Au1500_PCI_MEM_START      0x440000000
-#define Au1500_PCI_MEM_END        0x443FFFFFF
+#define Au1500_PCI_MEM_END        0x44FFFFFFF
 
 #define PCI_IO_START    (Au1500_PCI_IO_START + 0x300)
 #define PCI_IO_END      (Au1500_PCI_IO_END)
