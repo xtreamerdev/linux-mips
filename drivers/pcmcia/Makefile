@@ -89,6 +89,7 @@ sa1100_cs-objs-$(CONFIG_SA1100_STORK)		+= sa1100_stork.o
 sa1100_cs-objs-$(CONFIG_SA1100_XP860)		+= sa1100_xp860.o sa1111_generic.o
 sa1100_cs-objs-$(CONFIG_SA1100_YOPY)		+= sa1100_yopy.o
 
+obj-$(CONFIG_PCMCIA_VRC4171)	+= vrc4171_card.o
 obj-$(CONFIG_PCMCIA_VRC4173)	+= vrc4173_cardu.o
 
 include $(TOPDIR)/Rules.make
