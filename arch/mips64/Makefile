@@ -63,6 +63,10 @@ endif
 ifdef CONFIG_CPU_NEVADA
 GCCFLAGS	+= -mcpu=r8000 -mips3 -mmad
 endif
+ifdef CONFIG_CPU_RM7000
+GCCFLAGS	+= $(call check_gcc, -march=rm7000, -mcpu=r5000) \
+		   -mips2 -Wa,--trap
+endif
 ifdef CONFIG_CPU_R8000
 GCCFLAGS	+= -mcpu=r8000 -mips4
 endif
