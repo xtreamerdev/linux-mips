@@ -179,7 +179,7 @@ void __init au1x00_setup(void)
 
 #ifndef CONFIG_SERIAL_NONSTANDARD
 	/* don't touch the default serial console */
-	au_writel(0, UART0_ADDR + UART_CLK);
+        au_writel(0, UART_ADDR + UART_CLK);
 #endif
 	//au_writel(0, UART3_ADDR + UART_CLK);
 

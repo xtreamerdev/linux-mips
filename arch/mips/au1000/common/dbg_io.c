@@ -9,7 +9,7 @@
  * FIXME the user should be able to select the
  * uart to be used for debugging.
  */
-#define	DEBUG_BASE  UART2_ADDR
+#define DEBUG_BASE  UART_DEBUG_BASE
 /**/
 
 /* we need uint32 uint8 */
