@@ -145,6 +145,10 @@ void output_mm_defines(void)
 	linefeed;
 	constant("#define _PAGE_SIZE     ", PAGE_SIZE);
 	constant("#define _PGD_ORDER     ", PGD_ORDER);
+#ifdef PMD_ORDER
+	constant("#define _PMD_ORDER     ", PMD_ORDER);
+#endif
+	constant("#define _PTE_ORDER     ", PTE_ORDER);
 	constant("#define _PGDIR_SHIFT   ", PGDIR_SHIFT);
 	linefeed;
 }
