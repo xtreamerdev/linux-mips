@@ -21,6 +21,7 @@
 #include <linux/ppp_defs.h>
 #include <linux/if_ppp.h>
 #include <linux/if_pppox.h>
+#include <linux/if_tun.h>
 #include <linux/cdrom.h>
 #include <linux/loop.h>
 #include <linux/fb.h>
@@ -1108,6 +1109,13 @@ static struct ioctl32_list ioctl32_handler_table[] = {
 	IOCTL32_DEFAULT(SCSI_IOCTL_TAGGED_DISABLE),
 	IOCTL32_DEFAULT(SCSI_IOCTL_GET_BUS_NUMBER),
 	IOCTL32_DEFAULT(SCSI_IOCTL_SEND_COMMAND),
+
+	/* Big T */
+	IOCTL32_DEFAULT(TUNSETNOCSUM),
+	IOCTL32_DEFAULT(TUNSETDEBUG),
+	IOCTL32_DEFAULT(TUNSETIFF),
+	IOCTL32_DEFAULT(TUNSETPERSIST),
+	IOCTL32_DEFAULT(TUNSETOWNER),
 
 	/* Big V */
 	IOCTL32_DEFAULT(VT_SETMODE),
