@@ -124,6 +124,7 @@ pb1x00_pcmcia_socket_state(unsigned sock, struct pcmcia_state *state)
 #else
 	vs0 = (au_readw(PB1100_BOARD_STATUS) >> 4) & 0x3;
 	inserted0 = !((au_readl(SYS_PINSTATERD) >> 9) & 0x1); /* gpio 9 */
+	inserted1 = 0;
 #endif
 
 	state->ready = 0;
@@ -144,7 +145,7 @@ pb1x00_pcmcia_socket_state(unsigned sock, struct pcmcia_state *state)
 					/* return without setting 'detect' */
 					printk(KERN_ERR "pb1x00 bad VS (%d)\n",
 							vs0);
-					return;
+					return 0;
 			}
 			state->detect = 1;
 		}
@@ -162,7 +163,7 @@ pb1x00_pcmcia_socket_state(unsigned sock, struct pcmcia_state *state)
 					/* return without setting 'detect' */
 					printk(KERN_ERR "pb1x00 bad VS (%d)\n",
 							vs1);
-					return;
+					return 0;
 			}
 			state->detect = 1;
 		}

@@ -198,14 +198,14 @@ static int __init au1000_pcmcia_driver_init(void)
 		if (i == 0) {
 			pcmcia_socket[i].virt_io = 
 				(u32)ioremap((ioaddr_t)0xF00000000, 0x1000);
-			pcmcia_socket[i].phys_attr = (memaddr_t)0xF40000000;
-			pcmcia_socket[i].phys_mem = (memaddr_t)0xF80000000;
+			pcmcia_socket[i].phys_attr = (ioaddr_t)0xF40000000;
+			pcmcia_socket[i].phys_mem = (ioaddr_t)0xF80000000;
 		}
 		else  {
 			pcmcia_socket[i].virt_io = 
 				(u32)ioremap((ioaddr_t)0xF08000000, 0x1000);
-			pcmcia_socket[i].phys_attr = (memaddr_t)0xF48000000;
-			pcmcia_socket[i].phys_mem = (memaddr_t)0xF88000000;
+			pcmcia_socket[i].phys_attr = (ioaddr_t)0xF48000000;
+			pcmcia_socket[i].phys_mem = (ioaddr_t)0xF88000000;
 		}
 	}
 
