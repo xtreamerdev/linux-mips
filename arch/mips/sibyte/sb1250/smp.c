@@ -91,26 +91,6 @@ extern atomic_t cpus_booted;
 extern atomic_t smp_commenced;
 
 /*
- * Clear all undefined state in the cpu, set up sp and gp to the passed
- * values, and kick the cpu into smp_bootstrap();
- */
-extern int prom_boot_secondary(int cpu, unsigned long sp, unsigned long gp);
-
-/*
- *  After we've done initial boot, this function is called to allow the
- *  board code to clean up state, if needed
- */
-extern void prom_init_secondary(void);
-
-/*
- * Do whatever setup needs to be done for SMP at the board level.  Return
- * the number of cpus in the system, including this one
- */
-extern int prom_setup_smp(void);
-
-extern void prom_smp_finish(void);
-
-/*
  * Hook for doing final board-specific setup after the generic smp setup
  * is done
  */
