@@ -852,6 +852,8 @@ void __init trap_init(void)
 	extern char except_vec_ejtag_debug;
 	unsigned long i;
 
+	per_cpu_trap_init();
+
 	/* Copy the generic exception handler code to it's final destination. */
 	memcpy((void *)(KSEG0 + 0x80), &except_vec1_generic, 0x80);
 	memcpy((void *)(KSEG0 + 0x100), &except_vec2_generic, 0x80);
