@@ -863,7 +863,7 @@ type name(atype a, btype b, ctype c, dtype d) \
 	return -1; \
 }
 
-#if (_MIPS_SIM == _MIPS_SIM_ABIN32)
+#if (_MIPS_SIM == _MIPS_SIM_ABI32)
 
 /*
  * Using those means your brain needs more than an oil change ;-)
@@ -931,9 +931,9 @@ type name(atype a, btype b, ctype c, dtype d, etype e, ftype f) \
 	return -1; \
 }
 
-#endif /* (_MIPS_SIM == _MIPS_SIM_ABIN32) */
+#endif /* (_MIPS_SIM == _MIPS_SIM_ABI32) */
 
-#if (_MIPS_SIM == _MIPS_SIM_NABIN32) || (_MIPS_SIM == _MIPS_SIM_ABI64)
+#if (_MIPS_SIM == _MIPS_SIM_NABI32) || (_MIPS_SIM == _MIPS_SIM_ABI64)
 
 #define _syscall5(type,name,atype,a,btype,b,ctype,c,dtype,d,etype,e) \
 type name (atype a,btype b,ctype c,dtype d,etype e) \
@@ -989,7 +989,7 @@ type name (atype a,btype b,ctype c,dtype d,etype e,ftype f) \
 	return -1; \
 }
 
-#endif /* (_MIPS_SIM == _MIPS_SIM_NABIN32) || (_MIPS_SIM == _MIPS_SIM_ABI64) */
+#endif /* (_MIPS_SIM == _MIPS_SIM_NABI32) || (_MIPS_SIM == _MIPS_SIM_ABI64) */
 
 #ifdef __KERNEL_SYSCALLS__
 
