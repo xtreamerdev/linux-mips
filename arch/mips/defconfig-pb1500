@@ -851,7 +851,9 @@ CONFIG_DUMMY_CONSOLE=y
 # CONFIG_FB_3DFX is not set
 # CONFIG_FB_VOODOO1 is not set
 # CONFIG_FB_TRIDENT is not set
-# CONFIG_FB_E1356 is not set
+CONFIG_FB_E1356=y
+CONFIG_PB1500_CRT=y
+# CONFIG_PB1500_TFT is not set
 # CONFIG_FB_VIRTUAL is not set
 CONFIG_FBCON_ADVANCED=y
 # CONFIG_FBCON_MFB is not set
@@ -924,6 +926,7 @@ CONFIG_USB=y
 # CONFIG_USB_UHCI is not set
 # CONFIG_USB_UHCI_ALT is not set
 CONFIG_USB_OHCI=y
+CONFIG_USB_NON_PCI_OHCI=y
 
 #
 # USB Device Class drivers
@@ -953,7 +956,7 @@ CONFIG_USB_OHCI=y
 # USB Human Interface Devices (HID)
 #
 CONFIG_USB_HID=y
-# CONFIG_USB_HIDINPUT is not set
+CONFIG_USB_HIDINPUT=y
 # CONFIG_USB_HIDDEV is not set
 # CONFIG_USB_AIPTEK is not set
 # CONFIG_USB_WACOM is not set

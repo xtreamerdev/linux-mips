@@ -2029,7 +2029,7 @@ static int __devinit au1000_probe(void)
 	s->codec.codec_write = wrcodec;
 	s->codec.codec_wait = waitcodec;
 
-	if (!request_region(virt_to_phys((void *) AC97C_CONFIG),
+	if (!request_region(PHYSADDR(AC97C_CONFIG),
 			    0x14, AU1000_MODULE_NAME)) {
 		err("AC'97 ports in use");
 		return -1;
@@ -2165,7 +2165,7 @@ static int __devinit au1000_probe(void)
  err_dma2:
 	free_au1000_dma(s->dma_dac.dmanr);
  err_dma1:
-	release_region(virt_to_phys((void *) AC97C_CONFIG), 0x14);
+	release_region(PHYSADDR(AC97C_CONFIG), 0x14);
 	return -1;
 }
 
@@ -2182,7 +2182,7 @@ static void __devinit au1000_remove(void)
 	synchronize_irq();
 	free_au1000_dma(s->dma_adc.dmanr);
 	free_au1000_dma(s->dma_dac.dmanr);
-	release_region(virt_to_phys((void *) AC97C_CONFIG), 0x14);
+	release_region(PHYSADDR(AC97C_CONFIG), 0x14);
 	unregister_sound_dsp(s->dev_audio);
 	unregister_sound_mixer(s->codec.dev_mixer);
 }

@@ -112,7 +112,7 @@ void __init au1x00_setup(void)
 	}
 #endif
 
-#ifdef CONFIG_SOUND_AU1000
+#ifdef CONFIG_SOUND_AU1X00
 	strcat(argptr, " au1000_audio=vra");
 	argptr = prom_getcmdline();
 #endif
