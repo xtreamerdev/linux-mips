@@ -290,7 +290,11 @@ static void __init probe_dcache(unsigned long config)
 	       dcache_size >> 10, dc_lsize);
 }
 
-int mips_configk0 __initdata = -1;	/* board-specific setup routine can override this */
+/*
+ * Board-specific setup routine can override this
+ */
+int mips_configk0 __initdata = -1;
+
 void __init ld_mmu_tx49(void)
 {
 	unsigned long config = read_c0_config();
@@ -308,6 +312,9 @@ void __init ld_mmu_tx49(void)
 
 	probe_icache(config);
 	probe_dcache(config);
+
+	shm_align_mask = max_t(unsigned long,
+	                       (dcache_size >> 2) - 1, PAGE_SIZE - 1);
 
 	switch (dc_lsize) {
 	case 16:
