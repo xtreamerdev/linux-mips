@@ -221,21 +221,6 @@ endif
 endif
 
 #
-# SGI-IP32 (O2)
-#
-ifdef CONFIG_SGI_IP32
-CORE_FILES	+= arch/mips/sgi-ip32/ip32-kern.a
-LIBS		+= arch/mips/arc/arclib.a
-SUBDIRS		+= arch/mips/sgi-ip32 arch/mips/arc
-#
-# Set LOADADDR to >= 0x????????? if you want to leave space for symmon,
-# 0x80002000 for production kernels.  Note that the value must be
-# 16kb aligned or the handling of the current variable will break.
-#
-LOADADDR	:= 0x80002000
-endif
-
-#
 # Sibyte SB1250 SOC and Broadcom (SiByte) BCM112x SOCs
 #
 ifneq ($(CONFIG_SIBYTE_SB1250)$(CONFIG_SIBYTE_BCM112X),)
