@@ -1090,7 +1090,11 @@ static int elf_core_dump(long signr, struct pt_regs * regs, struct file * file)
 	elf.e_entry = 0;
 	elf.e_phoff = sizeof(elf);
 	elf.e_shoff = 0;
+#ifdef ELF_CORE_EFLAGS
+	elf.e_flags = ELF_CORE_EFLAGS;
+#else
 	elf.e_flags = 0;
+#endif
 	elf.e_ehsize = sizeof(elf);
 	elf.e_phentsize = sizeof(struct elf_phdr);
 	elf.e_phnum = segs+1;		/* Include notes */
