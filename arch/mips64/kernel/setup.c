@@ -435,15 +435,12 @@ void __init setup_arch(char **cmdline_p)
 	malta_setup();
 #endif
 #ifdef CONFIG_MOMENCO_OCELOT
-	case MACH_GROUP_MOMENCO:
 	momenco_ocelot_setup();
 #endif
 #ifdef CONFIG_MOMENCO_OCELOT_G
-	case MACH_GROUP_MOMENCO:
 	momenco_ocelot_g_setup();
 #endif
 #ifdef CONFIG_MOMENCO_OCELOT_C
-	case MACH_GROUP_MOMENCO:
 	momenco_ocelot_c_setup();
 #endif
 
