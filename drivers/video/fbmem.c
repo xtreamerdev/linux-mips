@@ -214,9 +214,7 @@ static struct {
 #ifdef CONFIG_FB_TRIDENT
 	{ "trident", tridentfb_init, tridentfb_setup },
 #endif
-#ifdef CONFIG_FB_VOODOO1
-	{ "sst", sstfb_init, sstfb_setup },
-#endif
+
 	/*
 	 * Generic drivers that are used as fallbacks
 	 * 
@@ -292,6 +290,9 @@ static struct {
 #endif
 #ifdef CONFIG_FB_PMAG_BA
 	{ "pmagbafb", pmagbafb_init, NULL },
+#endif
+#ifdef CONFIG_FB_VOODOO1
+	{ "sst", sstfb_init, sstfb_setup },
 #endif
 #ifdef CONFIG_FB_PMAGB_B
 	{ "pmagbbfb", pmagbbfb_init, NULL },
