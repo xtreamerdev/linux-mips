@@ -221,6 +221,8 @@ struct vr41xx_pci_address_map {
 
 extern void vr41xx_pciu_init(struct vr41xx_pci_address_map *map);
 
+extern struct pci_ops vr41xx_pci_ops;
+
 /*
  * MISC
  */

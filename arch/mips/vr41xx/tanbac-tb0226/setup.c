@@ -38,8 +38,6 @@ static struct resource vr41xx_pci_mem_resource = {
 	IORESOURCE_MEM
 };
 
-extern struct pci_ops vr41xx_pci_ops;
-
 struct pci_channel mips_pci_channels[] = {
 	{&vr41xx_pci_ops, &vr41xx_pci_io_resource, &vr41xx_pci_mem_resource, 0, 256},
 	{NULL, NULL, NULL, 0, 0}

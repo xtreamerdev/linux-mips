@@ -43,8 +43,6 @@ static struct resource vr41xx_pci_mem_resource = {
 	.flags	= IORESOURCE_MEM,
 };
 
-extern struct pci_ops vr41xx_pci_ops;
-
 struct pci_channel mips_pci_channels[] = {
 	{	.pci_ops	= &vr41xx_pci_ops,
 		.io_resource	= &vr41xx_pci_io_resource,
