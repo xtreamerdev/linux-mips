@@ -38,11 +38,11 @@ static kdev_t prom_console_device(struct console *c)
 }
 
 static struct console sercons = {
-    name:	"ttyS",
-    write:	prom_console_write,
-    device:	prom_console_device,
-    flags:	CON_PRINTBUFFER,
-    index:	-1,
+    .name	= "ttyS",
+    .write	= prom_console_write,
+    .device	= prom_console_device,
+    .flags	= CON_PRINTBUFFER,
+    .index	= -1,
 };
 
 /*

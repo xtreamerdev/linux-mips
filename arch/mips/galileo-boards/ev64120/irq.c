@@ -166,13 +166,13 @@ static void no_irq_ack(unsigned int irq)
 #endif
 
 struct hw_interrupt_type no_irq_type = {
-	typename:"none",
-	startup:no_irq_startup,
-	shutdown:no_irq_enable_disable,
-	enable:no_irq_enable_disable,
-	disable:no_irq_enable_disable,
-	ack:NULL,
-	end:no_irq_enable_disable,
+	.typename= "none",
+	.startup= no_irq_startup,
+	.shutdown= no_irq_enable_disable,
+	.enable= no_irq_enable_disable,
+	.disable= no_irq_enable_disable,
+	.ack= NULL,
+	.end= no_irq_enable_disable,
 };
 
 //      ack:            no_irq_ack,                re-enable later -- SKJ

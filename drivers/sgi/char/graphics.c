@@ -258,7 +258,7 @@ sgi_graphics_nopage (struct vm_area_struct *vma, unsigned long address, int
  */
 
 static struct vm_operations_struct graphics_mmap = {
-	nopage:	sgi_graphics_nopage,	/* our magic no-page fault handler */
+	.nopage	= sgi_graphics_nopage,	/* our magic no-page fault handler */
 };
 
 int
@@ -291,10 +291,10 @@ graphics_ops_post_init (int slot)
 #endif
 
 struct file_operations sgi_graphics_fops = {
-	ioctl:		sgi_graphics_ioctl,
-	mmap:		sgi_graphics_mmap,
-	open:		sgi_graphics_open,
-	release:	sgi_graphics_close,
+	.ioctl		= sgi_graphics_ioctl,
+	.mmap		= sgi_graphics_mmap,
+	.open		= sgi_graphics_open,
+	.release	= sgi_graphics_close,
 };
 
 /* /dev/graphics */
