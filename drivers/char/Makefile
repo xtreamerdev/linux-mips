@@ -25,7 +25,7 @@ export-objs     :=	busmouse.o console.o keyboard.o sysrq.o \
 			misc.o pty.o random.o selection.o serial.o \
 			sonypi.o tty_io.o tty_ioctl.o generic_serial.o \
 			au1000_gpio.o vac-serial.o hp_psaux.o nvram.o \
-			scx200.o fetchop.o
+			scx200.o fetchop.o hydrogen3_buttons.o
 
 mod-subdirs	:=	joystick ftape drm drm-4.0 pcmcia
 
@@ -272,6 +272,7 @@ obj-$(CONFIG_AU1X00_GPIO) += au1000_gpio.o
 obj-$(CONFIG_AU1X00_USB_TTY) += au1000_usbtty.o
 obj-$(CONFIG_AU1X00_USB_RAW) += au1000_usbraw.o
 obj-$(CONFIG_COBALT_LCD) += lcd.o
+obj-$(CONFIG_MIPS_HYDROGEN3_BUTTONS) += hydrogen3_buttons.o
 
 obj-$(CONFIG_QIC02_TAPE) += tpqic02.o
 
