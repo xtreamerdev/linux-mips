@@ -104,8 +104,6 @@ extern __inline__ void free_pgd_slow(pgd_t *pgd)
 	free_page((unsigned long)pgd);
 }
 
-extern pte_t *get_pte_slow(pmd_t *pmd, unsigned long address_preadjusted);
-
 extern __inline__ pte_t *get_pte_fast(void)
 {
 	unsigned long *ret;
