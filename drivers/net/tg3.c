@@ -55,8 +55,8 @@
 
 #define DRV_MODULE_NAME		"tg3"
 #define PFX DRV_MODULE_NAME	": "
-#define DRV_MODULE_VERSION	"2.4"
-#define DRV_MODULE_RELDATE	"December 2, 2003"
+#define DRV_MODULE_VERSION	"2.5"
+#define DRV_MODULE_RELDATE	"December 22, 2003"
 
 #define TG3_DEF_MAC_MODE	0
 #define TG3_DEF_RX_MODE		0
@@ -7552,11 +7552,13 @@ static int __devinit tg3_init_one(struct pci_dev *pdev,
 	if (pm_cap == 0) {
 		printk(KERN_ERR PFX "Cannot find PowerManagement capability, "
 		       "aborting.\n");
+		err = -EIO;
 		goto err_out_free_res;
 	}
 
 	/* Configure DMA attributes. */
-	if (!pci_set_dma_mask(pdev, 0xffffffffffffffffULL)) {
+	err = pci_set_dma_mask(pdev, 0xffffffffffffffffULL);
+	if (!err) {
 		pci_using_dac = 1;
 	} else {
 		err = pci_set_dma_mask(pdev, 0xffffffffULL);

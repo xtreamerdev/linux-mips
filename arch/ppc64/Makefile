@@ -50,10 +50,6 @@ ifdef CONFIG_XMON
 SUBDIRS += arch/ppc64/xmon
 CORE_FILES += arch/ppc64/xmon/x.o
 endif
-ifdef CONFIG_KDB
-SUBDIRS += arch/ppc64/kdb
-CORE_FILES += arch/ppc64/kdb/kdba.o
-endif
 
 MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
 

@@ -168,7 +168,6 @@ char *of_stdout_device = 0;
 
 extern struct rtas_t rtas;
 extern unsigned long klimit;
-extern unsigned long embedded_sysmap_end;
 extern struct lmb lmb;
 #ifdef CONFIG_MSCHUNKS
 extern struct msChunks msChunks;
@@ -1482,9 +1481,6 @@ prom_init(unsigned long r3, unsigned long r4, unsigned long pp,
 
 	/* Default machine type. */
 	_systemcfg->platform = PLATFORM_PSERIES;
-	/* Reset klimit to take into account the embedded system map */
-	if (RELOC(embedded_sysmap_end))
-		RELOC(klimit) = __va(PAGE_ALIGN(RELOC(embedded_sysmap_end)));
 
 	/* Get a handle to the prom entry point before anything else */
 	_prom->entry = pp;
@@ -1909,6 +1905,23 @@ inspect_node(phandle node, struct device_node *dad,
 		*prev_propp = PTRUNRELOC(pp);
 		prev_propp = &pp->next;
 	}
+
+	/* Add a "linux_phandle" value */
+	if (np->node != NULL) {
+		u32 ibm_phandle = 0;
+		int len;
+
+		/* First see if "ibm,phandle" exists and use its value */
+		len = (int) call_prom(RELOC("getprop"), 4, 1, node,
+				      RELOC("ibm,phandle"),
+				      &ibm_phandle, sizeof(ibm_phandle));
+		if (len < 0) {
+			np->linux_phandle = np->node;
+		} else {
+			np->linux_phandle = ibm_phandle;
+		}
+	}
+
 	*prev_propp = 0;
 
 	/* get the node's full name */
@@ -2408,7 +2421,7 @@ find_phandle(phandle ph)
 	struct device_node *np;
 
 	for (np = allnodes; np != 0; np = np->allnext)
-		if (np->node == ph)
+		if (np->linux_phandle == ph)
 			return np;
 	return NULL;
 }
@@ -2499,7 +2512,7 @@ print_properties(struct device_node *np)
 
 
 void __init
-abort()
+abort(void)
 {
 #ifdef CONFIG_XMON
 	xmon(NULL);

@@ -297,17 +297,6 @@ static void smp_space_timers( unsigned nr )
 	}
 }
 
-void vpa_init(int cpu)
-{
-	unsigned long flags;
-
-	/* Register the Virtual Processor Area (VPA) */
-	printk(KERN_INFO "register_vpa: cpu 0x%x\n", cpu);
-	flags = 1UL << (63 - 18);
-	paca[cpu].xLpPaca.xSLBCount = 64; /* SLB restore highwater mark */
-	register_vpa(flags, cpu, __pa((unsigned long)&(paca[cpu].xLpPaca)));
-}
-
 static void
 smp_chrp_setup_cpu(int cpu_nr)
 {

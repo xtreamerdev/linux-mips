@@ -505,6 +505,9 @@ _GLOBAL(identify_cpu)
  * r3 = data offset (not changed)
  */
 _GLOBAL(do_cpu_ftr_fixups)
+/* Dummy feature section to make sure section exists */
+BEGIN_FTR_SECTION
+END_FTR_SECTION(0,0)
 	/* Get CPU 0 features */
 	LOADADDR(r6,cur_cpu_spec)
 	sub	r6,r6,r3

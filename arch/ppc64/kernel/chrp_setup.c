@@ -89,12 +89,14 @@ extern void find_and_init_phbs(void);
 extern void pSeries_pcibios_fixup(void);
 extern void iSeries_pcibios_fixup(void);
 
+extern void pSeries_get_boot_time(struct rtc_time *rtc_time);
 extern void pSeries_get_rtc_time(struct rtc_time *rtc_time);
 extern int  pSeries_set_rtc_time(struct rtc_time *rtc_time);
 void pSeries_calibrate_decr(void);
-static void fwnmi_init(void);
+static void machine_check_init(void);
 extern void SystemReset_FWNMI(void), MachineCheck_FWNMI(void);	/* from head.S */
-int fwnmi_active;  /* TRUE if an FWNMI handler is present */
+int fwnmi_active = 0;  /* TRUE if an FWNMI handler is present */
+int check_exception_flag = 0;  /* TRUE if a check-exception handler present */
 
 kdev_t boot_dev;
 unsigned long  virtPython0Facilities = 0;  // python0 facility area (memory mapped io) (64-bit format) VIRTUAL address.
@@ -138,7 +140,6 @@ void __init chrp_request_regions(void) {
 void __init
 chrp_setup_arch(void)
 {
-	extern char cmd_line[];
 	struct device_node *root;
 	unsigned int *opprop;
 	
@@ -157,11 +158,9 @@ chrp_setup_arch(void)
 		ROOT_DEV = MKDEV(RAMDISK_MAJOR, 0);
 	else
 #endif
-	ROOT_DEV = to_kdev_t(0x0802); /* sda2 (sda1 is for the kernel) */
+	ROOT_DEV = to_kdev_t(0x0803); /* sda3 (sda1 is for the kernel or the bootloader) */
 
-	printk("Boot arguments: %s\n", cmd_line);
-
-	fwnmi_init();
+	machine_check_init();
 
 #ifndef CONFIG_PPC_ISERIES
 	/* Find and initialize PCI host bridges */
@@ -203,20 +202,26 @@ chrp_init2(void)
 }
 
 /* Initialize firmware assisted non-maskable interrupts if
- * the firmware supports this feature.
- *
+ * the firmware supports this feature.  If it does not,
+ * look for the check-exception property.
  */
-static void __init fwnmi_init(void)
+static void __init machine_check_init(void)
 {
 	long ret;
+	int check_ex_token;
 	int ibm_nmi_register = rtas_token("ibm,nmi-register");
-	if (ibm_nmi_register == RTAS_UNKNOWN_SERVICE)
-		return;
-	ret = rtas_call(ibm_nmi_register, 2, 1, NULL,
-			__pa((unsigned long)SystemReset_FWNMI),
-			__pa((unsigned long)MachineCheck_FWNMI));
-	if (ret == 0)
-		fwnmi_active = 1;
+
+	if (ibm_nmi_register != RTAS_UNKNOWN_SERVICE) {
+		ret = rtas_call(ibm_nmi_register, 2, 1, NULL,
+				__pa((unsigned long)SystemReset_FWNMI),
+				__pa((unsigned long)MachineCheck_FWNMI));
+		if (ret == 0)
+			fwnmi_active = 1;
+	} else {
+		check_ex_token = rtas_token("check-exception");
+		if (check_ex_token != RTAS_UNKNOWN_SERVICE)
+			check_exception_flag = 1;
+	}
 }
 
 
@@ -277,9 +282,11 @@ chrp_init(unsigned long r3, unsigned long r4, unsigned long r5,
 
  	#ifndef CONFIG_PPC_ISERIES
  		ppc_md.pcibios_fixup = pSeries_pcibios_fixup;
+		ppc_md.log_error     = pSeries_log_error;
  	#else 
  		ppc_md.pcibios_fixup = NULL;
  		// ppc_md.pcibios_fixup = iSeries_pcibios_fixup;
+		ppc_md.log_error     = NULL;
  	#endif
 
 
@@ -290,7 +297,7 @@ chrp_init(unsigned long r3, unsigned long r4, unsigned long r5,
 	ppc_md.halt           = rtas_halt;
 
 	ppc_md.time_init      = NULL;
-	ppc_md.get_boot_time  = pSeries_get_rtc_time;
+	ppc_md.get_boot_time  = pSeries_get_boot_time;
 	ppc_md.get_rtc_time   = pSeries_get_rtc_time;
 	ppc_md.set_rtc_time   = pSeries_set_rtc_time;
 	ppc_md.calibrate_decr = pSeries_calibrate_decr;
@@ -309,10 +316,10 @@ chrp_init(unsigned long r3, unsigned long r4, unsigned long r5,
 	SYSRQ_KEY = 0x63;	/* Print Screen */
 #endif
 #endif
-        /* Build up the firmware_features bitmask field
-         * using contents of device-tree/ibm,hypertas-functions.
-         * Ultimately this functionality may be moved into prom.c prom_init().
-         */
+	/* Build up the firmware_features bitmask field
+	 * using contents of device-tree/ibm,hypertas-functions.
+	 * Ultimately this functionality may be moved into prom.c prom_init().
+	 */
 	struct device_node * dn;
 	char * hypertas;
 	unsigned int len;
@@ -320,21 +327,26 @@ chrp_init(unsigned long r3, unsigned long r4, unsigned long r5,
 	cur_cpu_spec->firmware_features=0;
 	hypertas = get_property(dn, "ibm,hypertas-functions", &len);
 	if (hypertas) {
-	    while (len > 0){
-		int i;
-	    /* check value against table of strings */
-		for(i=0; i < FIRMWARE_MAX_FEATURES ;i++) {
-		    if ((firmware_features_table[i].name) && (strcmp(firmware_features_table[i].name,hypertas))==0) {
-		    /* we have a match */
-			cur_cpu_spec->firmware_features |= (1UL << firmware_features_table[i].val );
-			break;
-		    }
+		while (len > 0) {
+			int i, hypertas_len;
+			/* check value against table of strings */
+			for(i=0; i < FIRMWARE_MAX_FEATURES; i++) {
+				if ((firmware_features_table[i].name) &&
+				    (strcmp(firmware_features_table[i].name,hypertas))==0) {
+					/* we have a match */
+					cur_cpu_spec->firmware_features |=
+						(firmware_features_table[i].val);
+					break;
+				}
+			}
+			hypertas_len = strlen(hypertas);
+			len -= hypertas_len +1;
+			hypertas+= hypertas_len +1;
 		}
-		int hypertas_len = strlen(hypertas);
-		len -= hypertas_len +1;
-		hypertas+= hypertas_len +1;
-	    }
 	}
+
+	printk(KERN_INFO "firmware_features = 0x%lx\n",
+	       cur_cpu_spec->firmware_features);
 }
 
 void __chrp

@@ -14,6 +14,10 @@
  *  Adapted for 64bit PowerPC by Dave Engebretsen, Peter Bergner, and
  *    Mike Corrigan {engebret|bergner|mikejc}@us.ibm.com
  *
+ *  VMX/Altivec port from ppc32 (C) IBM 2003
+ *   Denis Joseph Barrow (dj@de.ibm.com,barrow_dj@yahoo.com)
+ *   additional debugging & 2.4-2.5 VMX port
+ *   Ben Herrenschmidt 	(benh@kernel.crashing.org)
  *  This file contains the low-level support and setup for the
  *  PowerPC-64 platform, including trap and interrupt dispatch.
  *
@@ -376,8 +380,17 @@ __start_interupts:
 	STD_EXCEPTION_PSERIES( 0xc00, SystemCall )
 	STD_EXCEPTION_PSERIES( 0xd00, SingleStep )
 	STD_EXCEPTION_PSERIES( 0xe00, Trap_0e )
-	STD_EXCEPTION_PSERIES( 0xf00, PerformanceMonitor )
+	. = 0xf00
+	b   PerformanceMonitor_Pseries
+	STD_EXCEPTION_PSERIES( 0xf20, AltiVecUnavailable )
+	. = 0xf90
+	.globl PerformanceMonitor_Pseries
+PerformanceMonitor_Pseries:
+	EXCEPTION_PROLOG_PSERIES( 0xf00, PerformanceMonitor_common )
 	STD_EXCEPTION_PSERIES( 0x1300, InstructionBreakpoint )
+	STD_EXCEPTION_PSERIES( 0x1700, AltiVecAssist )
+	STD_EXCEPTION_PSERIES( 0x1800, ThermalInterrupt)
+
 
 	/* Space for the naca.  Architected to be located at real address
 	 * 0x4000.  Various tools rely on this location being fixed.
@@ -564,6 +577,47 @@ __end_stab:
 	STD_EXCEPTION_COMMON( 0xb00, Trap_0b, .UnknownException )
 	STD_EXCEPTION_COMMON( 0xd00, SingleStep, .SingleStepException )
 	STD_EXCEPTION_COMMON( 0xe00, Trap_0e, .UnknownException )
+
+	.globl AltiVecUnavailable_common
+AltiVecUnavailable_common:
+	EXCEPTION_PROLOG_COMMON
+#ifdef CONFIG_ALTIVEC
+	bne	.load_up_altivec	/* if from user, just load it up */
+#endif
+	addi	r3,r1,STACK_FRAME_OVERHEAD
+	DO_COPY_EE()
+	li	r6,0xf20
+	bl      .save_remaining_regs
+#ifndef CONFIG_ALTIVEC
+	beq    1f
+	bl     .IllegalAltiVecInstruction
+	b      .ret_from_except
+1:
+#endif
+	bl      .KernelAltiVecUnavailableException
+	BUG_OPCODE
+
+	.global AltiVecAssist_common
+AltiVecAssist_common:
+	EXCEPTION_PROLOG_COMMON
+	addi	r3,r1,STACK_FRAME_OVERHEAD
+	DO_COPY_EE()
+	li	r6,0x1700
+	bl	.save_remaining_regs
+	bl	.AltiVecAssistException
+	b	.ret_from_except
+
+	.global ThermalInterrupt_common
+ThermalInterrupt_common:
+	EXCEPTION_PROLOG_COMMON
+	addi	r3,r1,STACK_FRAME_OVERHEAD
+	DO_COPY_EE()
+	li	r6,0x1800
+	bl      .save_remaining_regs
+	bl	.ThermalInterrupt
+	BUG_OPCODE
+
+
 	STD_EXCEPTION_COMMON(0x1300, InstructionBreakpoint, .InstructionBreakpointException )
 
 /*
@@ -1324,6 +1378,12 @@ _GLOBAL(save_remaining_regs)
 	addi	r24,r1,STACK_FRAME_OVERHEAD
 	ld	r22,PACACURRENT(r13)
 	std	r24,THREAD+PT_REGS(r22)
+#ifdef CONFIG_ALTIVEC
+BEGIN_FTR_SECTION
+	mfspr	r24,SPRN_VRSAVE		/* if save vrsave register value */
+	std	r24,THREAD+THREAD_VRSAVE(r22)
+END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
+#endif /* CONFIG_ALTIVEC */
 2:
 	SET_REG_TO_CONST(r22, MSR_KERNEL)
 
@@ -1694,6 +1754,100 @@ _GLOBAL(giveup_fpu)
 #endif /* CONFIG_SMP */
 	blr
 
+#ifdef CONFIG_ALTIVEC
+/*
+ * load_up_altivec(unused, unused, tsk)
+ * Disable Altivec for the task which used altivec upreviously,
+ * and save its altivec registers in its thread_struct.
+ * Enables Altivec for use in the kernel on return.
+ * On SMP we know the fpu is free, since we give it up every
+ * switch (ie, no lazy save of the altivec registers).
+ * On entry: r13 == 'current' && last_task_used_altivec != 'current'
+ */
+_STATIC(load_up_altivec)
+/*
+ * Disable AltiVec for the task which had AltiVec previously,
+ * and save its AltiVec registers in its thread_struct.
+ * Enables AltiVec for use in the kernel on return.
+ * On SMP we know the AltiVec units are free, since we give it up every
+ * switch.  -- Kumar
+ */
+	mfmsr	r5
+	oris	r5,r5,MSR_VEC@h
+	mtmsrd	r5			/* enable use of AltiVec now */
+	isync
+/*
+ * For SMP, we don't do lazy AltiVec switching because it just gets too
+ * horrendously complex, especially when a task switches from one CPU
+ * to another.  Instead we call giveup_altivec in switch_to.
+ */
+#ifndef CONFIG_SMP
+	LOADBASE(r3,last_task_used_altivec)
+	ld	r4,last_task_used_altivec@l(r3)
+	cmpi	0,r4,0
+	beq	1f
+	addi	r4,r4,THREAD	/* want THREAD of last_task_used_altivec */
+	SAVE_32VR(0,r20,r4)
+	MFVSCR(vr0)
+	li	r20,THREAD_VSCR
+	STVX(vr0,r20,r4)
+	ld	r5,PT_REGS(r4)
+	ld	r4,_MSR-STACK_FRAME_OVERHEAD(r5)
+	lis	r20,MSR_VEC@h
+	andc	r4,r4,r20	/* disable altivec for previous task */
+	std	r4,_MSR-STACK_FRAME_OVERHEAD(r5)
+1:
+#endif /* CONFIG_SMP */
+	/* enable use of AltiVec after return */
+	ld	r4,PACACURRENT(r13)
+	addi	r5,r4,THREAD
+	oris	r23,r23,MSR_VEC@h
+	li	r20,THREAD_VSCR
+	LVX(vr0,r20,r5)
+	MTVSCR(vr0)
+	REST_32VR(0,r20,r5)
+#ifndef CONFIG_SMP
+	/* Update last_task_used_altivec to 'current' */
+	std	r4,last_task_used_altivec@l(r3)
+#endif /* CONFIG_SMP */
+	/* restore registers and return */
+	b	fast_exception_return
+/*
+ * giveup_altivec(tsk)
+ * Disable AltiVec for the task given as the argument,
+ * and save the AltiVec registers in its thread_struct.
+ * Enables AltiVec for use in the kernel on return.
+ */
+_GLOBAL(giveup_altivec)
+	mfmsr	r5
+	oris	r5,r5,MSR_VEC@h
+	mtmsrd	r5			/* enable use of AltiVec now */
+	isync
+	cmpi	0,r3,0
+	beqlr-				/* if no previous owner, done */
+	addi	r3,r3,THREAD		/* want THREAD of task */
+	ld	r5,PT_REGS(r3)
+	cmpi	0,r5,0
+	SAVE_32VR(0, r4, r3)
+	MFVSCR(vr0)
+	li	r4,THREAD_VSCR
+	STVX(vr0, r4, r3)
+	beq	1f
+	ld	r4,_MSR-STACK_FRAME_OVERHEAD(r5)
+	lis	r3,MSR_VEC@h
+	andc	r4,r4,r3		/* disable AltiVec for previous task */
+	std	r4,_MSR-STACK_FRAME_OVERHEAD(r5)
+1:
+#ifndef CONFIG_SMP
+	li	r5,0
+	LOADBASE(r4,last_task_used_altivec)
+	std	r5,last_task_used_altivec@l(r4)
+#endif /* CONFIG_SMP */
+	blr
+#endif /* CONFIG_ALTIVEC */
+
+
+
 #ifdef CONFIG_SMP
 /*
  * This function is called after the master CPU has released the
@@ -1782,7 +1936,6 @@ _GLOBAL(__secondary_start)
 	mtspr	SRR0,r3
 	mtspr	SRR1,r4
 	rfid
-#endif /* CONFIG_SMP */
 
 /* 
  * Running with relocation on at this point.  All we want to do is
@@ -1792,6 +1945,7 @@ _GLOBAL(start_secondary_prolog)
 	li	r3,0
 	std	r3,0(r1)                /* Zero the stack frame pointer     */
 	bl	.start_secondary
+#endif /* CONFIG_SMP */
 
 /*
  * This subroutine clobbers r11, r12 and the LR

@@ -178,4 +178,6 @@ struct paca_struct {
 	u8 guard[0x1000];               /* ... and then hang 'em         */ 
 };
 
+#define get_hard_smp_processor_id(CPU) (paca[(CPU)].xHwProcNum)
+
 #endif /* _PPC64_PACA_H */

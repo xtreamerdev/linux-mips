@@ -27,6 +27,7 @@
 #include <linux/errno.h>
 #include <linux/sys.h>
 #include <linux/config.h>
+#include <asm/cputable.h>
 
 #ifdef CONFIG_PPC_ISERIES
 #define DO_SOFT_DISABLE
@@ -257,6 +258,11 @@ _GLOBAL(_switch)
 	mflr	r20		/* Return to switch caller */
 	mfmsr	r22
 	li	r6,MSR_FP	/* Disable floating-point */
+#ifdef CONFIG_ALTIVEC
+BEGIN_FTR_SECTION
+	oris	r6,r6,MSR_VEC@h	/* Disable altivec */
+END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
+#endif /* CONFIG_ALTIVEC */
 	andc	r22,r22,r6
 	mtmsrd	r22
 	isync
@@ -385,6 +391,12 @@ restore:
 	andi.	r0,r0,MSR_PR
 	beq+	1f
 	ld	r4,PACACURRENT(r13)
+#ifdef CONFIG_ALTIVEC
+BEGIN_FTR_SECTION
+	ld	r0,THREAD+THREAD_VRSAVE(r4)
+	mtspr	SPRN_VRSAVE,r0		/* if GPUL, restore VRSAVE reg */
+END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
+#endif /* CONFIG_ALTIVEC */
 	addi	r0,r1,INT_FRAME_SIZE	/* size of frame */
 	std	r0,THREAD+KSP(r4)	/* save kernel stack pointer */
 	std	r1,PACAKSAVE(r13)	/* save exception stack pointer */

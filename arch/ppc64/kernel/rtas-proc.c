@@ -124,6 +124,11 @@ static unsigned long rtas_tone_frequency = 1000;
 static unsigned long rtas_tone_volume = 0;
 static unsigned int open_token = 0;
 
+static int set_time_for_power_on = RTAS_UNKNOWN_SERVICE;
+static int set_time_of_day = RTAS_UNKNOWN_SERVICE;
+static int get_sensor_state = RTAS_UNKNOWN_SERVICE;
+static int set_indicator = RTAS_UNKNOWN_SERVICE;
+
 extern struct proc_dir_entry *proc_ppc64_root;
 extern struct proc_dir_entry *rtas_proc_dir;
 extern spinlock_t proc_ppc64_lock;
@@ -215,6 +220,8 @@ int check_location (char *c, int idx, char * buf);
 void proc_rtas_init(void)
 {
 	struct proc_dir_entry *entry;
+	int display_character;
+	int errinjct_token;
 
 	rtas_node = find_devices("rtas");
 	if ((rtas_node == NULL) || (systemcfg->platform == PLATFORM_ISERIES_LPAR)) {
@@ -240,29 +247,51 @@ void proc_rtas_init(void)
 		return;
 	}
 
-	/* /proc/rtas entries */
+	/*
+	 * /proc/rtas entries
+	 * only create entries if rtas token exists for desired function
+	 */
 
-	entry = create_proc_entry("progress", S_IRUGO|S_IWUSR, rtas_proc_dir);
-	if (entry) entry->proc_fops = &ppc_rtas_progress_operations;
+	set_time_of_day = rtas_token("set-time-of-day");
+	if (set_time_of_day != RTAS_UNKNOWN_SERVICE) {
+		entry=create_proc_entry("clock",S_IRUGO|S_IWUSR,rtas_proc_dir);
+		if (entry) entry->proc_fops = &ppc_rtas_clock_operations;
+	}
 
-	entry = create_proc_entry("clock", S_IRUGO|S_IWUSR, rtas_proc_dir); 
-	if (entry) entry->proc_fops = &ppc_rtas_clock_operations;
+	set_time_for_power_on = rtas_token("set-time-for-power-on");
+	if (set_time_for_power_on != RTAS_UNKNOWN_SERVICE) {
+		entry=create_proc_entry("poweron",S_IWUSR|S_IRUGO,rtas_proc_dir);
+		if (entry) entry->proc_fops = &ppc_rtas_poweron_operations;
+	}
 
-	entry = create_proc_entry("poweron", S_IWUSR|S_IRUGO, rtas_proc_dir); 
-	if (entry) entry->proc_fops = &ppc_rtas_poweron_operations;
+	get_sensor_state = rtas_token("get-sensor-state");
+	if (get_sensor_state != RTAS_UNKNOWN_SERVICE) {
+		create_proc_read_entry("sensors", S_IRUGO, rtas_proc_dir,
+				       ppc_rtas_sensor_read, NULL);
+	}
 
-	create_proc_read_entry("sensors", S_IRUGO, rtas_proc_dir, 
-			ppc_rtas_sensor_read, NULL);
-	
-	entry = create_proc_entry("frequency", S_IWUSR|S_IRUGO, rtas_proc_dir); 
-	if (entry) entry->proc_fops = &ppc_rtas_tone_freq_operations;
+	set_indicator = rtas_token("set-indicator");
+	if (set_indicator != RTAS_UNKNOWN_SERVICE) {
+		entry=create_proc_entry("frequency",S_IWUSR|S_IRUGO,rtas_proc_dir);
+		if (entry) entry->proc_fops = &ppc_rtas_tone_freq_operations;
 
-	entry = create_proc_entry("volume", S_IWUSR|S_IRUGO, rtas_proc_dir); 
-	if (entry) entry->proc_fops = &ppc_rtas_tone_volume_operations;
+		entry=create_proc_entry("volume",S_IWUSR|S_IRUGO,rtas_proc_dir);
+		if (entry) entry->proc_fops = &ppc_rtas_tone_volume_operations;
+	}
+
+	display_character = rtas_token("display-character");
+	if ((display_character != RTAS_UNKNOWN_SERVICE) ||
+	    (set_indicator != RTAS_UNKNOWN_SERVICE)) {
+		entry=create_proc_entry("progress",S_IRUGO|S_IWUSR,rtas_proc_dir);
+		if (entry) entry->proc_fops = &ppc_rtas_progress_operations;
+	}
 
 #ifdef CONFIG_RTAS_ERRINJCT
-	entry = create_proc_entry("errinjct", S_IWUSR|S_IRUGO, rtas_proc_dir);
-	if (entry) entry->proc_fops = &ppc_rtas_errinjct_operations;
+	errinjct_token = rtas_token("ibm,errinjct");
+	if (errinjct_token != RTAS_UNKNOWN_SERVICE) {
+		entry=create_proc_entry("errinjct",S_IWUSR|S_IRUGO,rtas_proc_dir);
+		if (entry) entry->proc_fops = &ppc_rtas_errinjct_operations;
+	}
 #endif
 
 }
@@ -294,11 +323,11 @@ static ssize_t ppc_rtas_poweron_write(struct file * file, const char * buf,
 
 	to_tm(nowtime, &tm);
 
-	error = rtas_call(rtas_token("set-time-for-power-on"), 7, 1, NULL, 
-			tm.tm_year, tm.tm_mon, tm.tm_mday, 
+	error = rtas_call(set_time_for_power_on, 7, 1, NULL,
+			tm.tm_year, tm.tm_mon, tm.tm_mday,
 			tm.tm_hour, tm.tm_min, tm.tm_sec, 0 /* nano */);
 	if (error != 0)
-		printk(KERN_WARNING "error: setting poweron time returned: %s\n", 
+		printk(KERN_WARNING "error: setting poweron time returned: %s\n",
 				ppc_rtas_process_error(error));
 	return count;
 }
@@ -465,7 +494,6 @@ static int ppc_rtas_sensor_read(char * buf, char ** start, off_t off,
 	unsigned long ret;
 	int state, error;
 	char *buffer;
-	int get_sensor_state = rtas_token("get-sensor-state");
 
 	if (count < 0)
 		return -EINVAL;
@@ -479,8 +507,8 @@ static int ppc_rtas_sensor_read(char * buf, char ** start, off_t off,
 	memset(buffer, 0, MAX_LINELENGTH*MAX_SENSORS);
 
 	n  = sprintf ( buffer  , "RTAS (RunTime Abstraction Services) Sensor Information\n");
-	n += sprintf ( buffer+n, "Sensor\t\tValue\t\tCondition\tLocation\n");
-	n += sprintf ( buffer+n, "********************************************************\n");
+	n += sprintf ( buffer+n, "%-17s\t%-15s\t%-15s\tLocation\n", "Sensor", "Value", "Condition");
+	n += sprintf ( buffer+n, "***************************************************************************\n");
 
 	if (ppc_rtas_find_all_sensors() != 0) {
 		n += sprintf ( buffer+n, "\nNo sensors are available\n");
@@ -586,10 +614,10 @@ int ppc_rtas_process_sensor(struct individual_sensor s, int state,
 		int error, char * buf) 
 {
 	/* Defined return vales */
-	const char * key_switch[]        = { "Off\t", "Normal\t", "Secure\t", "Mainenance" };
+	const char * key_switch[]        = { "Off", "Normal", "Secure", "Maintenance" };
 	const char * enclosure_switch[]  = { "Closed", "Open" };
 	const char * lid_status[]        = { " ", "Open", "Closed" };
-	const char * power_source[]      = { "AC\t", "Battery", "AC & Battery" };
+	const char * power_source[]      = { "AC", "Battery", "AC & Battery" };
 	const char * battery_remaining[] = { "Very Low", "Low", "Mid", "High" };
 	const char * epow_sensor[]       = { 
 		"EPOW Reset", "Cooling warning", "Power warning",
@@ -600,101 +628,108 @@ int ppc_rtas_process_sensor(struct individual_sensor s, int state,
 	const char * ibm_drconnector[]     = { "Empty", "Present" };
 	const char * ibm_intqueue[]        = { "Disabled", "Enabled" };
 
-	int have_strings = 0;
 	int temperature = 0;
 	int unknown = 0;
 	int n = 0;
+	char *label_string = NULL;
+	const char **value_arr = NULL;
+	int value_arrsize = 0;
 
 	/* What kind of sensor do we have here? */
 	
 	switch (s.token) {
 		case KEY_SWITCH:
-			n += sprintf(buf+n, "Key switch:\t");
-			n += sprintf(buf+n, "%s\t", key_switch[state]);
-			have_strings = 1;
+			label_string = "Key switch:";
+			value_arrsize = sizeof(key_switch)/sizeof(char *);
+			value_arr = key_switch;
 			break;
 		case ENCLOSURE_SWITCH:
-			n += sprintf(buf+n, "Enclosure switch:\t");
-			n += sprintf(buf+n, "%s\t", enclosure_switch[state]);
-			have_strings = 1;
+			label_string = "Enclosure switch:";
+			value_arrsize = sizeof(enclosure_switch)/sizeof(char *);
+			value_arr = enclosure_switch;
 			break;
 		case THERMAL_SENSOR:
-			n += sprintf(buf+n, "Temp. (°C/°F):\t");
+			label_string = "Temp. (°C/°F):";
 			temperature = 1;
 			break;
 		case LID_STATUS:
-			n += sprintf(buf+n, "Lid status:\t");
-			n += sprintf(buf+n, "%s\t", lid_status[state]);
-			have_strings = 1;
+			label_string = "Lid status:";
+			value_arrsize = sizeof(lid_status)/sizeof(char *);
+			value_arr = lid_status;
 			break;
 		case POWER_SOURCE:
-			n += sprintf(buf+n, "Power source:\t");
-			n += sprintf(buf+n, "%s\t", power_source[state]);
-			have_strings = 1;
+			label_string = "Power source:";
+			value_arrsize = sizeof(power_source)/sizeof(char *);
+			value_arr = power_source;
 			break;
 		case BATTERY_VOLTAGE:
-			n += sprintf(buf+n, "Battery voltage:\t");
+			label_string = "Battery voltage:";
 			break;
 		case BATTERY_REMAINING:
-			n += sprintf(buf+n, "Battery remaining:\t");
-			n += sprintf(buf+n, "%s\t", battery_remaining[state]);
-			have_strings = 1;
+			label_string = "Battery remaining:";
+			value_arrsize = sizeof(battery_remaining)/sizeof(char *);
+			value_arr = battery_remaining;
 			break;
 		case BATTERY_PERCENTAGE:
-			n += sprintf(buf+n, "Battery percentage:\t");
+			label_string = "Battery percentage:";
 			break;
 		case EPOW_SENSOR:
-			n += sprintf(buf+n, "EPOW Sensor:\t");
-			n += sprintf(buf+n, "%s\t", epow_sensor[state]);
-			have_strings = 1;
+			label_string = "EPOW Sensor:";
+			value_arrsize = sizeof(epow_sensor)/sizeof(char *);
+			value_arr = epow_sensor;
 			break;
 		case BATTERY_CYCLESTATE:
-			n += sprintf(buf+n, "Battery cyclestate:\t");
-			n += sprintf(buf+n, "%s\t", battery_cyclestate[state]);
-			have_strings = 1;
+			label_string = "Battery cyclestate:";
+			value_arrsize = sizeof(battery_cyclestate)/sizeof(char *);
+			value_arr = battery_cyclestate;
 			break;
 		case BATTERY_CHARGING:
-			n += sprintf(buf+n, "Battery Charging:\t");
-			n += sprintf(buf+n, "%s\t", battery_charging[state]);
-			have_strings = 1;
+			label_string = "Battery Charging:";
+			value_arrsize = sizeof(battery_charging)/sizeof(char *);
+			value_arr = battery_charging;
 			break;
 		case IBM_SURVEILLANCE:
-			n += sprintf(buf+n, "Surveillance:\t");
+			label_string = "Surveillance:";
 			break;
 		case IBM_FANRPM:
-			n += sprintf(buf+n, "Fan (rpm):\t");
+			label_string = "Fan (rpm):";
 			break;
 		case IBM_VOLTAGE:
-			n += sprintf(buf+n, "Voltage (mv):\t");
+			label_string = "Voltage (mv):";
 			break;
 		case IBM_DRCONNECTOR:
-			n += sprintf(buf+n, "DR connector:\t");
-			n += sprintf(buf+n, "%s\t", ibm_drconnector[state]);
-			have_strings = 1;
+			label_string = "DR connector:";
+			value_arrsize = sizeof(ibm_drconnector)/sizeof(char *);
+			value_arr = ibm_drconnector;
 			break;
 		case IBM_POWERSUPPLY:
-			n += sprintf(buf+n, "Powersupply:\t");
+			label_string = "Powersupply:";
 			break;
 		case IBM_INTQUEUE:
-			n += sprintf(buf+n, "Interrupt queue:\t");
-			n += sprintf(buf+n, "%s\t", ibm_intqueue[state]);
-			have_strings = 1;
+			label_string = "Interrupt queue:";
+			value_arrsize = sizeof(ibm_intqueue)/sizeof(char *);
+			value_arr = ibm_intqueue;
 			break;
 		default:
 			n += sprintf(buf+n,  "Unkown sensor (type %d), ignoring it\n",
 					s.token);
 			unknown = 1;
-			have_strings = 1;
 			break;
 	}
-	if (have_strings == 0) {
+
+	if (label_string)
+		n += sprintf(buf+n, "%-17s\t", label_string);
+
+	if (value_arr && state >= 0 && state < value_arrsize) {
+		n += sprintf(buf+n, "%-15s\t", value_arr[state]);
+	} else {
 		if (temperature) {
-			n += sprintf(buf+n, "%4d /%4d\t", state, cel_to_fahr(state));
+			n += sprintf(buf+n, "%2d / %2d  \t", state, cel_to_fahr(state));
 		} else
-			n += sprintf(buf+n, "%10d\t", state);
+			n += sprintf(buf+n, "%-10d\t", state);
 	}
 	if (unknown == 0) {
-		n += sprintf ( buf+n, "%s\t", ppc_rtas_process_error(error));
+		n += sprintf ( buf+n, "%-15s\t", ppc_rtas_process_error(error));
 		n += get_location_code(s, buf+n);
 	}
 	return n;
@@ -830,7 +865,7 @@ static ssize_t ppc_rtas_tone_freq_write(struct file * file, const char * buf,
 	}
 	if (freq < 0) freq = 0;
 	rtas_tone_frequency = freq; /* save it for later */
-	error = rtas_call(rtas_token("set-indicator"), 3, 1, NULL,
+	error = rtas_call(set_indicator, 3, 1, NULL,
 			TONE_FREQUENCY, 0, freq);
 	if (error != 0)
 		printk(KERN_WARNING "error: setting tone frequency returned: %s\n", 
@@ -885,7 +920,7 @@ static ssize_t ppc_rtas_tone_volume_write(struct file * file, const char * buf,
 	if (volume > 100) volume = 100;
 	
         rtas_tone_volume = volume; /* save it for later */
-	error = rtas_call(rtas_token("set-indicator"), 3, 1, NULL,
+	error = rtas_call(set_indicator, 3, 1, NULL,
 			TONE_VOLUME, 0, volume);
 	if (error != 0)
 		printk(KERN_WARNING "error: setting tone volume returned: %s\n", 

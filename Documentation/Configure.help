@@ -3253,10 +3253,31 @@ CONFIG_IP6_NF_TARGET_MARK
   If you want to compile it as a module, say M here and read
   <file:Documentation/modules.txt>.  If unsure, say `N'.
 
+ARP tables support
+CONFIG_IP_NF_ARPTABLES
+  arptables is a general, extensible packet identification framework.
+  The ARP packet filtering and mangling (manipulation)subsystems
+  use this: say Y or M here if you want to use either of those.
+
+  If you want to compile it as a module, say M here and read
+  <file:Documentation/modules.txt>.  If unsure, say `N'.
+
+ARP packet filtering
+CONFIG_IP_NF_ARPFILTER
+  ARP packet filtering defines a table `filter', which has a series of
+  rules for simple ARP packet filtering at local input and
+  local output.  See the man page for arptables(8).
+
+  If you want to compile it as a module, say M here and read
+  <file:Documentation/modules.txt>.  If unsure, say `N'.
+
 ARP payload mangling
 CONFIG_IP_NF_ARP_MANGLE
   Allows altering the ARP packet payload: source and destination
   hardware and network addresses.
+
+  If you want to compile it as a module, say M here and read
+  <file:Documentation/modules.txt>.  If unsure, say `N'.
 
 TCP Explicit Congestion Notification support
 CONFIG_INET_ECN
@@ -11155,9 +11176,6 @@ CONFIG_COMX
   You must say Y to "/proc file system support" (CONFIG_PROC_FS) to
   use this driver.
 
-  If you want to compile this as a module, say M and read
-  <file:Documentation/modules.txt>.  The module will be called comx.o.
-
 Support for COMX/CMX/HiCOMX boards
 CONFIG_COMX_HW_COMX
   Hardware driver for the 'CMX', 'COMX' and 'HiCOMX' boards from the
@@ -11372,6 +11390,18 @@ CONFIG_PC300_MLPPP
   Say 'Y' to this option if you are planning to use Multilink PPP over the
   PC300 synchronous communication boards.
 
+CONFIG_PCI200SYN
+  This driver is for PCI200SYN cards made by Goramo sp. j.
+  If you have such a card, say Y or M here and see
+  <http://hq.pm.waw.pl/pub/hdlc/>
+
+  If you want to compile the driver as a module ( = code which can be
+  inserted in and removed from the running kernel whenever you want),
+  say M here and read <file:Documentation/modules.txt>.  The module
+  will be called pci200syn.o.
+
+  If unsure, say N here.
+
 SDL RISCom/N2 support
 CONFIG_N2
   This driver is for RISCom/N2 single or dual channel ISA cards
@@ -11399,25 +11429,6 @@ CONFIG_C101
   will be called c101.o.
 
   If unsure, say N here.
-
-CONFIG_HDLC_DEBUG_PKT
-  This option is for developers only - do NOT use on production
-  systems.
-
-CONFIG_HDLC_DEBUG_HARD_HEADER
-  This option is for developers only - do NOT use on production
-  systems.
-
-CONFIG_HDLC_DEBUG_ECN
-  This option is for developers only - do NOT use on production
-  systems.
-
-CONFIG_HDLC_DEBUG_RINGS
-  If you answer Y here you will be able to get a diagnostic dump of
-  port's TX and RX packet rings, using "sethdlc hdlcX private"
-  command. It does not affect normal operations.
-
-  If unsure, say Y here.
 
 Ethernet (10 or 100Mbit)
 CONFIG_NET_ETHERNET
@@ -19052,9 +19063,9 @@ CONFIG_I2C_ELV
   <file:Documentation/modules.txt>.
   The module will be called i2c-elv.o.
 
-Velleman K9000 adapter
+Velleman K8000 adapter
 CONFIG_I2C_VELLEMAN
-  This supports the Velleman K9000 parallel-port I2C adapter.  Say Y
+  This supports the Velleman K8000 parallel-port I2C adapter.  Say Y
   if you own such an adapter.
 
   This driver is also available as a module.  If you want to compile
@@ -23907,7 +23918,7 @@ CONFIG_IDE_8xx_PCCARD
              PCMCIA interface (example: IDIF860 systems)
 
 Use SMC2 for UART
-CONFIG_SMC2_UART
+CONFIG_8xx_SMC2
   If you would like to use SMC2 as a serial port, say Y here.
 
   If in doubt, say Y here.
@@ -24426,6 +24437,11 @@ CONFIG_PPC_RTAS
   and shutdown.
 
   If unsure, say Y.
+
+Support for Lpar Configuration data in /proc
+CONFIG_LPARCFG
+  This option adds lparcfg entry as /proc/ppc64/lparcfg which returns
+  system configuration info in <key word>=<value> pairs. 
 
 MESH (Power Mac internal SCSI) support
 CONFIG_SCSI_MESH
@@ -26320,6 +26336,14 @@ CONFIG_SMC_IRCC_FIR
   here and read <file:Documentation/modules.txt>.  The module will be
   called smc-ircc.o.
 
+VIA IrCC
+CONFIG_VIA_IRCC_FIR
+  Say Y here if you want to build support for the VIA Fast Infrared
+  Communications Controller.  It is used in all sorts of VIA686a- and
+  VT1211-based notebooks. If you want to compile it as a module, say M
+  here and read <file:Documentation/modules.txt>.  The module will be
+  called via-ircc.o.
+
 ALi M5123 FIR controller driver
 CONFIG_ALI_FIR
   Say Y here if you want to build support for the ALi M5123 FIR
@@ -27313,16 +27337,11 @@ CONFIG_IA64_GENERIC
   will run on any supported IA-64 system.  However, if you configure
   a kernel for your specific system, it will be faster and smaller.
 
-  To find out what type of IA-64 system you have, you may want to
-  check the IA-64 Linux web site at <http://www.linux-ia64.org/>.
-  As of the time of this writing, most hardware is DIG compliant,
-  so the "DIG-compliant" option is usually the right choice.
-
-  HP-simulator   For the HP simulator (<http://software.hp.com/ia64linux/>).
-  HP-zx1	 For HP zx1 Platforms.
-  SN1            For SGI SN1 Platforms.
-  SN2            For SGI SN2 Platforms.
-  DIG-compliant  For DIG ("Developer's Interface Guide") compliant systems.
+  generic        For any supported IA-64 system
+  DIG-compliant  For DIG ("Developer's Interface Guide") compliant systems
+  HP             For HP systems
+  SGI-SN2        For SGI SN2 systems
+  Ski-simulator  For the HP simulator (<http://www.hpl.hp.com/research/linux/ski/>)
 
   If you don't know what to do, choose "generic".
 
@@ -28276,6 +28295,14 @@ CONFIG_SCx200
   This support is also available as a module.  If compiled as a
   module, it will be called scx200.o.
 
+NatSemi SCx200 GPIO support
+CONFIG_SCx200_GPIO
+  Give userspace access to the GPIO pins on the National
+  Semiconductor SCx200 processors.
+
+  This support is also available as a module.  If compiled as a
+  module, it will be called scx200_gpio.o.
+
 NatSemi SCx200 Watchdog
 CONFIG_SCx200_WDT
   Enable the built-in watchdog timer support on the National 
@@ -28427,7 +28454,7 @@ CONFIG_MTD_UCLINUX
   If compiled as a module, it will be called uclinux.o.
 
 NatSemi SCx200 I2C using GPIO pins
-CONFIG_SCx200_GPIO
+CONFIG_SCx200_I2C
   Enable the use of two GPIO pins of a SCx200 processor as an I2C bus.
 
   If you don't know what to do here, say N.
@@ -28655,6 +28682,12 @@ CONFIG_CRYPTO_CAST5
 
   The CAST5 encryption algorithm (synonymous with CAST-128) is
   described in RFC2144.
+
+CONFIG_CRYPTO_CAST6
+  CAST6 (CAST-256) cipher algorithm.
+  
+  The CAST6 encryption algorithm (synonymous with CAST-256) is
+  described in RFC2612.
 
 CONFIG_CRYPTO_DEFLATE
   This is the Deflate algorithm (RFC1951), specified for use in
