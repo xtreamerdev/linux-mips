@@ -518,6 +518,19 @@ SUBDIRS		+= arch/mips/jmr3927/rbhma3100 arch/mips/jmr3927/common
 LOADADDR	:= 0x80050000
 endif
 
+#
+# Toshiba RBTX4927 board or
+# Toshiba RBTX4937 board
+#
+ifdef CONFIG_TOSHIBA_RBTX4927
+MIPS           = arch/mips
+CEC            = tx4927
+COMMON         = $(MIPS)/$(CEC)/common
+BOARD          = $(MIPS)/$(CEC)/toshiba_rbtx4927
+LIBS          += $(BOARD)/toshiba_rbtx4927.o $(COMMON)/tx4927.o
+SUBDIRS       += $(BOARD)                    $(COMMON)
+LOADADDR      += 0x80020000
+endif
 
 #
 # Choosing incompatible machines durings configuration will result in
