@@ -374,12 +374,10 @@ void __init init_IRQ(void)
 
 	/*
 	 * Note that the timer interrupts are also mapped, but this is
-	 * done in sb1250_time_init()
+	 * done in sb1250_time_init().  Also, the profiling driver 
+	 * does its own management of IP7.
 	 */
 
-#ifdef CONFIG_BCM1250_PROF
-	imask |= STATUSF_IP7;
-#endif
 #ifdef CONFIG_KGDB
 	imask |= STATUSF_IP6;
 #endif
@@ -427,7 +425,7 @@ void sb1250_kgdb_interrupt(struct pt_regs *regs)
 	 * host to stop the break, since we would see another
 	 * interrupt on the end-of-break too)
 	 */
-	kstat.irqs[smp_processor_id()][K_INT_UART_1]++;
+	kstat.irqs[smp_processor_id()][kgdb_irq]++;
 	mdelay(500);
 	duart_out(R_DUART_CMD, V_DUART_MISC_CMD_RESET_BREAK_INT |
 				M_DUART_RX_EN | M_DUART_TX_EN);
