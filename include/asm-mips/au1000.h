@@ -956,6 +956,22 @@ extern au1xxx_irq_map_t au1xxx_irq_map[];
   #define SYS_PF_CS			(1<<16)	/* EXTCLK0/32khz to gpio2 */
   #define SYS_PF_EX0			(1<<9)	/* gpio2/clock */
 
+/* Au1550 Only.  Redefines lots of pins */
+  #define SYS_PF_PSC2_MASK		(7 << 17)
+  #define SYS_PF_PSC2_AC97		(0)
+  #define SYS_PF_PSC2_SPI		(0)
+  #define SYS_PF_PSC2_I2S		(1 << 17)
+  #define SYS_PF_PSC2_SMBUS		(3 << 17)
+  #define SYS_PF_PSC2_GPIO		(7 << 17)
+  #define SYS_PF_PSC3_MASK		(7 << 20)
+  #define SYS_PF_PSC3_AC97		(0)
+  #define SYS_PF_PSC3_SPI		(0)
+  #define SYS_PF_PSC3_I2S		(1 << 20)
+  #define SYS_PF_PSC3_SMBUS		(3 << 20)
+  #define SYS_PF_PSC3_GPIO		(7 << 20)
+  #define SYS_PF_PSC1_S1		(1 << 1)
+  #define SYS_PF_MUST_BE_SET		((1 << 5) | (1 << 2))
+
 #define SYS_TRIOUTRD              0xB1900100
 #define SYS_TRIOUTCLR             0xB1900100
 #define SYS_OUTPUTRD              0xB1900108
