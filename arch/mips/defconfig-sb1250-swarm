@@ -360,7 +360,6 @@ CONFIG_NETDEVICES=y
 # Ethernet (10 or 100Mbit)
 #
 CONFIG_NET_ETHERNET=y
-CONFIG_NET_SB1250_MAC=y
 # CONFIG_SUNLANCE is not set
 # CONFIG_SUNBMAC is not set
 # CONFIG_SUNQE is not set
@@ -384,6 +383,7 @@ CONFIG_NET_SB1250_MAC=y
 # CONFIG_HAMACHI is not set
 # CONFIG_YELLOWFIN is not set
 # CONFIG_R8169 is not set
+CONFIG_NET_SB1250_MAC=y
 # CONFIG_SK98LIN is not set
 # CONFIG_TIGON3 is not set
 # CONFIG_FDDI is not set
