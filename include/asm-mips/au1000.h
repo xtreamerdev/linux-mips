@@ -841,8 +841,8 @@ extern unsigned int get_au1x00_lcd_clock(void);
 #define GPIO2_DIR                 (GPIO2_BASE + 0)
 #define GPIO2_DATA_EN             (GPIO2_BASE + 8)
 #define GPIO2_PIN_STATE           (GPIO2_BASE + 0xC)
-#define GPIO2_INT_MASK            (GPIO2_BASE + 0x10)
-#define GPIO2_CONTROL             (GPIO2_BASE + 0x14)
+#define GPIO2_INT_ENABLE          (GPIO2_BASE + 0x10)
+#define GPIO2_ENABLE              (GPIO2_BASE + 0x14)
 
 /* Power Management */
 #define SYS_SCRATCH0              0xB1900018

@@ -155,6 +155,10 @@ void __init au1x00_setup(void)
 	}
 #endif
 
+	/* GPIO201 is input for PCMCIA card detect */
+	/* GPIO203 is input for PCMCIA interrupt request */
+	au_writel(au_readl(GPIO2_DIR) & (u32)(~((1<<1)|(1<<3))), GPIO2_DIR);
+
 	/* zero and disable FREQ2 */
 	sys_freqctrl = au_readl(SYS_FREQCTRL0);
 	sys_freqctrl &= ~0xFFF00000;

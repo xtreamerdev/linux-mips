@@ -2,7 +2,7 @@
  *
  * Alchemy Semi Au1000 pcmcia driver
  *
- * Copyright 2001 MontaVista Software Inc.
+ * Copyright 2001-2003 MontaVista Software Inc.
  * Author: MontaVista Software, Inc.
  *         	ppopov@mvista.com or source@mvista.com
  *
@@ -134,6 +134,8 @@ static struct pccard_operations au1000_pcmcia_operations = {
 
 static spinlock_t pcmcia_lock = SPIN_LOCK_UNLOCKED;
 
+extern const unsigned long mips_io_port_base;
+
 static int __init au1000_pcmcia_driver_init(void)
 {
 	servinfo_t info;
@@ -195,9 +197,15 @@ static int __init au1000_pcmcia_driver_init(void)
 		pcmcia_socket[i].k_state=state;
 		pcmcia_socket[i].cs_state.csc_mask=SS_DETECT;
 		
+		/*
+		 * PCMCIA drivers use the inb/outb macros to access the
+		 * IO registers. Since mips_io_port_base is added to the
+		 * access address, we need to subtract it here.
+		 */
 		if (i == 0) {
 			pcmcia_socket[i].virt_io = 
-				(u32)ioremap((ioaddr_t)AU1X_SOCK0_IO, 0x1000);
+				(u32)ioremap((ioaddr_t)AU1X_SOCK0_IO, 0x1000) -
+				mips_io_port_base;
 			pcmcia_socket[i].phys_attr = 
 				(ioaddr_t)AU1X_SOCK0_PHYS_ATTR;
 			pcmcia_socket[i].phys_mem = 
@@ -205,7 +213,8 @@ static int __init au1000_pcmcia_driver_init(void)
 		}
 		else  {
 			pcmcia_socket[i].virt_io = 
-				(u32)ioremap((ioaddr_t)AU1X_SOCK1_IO, 0x1000);
+				(u32)ioremap((ioaddr_t)AU1X_SOCK1_IO, 0x1000) -
+				mips_io_port_base;
 			pcmcia_socket[i].phys_attr = 
 				(ioaddr_t)AU1X_SOCK1_PHYS_ATTR;
 			pcmcia_socket[i].phys_mem = 
