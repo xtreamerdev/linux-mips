@@ -74,6 +74,7 @@ bool 'Support for Momentum Ocelot board' CONFIG_MOMENCO_OCELOT
 bool 'Support for Momentum Ocelot-G board' CONFIG_MOMENCO_OCELOT_G
 bool 'Support for Momentum Ocelot-C and -CS boards' CONFIG_MOMENCO_OCELOT_C
 bool 'Support for Momentum Jaguar-ATX boards' CONFIG_MOMENCO_JAGUAR_ATX
+bool 'Support for PMC-Sierra Big Sur board' CONFIG_PMC_BIG_SUR
 bool 'Support PMC-Sierra Yosemite board' CONFIG_PMC_YOSEMITE
 if [ "$CONFIG_PMC_YOSEMITE" = "y" ]; then
    bool '  Hypertransport Support for PMC-Sierra Yosemite'  CONFIG_HYPERTRANSPORT
@@ -470,6 +471,10 @@ fi
 if [ "$CONFIG_MOMENCO_OCELOT_C" = "y" ]; then
    define_bool CONFIG_SWAP_IO_SPACE y
    define_bool CONFIG_NONCOHERENT_IO y
+   define_bool CONFIG_NEW_TIME_C y
+   define_bool CONFIG_BOOT_ELF32 y
+fi
+if [ "$CONFIG_PMC_BIG_SUR" = "y" ]; then
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_BOOT_ELF32 y
 fi

@@ -54,6 +54,7 @@ CONFIG_KMOD=y
 # CONFIG_MOMENCO_OCELOT_G is not set
 # CONFIG_MOMENCO_OCELOT_C is not set
 # CONFIG_MOMENCO_JAGUAR_ATX is not set
+# CONFIG_PMC_BIG_SUR is not set
 # CONFIG_PMC_YOSEMITE is not set
 # CONFIG_DDB5074 is not set
 # CONFIG_DDB5476 is not set
@@ -118,7 +119,7 @@ CONFIG_CPU_HAS_SYNC=y
 CONFIG_NET=y
 # CONFIG_PCI is not set
 # CONFIG_PCI_NEW is not set
-# CONFIG_PCI_AUTO is not set
+CONFIG_PCI_AUTO=y
 # CONFIG_ISA is not set
 # CONFIG_TC is not set
 # CONFIG_MCA is not set

@@ -477,6 +477,12 @@ SUBDIRS		+= arch/mips/momentum/ocelot_c
 LOADADDR	:= 0x80100000
 endif
 
+ifdef CONFIG_PMC_BIG_SUR
+CORE_FILES	+= arch/mips/pmc-sierra/big_sur/big_sur.o
+SUBDIRS		+= arch/mips/pmc-sierra/big_sur
+LOADADDR	:= 0x80100000
+endif
+
 ifdef CONFIG_MOMENCO_JAGUAR_ATX
 LIBS		+= arch/mips/momentum/jaguar_atx/jaguar_atx.o
 SUBDIRS		+= arch/mips/momentum/jaguar_atx
