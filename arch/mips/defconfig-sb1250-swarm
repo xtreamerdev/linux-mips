@@ -26,6 +26,7 @@ CONFIG_KMOD=y
 # CONFIG_MIPS_DB1000 is not set
 # CONFIG_MIPS_DB1100 is not set
 # CONFIG_MIPS_DB1500 is not set
+# CONFIG_MIPS_DB1550 is not set
 # CONFIG_MIPS_PB1000 is not set
 # CONFIG_MIPS_PB1100 is not set
 # CONFIG_MIPS_PB1500 is not set
@@ -85,7 +86,6 @@ CONFIG_SIBYTE_CFE=y
 # CONFIG_SIBYTE_BW_TRACE is not set
 # CONFIG_SIBYTE_SB1250_PROF is not set
 # CONFIG_SIBYTE_TBPROF is not set
-# CONFIG_PCI is not set
 CONFIG_SIBYTE_GENBUS_IDE=y
 CONFIG_SMP_CAPABLE=y
 # CONFIG_SNI_RM200_PCI is not set
@@ -147,6 +147,8 @@ CONFIG_CPU_HAS_SYNC=y
 # CONFIG_BINFMT_IRIX is not set
 CONFIG_NET=y
 # CONFIG_PCI is not set
+# CONFIG_PCI_NEW is not set
+# CONFIG_PCI_AUTO is not set
 # CONFIG_ISA is not set
 # CONFIG_TC is not set
 # CONFIG_MCA is not set
@@ -167,6 +169,7 @@ CONFIG_BINFMT_ELF=y
 # CONFIG_BINFMT_ELF32 is not set
 # CONFIG_BINFMT_MISC is not set
 # CONFIG_OOM_KILLER is not set
+# CONFIG_CMDLINE_BOOL is not set
 
 #
 # Memory Technology Devices (MTD)

@@ -282,10 +282,10 @@ if [ "$CONFIG_MOMENCO_OCELOT_C" = "y" -o "$CONFIG_MOMENCO_JAGUAR_ATX" = "y" ]; t
 fi
 
 if [ "$CONFIG_PMC_BIG_SUR" = "y" ]; then
-   dep_tristate 'PMC-Sierra Big Sur Fast Ethernet Adapter' CONFIG_BIG_SUR_FE
+   tristate 'PMC-Sierra Big Sur Fast Ethernet Adapter' CONFIG_BIG_SUR_FE
 fi
 if [ "$CONFIG_PMC_YOSEMITE" = "y" ]; then
-   dep_tristate 'PMC-Sierra TITAN Gigabit Ethernet Support' CONFIG_TITAN_GE
+   tristate 'PMC-Sierra TITAN Gigabit Ethernet Support' CONFIG_TITAN_GE
 fi
 endmenu
 

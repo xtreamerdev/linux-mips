@@ -27,9 +27,6 @@ dep_bool 'Support for Alchemy Db1100 board' CONFIG_MIPS_DB1100 $CONFIG_MIPS32
 dep_bool 'Support for Alchemy Db1500 board' CONFIG_MIPS_DB1500 $CONFIG_MIPS32
 dep_bool 'Support for Alchemy Db1550 board' CONFIG_MIPS_DB1550 $CONFIG_MIPS32
 dep_bool 'Support for Alchemy PB1000 board' CONFIG_MIPS_PB1000 $CONFIG_MIPS32
-if [ "$CONFIG_MIPS_PB1000" = "y" ]; then
-   bool '  Support for PCI AUTO Config' CONFIG_PCI_AUTO
-fi
 dep_bool 'Support for Alchemy PB1100 board' CONFIG_MIPS_PB1100 $CONFIG_MIPS32
 dep_bool 'Support for Alchemy PB1500 board' CONFIG_MIPS_PB1500 $CONFIG_MIPS32
 dep_bool 'Support for Alchemy Hydrogen3 board' CONFIG_MIPS_HYDROGEN3 $CONFIG_MIPS32
@@ -191,12 +188,6 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    bool '   Support for ZBbus profiling' CONFIG_SIBYTE_TBPROF
 
    if [ "$CONFIG_SIBYTE_SB1250" = "y" -o \
-        "$CONFIG_SIBYTE_BCM1125" = "y" -o \
-        "$CONFIG_SIBYTE_BCM1125H" = "y" ]; then
-      bool '   Support for BCM1250/BCM1125 onchip PCI controller' CONFIG_PCI
-   fi
-
-   if [ "$CONFIG_SIBYTE_SB1250" = "y" -o \
         "$CONFIG_SIBYTE_BCM1125H" = "y" ]; then
       if [ "$CONFIG_PCI" = "y" ]; then
          define_bool CONFIG_SIBYTE_HAS_LDT y
@@ -260,9 +251,6 @@ if [ "$CONFIG_MIPS_MIRAGE" = "y" ]; then
    define_bool CONFIG_SOC_AU1500 y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PC_KEYB y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NONCOHERENT_IO y
 fi
 if [ "$CONFIG_MIPS_BOSPORUS" = "y" ]; then
@@ -270,17 +258,12 @@ if [ "$CONFIG_MIPS_BOSPORUS" = "y" ]; then
    define_bool CONFIG_SOC_AU1500 y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PC_KEYB y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NONCOHERENT_IO y
 fi
 if [ "$CONFIG_MIPS_PB1000" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1000 y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_SWAP_IO_SPACE_W y
@@ -290,9 +273,6 @@ if [ "$CONFIG_MIPS_PB1100" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1100 y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_PCI_AUTO n
-   define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_SWAP_IO_SPACE_W y
@@ -302,9 +282,6 @@ if [ "$CONFIG_MIPS_PB1500" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1500 y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
 fi
@@ -312,10 +289,6 @@ if [ "$CONFIG_MIPS_DB1000" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1000 y
    define_bool CONFIG_NEW_TIME_C y
-   # CONFIG_PCI needed for USB
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO n
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_SWAP_IO_SPACE y
@@ -324,9 +297,6 @@ if [ "$CONFIG_MIPS_DB1500" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1500 y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
 fi
@@ -334,9 +304,6 @@ if [ "$CONFIG_MIPS_DB1550" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1550 y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
 fi
@@ -344,8 +311,6 @@ if [ "$CONFIG_MIPS_DB1100" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1100 y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_SWAP_IO_SPACE y
@@ -354,8 +319,6 @@ if [ "$CONFIG_MIPS_HYDROGEN3" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1100 y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_SWAP_IO_SPACE y
@@ -364,9 +327,6 @@ if [ "$CONFIG_MIPS_XXS1500" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1500 y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
 fi
@@ -374,18 +334,12 @@ if [ "$CONFIG_MIPS_MTX1" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1500 y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NONCOHERENT_IO y
 fi
 if [ "$CONFIG_COGENT_CSB250" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1500 y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
 fi
@@ -393,9 +347,6 @@ if [ "$CONFIG_MIPS_PB1550" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1550 y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NONCOHERENT_IO n
    define_bool CONFIG_PC_KEYB y
 fi
@@ -403,7 +354,6 @@ if [ "$CONFIG_MIPS_COBALT" = "y" ]; then
    define_bool CONFIG_BOOT_ELF32 y
    define_bool CONFIG_COBALT_LCD y
    define_bool CONFIG_I8259 y
-   define_bool CONFIG_PCI y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
 fi
@@ -416,37 +366,27 @@ if [ "$CONFIG_DECSTATION" = "y" ]; then
    define_bool CONFIG_NONCOHERENT_IO y
 fi
 if [ "$CONFIG_MIPS_EV64120" = "y" ]; then
-   define_bool CONFIG_PCI y
    define_bool CONFIG_MIPS_GT64120 y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_OLD_TIME_C y
 fi
 if [ "$CONFIG_MIPS_EV96100" = "y" ]; then
-   define_bool CONFIG_PCI y
    define_bool CONFIG_MIPS_GT64120 y
    define_bool CONFIG_MIPS_GT96100 y
-   define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
 fi
 if [ "$CONFIG_MIPS_IVR" = "y" ]; then
-   define_bool CONFIG_PCI y
    define_bool CONFIG_PC_KEYB y
-   define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_IT8172_CIR y
    define_bool CONFIG_NEW_TIME_C y
 fi
 if [ "$CONFIG_HP_LASERJET" = "y" ]; then
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI y
-   #not yet define_bool CONFIG_PCI_AUTO y
 fi
 if [ "$CONFIG_IBM_WORKPAD" = "y" ]; then
    define_bool CONFIG_IRQ_CPU y
@@ -458,19 +398,15 @@ fi
 if [ "$CONFIG_LASAT" = "y" ]; then
    define_bool CONFIG_BOARD_SCACHE y
    define_bool CONFIG_R5000_CPU_SCACHE y
-   define_bool CONFIG_PCI y
    define_bool CONFIG_MIPS_GT64120 y
    define_bool CONFIG_MIPS_NILE4 y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_NEW_TIME_C y
 fi
 if [ "$CONFIG_MIPS_ITE8172" = "y" ]; then
-   define_bool CONFIG_PCI y
    define_bool CONFIG_IT8712 y
    define_bool CONFIG_PC_KEYB y
-   define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_IT8172_CIR y
    define_bool CONFIG_NEW_TIME_C y
 fi
@@ -482,7 +418,6 @@ if [ "$CONFIG_MIPS_ATLAS" = "y" ]; then
    define_bool CONFIG_MIPS_MSC y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI y
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
 fi
@@ -511,17 +446,14 @@ if [ "$CONFIG_MIPS_MALTA" = "y" ]; then
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
    define_bool CONFIG_PC_KEYB y
-   define_bool CONFIG_PCI y
 fi
 if [ "$CONFIG_MIPS_SEAD" = "y" ]; then
    define_bool CONFIG_BOOT_ELF32 y
    define_int CONFIG_L1_CACHE_SHIFT 5
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI n
 fi
 if [ "$CONFIG_MOMENCO_OCELOT" = "y" ]; then
-   define_bool CONFIG_PCI y
    define_bool CONFIG_SYSCLK_100 y
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
@@ -529,7 +461,6 @@ if [ "$CONFIG_MOMENCO_OCELOT" = "y" ]; then
    define_bool CONFIG_OLD_TIME_C y
 fi
 if [ "$CONFIG_MOMENCO_OCELOT_G" = "y" ]; then
-   define_bool CONFIG_PCI y
    define_bool CONFIG_SYSCLK_100 y
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
@@ -537,14 +468,12 @@ if [ "$CONFIG_MOMENCO_OCELOT_G" = "y" ]; then
    define_bool CONFIG_OLD_TIME_C y
 fi
 if [ "$CONFIG_MOMENCO_OCELOT_C" = "y" ]; then
-   define_bool CONFIG_PCI y
    define_bool CONFIG_SWAP_IO_SPACE y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_BOOT_ELF32 y
 fi
 if [ "$CONFIG_MOMENCO_JAGUAR_ATX" = "y" ]; then
-   define_bool CONFIG_PCI y
    define_bool CONFIG_SWAP_IO_SPACE y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_NEW_TIME_C y
@@ -552,7 +481,6 @@ if [ "$CONFIG_MOMENCO_JAGUAR_ATX" = "y" ]; then
 fi
 
 if [ "$CONFIG_PMC_YOSEMITE" = "y" ]; then
-   define_bool CONFIG_PCI y
    define_bool CONFIG_SWAP_IO_SPACE y
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
@@ -567,32 +495,23 @@ if [ "$CONFIG_DDB5074" = "y" ]; then
    define_bool CONFIG_I8259 y
    define_bool CONFIG_ISA y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_IRQ_CPU y
-   define_bool CONFIG_NEW_PCI y
 fi
 if [ "$CONFIG_DDB5476"  = "y" ]; then
    define_bool CONFIG_ISA y
-   define_bool CONFIG_PCI y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_I8259 y
    define_bool CONFIG_HAVE_STD_PC_SERIAL_PORT y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
 fi
 if [ "$CONFIG_DDB5477" = "y" ]; then
-   define_bool CONFIG_PCI y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_IRQ_CPU y
-   define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_I8259 y
 fi
@@ -608,9 +527,6 @@ if [ "$CONFIG_NEC_EAGLE" = "y" ]; then
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_DUMMY_KEYB y
    define_bool CONFIG_SCSI n
 fi
@@ -638,7 +554,6 @@ if [ "$CONFIG_SGI_IP27" = "y" ]; then
    define_int CONFIG_L1_CACHE_SHIFT 7
    #define_bool CONFIG_MAPPED_PCI_IO y
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
    define_bool CONFIG_QL_ISP_A64 y
 fi
 if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
@@ -657,15 +572,11 @@ if [ "$CONFIG_SNI_RM200_PCI" = "y" ]; then
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_OLD_TIME_C y
    define_bool CONFIG_PC_KEYB y
-   define_bool CONFIG_PCI y
 fi
 if [ "$CONFIG_TANBAC_TB0226" = "y" ]; then
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_DUMMY_KEYB y
    define_bool CONFIG_SERIAL_MANY_PORTS y
 fi
@@ -673,17 +584,11 @@ if [ "$CONFIG_TANBAC_TB0229" = "y" ]; then
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_DUMMY_KEYB y
    define_bool CONFIG_SERIAL_MANY_PORTS y
 fi
 if [ "$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
    define_bool CONFIG_TOSHIBA_BOARDS y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_SWAP_IO_SPACE_W y
@@ -692,9 +597,6 @@ if [ "$CONFIG_TOSHIBA_JMR3927" = "y" ]; then
 fi
 if [ "$CONFIG_TOSHIBA_RBTX4927" = "y" ]; then
    define_bool CONFIG_NEW_TIME_C y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
    define_bool CONFIG_ISA y
@@ -704,18 +606,12 @@ if [ "$CONFIG_VICTOR_MPC30X" = "y" ]; then
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_SCSI n
 fi
 if [ "$CONFIG_ZAO_CAPCELLA" = "y" ]; then
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_PCI y
-   define_bool CONFIG_NEW_PCI y
-   define_bool CONFIG_PCI_AUTO y
    define_bool CONFIG_DUMMY_KEYB y
    define_bool CONFIG_SCSI n
 fi
@@ -907,13 +803,25 @@ fi
 
 bool 'Networking support' CONFIG_NET
 
+if [ "$CONFIG_ACER_PICA_61" = "y" -o \
+     "$CONFIG_CASIO_E55" = "y" -o \
+     "$CONFIG_DECSTATION" = "y" -o \
+     "$CONFIG_IBM_WORKPAD" = "y" -o \
+     "$CONFIG_MIPS_MAGNUM_4000" = "y" -o \
+     "$CONFIG_MIPS_SEAD" = "y" -o \
+     "$CONFIG_NINO" = "y" -o \
+     "$CONFIG_OLIVETTI_M700" = "y" -o \
+     "$CONFIG_SGI_IP22" = "y" ]; then
+   define_bool CONFIG_PCI n
+else
+   bool 'PCI bus support' CONFIG_PCI
+   dep_bool '    New PCI bus code' CONFIG_PCI_NEW $CONFIG_PCI
+   dep_bool '    Autoscan PCI bus' CONFIG_PCI_AUTO $CONFIG_PCI
+fi
+
 if [ "$CONFIG_SGI_IP22" = "y" -o "$CONFIG_MIPS_MAGNUM_4000" = "y" -o \
      "$CONFIG_OLIVETTI_M700" = "y" -o "$CONFIG_SNI_RM200_PCI" = "y" ]; then
    bool 'EISA bus support' CONFIG_EISA
-fi
-
-if [ "$CONFIG_PCI" != "y" ]; then
-   define_bool CONFIG_PCI n
 fi
 
 source drivers/pci/Config.in
