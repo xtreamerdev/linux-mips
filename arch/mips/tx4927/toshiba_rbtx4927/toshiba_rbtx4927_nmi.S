@@ -1,5 +1,5 @@
 /*
- * linux/arch/mips/tx4927/toshiba_rbtx4927/tx4927_irq_handler.S
+ * linux/arch/mips/tx4927/toshiba_rbtx4927/toshiba_rbtx4927_nmi.S
  *
  * NMI handler for Toshiba RBTX4927 board
  *

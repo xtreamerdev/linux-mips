@@ -921,7 +921,7 @@ void toshiba_rbtx4927_nmi (struct pt_regs *regs)
 	printk("Process %s (pid: %d, stackpage=%08lx)\n",
 		current->comm, current->pid, (unsigned long) current);
 	show_stack((unsigned int *)regs->regs[29]);
-	show_trace(regs->regs[29]);
+	show_trace((long *)regs->regs[29]);
 	show_code((unsigned int *)regs->cp0_epc);
 	bust_spinlocks(0);
 }
