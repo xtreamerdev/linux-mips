@@ -79,7 +79,7 @@ bool 'Support for Momentum Ocelot-C and -CS boards' CONFIG_MOMENCO_OCELOT_C
 bool 'Support for Momentum Jaguar-ATX boards' CONFIG_MOMENCO_JAGUAR_ATX
 bool 'Support for PMC-Sierra Big Sur board' CONFIG_PMC_BIG_SUR
 bool 'Support for PMC-Sierra Stretch board' CONFIG_PMC_STRETCH
-bool 'Support PMC-Sierra Yosemite board' CONFIG_PMC_YOSEMITE
+bool 'Support for PMC-Sierra Yosemite board' CONFIG_PMC_YOSEMITE
 if [ "$CONFIG_PMC_YOSEMITE" = "y" ]; then
    bool '  Hypertransport Support for PMC-Sierra Yosemite'  CONFIG_HYPERTRANSPORT
 fi
