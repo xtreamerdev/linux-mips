@@ -255,13 +255,8 @@ vmlinux.64: vmlinux
 	$(OBJCOPY) -O $(64bit-bfd) --remove-section=.reginfo --change-addresses=0xa800000080000000 $< $@
 endif
 
-zImage: vmlinux
-	@$(MAKEBOOT) zImage
-
-compressed: zImage
-
-zdisk: vmlinux
-	@$(MAKEBOOT) zdisk
+vmlinux.ecoff: vmlinux
+	@$(MAKEBOOT) $@
 
 archclean:
 	@$(MAKEBOOT) clean
