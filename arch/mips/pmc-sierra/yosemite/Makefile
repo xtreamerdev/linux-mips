@@ -2,10 +2,7 @@
 # Makefile for the PMC-Sierra Titan 
 #
 
-.S.s:
-	$(CPP) $(CFLAGS) $< -o $*.s
-.S.o:
-	$(CC) $(CFLAGS) -c $< -o $*.o
+USE_STANDARD_AS_RULE := true
 
 O_TARGET:= titan.o
 
