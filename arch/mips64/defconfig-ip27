@@ -13,7 +13,9 @@ CONFIG_MIPS64=y
 #
 # Loadable module support
 #
-# CONFIG_MODULES is not set
+CONFIG_MODULES=y
+CONFIG_MODVERSIONS=y
+CONFIG_KMOD=y
 
 #
 # Machine selection
