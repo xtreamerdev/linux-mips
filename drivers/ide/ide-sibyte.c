@@ -32,8 +32,7 @@ static unsigned long ide_base;
 #define SIBYTE_IDE_BASE        (KSEG1ADDR(ide_base)-mips_io_port_base)
 #define SIBYTE_IDE_REG(pcaddr) (SIBYTE_IDE_BASE + ((pcaddr)<<5))
 
-extern void sibyte_ideproc(ide_ide_action_t action, ide_drive_t *drive,
-			   void *buffer, unsigned int count);
+extern void sibyte_set_ideops(ide_hwif_t *hwif);
 
 void __init sibyte_ide_probe(void)
 {
@@ -43,6 +42,7 @@ void __init sibyte_ide_probe(void)
 	 * Find the first untaken slot in hwifs 
 	 */
 	for (i = 0; i < MAX_HWIFS; i++) {
+		sibyte_set_ideops(&ide_hwifs[i]);
 		if (!ide_hwifs[i].io_ports[IDE_DATA_OFFSET]) {
 			break;
 		}
@@ -73,8 +73,8 @@ void __init sibyte_ide_probe(void)
 	hwif->irq                             = K_INT_GB_IDE;
 	hwif->noprobe                         = 0;
 	hwif->hw.ack_intr                     = NULL;
-	/* Use our own non-byte-swapping routines */
-	hwif->ideproc                         = sibyte_ideproc;
+	/* Override options here, prevent region-checking */
+	hwif->mmio                            = 2;
 
 	memcpy(hwif->io_ports, hwif->hw.io_ports, sizeof(hwif->io_ports));
 	printk("SiByte onboard IDE configured as device %i\n", i);

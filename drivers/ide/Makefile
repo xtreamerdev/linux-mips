@@ -44,6 +44,8 @@ ifeq ($(CONFIG_BLK_DEV_IDE),y)
 obj-$(CONFIG_PROC_FS)			+= ide-proc.o
 endif
 
+obj-$(CONFIG_BLK_DEV_IDE_SIBYTE)	+= ide-sibyte.o
+
 ifeq ($(CONFIG_BLK_DEV_IDE),y)
   obj-y		+= legacy/idedriver-legacy.o
   obj-y		+= ppc/idedriver-ppc.o

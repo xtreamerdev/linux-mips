@@ -29,6 +29,12 @@
 extern struct ide_ops std_ide_ops;
 unsigned long ide_base;
 
+#ifdef CONFIG_SIBYTE_PCMCIA
+extern unsigned long sb_pcmcia_base;
+extern ide_ack_intr_t sb_pcmcia_ack_intr;
+#define SIBYTE_CS_REG(pcaddr)  (KSEG1ADDR(sb_pcmcia_base)-mips_io_port_base + pcaddr)
+#endif
+
 #ifdef CONFIG_BLK_DEV_IDE_SIBYTE
 extern ide_hwif_t *sb_ide_hwif;
 static inline int is_sibyte_ide(ide_ioreg_t from)
@@ -42,7 +48,11 @@ static inline int is_sibyte_ide(ide_ioreg_t from)
 		 (from == sb_ide_hwif->io_ports[IDE_HCYL_OFFSET]) ||
 		 (from == sb_ide_hwif->io_ports[IDE_SELECT_OFFSET]) ||
 		 (from == sb_ide_hwif->io_ports[IDE_STATUS_OFFSET]) ||
-		 (from == sb_ide_hwif->io_ports[IDE_CONTROL_OFFSET]))));
+		 (from == sb_ide_hwif->io_ports[IDE_CONTROL_OFFSET])))
+#ifdef CONFIG_SIBYTE_PCMCIA
+		|| (from > 0xffff)
+#endif
+		);
 }
 #else
 #define is_sibyte_ide(f) (0)
@@ -65,62 +75,31 @@ static ide_ioreg_t sibyte_ide_default_io_base(int index)
 static void sibyte_ide_init_hwif_ports (hw_regs_t *hw, ide_ioreg_t data_port,
 				       ide_ioreg_t ctrl_port, int *irq)
 {
+#ifdef CONFIG_SIBYTE_PCMCIA
+	if (data_port == 0xff00) {
+		hw->io_ports[IDE_DATA_OFFSET]    = SIBYTE_CS_REG(0);
+		hw->io_ports[IDE_ERROR_OFFSET]   = SIBYTE_CS_REG(1);
+		hw->io_ports[IDE_NSECTOR_OFFSET] = SIBYTE_CS_REG(2);
+		hw->io_ports[IDE_SECTOR_OFFSET]  = SIBYTE_CS_REG(3);
+		hw->io_ports[IDE_LCYL_OFFSET]    = SIBYTE_CS_REG(4);
+		hw->io_ports[IDE_HCYL_OFFSET]    = SIBYTE_CS_REG(5);
+		hw->io_ports[IDE_SELECT_OFFSET]  = SIBYTE_CS_REG(6);
+		hw->io_ports[IDE_STATUS_OFFSET]  = SIBYTE_CS_REG(7);
+		hw->io_ports[IDE_CONTROL_OFFSET] = SIBYTE_CS_REG(6); /* XXXKW ? */
+		hw->ack_intr = sb_pcmcia_ack_intr; /* XXXKW why here? */
+		if (irq)
+			*irq = 0;
+		hw->io_ports[IDE_IRQ_OFFSET] = 0;
+		return;
+	}
+#endif
 	std_ide_ops.ide_init_hwif_ports(hw, data_port, ctrl_port, irq);
-}
-
-static int sibyte_ide_request_irq(unsigned int irq,
-                                void (*handler)(int,void *, struct pt_regs *),
-                                unsigned long flags, const char *device,
-                                void *dev_id)
-{
-	return request_irq(irq, handler, flags, device, dev_id);
-}
-
-static void sibyte_ide_free_irq(unsigned int irq, void *dev_id)
-{
-	free_irq(irq, dev_id);
-}
-
-static int sibyte_ide_check_region(ide_ioreg_t from, unsigned int extent)
-{
-	/* Figure out if it's the SiByte IDE; if so, don't do anything
-           since our I/O space is in a weird place. */
-	if (is_sibyte_ide(from))
-		return 0;
-	else
-#ifdef CONFIG_BLK_DEV_IDE
-		return std_ide_ops.ide_check_region(from, extent);
-#else
-		return 0;
-#endif
-}
-
-static void sibyte_ide_request_region(ide_ioreg_t from, unsigned int extent,
-				     const char *name)
-{
-#ifdef CONFIG_BLK_DEV_IDE
-	if (!is_sibyte_ide(from))
-		std_ide_ops.ide_request_region(from, extent, name);
-#endif
-}
-
-static void sibyte_ide_release_region(ide_ioreg_t from, unsigned int extent)
-{
-#ifdef CONFIG_BLK_DEV_IDE
-	if (!is_sibyte_ide(from))
-		std_ide_ops.ide_release_region(from, extent);
-#endif
 }
 
 struct ide_ops sibyte_ide_ops = {
 	&sibyte_ide_default_irq,
 	&sibyte_ide_default_io_base,
-	&sibyte_ide_init_hwif_ports,
-	&sibyte_ide_request_irq,
-	&sibyte_ide_free_irq,
-	&sibyte_ide_check_region,
-	&sibyte_ide_request_region,
-	&sibyte_ide_release_region
+	&sibyte_ide_init_hwif_ports
 };
 
 /*
@@ -129,20 +108,17 @@ struct ide_ops sibyte_ide_ops = {
  * IDE (e.g. PCI-IDE) devices.
  */
 
-#define sibyte_outb(val,port)					\
-do {								\
-	*(volatile u8 *)(mips_io_port_base + (port)) = val;	\
-} while(0)
+static inline void sibyte_outb(u8 val, unsigned long port) {
+	*(volatile u8 *)(mips_io_port_base + (port)) = val;
+}
 
-#define sibyte_outw(val,port)					\
-do {								\
-	*(volatile u16 *)(mips_io_port_base + (port)) = val;	\
-} while(0)
+static inline void sibyte_outw(u16 val, unsigned long port) {
+	*(volatile u16 *)(mips_io_port_base + (port)) = val;
+}
 
-#define sibyte_outl(val,port)					\
-do {								\
-	*(volatile u32 *)(mips_io_port_base + (port)) = val;	\
-} while(0)
+static inline void sibyte_outl(u32 val, unsigned long port) {
+	*(volatile u32 *)(mips_io_port_base + (port)) = val;
+}
 
 static inline unsigned char sibyte_inb(unsigned long port)
 {
@@ -208,44 +184,16 @@ static inline void sibyte_insl(unsigned long port, void *addr, unsigned int coun
 	}
 }
 
-void sibyte_ideproc(ide_ide_action_t action, ide_drive_t *drive,
-		    void *buffer, unsigned int count)
+void sibyte_set_ideops(ide_hwif_t *hwif)
 {
-	/*  slow? vlb_sync? */
-	switch (action) {
-	case ideproc_ide_input_data:
-		if (drive->io_32bit) {
-			sibyte_insl(IDE_DATA_REG, buffer, count);
-		} else {
-			sibyte_insw(IDE_DATA_REG, buffer, count<<1);
-		}
-		break;
-	case ideproc_ide_output_data:
-		if (drive->io_32bit) {
-			sibyte_outsl(IDE_DATA_REG, buffer, count);
-		} else {
-			sibyte_outsw(IDE_DATA_REG, buffer, count<<1);
-		}
-		break;
-	case ideproc_atapi_input_bytes:
-		count++;
-		if (drive->io_32bit) {
-			sibyte_insl(IDE_DATA_REG, buffer, count>>2);
-		} else {
-			sibyte_insw(IDE_DATA_REG, buffer, count>>1);
-		}
-		if ((count & 3) >= 2)
-			sibyte_insw(IDE_DATA_REG, (char *)buffer + (count & ~3), 1);
-		break;
-	case ideproc_atapi_output_bytes:
-		count++;
-		if (drive->io_32bit) {
-			sibyte_outsl(IDE_DATA_REG, buffer, count>>2);
-		} else {
-			sibyte_outsw(IDE_DATA_REG, buffer, count>>1);
-		}
-		if ((count & 3) >= 2)
-			sibyte_outsw(IDE_DATA_REG, (char *)buffer + (count & ~3), 1);
-		break;
-	}
+	hwif->INB = sibyte_inb;
+	hwif->INW = sibyte_inw;
+	hwif->INL = sibyte_inl;
+	hwif->OUTB = sibyte_outb;
+	hwif->OUTW = sibyte_outw;
+	hwif->OUTL = sibyte_outl;
+	hwif->INSW = sibyte_insw;
+	hwif->INSL = sibyte_insl;
+	hwif->OUTSW = sibyte_outsw;
+	hwif->OUTSL = sibyte_outsl;
 }
