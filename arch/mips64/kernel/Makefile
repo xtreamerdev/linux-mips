@@ -27,7 +27,7 @@ obj-$(CONFIG_BINFMT_ELF32)	+= binfmt_elf32.o
 obj-$(CONFIG_SMP)		+= smp.o
 
 ifndef CONFIG_MAPPED_PCI_IO
-obj-y				+= pci-dma.o
+obj-$(CONFIG_PCI)		+= pci-dma.o
 endif
 
 CFLAGS_r4k_genex.o := -P
