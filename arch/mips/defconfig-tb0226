@@ -261,7 +261,6 @@ CONFIG_IPV6_SCTP__=y
 # ATA/IDE/MFM/RLL support
 #
 # CONFIG_IDE is not set
-# CONFIG_BLK_DEV_IDE_MODES is not set
 # CONFIG_BLK_DEV_HD is not set
 
 #
@@ -796,7 +795,6 @@ CONFIG_USB_STORAGE=y
 # CONFIG_USB_RTL8150 is not set
 # CONFIG_USB_KAWETH is not set
 # CONFIG_USB_CATC is not set
-# CONFIG_USB_AX8817X is not set
 # CONFIG_USB_CDCETHER is not set
 # CONFIG_USB_USBNET is not set
 

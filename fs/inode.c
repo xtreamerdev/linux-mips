@@ -790,7 +790,10 @@ void prune_icache(int goal)
 {
 	LIST_HEAD(list);
 	struct list_head *entry, *freeable = &list;
-	int count, avg_pages;
+	int count;
+#ifdef CONFIG_HIGHMEM
+	int avg_pages;
+#endif
 	struct inode * inode;
 
 	spin_lock(&inode_lock);
@@ -1234,10 +1237,8 @@ void iput(struct inode *inode)
 				BUG();
 		} else {
 			if (!list_empty(&inode->i_hash)) {
-				if (!(inode->i_state & (I_DIRTY|I_LOCK))) {
-					list_del(&inode->i_list);
-					list_add(&inode->i_list, &inode_unused);
-				}
+				if (!(inode->i_state & (I_DIRTY|I_LOCK))) 
+					__refile_inode(inode);
 				inodes_stat.nr_unused++;
 				spin_unlock(&inode_lock);
 				if (!sb || (sb->s_flags & MS_ACTIVE))
@@ -1414,6 +1415,11 @@ void remove_dquot_ref(struct super_block *sb, short type)
 			remove_inode_dquot_ref(inode, type, &tofree_head);
 	}
 	list_for_each(act_head, &inode_unused) {
+		inode = list_entry(act_head, struct inode, i_list);
+		if (inode->i_sb == sb && IS_QUOTAINIT(inode))
+			remove_inode_dquot_ref(inode, type, &tofree_head);
+	}
+	list_for_each(act_head, &inode_unused_pagecache) {
 		inode = list_entry(act_head, struct inode, i_list);
 		if (inode->i_sb == sb && IS_QUOTAINIT(inode))
 			remove_inode_dquot_ref(inode, type, &tofree_head);

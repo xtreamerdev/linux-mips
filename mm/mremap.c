@@ -238,13 +238,6 @@ unsigned long do_mremap(unsigned long addr,
 			goto out;
 		if (!(flags & MREMAP_MAYMOVE))
 			goto out;
-		/*
-		 * Allow new_len == 0 only if new_addr == addr
-		 * to preserve truncation in place (that was working
-		 * safe and some app may depend on it).
-		 */
-		if (unlikely(!new_len && new_addr != addr))
-			goto out;
 
 		if (new_len > TASK_SIZE || new_addr > TASK_SIZE - new_len)
 			goto out;
@@ -265,16 +258,20 @@ unsigned long do_mremap(unsigned long addr,
 		if ((addr <= new_addr) && (addr+old_len) > new_addr)
 			goto out;
 
-		do_munmap(current->mm, new_addr, new_len);
+		ret = do_munmap(current->mm, new_addr, new_len);
+		if (ret && new_len)
+			goto out;
 	}
 
 	/*
 	 * Always allow a shrinking remap: that just unmaps
 	 * the unnecessary pages..
 	 */
-	ret = addr;
 	if (old_len >= new_len) {
-		do_munmap(current->mm, addr+new_len, old_len - new_len);
+		ret = do_munmap(current->mm, addr+new_len, old_len - new_len);
+		if (ret && old_len != new_len)
+			goto out;
+		ret = addr;
 		if (!(flags & MREMAP_FIXED) || (new_addr == addr))
 			goto out;
 	}
