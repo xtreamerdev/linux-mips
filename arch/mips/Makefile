@@ -54,6 +54,10 @@ GCCFLAGS	+= -g
 ifdef CONFIG_SB1XXX_CORELIS
 GCCFLAGS	+= -mno-sched-prolog -fno-omit-frame-pointer
 endif
+ifdef CONFIG_PMC_STRETCH
+GCCFLAGS	+= -mabi=32
+LD		+= -m elf32btsmip
+endif
 endif
 
 #
@@ -481,6 +485,12 @@ ifdef CONFIG_PMC_BIG_SUR
 CORE_FILES	+= arch/mips/pmc-sierra/big_sur/big_sur.o
 SUBDIRS		+= arch/mips/pmc-sierra/big_sur
 LOADADDR	:= 0x80100000
+endif
+
+ifdef CONFIG_PMC_STRETCH
+CORE_FILES	+= arch/mips/pmc-sierra/stretch/stretch.o
+SUBDIRS		+= arch/mips/pmc-sierra/stretch
+LOADADDR	:= 0x80200000
 endif
 
 ifdef CONFIG_MOMENCO_JAGUAR_ATX
