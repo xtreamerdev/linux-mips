@@ -574,7 +574,7 @@ static int vino_waitfor(struct vino_device *v, int frame)
 		spin_unlock_irq(&v->state_lock);
 		/* to ensure that schedule_timeout will return imediately
 		 * if VINO interrupt was triggred meanwhile */
-		schedule_timeout(HZ / 20);
+		schedule_timeout(HZ / 10);
 		if (signal_pending(current))
 			err = -EINTR;
 		spin_lock_irq(&v->state_lock);
@@ -883,7 +883,7 @@ static int vino_do_ioctl(struct inode *inode, struct file *file,
 	case VIDIOCGPICT: {
 		struct video_picture *pic = arg;
 
-		memcpy(pic, &v->picture, sizeof(*pic));
+		memcpy(pic, &v->picture, sizeof(struct video_picture));
 		break;
 	}
 	case VIDIOCSPICT: {
@@ -907,18 +907,21 @@ static int vino_do_ioctl(struct inode *inode, struct file *file,
 			v->picture.depth = pic->depth;
 			/* TODO: we need to change line size */
 		}
+		DEBUG("XXX %d, %d\n", v->input, Vino->camera.owner);
 		spin_lock(&Vino->input_lock);
 		if (v->input == VINO_INPUT_CAMERA) {
 			if (Vino->camera.owner == v->chan) {
 				spin_unlock(&Vino->input_lock);
-				memcpy(&v->picture, pic, sizeof(*pic));
+				memcpy(&v->picture, pic,
+					sizeof(struct video_picture));
 				i2c_camera_command(DECODER_SET_PICTURE, pic);
 				goto out_unlocked;
 			}
 		} else {
 			if (Vino->decoder.owner == v->chan) {
 				spin_unlock(&Vino->input_lock);
-				memcpy(&v->picture, pic, sizeof(*pic));
+				memcpy(&v->picture, pic,
+					sizeof(struct video_picture));
 				i2c_decoder_command(DECODER_SET_PICTURE, pic);
 				goto out_unlocked;
 			}
@@ -1031,8 +1034,8 @@ static void init_channel_data(struct vino_device *v, int channel)
 	v->vdev.priv = v;
 	v->chan = channel;
 	v->input = -1;
-	v->picture.palette = VIDEO_PALETTE_RGB32;
-	v->picture.depth = 24;
+	v->picture.palette = VIDEO_PALETTE_GREY;
+	v->picture.depth = 8;
 	v->buffer_state = VINO_BUF_UNUSED;
 	v->users = 0;
 	set_clipping(v, 0, 0, VINO_NTSC_WIDTH, VINO_NTSC_HEIGHT, 1);

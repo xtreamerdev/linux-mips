@@ -33,24 +33,24 @@ struct indycam {
 	int version;
 };
 
-static const struct { 
-	unsigned char addr;
-	unsigned char val;
-} initseq [] = {
-	{ INDYCAM_CONTROL, INDYCAM_CONTROL_AGCENA },
-	{ INDYCAM_SHUTTER, INDYCAM_SHUTTER_60 },
-	{ INDYCAM_GAIN,	0x80 },
-	{ INDYCAM_RED_BALANCE, 0x18 },
-	{ INDYCAM_BLUE_BALANCE, 0xa4 },
-	{ INDYCAM_RED_SATURATION, 0x80 },
-	{ INDYCAM_BLUE_SATURATION, 0xc0 },
-};
-
 static struct i2c_driver i2c_driver_indycam;
 
 static int indycam_attach(struct i2c_adapter *adap, int addr, int kind)
 {
-	int i, err = 0;
+	static const unsigned char initseq[] = {
+		0,
+		INDYCAM_CONTROL_AGCENA,	/* INDYCAM_CONTROL */
+		INDYCAM_SHUTTER_60,	/* INDYCAM_SHUTTER */
+		0x80,			/* INDYCAM_GAIN */
+		0xf0,			/* INDYCAM_BRIGHTNESS */
+		0x18,			/* INDYCAM_RED_BALANCE */
+		0xa4,			/* INDYCAM_BLUE_BALANCE */
+		0x80,			/* INDYCAM_RED_SATURATION */
+		0xc0,			/* INDYCAM_BLUE_SATURATION */
+		0x80,			/* INDYCAM_GAMMA */
+	};
+
+	int err = 0;
 	struct indycam *camera;
 	struct i2c_client *client;
 
@@ -84,10 +84,7 @@ static int indycam_attach(struct i2c_adapter *adap, int addr, int kind)
 	       INDYCAM_VERSION_MAJOR(camera->version),
 	       INDYCAM_VERSION_MINOR(camera->version));
 
-	err = 0;
-	for (i = 0; i < ARRAY_SIZE(initseq); i++)
-		err |= i2c_smbus_write_byte_data(client, initseq[i].addr,
-						 initseq[i].val);
+	err = i2c_master_send(client, initseq, sizeof(initseq));
 	if (err)
 		printk(KERN_INFO "IndyCam initalization failed\n");
 

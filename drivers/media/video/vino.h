@@ -68,18 +68,18 @@ struct sgi_vino {
 	volatile u32 rev_id;
 
 #define VINO_CTRL_LITTLE_ENDIAN		(1<<0)
-#define VINO_CTRL_A_FIELD_TRANS_INT	(1<<1)	/* Field transferred int */
-#define VINO_CTRL_A_FIFO_OF_INT		(1<<2)	/* FIFO overflow int */
-#define VINO_CTRL_A_END_DESC_TBL_INT	(1<<3)	/* End of desc table int */
-#define VINO_CTRL_A_INT			(VINO_CTRL_A_FIELD_TRANS_INT | \
-					 VINO_CTRL_A_FIFO_OF_INT | \
-					 VINO_CTRL_A_END_DESC_TBL_INT)
-#define VINO_CTRL_B_FIELD_TRANS_INT	(1<<4)	/* Field transferred int */
-#define VINO_CTRL_B_FIFO_OF_INT		(1<<5)	/* FIFO overflow int */
-#define VINO_CTRL_B_END_DESC_TBL_INT	(1<<6)	/* End of desc table int */
-#define VINO_CTRL_B_INT			(VINO_CTRL_B_FIELD_TRANS_INT | \
-					 VINO_CTRL_B_FIFO_OF_INT | \
-					 VINO_CTRL_B_END_DESC_TBL_INT)
+#define VINO_CTRL_A_EOF_INT		(1<<1)	/* Field transferred int */
+#define VINO_CTRL_A_FIFO_INT		(1<<2)	/* FIFO overflow int */
+#define VINO_CTRL_A_EOD_INT		(1<<3)	/* End of desc table int */
+#define VINO_CTRL_A_INT			(VINO_CTRL_A_EOF_INT | \
+					 VINO_CTRL_A_FIFO_INT | \
+					 VINO_CTRL_A_EOD_INT)
+#define VINO_CTRL_B_EOF_INT		(1<<4)	/* Field transferred int */
+#define VINO_CTRL_B_FIFO_INT		(1<<5)	/* FIFO overflow int */
+#define VINO_CTRL_B_EOD_INT		(1<<6)	/* End of desc table int */
+#define VINO_CTRL_B_INT			(VINO_CTRL_B_EOF_INT | \
+					 VINO_CTRL_B_FIFO_INT | \
+					 VINO_CTRL_B_EOD_INT)
 #define VINO_CTRL_A_DMA_ENBL		(1<<7)
 #define VINO_CTRL_A_INTERLEAVE_ENBL	(1<<8)
 #define VINO_CTRL_A_SYNC_ENBL		(1<<9)

@@ -11,26 +11,26 @@
 #define INDYCAM_VERSION_MINOR(x)	((x) & 0x0f)
 
 /* Register bus addresses */
-#define INDYCAM_CONTROL			0x00	/* R/W */
-#define INDYCAM_SHUTTER			0x01	/* R/W */
-#define INDYCAM_GAIN			0x02	/* R/W */
-#define INDYCAM_BRIGHTNESS		0x03	/* R/O */
-#define INDYCAM_RED_BALANCE		0x04	/* R/W */
-#define INDYCAM_BLUE_BALANCE		0x05	/* R/W */
-#define INDYCAM_RED_SATURATION		0x06	/* R/W */
-#define INDYCAM_BLUE_SATURATION		0x07	/* R/W */
+#define INDYCAM_CONTROL			0x00
+#define INDYCAM_SHUTTER			0x01
+#define INDYCAM_GAIN			0x02
+#define INDYCAM_BRIGHTNESS		0x03
+#define INDYCAM_RED_BALANCE		0x04
+#define INDYCAM_BLUE_BALANCE		0x05
+#define INDYCAM_RED_SATURATION		0x06
+#define INDYCAM_BLUE_SATURATION		0x07
 #define INDYCAM_GAMMA			0x08
-#define INDYCAM_VERSION			0x0e	/* R/O */
-#define INDYCAM_RESET			0x0f	/* W/O */
+#define INDYCAM_VERSION			0x0e
+#define INDYCAM_RESET			0x0f
 #define INDYCAM_LED			0x46
 #define INDYCAM_ORIENTATION		0x47
 #define INDYCAM_BUTTON			0x48
 
 /* Field definitions of registers */
-#define INDYCAM_CONTROL_AGCENA		(1<<0)	/* R/W */
-#define INDYCAM_CONTROL_AWBCTL		(1<<1)	/* R/W */
+#define INDYCAM_CONTROL_AGCENA		(1<<0)
+#define INDYCAM_CONTROL_AWBCTL		(1<<1)
 						/* 2-3 are reserved */
-#define INDYCAM_CONTROL_EVNFLD		(1<<4)	/* R/O */
+#define INDYCAM_CONTROL_EVNFLD		(1<<4)
 
 #define INDYCAM_SHUTTER_10000		0x02	/* 1/10000 second */
 #define INDYCAM_SHUTTER_4000		0x04	/* 1/4000 second */
