@@ -55,7 +55,8 @@ unsigned char *kbd_sysrq_xlate = lk201_sysrq_xlate;
 unsigned char kbd_sysrq_key = -1;
 #endif
 
-#define KEYB_LINE	3
+#define KEYB_LINE_ZS	3
+#define KEYB_LINE_DZ	0
 
 static int __init lk201_init(void *);
 static void __init lk201_info(void *);
@@ -417,25 +418,23 @@ static int __init lk201_init(void *handle)
 
 void __init kbd_init_hw(void)
 {
+	int keyb_line;
+
 	/* Maxine uses LK501 at the Access.Bus. */
 	if (!LK_IFACE)
 		return;
 
 	printk(KERN_INFO "lk201: DECstation LK keyboard driver v0.05.\n");
 
-	if (LK_IFACE_ZS) {
-		/*
-		 * kbd_init_hw() is being called before
-		 * rs_init() so just register the kbd hook
-		 * and let zs_init do the rest :-)
-		 */
-		if (!register_dec_serial_hook(KEYB_LINE, &lk201_hook))
-			unregister_dec_serial_hook(KEYB_LINE);
-	} else {
-		/*
-		 * TODO: modify dz.c to allow similar hooks
-		 * for LK201 handling on DS2100, DS3100, and DS5000/200
-		 */
-		printk(KERN_ERR "lk201: support for DZ11 not yet ready.\n");
-	}
+	/*
+	 * kbd_init_hw() is being called before
+	 * rs_init() so just register the kbd hook
+	 * and let zs_init do the rest :-)
+	 */
+	if (LK_IFACE_ZS)
+		keyb_line = KEYB_LINE_ZS;
+	else
+		keyb_line = KEYB_LINE_DZ;
+	if (!register_dec_serial_hook(keyb_line, &lk201_hook))
+		unregister_dec_serial_hook(keyb_line);
 }

@@ -3,16 +3,16 @@
  *      choose the right serial device at boot time
  *
  * triemer 6-SEP-1998
- *      sercons.c is designed to allow the three different kinds 
+ *      sercons.c is designed to allow the three different kinds
  *      of serial devices under the decstation world to co-exist
- *      in the same kernel.  The idea here is to abstract 
+ *      in the same kernel.  The idea here is to abstract
  *      the pieces of the drivers that are common to this file
  *      so that they do not clash at compile time and runtime.
  *
  * HK 16-SEP-1998 v0.002
  *      removed the PROM console as this is not a real serial
  *      device. Added support for PROM console in drivers/char/tty_io.c
- *      instead. Although it may work to enable more than one 
+ *      instead. Although it may work to enable more than one
  *      console device I strongly recommend to use only one.
  *
  *	Copyright (C) 2004  Maciej W. Rozycki
@@ -29,12 +29,20 @@ extern int register_zs_hook(unsigned int channel,
 			    struct dec_serial_hook *hook);
 extern int unregister_zs_hook(unsigned int channel);
 
+extern int register_dz_hook(unsigned int channel,
+			    struct dec_serial_hook *hook);
+extern int unregister_dz_hook(unsigned int channel);
+
 int register_dec_serial_hook(unsigned int channel,
 			     struct dec_serial_hook *hook)
 {
 #ifdef CONFIG_ZS
 	if (IOASIC)
 		return register_zs_hook(channel, hook);
+#endif
+#ifdef CONFIG_DZ
+	if (!IOASIC)
+		return register_dz_hook(channel, hook);
 #endif
 	return 0;
 }
@@ -44,6 +52,10 @@ int unregister_dec_serial_hook(unsigned int channel)
 #ifdef CONFIG_ZS
 	if (IOASIC)
 		return unregister_zs_hook(channel);
+#endif
+#ifdef CONFIG_DZ
+	if (!IOASIC)
+		return unregister_dz_hook(channel);
 #endif
 	return 0;
 }
