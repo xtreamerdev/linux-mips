@@ -36,7 +36,7 @@
 #endif
 
 #ifdef CONFIG_SIBYTE_SB1250
-#include <asm/sibyte/sb1250_io.h>
+#include <asm/sibyte/io.h>
 #endif
 
 #ifdef CONFIG_SGI_IP27
