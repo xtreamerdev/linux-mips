@@ -214,7 +214,7 @@ wakeup_counter0_set(int ticks)
 #ifdef CONFIG_AU1000_SRC_CLK
 #define AU1000_SRC_CLK	CONFIG_AU1000_SRC_CLK
 #else
-#define AU1000_SRC_CLK	12
+#define AU1000_SRC_CLK	12000000
 #endif
 
 /*
@@ -248,7 +248,8 @@ unsigned long cal_r4koff(void)
 		au_writel(counter | SYS_CNTRL_EN1, SYS_COUNTER_CNTRL);
 
 		while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_T1S);
-		au_writel(trim_divide-1, SYS_RTCTRIM); /* RTC now ticks at 32.768/16 kHz */
+		/* RTC now ticks at 32.768/16 kHz */
+		au_writel(trim_divide-1, SYS_RTCTRIM);
 		while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_T1S);
 
 		while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_C1S);
@@ -279,7 +280,8 @@ unsigned long cal_r4koff(void)
 			cpu_speed = count * 2;
 		}
 #else
-		cpu_speed = (au_readl(SYS_CPUPLL) & 0x0000003f) * 1000000 * 12;
+		cpu_speed = (au_readl(SYS_CPUPLL) & 0x0000007f) * 
+			AU1000_SRC_CLK;
 		count = cpu_speed / 2;
 #endif
 	}
@@ -288,7 +290,7 @@ unsigned long cal_r4koff(void)
 		 * isn't one and grab the processor speed from the PLL.
 		 * NOTE: some old silicon doesn't allow reading the PLL.
 		 */
-		cpu_speed = (au_readl(SYS_CPUPLL) & 0x0000003f) * 1000000 * AU1000_SRC_CLK;
+		cpu_speed = (au_readl(SYS_CPUPLL) & 0x0000007f) * AU1000_SRC_CLK;
 		count = cpu_speed / 2;
 		no_au1xxx_32khz = 1;
 	}
