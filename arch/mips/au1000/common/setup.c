@@ -196,7 +196,7 @@ void __init au1x00_setup(void)
 	au_writel(0, SYS_TOYTRIM);
 }
 
-#if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_SOC_AU1500)
+#if defined(CONFIG_64BIT_PHYS_ADDR) && (defined(CONFIG_SOC_AU1500) || defined(CONFIG_SOC_AU1550))
 /* This routine should be valid for all Au1500 based boards */
 static phys_t au1500_fixup_bigphys_addr(phys_t phys_addr, phys_t size)
 {
