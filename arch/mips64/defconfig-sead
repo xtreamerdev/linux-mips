@@ -187,6 +187,15 @@ CONFIG_BLK_DEV_INITRD=y
 # CONFIG_HAMRADIO is not set
 
 #
+# Input core support
+#
+# CONFIG_INPUT is not set
+# CONFIG_INPUT_KEYBDEV is not set
+# CONFIG_INPUT_MOUSEDEV is not set
+# CONFIG_INPUT_JOYDEV is not set
+# CONFIG_INPUT_EVDEV is not set
+
+#
 # Character devices
 #
 # CONFIG_VT is not set
@@ -327,15 +336,6 @@ CONFIG_SGI_PARTITION=y
 # USB support
 #
 # CONFIG_USB is not set
-
-#
-# Input core support
-#
-# CONFIG_INPUT is not set
-# CONFIG_INPUT_KEYBDEV is not set
-# CONFIG_INPUT_MOUSEDEV is not set
-# CONFIG_INPUT_JOYDEV is not set
-# CONFIG_INPUT_EVDEV is not set
 
 #
 # Kernel hacking
