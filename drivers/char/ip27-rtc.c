@@ -323,3 +323,7 @@ static void get_rtc_time(struct rtc_time *rtc_tm)
 
 	rtc_tm->tm_mon--;
 }
+
+MODULE_AUTHOR("Ralf Baechle <ralf@linux-mips.org>");
+MODULE_DESCRIPTION("SGI IP27 M48T35 RTC driver");
+MODULE_LICENSE("GPL");
