@@ -115,6 +115,7 @@ obj-$(CONFIG_ADAPTEC_STARFIRE) += starfire.o mii.o
 # end link order section
 #
 
+obj-$(CONFIG_GALILEO_64240_ETH) += gt64240eth.o
 obj-$(CONFIG_MV64340_ETH)	+= mv64340_eth.o
 obj-$(CONFIG_AIRONET4500) 	+= aironet4500_core.o
 obj-$(CONFIG_AIRONET4500_CS) 	+= aironet4500_core.o

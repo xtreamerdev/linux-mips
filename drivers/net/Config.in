@@ -59,6 +59,9 @@ if [ "$CONFIG_NET_ETHERNET" = "y" ]; then
    if [ "$CONFIG_MIPS_JAZZ" = "y" ]; then
       tristate '  MIPS JAZZ onboard SONIC Ethernet support' CONFIG_MIPS_JAZZ_SONIC
    fi
+   if [ "$CONFIG_MOMENCO_OCELOT_G" = "y" ]; then
+      bool '  GT-64240 Ethernet support' CONFIG_GALILEO_64240_ETH
+   fi
    if [ "$CONFIG_MIPS_GT96100" = "y" ]; then
       bool '  MIPS GT96100 Ethernet support' CONFIG_MIPS_GT96100ETH
    fi
