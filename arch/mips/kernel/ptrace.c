@@ -148,7 +148,7 @@ asmlinkage int sys_ptrace(long request, long pid, long addr, long data)
 				tmp = child->thread.fpu.hard.control;
 			break;
 		case FPC_EIR: {	/* implementation / version register */
-			unsigned int flags;
+			unsigned long flags;
 
 			if (!(mips_cpu.options & MIPS_CPU_FPU)) {
 				break;

@@ -352,7 +352,7 @@ static unsigned long do_fast_gettimeoffset(void)
 
 void do_gettimeofday(struct timeval *tv)
 {
-	unsigned int flags;
+	unsigned long flags;
 
 	read_lock_irqsave (&xtime_lock, flags);
 	*tv = xtime;

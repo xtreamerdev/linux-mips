@@ -121,7 +121,7 @@ static void sb1250_set_affinity(unsigned int irq, unsigned long mask)
 	int i = 0, old_cpu, cpu, int_on;
 	u64 cur_ints;
 	irq_desc_t *desc = irq_desc + irq;
-	unsigned int flags;
+	unsigned long flags;
 
 	while (mask) {
 		if (mask & 1) {

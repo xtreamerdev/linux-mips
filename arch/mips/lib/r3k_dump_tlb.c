@@ -81,7 +81,7 @@ dump_tlb_wired(void)
 void
 dump_tlb_addr(unsigned long addr)
 {
-	unsigned int flags, oldpid;
+	unsigned long flags, oldpid;
 	int index;
 
 	local_irq_save(flags);

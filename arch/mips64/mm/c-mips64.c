@@ -332,7 +332,7 @@ static void
 mips64_dma_cache_wback_inv_pc(unsigned long addr, unsigned long size)
 {
 	unsigned long end, a;
-	unsigned int flags;
+	unsigned long flags;
 
 	if (size >= (unsigned long)dcache_size) {
 		blast_dcache();
@@ -373,7 +373,7 @@ static void
 mips64_dma_cache_inv_pc(unsigned long addr, unsigned long size)
 {
 	unsigned long end, a;
-	unsigned int flags;
+	unsigned long flags;
 
 	if (size >= (unsigned long)dcache_size) {
 		blast_dcache();

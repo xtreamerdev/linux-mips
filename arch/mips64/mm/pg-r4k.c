@@ -157,7 +157,7 @@ void r4k_clear_page_r4600_v1(void * page)
  */
 void r4k_clear_page_r4600_v2(void * page)
 {
-	unsigned int flags;
+	unsigned long flags;
 
 	local_irq_save(flags);
 	*(volatile unsigned int *)KSEG1;
@@ -432,7 +432,7 @@ void r4k_copy_page_r4600_v1(void * to, void * from)
 void r4k_copy_page_r4600_v2(void * to, void * from)
 {
 	unsigned long dummy1, dummy2, reg1, reg2;
-	unsigned int flags;
+	unsigned long flags;
 
 	local_irq_save(flags);
 	__asm__ __volatile__(

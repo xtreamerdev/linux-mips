@@ -87,7 +87,7 @@ void mips_timer_interrupt(struct pt_regs *regs)
  */
 static unsigned int __init cal_r4koff(void)
 {
-	unsigned int flags;
+	unsigned long flags;
 
 	local_irq_save(flags);
 

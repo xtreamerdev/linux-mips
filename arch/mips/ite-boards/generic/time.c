@@ -46,7 +46,7 @@ extern asmlinkage unsigned int do_IRQ(int irq, struct pt_regs *regs);
  */
 static unsigned long __init cal_r4koff(void)
 {
-	unsigned int flags;
+	unsigned long flags;
 
 	local_irq_save(flags);
 

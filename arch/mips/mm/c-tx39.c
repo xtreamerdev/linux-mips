@@ -306,7 +306,7 @@ static void tx39_dma_cache_wback(unsigned long addr, unsigned long size)
 static void tx39_flush_cache_sigtramp(unsigned long addr)
 {
 	unsigned long config;
-	unsigned int flags;
+	unsigned long flags;
 
 	protected_writeback_dcache_line(addr & ~(dcache_lsize - 1));
 
