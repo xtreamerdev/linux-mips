@@ -34,8 +34,6 @@
 
 #include <linux/init.h>
 
-#ifdef CONFIG_PCI
-
 #define SELF 0
 #define MASTER_ABORT_BIT 0x100
 
@@ -61,7 +59,6 @@ static int galileo_pcibios_write_config_word(struct pci_dev *dev,
 					     int offset, u16 val);
 static int galileo_pcibios_write_config_dword(struct pci_dev *dev,
 					      int offset, u32 val);
-static void galileo_pcibios_set_master(struct pci_dev *dev);
 
 /*
  *  General-purpose PCI functions.
@@ -345,7 +342,7 @@ static int galileo_pcibios_write_config_byte(struct pci_dev *device,
 	return PCIBIOS_SUCCESSFUL;
 }
 
-static void galileo_pcibios_set_master(struct pci_dev *dev)
+void pcibios_set_master(struct pci_dev *dev)
 {
 	u16 cmd;
 
@@ -534,9 +531,6 @@ void pci1P2PConfig(unsigned int SecondBusLow,unsigned int SecondBusHigh,
 	GT_WRITE(PCI_1P2P_CONFIGURATION, regData);
 }
 
-#define PCI0_STATUS_COMMAND_REG                 0x4
-#define PCI1_STATUS_COMMAND_REG                 0x84
-
 void __init pcibios_init(void)
 {
 	/* Reset PCI I/O and PCI MEM values */
@@ -564,5 +558,3 @@ unsigned __init int pcibios_assign_all_busses(void)
 {
 	return 1;
 }
-
-#endif	/* CONFIG_PCI */
