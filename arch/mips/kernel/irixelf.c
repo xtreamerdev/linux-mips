@@ -1,4 +1,4 @@
-/* $Id: irixelf.c,v 1.16.2.2 1999/06/14 21:40:54 ralf Exp $
+/* $Id: irixelf.c,v 1.16.2.3 1999/06/17 12:06:38 ralf Exp $
  *
  * irixelf.c: Code to load IRIX ELF executables which conform to
  *            the MIPS ABI.
@@ -1027,7 +1027,13 @@ unsigned long irix_mapelf(int fd, struct elf_phdr *user_phdrp, int cnt)
  */
 static int dump_write(struct file *file, const void *addr, int nr)
 {
-	return file->f_op->write(file, addr, nr, &file->f_pos) == nr;
+	int r;
+
+	down(&file->f_dentry->d_inode->i_sem);
+	r = file->f_op->write(file, addr, nr, &file->f_pos) == nr;
+	up(&file->f_dentry->d_inode->i_sem);
+
+	return r;
 }
 
 static int dump_seek(struct file *file, off_t off)
