@@ -464,9 +464,9 @@ LOADADDR	:= 0x88002000
 endif
 
 #
-# Sibyte SB1250 SOC
+# Sibyte SB1250 SOC and Broadcom (SiByte) BCM112x SOCs
 #
-ifdef CONFIG_SIBYTE_SB1250
+ifneq ($(CONFIG_SIBYTE_SB1250)$(CONFIG_SIBYTE_BCM112X),)
 # This is a LIB so that it links at the end, and initcalls are later
 # the sequence; but it is built as an object so that modules don't get
 # removed (as happens, even if they have __initcall/module_init)
@@ -476,64 +476,18 @@ LOADADDR	:= 0x80100000
 endif
 
 #
-# Sibyte SWARM board
+# Sibyte boards:
 #
-ifdef CONFIG_SIBYTE_SWARM
+# BCM91250A (SWARM),
+# BCM91250E (Sentosa),
+# BCM91120C (CRhine),
+# BCM91120x (Carmel),
+# BCM91125C (CRhone),
+# BCM91125E (Rhone).
+#
+ifdef CONFIG_SIBYTE_BOARD
 LIBS		+= arch/mips/sibyte/swarm/sbswarm.a
 SUBDIRS		+= arch/mips/sibyte/swarm
-endif
-ifdef CONFIG_SIBYTE_SENTOSA
-LIBS		+= arch/mips/sibyte/swarm/sbswarm.a
-SUBDIRS		+= arch/mips/sibyte/swarm
-endif
-
-#
-# Broadcom (SiByte) BCM112x SOCs
-# (In fact, this just uses the exact same support as the BCM1250.)
-#
-ifdef CONFIG_SIBYTE_BCM112X
-# This is a LIB so that it links at the end, and initcalls are later
-# the sequence; but it is built as an object so that modules don't get
-# removed (as happens, even if they have __initcall/module_init)
-LIBS		+= arch/mips/sibyte/sb1250/sb1250.o
-SUBDIRS		+= arch/mips/sibyte/sb1250
-LOADADDR	:= 0x80100000
-endif
-
-#
-# Sibyte BCM91120C (CRhine) board
-# (In fact, this just uses the exact same support as the BCM912500A (SWARM).)
-#
-ifdef CONFIG_SIBYTE_CRHINE
-LIBS          += arch/mips/sibyte/swarm/sbswarm.a
-SUBDIRS       += arch/mips/sibyte/swarm
-endif
-
-#
-# Sibyte BCM91120x (Carmel) board
-# (In fact, this just uses the exact same support as the BCM912500A (SWARM).)
-#
-ifdef CONFIG_SIBYTE_CARMEL
-LIBS          += arch/mips/sibyte/swarm/sbswarm.a
-SUBDIRS       += arch/mips/sibyte/swarm
-endif
-
-#
-# Sibyte BCM91125C (CRhone) board
-# (In fact, this just uses the exact same support as the BCM912500A (SWARM).)
-#
-ifdef CONFIG_SIBYTE_CRHONE
-LIBS          += arch/mips/sibyte/swarm/sbswarm.a
-SUBDIRS       += arch/mips/sibyte/swarm
-endif
-
-#
-# Sibyte BCM91125E (Rhone) board
-# (In fact, this just uses the exact same support as the BCM912500A (SWARM).)
-#
-ifdef CONFIG_SIBYTE_RHONE
-LIBS          += arch/mips/sibyte/swarm/sbswarm.a
-SUBDIRS       += arch/mips/sibyte/swarm
 endif
 
 #
