@@ -46,10 +46,6 @@ extern struct rtc_ops swarm_rtc_ops;
 extern struct ide_ops sibyte_ide_ops;
 #endif
 
-#ifdef CONFIG_L3DEMO
-extern void *l3info;
-#endif
-
 const char *get_system_type(void)
 {
 	return "SiByte " SIBYTE_BOARD_NAME;
@@ -103,11 +99,6 @@ void __init swarm_setup(void)
 		rtc_set_time = m41t81_set_time;
 	}
 
-#ifdef CONFIG_L3DEMO
-	if (l3info != NULL) {
-		printk("\n");
-	}
-#endif
 	printk("This kernel optimized for "
 #ifdef CONFIG_SIMULATION
 	       "simulation"
