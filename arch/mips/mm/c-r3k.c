@@ -317,6 +317,8 @@ static void r3k_dma_cache_wback_inv(unsigned long start, unsigned long size)
 
 void __init ld_mmu_r23000(void)
 {
+	extern void build_clear_page(void);
+	extern void build_copy_page(void);
 	unsigned long config;
 
 	r3k_probe_cache();
@@ -338,4 +340,7 @@ void __init ld_mmu_r23000(void)
 		icache_size >> 10, icache_lsize);
 	printk("Primary data cache %ldkB, linesize %ld bytes.\n",
 		dcache_size >> 10, dcache_lsize);
+
+	build_clear_page();
+	build_copy_page();
 }
