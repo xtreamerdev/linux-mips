@@ -1,5 +1,5 @@
 /*
- *	linux/asm-mips/dec/kn02ca.h
+ *	include/asm-mips/dec/kn02ca.h
  *
  *	Personal DECstation 5000/xx (Maxine or KN02-CA) definitions.
  *

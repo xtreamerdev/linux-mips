@@ -1,5 +1,5 @@
 /*
- *	linux/asm-mips/dec/ioasic.h
+ *	include/asm-mips/dec/ioasic.h
  *
  *	DEC I/O ASIC access operations.
  *

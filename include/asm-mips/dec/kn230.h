@@ -1,5 +1,5 @@
 /*
- *	linux/asm-mips/dec/kn230.h
+ *	include/asm-mips/dec/kn230.h
  *
  *	DECstation 5100 (MIPSmate or KN230) definitions.
  *

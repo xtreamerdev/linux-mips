@@ -1,5 +1,5 @@
 /*
- *	linux/asm-mips/dec/kn02ba.h
+ *	include/asm-mips/dec/kn02ba.h
  *
  *	DECstation 5000/1xx (3min or KN02-BA) definitions.
  *
