@@ -93,18 +93,24 @@ restore_all:	RESTORE_SOME
 		eret
 		.set	mips0
 
-signal_return:	mfc0	t0, CP0_STATUS	# need_resched and signals atomic test
+signal_return:
+		.type	signal_return, @function
+
+		mfc0	t0, CP0_STATUS
 		ori	t0, t0, 1
 		mtc0	t0, CP0_STATUS
+
+		SAVE_STATIC
 		move	a0, zero
 		move	a1, sp
-		SAVE_STATIC
 		jal	do_signal
+		RESTORE_STATIC
+		b	restore_all
 
 o32_reschedule:
 		SAVE_STATIC
 		jal	schedule
-		b	o32_ret_from_sys_call
+		j	ret_from_sys_call
 
 /* ------------------------------------------------------------------------ */
 

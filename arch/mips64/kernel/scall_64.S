@@ -67,7 +67,7 @@ ret_from_sys_call:
 	SSNOP; SSNOP; SSNOP
 
 	ld	t2, TASK_NEED_RESCHED($28)
-	bnez	t2, reschedule
+	bnez	t2, _64_reschedule
 	lw	v0, TASK_SIGPENDING($28)
 	bnez	v0, signal_return
 
@@ -84,12 +84,14 @@ signal_return:
 	ori	t0, t0, 1
 	mtc0	t0, CP0_STATUS
 
+	SAVE_STATIC
 	move	a0, zero
 	move	a1, sp
 	jal	do_signal
+	RESTORE_STATIC
 	b	restore_all
 
-reschedule:
+_64_reschedule:
 	SAVE_STATIC
 	jal	schedule
 	b	ret_from_sys_call
