@@ -91,7 +91,6 @@ static int rtc_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
 		struct rtc_time rtc_tm;
 		unsigned char mon, day, hrs, min, sec, leap_yr;
 		unsigned int yrs;
-		unsigned long flags;
 
 		if (!capable(CAP_SYS_TIME))
 			return -EACCES;
@@ -138,7 +137,7 @@ static int rtc_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
 		BIN_TO_BCD(yrs);
 
 		spin_lock_irq(&rtc_lock);
-		rtc->control &= ~M48T35_RTC_SET;
+		rtc->control |= M48T35_RTC_SET;
 		rtc->year = yrs;
 		rtc->month = mon;
 		rtc->date = day;
@@ -164,15 +163,15 @@ static int rtc_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
 
 static int rtc_open(struct inode *inode, struct file *file)
 {
-	spin_lock_irq(rtc_lock);
+	spin_lock_irq(&rtc_lock);
 
 	if (rtc_status & RTC_IS_OPEN) {
-		spin_unlock_irq(rtc_status_lock);
+		spin_unlock_irq(&rtc_lock);
 		return -EBUSY;
 	}
 
 	rtc_status |= RTC_IS_OPEN;
-	spin_unlock_irq(rtc_lock);
+	spin_unlock_irq(&rtc_lock);
 
 	return 0;
 }
@@ -180,13 +179,10 @@ static int rtc_open(struct inode *inode, struct file *file)
 static int rtc_release(struct inode *inode, struct file *file)
 {
 	/*
-	 * Turn off all interrupts once the device is no longer
-	 * in use, and clear the data.
+	 * No need for locking -- nobody else can do anything until this rmw
+	 * is committed, and no timer is running.
 	 */
-
-	spin_lock_irq(rtc_lock);
 	rtc_status &= ~RTC_IS_OPEN;
-	spin_unlock_irq(rtc_lock);
 
 	return 0;
 }
@@ -197,6 +193,7 @@ static int rtc_release(struct inode *inode, struct file *file)
 
 static struct file_operations rtc_fops = {
 	.owner		= THIS_MODULE,
+	.llseek		= no_llseek,
 	.ioctl		= rtc_ioctl,
 	.open		= rtc_open,
 	.release	= rtc_release,
@@ -211,17 +208,16 @@ static struct miscdevice rtc_dev=
 
 static int __init rtc_init(void)
 {
-	unsigned long flags;
 	nasid_t nid;
 
 	nid = get_nasid();
 	rtc = (struct m48t35_rtc *)
-	    KL_CONFIG_CH_CONS_INFO(nid)->memory_base + IOC3_BYTEBUS_DEV0;
+	    (KL_CONFIG_CH_CONS_INFO(nid)->memory_base + IOC3_BYTEBUS_DEV0);
 
 	printk(KERN_INFO "Real Time Clock Driver v%s\n", RTC_VERSION);
 	if (misc_register(&rtc_dev))
 		return -ENODEV;
-	create_proc_read_entry ("rtc", 0, NULL, rtc_read_proc, NULL);
+	create_proc_read_entry("driver/rtc", 0, NULL, rtc_read_proc, NULL);
 
 	rtc_freq = 1024;
 	return 0;
@@ -285,9 +281,6 @@ static int rtc_read_proc(char *page, char **start, off_t off,
 
 static void get_rtc_time(struct rtc_time *rtc_tm)
 {
-
-	unsigned long flags;
-
 	/*
 	 * Do we need to wait for the last update to finish?
 	 */
