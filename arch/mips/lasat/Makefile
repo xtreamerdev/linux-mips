@@ -22,4 +22,3 @@ include $(TOPDIR)/Rules.make
 
 clean:
 	make -C image clean
-	make -C boot clean
