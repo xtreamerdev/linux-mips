@@ -399,6 +399,7 @@ if [ "$CONFIG_MIPS_COBALT" = "y" ]; then
    define_bool CONFIG_NONCOHERENT_IO y
 fi
 if [ "$CONFIG_DECSTATION" = "y" ]; then
+   define_bool CONFIG_EARLY_PRINTK y
    define_bool CONFIG_BOOT_ELF32 y
    define_bool CONFIG_IRQ_CPU y
    define_int CONFIG_L1_CACHE_SHIFT 4
