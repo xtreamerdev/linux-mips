@@ -106,7 +106,6 @@ asmlinkage int sys_clone(abi64_no_regargs, struct pt_regs regs)
 /*
  * sys_execve() executes a new program.
  */
-extern unsigned long kernelsp;
 asmlinkage int sys_execve(abi64_no_regargs, struct pt_regs regs)
 {
 	int error;
