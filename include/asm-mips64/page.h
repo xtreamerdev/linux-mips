@@ -11,6 +11,8 @@
 
 #include <linux/config.h>
 
+#ifdef __KERNEL__
+
 /*
  * PAGE_SHIFT determines the page size
  */
@@ -25,8 +27,6 @@
 #endif
 #define PAGE_SIZE	(1UL << PAGE_SHIFT)
 #define PAGE_MASK	(~(PAGE_SIZE-1))
-
-#ifdef __KERNEL__
 
 #ifndef __ASSEMBLY__
 
