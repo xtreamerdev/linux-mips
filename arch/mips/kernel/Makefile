@@ -45,9 +45,8 @@ obj-$(CONFIG_IRQ_CPU)		+= irq_cpu.o
 obj-$(CONFIG_IRQ_CPU_RM7K)	+= irq-rm7000.o
 
 # transition from old time.c to new time.c
-# some boards uses old-time.c, some use time.c, and some use their own ones
-export-objs			+= old-time.o time.o
-obj-$(CONFIG_OLD_TIME_C)	+= old-time.o
+# some boards use use time.c, and some use their own ones
+export-objs			+= time.o
 obj-$(CONFIG_NEW_TIME_C)	+= time.o
 
 obj-$(CONFIG_BINFMT_IRIX)	+= irixelf.o irixioctl.o irixsig.o sysirix.o \

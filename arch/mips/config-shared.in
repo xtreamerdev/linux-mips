@@ -237,7 +237,6 @@ if [ "$CONFIG_ACER_PICA_61" = "y" ]; then
    define_bool CONFIG_MIPS_JAZZ y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
-   define_bool CONFIG_OLD_TIME_C y
 fi
 if [ "$CONFIG_CASIO_E55" = "y" ]; then
    define_bool CONFIG_IRQ_CPU y
@@ -369,7 +368,6 @@ fi
 if [ "$CONFIG_MIPS_EV64120" = "y" ]; then
    define_bool CONFIG_MIPS_GT64120 y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_OLD_TIME_C y
 fi
 if [ "$CONFIG_MIPS_EV96100" = "y" ]; then
    define_bool CONFIG_MIPS_GT64120 y
@@ -432,7 +430,6 @@ if [ "$CONFIG_MIPS_MAGNUM_4000" = "y" -o \
    define_bool CONFIG_MIPS_JAZZ y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
-   define_bool CONFIG_OLD_TIME_C y
 fi
 if [ "$CONFIG_MIPS_MALTA" = "y" ]; then
    define_bool CONFIG_BOOT_ELF32 y
@@ -459,13 +456,11 @@ if [ "$CONFIG_MOMENCO_OCELOT" = "y" ]; then
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_OLD_TIME_C y
 fi
 if [ "$CONFIG_MOMENCO_OCELOT_G" = "y" ]; then
    define_bool CONFIG_IRQ_CPU y
    define_bool CONFIG_IRQ_CPU_RM7K y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_OLD_TIME_C y
    define_bool CONFIG_SYSCLK_100 y
    define_bool CONFIG_SWAP_IO_SPACE_W y
    define_bool CONFIG_SWAP_IO_SPACE_L y
@@ -577,7 +572,6 @@ if [ "$CONFIG_SNI_RM200_PCI" = "y" ]; then
    define_bool CONFIG_I8259 y
    define_bool CONFIG_ISA y
    define_bool CONFIG_NONCOHERENT_IO y
-   define_bool CONFIG_OLD_TIME_C y
    define_bool CONFIG_PC_KEYB y
 fi
 if [ "$CONFIG_TANBAC_TB0226" = "y" ]; then
