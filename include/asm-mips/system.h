@@ -128,7 +128,7 @@ __asm__ (
 
 #define __save_and_sti(x)						\
 __asm__ __volatile__(							\
-	"__save_and_cli\t%0"						\
+	"__save_and_sti\t%0"						\
 	: "=r" (x)							\
 	: /* no inputs */						\
 	: "memory")
