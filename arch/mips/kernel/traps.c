@@ -63,7 +63,7 @@ extern int fpu_emulator_cop1Handler(int xcptno, struct pt_regs *xcp,
 
 void (*board_be_init)(void);
 int (*board_be_handler)(struct pt_regs *regs, int is_fixup);
-void (*board_nmi_handler_setup)(void) = NULL;
+void (*board_nmi_handler_setup)(void);
 
 int kstack_depth_to_print = 24;
 
