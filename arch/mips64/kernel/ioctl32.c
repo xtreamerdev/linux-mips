@@ -866,7 +866,10 @@ static int loop_status(unsigned int fd, unsigned int cmd, unsigned long arg)
 	return err;
 }
 
-extern int tty_ioctl(struct inode * inode, struct file * file, unsigned int cmd, unsigned long arg);
+extern int tty_ioctl(struct inode * inode, struct file * file,
+	unsigned int cmd, unsigned long arg);
+
+#ifdef CONFIG_VT
 
 static int vt_check(struct file *file)
 {
@@ -976,6 +979,8 @@ static int do_kdfontop_ioctl(unsigned int fd, unsigned int cmd, struct console_f
 	return 0;
 }
 
+#endif /* CONFIG_VT */
+
 struct ioctl32_handler {
 	unsigned int cmd;
 	int (*function)(unsigned int, unsigned int, unsigned long);
@@ -1077,8 +1082,11 @@ static struct ioctl32_list ioctl32_handler_table[] = {
 	IOCTL32_DEFAULT(PIO_UNISCRNMAP),
 	IOCTL32_DEFAULT(PIO_FONTRESET),
 	IOCTL32_DEFAULT(PIO_UNIMAPCLR),
+
+#ifdef CONFIG_VT
 	IOCTL32_HANDLER(PIO_FONTX, do_fontx_ioctl),
 	IOCTL32_HANDLER(KDFONTOP, do_kdfontop_ioctl),
+#endif /* CONFIG_VT */
 
 	/* Big S */
 	IOCTL32_DEFAULT(SCSI_IOCTL_GET_IDLUN),
