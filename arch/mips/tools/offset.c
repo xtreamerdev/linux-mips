@@ -149,6 +149,9 @@ void output_mm_defines(void)
 	constant("#define _PMD_ORDER     ", PMD_ORDER);
 #endif
 	constant("#define _PTE_ORDER     ", PTE_ORDER);
+	constant("#define _PTRS_PER_PGD  ", PTRS_PER_PGD);
+	constant("#define _PTRS_PER_PMD  ", PTRS_PER_PMD);
+	constant("#define _PTRS_PER_PTE  ", PTRS_PER_PTE);
 	constant("#define _PGDIR_SHIFT   ", PGDIR_SHIFT);
 	linefeed;
 }
