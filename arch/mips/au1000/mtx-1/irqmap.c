@@ -50,7 +50,34 @@
 /* Need to define this.
 */
 au1xxx_irq_map_t au1xxx_irq_map[] = {
-	{ 0. 0. 0}
+	{ 0, 0, 0}
 };
 
 int au1xxx_nr_irqs = 0;
+
+#ifdef CONFIG_PCI
+
+#define INTA AU1000_PCI_INTA
+#define INTB AU1000_PCI_INTB
+#define INTC AU1000_PCI_INTC
+#define INTD AU1000_PCI_INTD
+#define INTX 0xFF /* not valid */
+
+int __init
+au1xxx_pci_irqmap(struct pci_dev *dev, unsigned char idsel, unsigned char pin)
+{
+	static char pci_irq_table[][4] =
+	/*
+	 *	PCI IDSEL/INTPIN->INTLINE
+	 *	A       B       C       D
+	 */
+	{
+		{INTA, INTB, INTC, INTD},   /* IDSEL 0 */
+		{INTA, INTB, INTC, INTD},   /* IDSEL 1 */
+		{INTA, INTB, INTC, INTD},   /* IDSEL 2 */
+		{INTA, INTB, INTC, INTD},   /* IDSEL 3 */
+	};
+	const long min_idsel = 0, max_idsel = 3, irqs_per_slot = 4;
+	return PCI_IRQ_TABLE_LOOKUP;
+};
+#endif
