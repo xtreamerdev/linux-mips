@@ -280,13 +280,10 @@ static __init void prom_meminit(void)
 			}
 #endif
 			if (!rd_flag) {
-				if (addr < MAX_RAM_SIZE) {
-					if (size > MAX_RAM_SIZE) {
-						size = MAX_RAM_SIZE - addr;
-					}
-					add_memory_region(addr, size,
-					                  BOOT_MEM_RAM);
+				if (size > MAX_RAM_SIZE) {
+					size = MAX_RAM_SIZE - addr;
 				}
+				add_memory_region(addr, size, BOOT_MEM_RAM);
 			}
 			swarm_mem_region_addrs[swarm_mem_region_count] = addr;
 			swarm_mem_region_sizes[swarm_mem_region_count] = size;
