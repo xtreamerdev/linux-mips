@@ -94,6 +94,12 @@ void output_task_defines(void)
 	offset("#define TASK_PID           ", struct task_struct, pid);
 	size(  "#define TASK_STRUCT_SIZE   ", struct task_struct);
 	linefeed;
+
+	text("/* MIPS task_struct allocation info. */");
+	constant("#define _THREAD_ORDER    ", THREAD_ORDER);
+	constant("#define _THREAD_SIZE     ", THREAD_SIZE);
+	constant("#define _THREAD_MASK     ", THREAD_MASK);
+	linefeed;
 }
 
 void output_thread_defines(void)

@@ -322,8 +322,9 @@ unsigned long get_wchan(struct task_struct *p);
 /*
  * NOTE! The task struct and the stack go together
  */
-#define THREAD_ORDER		(PAGE_SHIFT >= 12 ? 0 : 2)
+#define THREAD_ORDER		(PAGE_SHIFT >= 14 ? 0 : 2)
 #define THREAD_SIZE		(PAGE_SIZE << THREAD_ORDER)
+#define THREAD_MASK		(THREAD_SIZE - 1UL)
 #define alloc_task_struct() \
 	((struct task_struct *) __get_free_pages(GFP_KERNEL, THREAD_ORDER))
 #define free_task_struct(p)	free_pages((unsigned long)(p), THREAD_ORDER)
