@@ -156,7 +156,7 @@ obj-$(CONFIG_SERIAL_HCDP) += hcdp_serial.o
 obj-$(CONFIG_SERIAL_21285) += serial_21285.o
 obj-$(CONFIG_SERIAL_SA1100) += serial_sa1100.o
 obj-$(CONFIG_SERIAL_AMBA) += serial_amba.o
-obj-$(CONFIG_TS_AU1000_ADS7846) += au1000_ts.o
+obj-$(CONFIG_TS_AU1X00_ADS7846) += au1000_ts.o
 obj-$(CONFIG_SERIAL_DEC) += decserial.o
 
 ifndef CONFIG_SUN_KEYBOARD
@@ -234,7 +234,7 @@ obj-$(CONFIG_AMD_RNG) += amd768_rng.o
 obj-$(CONFIG_AMD_PM768) += amd76x_pm.o
 
 obj-$(CONFIG_ITE_GPIO) += ite_gpio.o
-obj-$(CONFIG_AU1000_GPIO) += au1000_gpio.o
+obj-$(CONFIG_AU1X00_GPIO) += au1000_gpio.o
 obj-$(CONFIG_AU1000_USB_TTY) += au1000_usbtty.o
 obj-$(CONFIG_AU1000_USB_RAW) += au1000_usbraw.o
 obj-$(CONFIG_COBALT_LCD) += lcd.o
