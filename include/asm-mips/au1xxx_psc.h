@@ -410,4 +410,121 @@ typedef struct	psc_spi {
 #define PSC_SPITXRX_LC		(1 << 29)
 #define PSC_SPITXRX_SR		(1 << 28)
 
+/* PSC in SMBus (I2C) Mode.
+*/
+typedef struct	psc_smb {
+	u32	psc_sel;
+	u32	psc_ctrl;
+	u32	psc_smbcfg;
+	u32	psc_smbmsk;
+	u32	psc_smbpcr;
+	u32	psc_smbstat;
+	u32	psc_smbevnt;
+	u32	psc_smbtxrx;
+	u32	psc_smbtmr;
+} psc_smb_t;
+
+/* SMBus Config Register.
+*/
+#define PSC_SMBCFG_RT_MASK	(3 << 30)
+#define PSC_SMBCFG_RT_FIFO1	(0 << 30)
+#define PSC_SMBCFG_RT_FIFO2	(1 << 30)
+#define PSC_SMBCFG_RT_FIFO4	(2 << 30)
+#define PSC_SMBCFG_RT_FIFO8	(3 << 30)
+
+#define PSC_SMBCFG_TT_MASK	(3 << 28)
+#define PSC_SMBCFG_TT_FIFO1	(0 << 28)
+#define PSC_SMBCFG_TT_FIFO2	(1 << 28)
+#define PSC_SMBCFG_TT_FIFO4	(2 << 28)
+#define PSC_SMBCFG_TT_FIFO8	(3 << 28)
+
+#define PSC_SMBCFG_DD_DISABLE	(1 << 27)
+#define PSC_SMBCFG_DE_ENABLE	(1 << 26)
+
+#define PSC_SMBCFG_SET_DIV(x)	(((x) & 0x03) << 13)
+#define PSC_SMBCFG_DIV2		0
+#define PSC_SMBCFG_DIV4		1
+#define PSC_SMBCFG_DIV8		2
+#define PSC_SMBCFG_DIV16	3
+
+#define PSC_SMBCFG_GCE		(1 << 9)
+#define PSC_SMBCFG_SFM		(1 << 8)
+
+#define PSC_SMBCFG_SET_SLV(x)	(((x) & 0x7f) << 1)
+
+/* SMBus Mask Register.
+*/
+#define PSC_SMBMSK_DN		(1 << 30)
+#define PSC_SMBMSK_AN		(1 << 29)
+#define PSC_SMBMSK_AL		(1 << 28)
+#define PSC_SMBMSK_RR		(1 << 13)
+#define PSC_SMBMSK_RO		(1 << 12)
+#define PSC_SMBMSK_RU		(1 << 11)
+#define PSC_SMBMSK_TR		(1 << 10)
+#define PSC_SMBMSK_TO		(1 << 9)
+#define PSC_SMBMSK_TU		(1 << 8)
+#define PSC_SMBMSK_SD		(1 << 5)
+#define PSC_SMBMSK_MD		(1 << 4)
+#define PSC_SMBMSK_ALLMASK	(PSC_SMBMSK_DN | PSC_SMBMSK_AN | \
+				 PSC_SMBMSK_AL | PSC_SMBMSK_RR | \
+				 PSC_SMBMSK_RO | PSC_SMBMSK_TO | \
+				 PSC_SMBMSK_TU | PSC_SMBMSK_SD | \
+				 PSC_SMBMSK_MD)
+
+/* SMBus Protocol Control Register.
+*/
+#define PSC_SMBPCR_DC		(1 << 2)
+#define PSC_SMBPCR_MS		(1 << 0)
+
+/* SMBus Status register (read only).
+*/
+#define PSC_SMBSTAT_BB		(1 << 28)
+#define PSC_SMBSTAT_RF		(1 << 13)
+#define PSC_SMBSTAT_RE		(1 << 12)
+#define PSC_SMBSTAT_RR		(1 << 11)
+#define PSC_SMBSTAT_TF		(1 << 10)
+#define PSC_SMBSTAT_TE		(1 << 9)
+#define PSC_SMBSTAT_TR		(1 << 8)
+#define PSC_SMBSTAT_SB		(1 << 5)
+#define PSC_SMBSTAT_MB		(1 << 4)
+#define PSC_SMBSTAT_DI		(1 << 2)
+#define PSC_SMBSTAT_DR		(1 << 1)
+#define PSC_SMBSTAT_SR		(1 << 0)
+
+/* SMBus Event Register.
+*/
+#define PSC_SMBEVNT_DN		(1 << 30)
+#define PSC_SMBEVNT_AN		(1 << 29)
+#define PSC_SMBEVNT_AL		(1 << 28)
+#define PSC_SMBEVNT_RR		(1 << 13)
+#define PSC_SMBEVNT_RO		(1 << 12)
+#define PSC_SMBEVNT_RU		(1 << 11)
+#define PSC_SMBEVNT_TR		(1 << 10)
+#define PSC_SMBEVNT_TO		(1 << 9)
+#define PSC_SMBEVNT_TU		(1 << 8)
+#define PSC_SMBEVNT_SD		(1 << 5)
+#define PSC_SMBEVNT_MD		(1 << 4)
+#define PSC_SMBEVNT_ALLCLR	(PSC_SMBEVNT_DN | PSC_SMBEVNT_AN | \
+				 PSC_SMBEVNT_AL | PSC_SMBEVNT_RR | \
+				 PSC_SMBEVNT_RO | PSC_SMBEVNT_TO | \
+				 PSC_SMBEVNT_TU | PSC_SMBEVNT_SD | \
+				 PSC_SMBEVNT_MD)
+
+/* Transmit register control.
+*/
+#define PSC_SMBTXRX_RSR		(1 << 30)
+#define PSC_SMBTXRX_STP		(1 << 29)
+#define PSC_SMBTXRX_DATAMASK	(0xff)
+
+/* SMBus protocol timers register.
+*/
+#define PSC_SMBTMR_SET_TH(x)	(((x) & 0x3) << 30)
+#define PSC_SMBTMR_SET_PS(x)	(((x) & 0x1f) << 25)
+#define PSC_SMBTMR_SET_PU(x)	(((x) & 0x1f) << 20)
+#define PSC_SMBTMR_SET_SH(x)	(((x) & 0x1f) << 15)
+#define PSC_SMBTMR_SET_SU(x)	(((x) & 0x1f) << 10)
+#define PSC_SMBTMR_SET_CL(x)	(((x) & 0x1f) << 5)
+#define PSC_SMBTMR_SET_CH(x)	(((x) & 0x1f) << 0)
+
+
 #endif /* _AU1000_PSC_H_ */
