@@ -21,7 +21,6 @@
  *
  * Routines for generic manipulation of the interrupts found on the MIPS 
  * Atlas board.
- *
  */
 #include <linux/config.h>
 #include <linux/init.h>
@@ -30,11 +29,9 @@
 #include <linux/interrupt.h>
 #include <linux/kernel_stat.h>
 
-#include <asm/irq.h>
 #include <asm/mips-boards/atlas.h>
 #include <asm/mips-boards/atlasint.h>
 #include <asm/gdb-stub.h>
-
 
 struct atlas_ictrl_regs *atlas_hw0_icregs
 	= (struct atlas_ictrl_regs *)ATLAS_ICTRL_REGS_BASE;
@@ -116,9 +113,9 @@ void atlas_hw0_irqdispatch(struct pt_regs *regs)
 	DEBUG_INT("atlas_hw0_irqdispatch: irq=%d\n", irq);
 
 	/* if action == NULL, then we don't have a handler for the irq */
-	if ( action == NULL ) {
+	if (action == NULL) {
 		printk("No handler for hw0 irq: %i\n", irq);
-		irq_err_count++;
+		atomic_inc(&irq_err_count);
 		return;
 	}
 
