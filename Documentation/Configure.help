@@ -18256,6 +18256,11 @@ CONFIG_I2C_MAX1617
   sensor.  Currently the device is only supported on a SiByte I2C
   adapter, and the driver prints status updates to the system log.
 
+SGI I2C Algorithm
+CONFIG_I2C_ALGO_SGI
+  Supports the SGI interfaces like the ones found on SGI Indy VINO
+  or SGI O2 MACE.
+
 I2C device interface
 CONFIG_I2C_CHARDEV
   Say Y here to use i2c-* device files, usually found in the /dev
