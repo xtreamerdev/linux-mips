@@ -25,7 +25,7 @@ obj-$(CONFIG_NEW_TIME_C)	+= time.o
 
 obj-$(CONFIG_MODULES)		+= mips64_ksyms.o
 obj-$(CONFIG_MIPS32_COMPAT)	+= linux32.o signal32.o ioctl32.o
-obj-$(CONFIG_MIPS32_N32)	+= binfmt_elfn32.o scall_n32.o
+obj-$(CONFIG_MIPS32_N32)	+= binfmt_elfn32.o scall_n32.o signal_n32.o
 obj-$(CONFIG_MIPS32_O32)	+= binfmt_elfo32.o scall_o32.o
 obj-$(CONFIG_SMP)		+= smp.o
 
