@@ -110,16 +110,16 @@ static unsigned char sgi_read_status(void)
 }
 
 struct kbd_ops ip22_kbd_ops = {
-	sgi_request_region,
-	sgi_request_irq,
+	.kbd_request_region	= sgi_request_region,
+	.kbd_request_irq	= sgi_request_irq,
 
-	sgi_aux_request_irq,
-	sgi_aux_free_irq,
+	.aux_request_irq	= sgi_aux_request_irq,
+	.aux_free_irq		= sgi_aux_free_irq,
 
-	sgi_read_input,
-	sgi_write_output,
-	sgi_write_command,
-	sgi_read_status
+	.kbd_read_input		= sgi_read_input,
+	.kbd_write_output	= sgi_write_output,
+	.kbd_write_command	= sgi_write_command,
+	.kbd_read_status	= sgi_read_status,
 };
 
 void __init ip22_setup(void)
