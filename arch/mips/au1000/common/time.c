@@ -49,10 +49,6 @@
 #include <linux/mc146818rtc.h>
 #include <linux/timex.h>
 
-#if !defined(CONFIG_NEW_TIME_C)
-#error "Alchemy processors need CONFIG_NEW_TIME_C defined"
-#endif
-
 extern void startup_match20_interrupt(void);
 extern void do_softirq(void);
 extern volatile unsigned long wall_jiffies;
