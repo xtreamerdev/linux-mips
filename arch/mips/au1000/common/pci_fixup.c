@@ -118,6 +118,20 @@ void __init pcibios_fixup_irqs(void)
 		slot = PCI_SLOT(dev->devfn);
 #if defined( CONFIG_SOC_AU1500 )
 		switch (slot) {
+#if defined( CONFIG_MIPS_MTX1 )
+                       case 0:
+                               dev->irq = AU1000_PCI_INTA;
+                               break;
+                       case 1:
+                               dev->irq = AU1000_PCI_INTB;
+                               break;
+                       case 2:
+                               dev->irq = AU1000_PCI_INTC;
+                               break;
+                       case 3:
+                               dev->irq = AU1000_PCI_INTD;
+                               break;
+#endif
 			case 12:
 			case 13:
 			default:
@@ -125,15 +139,18 @@ void __init pcibios_fixup_irqs(void)
 				break;
 		}
 #elif defined( CONFIG_SOC_AU1550 )
-		switch (slot) {
-			default:
-			case 12:
-				dev->irq = AU1000_PCI_INTA;
-				break;
-			case 13:
-				dev->irq = AU1000_PCI_INTB;
-				break;
-		}
+                switch (slot) {
+                       case 11:
+                               dev->irq = AU1550_PCI_INTC;
+                               break;
+                       case 12:
+                               dev->irq = AU1550_PCI_INTB;
+                                break;
+                       default:
+                       case 13:
+                               dev->irq = AU1550_PCI_INTA;
+                                break;
+                }
 #endif
 
 		pci_write_config_byte(dev, PCI_INTERRUPT_LINE, dev->irq);
