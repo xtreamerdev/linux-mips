@@ -226,10 +226,16 @@ extern void lasat_write_eeprom_info(void);
 /* for calibration of delays */
 
 #include <asm/delay.h>
-#define NANOTH 1000000000L
-extern inline void ndelay(unsigned int ns) {
-	if (ns != 0)
-		__delay(lasat_board_info.li_cpu_hz / 2 / (NANOTH / ns) + 1);
+#include <asm/bootinfo.h>
+/* calculating with the slowest board with 100 MHz clock */
+#define LASAT_100_DIVIDER 20
+/* All 200's run at 250 MHz clock */
+#define LASAT_200_DIVIDER 8
+
+extern unsigned int lasat_ndelay_divider;
+
+extern inline void lasat_ndelay(unsigned int ns) {
+	__delay(ns / lasat_ndelay_divider);
 }
 
 extern void (* prom_printf)(const char *fmt, ...);
