@@ -26,6 +26,9 @@ ifdef CONFIG_CROSSCOMPILE
 CROSS_COMPILE	= $(tool-prefix)
 endif
 
+check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
+
+#
 #
 # GCC uses -G 0 -mabicalls -fpic as default.  We don't want PIC in the kernel
 # code since it only slows down the whole thing.  At some point we might make
@@ -38,6 +41,7 @@ endif
 #
 GCCFLAGS	:= -I $(TOPDIR)/include/asm/gcc
 GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe
+GCCFLAGS	+= $(call check_gcc, -mabi=32,)
 LINKFLAGS	+= -G 0 -static # -N
 MODFLAGS	+= -mlong-calls
 
@@ -48,9 +52,6 @@ GCCFLAGS	+= -mno-sched-prolog -fno-omit-frame-pointer
 endif
 endif
 
-check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
-
-#
 # CPU-dependent compiler/assembler options for optimization.
 #
 ifdef CONFIG_CPU_R3000
