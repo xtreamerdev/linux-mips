@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001 Broadcom Corporation
+ * Copyright (C) 2001, 2002, 2003 Broadcom Corporation
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -30,11 +30,14 @@
 #include <linux/devfs_fs_kernel.h>
 #include <asm/uaccess.h>
 #include <asm/smplock.h>
+#include <asm/sibyte/sb1250.h>
 #include <asm/sibyte/sb1250_regs.h>
 #include <asm/sibyte/sb1250_scd.h>
 #include <asm/sibyte/sb1250_int.h>
 #include <asm/sibyte/64bit.h>
 #include <asm/sibyte/trace_prof.h>
+
+#define DEVNAME "bcm1250_tbprof"
 
 static struct sbprof_tb sbp;
 
@@ -54,7 +57,7 @@ static struct sbprof_tb sbp;
  ************************************************************************/
 
 /* 100 samples per second on a 500 Mhz 1250 (default) */
-static u_int64_t tb_period = 2500000ULL;
+static u_int64_t tb_period;
 
 static void arm_tb(void)
 {
@@ -362,46 +365,8 @@ static struct file_operations sbprof_tb_fops = {
 
 static devfs_handle_t devfs_handle;
 
-#define UNDEF 0
-static unsigned long long pll_div_to_mhz[32] = {
-  UNDEF,
-  UNDEF,
-  UNDEF,
-  UNDEF,
-  200,
-  250,
-  300,
-  350,
-  400,
-  450,
-  500,
-  550,
-  600,
-  650,
-  700,
-  750,
-  800, 
-  850, 
-  900,
-  950,
-  1000,
-  1050,
-  1100,
-  UNDEF,
-  UNDEF,
-  UNDEF,
-  UNDEF, 
-  UNDEF, 
-  UNDEF,
-  UNDEF,
-  UNDEF,
-  UNDEF
-};
-
 static int __init sbprof_tb_init(void)
 {
-	unsigned int pll_div;
-
 	if (devfs_register_chrdev(SBPROF_TB_MAJOR, DEVNAME, &sbprof_tb_fops)) {
 		printk(KERN_WARNING DEVNAME ": initialization failed (dev %d)\n",
 		       SBPROF_TB_MAJOR);
@@ -412,12 +377,7 @@ static int __init sbprof_tb_init(void)
 				      S_IFCHR | S_IRUGO | S_IWUGO,
 				      &sbprof_tb_fops, NULL);
 	sbp.open = 0;
-	pll_div = pll_div_to_mhz[G_SYS_PLL_DIV(in64(KSEG1 + A_SCD_SYSTEM_CFG))];
-	if (pll_div != UNDEF) {
-		tb_period = (pll_div / 2) * 10000;
-	} else {
-		printk(KERN_INFO DEVNAME ": strange PLL divide\n");
-	}
+	tb_period = zbbus_mhz * 10000LL;
 	printk(KERN_INFO DEVNAME ": initialized - tb_period = %lld\n", tb_period);
 	return 0;
 }
