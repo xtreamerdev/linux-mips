@@ -223,6 +223,16 @@ SUBDIRS       += arch/mips/au1000/mtx-1 arch/mips/au1000/common
 LOADADDR      += 0x80100000
 endif
 
+#
+# Cogent CSB250
+#
+ifdef CONFIG_COGENT_CSB250
+LIBS		+= arch/mips/au1000/csb250/csb250.o \
+		   arch/mips/au1000/common/au1000.o
+SUBDIRS		+= arch/mips/au1000/csb250 arch/mips/au1000/common
+LOADADDR	:= 0x80100000
+endif
+
 ifdef CONFIG_PCI
 CORE_FILES    += arch/mips/pci/pci-core.o
 SUBDIRS       += arch/mips/pci
