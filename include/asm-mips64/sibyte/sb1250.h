@@ -33,6 +33,7 @@ extern unsigned int sb1_pass;
 extern unsigned int soc_pass;
 extern unsigned int soc_type;
 extern unsigned int periph_rev;
+extern unsigned int zbbus_mhz;
 
 extern void sb1250_time_init(void);
 extern unsigned long sb1250_gettimeoffset(void);
