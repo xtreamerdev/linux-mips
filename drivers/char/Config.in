@@ -226,9 +226,6 @@ if [ "$CONFIG_WATCHDOG" != "n" ]; then
    tristate '  Eurotech CPU-1220/1410 Watchdog Timer' CONFIG_EUROTECH_WDT
    tristate '  IB700 SBC Watchdog Timer' CONFIG_IB700_WDT
    tristate '  ICP ELectronics Wafer 5823 Watchdog' CONFIG_WAFER_WDT
-   if [ "$CONFIG_SGI_IP22" = "y" ]; then
-      dep_tristate '  Indy/I2 Hardware Watchdog' CONFIG_INDYDOG $CONFIG_SGI_IP22
-   fi
    tristate '  Intel i810 TCO timer / Watchdog' CONFIG_I810_TCO
    tristate '  Mixcom Watchdog' CONFIG_MIXCOMWD 
    tristate '  SBC-60XX Watchdog Timer' CONFIG_60XX_WDT
