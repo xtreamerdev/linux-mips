@@ -17,9 +17,7 @@
 #include <asm/sn/sn0/hub.h>
 #include <asm/traps.h>
 #include <asm/uaccess.h>
-
-extern void dump_tlb_addr(unsigned long addr);
-extern void dump_tlb_all(void);
+#include <asm/tlbdebug.h>
 
 static void dump_hub_information(unsigned long errst0, unsigned long errst1)
 {

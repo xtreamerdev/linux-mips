@@ -32,6 +32,7 @@
 #include <asm/io.h>
 #include <asm/siginfo.h>
 #include <asm/watch.h>
+#include <asm/tlbdebug.h>
 #include <asm/types.h>
 #include <asm/system.h>
 #include <asm/traps.h>
@@ -745,8 +746,6 @@ bad_cid:
 
 asmlinkage void do_watch(struct pt_regs *regs)
 {
-	extern void dump_tlb_all(void);
-
 	/*
 	 * We use the watch exception where available to detect stack
 	 * overflows.
