@@ -758,7 +758,7 @@ static void __init probe_pcache(void)
 		c->dcache.ways = 2;
 		c->dcache.waybit= ffs(dcache_size/2) - 1;
 
-		c->options |= MIPS_CPU_CACHE_CDEX;
+		c->options |= MIPS_CPU_CACHE_CDEX_P;
 		break;
 
 	case CPU_R5432:
@@ -773,7 +773,7 @@ static void __init probe_pcache(void)
 		c->dcache.ways = 2;
 		c->dcache.waybit = 0;
 
-		c->options |= MIPS_CPU_CACHE_CDEX;
+		c->options |= MIPS_CPU_CACHE_CDEX_P;
 		break;
 
 	case CPU_TX49XX:
@@ -787,7 +787,7 @@ static void __init probe_pcache(void)
 		c->dcache.ways = 4;
 		c->dcache.waybit = 0;
 
-		c->options |= MIPS_CPU_CACHE_CDEX;
+		c->options |= MIPS_CPU_CACHE_CDEX_P;
 		break;
 
 	case CPU_R4000PC:
@@ -807,7 +807,7 @@ static void __init probe_pcache(void)
 		c->dcache.ways = 1;
 		c->dcache.waybit = 0;	/* does not matter */
 
-		c->options |= MIPS_CPU_CACHE_CDEX;
+		c->options |= MIPS_CPU_CACHE_CDEX_P;
 		break;
 
 	case CPU_R10000:
@@ -838,7 +838,7 @@ static void __init probe_pcache(void)
 		c->dcache.ways = 2;
 		c->dcache.waybit = ffs(dcache_size/2) - 1;
 
-		c->options |= MIPS_CPU_CACHE_CDEX;
+		c->options |= MIPS_CPU_CACHE_CDEX_P;
 		break;
 
 	case CPU_VR41XX:
@@ -857,7 +857,7 @@ static void __init probe_pcache(void)
 		c->dcache.ways = 1;
 		c->dcache.waybit = 0;	/* does not matter */
 
-		c->options |= MIPS_CPU_CACHE_CDEX;
+		c->options |= MIPS_CPU_CACHE_CDEX_P;
 		break;
 
 	case CPU_RM7000:
@@ -874,7 +874,7 @@ static void __init probe_pcache(void)
 		c->dcache.ways = 4;
 		c->dcache.waybit = ffs(dcache_size / c->dcache.ways) - 1;
 
-		c->options |= MIPS_CPU_CACHE_CDEX | MIPS_CPU_PREFETCH;
+		c->options |= MIPS_CPU_CACHE_CDEX_P | MIPS_CPU_PREFETCH;
 		break;
 
 	default:
@@ -1065,6 +1065,8 @@ static void __init setup_scache(void)
 	case CPU_R4400MC:
 		probe_scache_kseg1 = (probe_func_t) (KSEG1ADDR(&probe_scache));
 		sc_present = probe_scache_kseg1(config);
+		if (sc_present)
+			c->options |= MIPS_CPU_CACHE_CDEX_S;
 		break;
 
 	case CPU_R10000:
