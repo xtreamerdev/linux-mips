@@ -25,5 +25,6 @@ obj-$(CONFIG_AU1X00_UART) += serial.o
 obj-$(CONFIG_AU1000_USB_DEVICE) += usbdev.o
 obj-$(CONFIG_KGDB) += dbg_io.o
 obj-$(CONFIG_RTC) += rtc.o
+obj-$(CONFIG_PCI) += pci_ops.o pci_fixup.o
 
 include $(TOPDIR)/Rules.make

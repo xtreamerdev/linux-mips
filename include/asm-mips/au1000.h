@@ -948,6 +948,7 @@ extern unsigned int get_au1x00_lcd_clock(void);
   #define AC97C_RS              (1<<1)
   #define AC97C_CE              (1<<0)
 
+#ifdef CONFIG_CPU_AU1500
 /* Au1500 PCI Controller */
 #define Au1500_CFG_BASE           0xB4005000 // virtual, kseg0 addr
 #define Au1500_PCI_CMEM           (Au1500_CFG_BASE + 0)
@@ -982,5 +983,24 @@ extern unsigned int get_au1x00_lcd_clock(void);
 #define Au1500_PCI_IO_END         0x5000FFFFF
 #define Au1500_PCI_MEM_START      0x440000000
 #define Au1500_PCI_MEM_END        0x443FFFFFF
+
+#define PCI_IO_START    (Au1500_PCI_IO_START + 0x300)
+#define PCI_IO_END      (Au1500_PCI_IO_END)
+#define PCI_MEM_START   (Au1500_PCI_MEM_START)
+#define PCI_MEM_END     (Au1500_PCI_MEM_END)
+#define PCI_FIRST_DEVFN (0<<3)
+#define PCI_LAST_DEVFN  (19<<3)
+
+#endif
+
+#if defined(CONFIG_CPU_AU1100) || (defined(CONFIG_CPU_AU1000) && !defined(CONFIG_MIPS_PB1000))
+/* no PCI bus controller */
+#define PCI_IO_START    0
+#define PCI_IO_END      0
+#define PCI_MEM_START   0
+#define PCI_MEM_END     0 
+#define PCI_FIRST_DEVFN 0
+#define PCI_LAST_DEVFN  0
+#endif
 
 #endif

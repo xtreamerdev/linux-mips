@@ -16,6 +16,4 @@ O_TARGET := pb1500.o
 
 obj-y := init.o setup.o
 
-obj-$(CONFIG_PCI) += pci_fixup.o pci_ops.o
-
 include $(TOPDIR)/Rules.make
