@@ -81,8 +81,8 @@ static inline void init_MUTEX_LOCKED (struct semaphore *sem)
 extern spinlock_t semaphore_lock;
 #endif
 
-asmlinkage void __down(struct semaphore * sem);
-asmlinkage int  __down_interruptible(struct semaphore * sem);
+extern void __down_failed(struct semaphore * sem);
+extern int  __down_failed_interruptible(struct semaphore * sem);
 extern void __up_wakeup(struct semaphore * sem);
 
 static inline void down(struct semaphore * sem)
@@ -94,7 +94,7 @@ static inline void down(struct semaphore * sem)
 #endif
 	count = atomic_dec_return(&sem->count);
 	if (unlikely(count < 0))
-		__down(sem);
+		__down_failed(sem);
 }
 
 /*
@@ -110,7 +110,7 @@ static inline int down_interruptible(struct semaphore * sem)
 #endif
 	count = atomic_dec_return(&sem->count);
 	if (unlikely(count < 0))
-		return __down_interruptible(sem);
+		return __down_failed_interruptible(sem);
 
 	return 0;
 }
