@@ -10,7 +10,7 @@
 
 O_TARGET := idedriver.o
 
-export-objs := ide-iops.o ide-taskfile.o ide-proc.o ide.o ide-probe.o ide-dma.o ide-lib.o setup-pci.o ide-io.o
+export-objs := ide-iops.o ide-taskfile.o ide-proc.o ide.o ide-probe.o ide-dma.o ide-lib.o setup-pci.o ide-io.o ide-disk.o
 
 all-subdirs	:= arm legacy pci ppc raid
 mod-subdirs	:= arm legacy pci ppc raid
@@ -29,14 +29,18 @@ endif
 
 # Core IDE code - must come before legacy
 
-obj-$(CONFIG_BLK_DEV_IDE)		+= ide-probe.o ide-geometry.o ide-iops.o ide-taskfile.o ide.o ide-lib.o ide-io.o
+obj-$(CONFIG_BLK_DEV_IDE)		+= ide-probe.o ide-geometry.o ide-iops.o ide-taskfile.o ide.o ide-lib.o ide-io.o ide-default.o
 obj-$(CONFIG_BLK_DEV_IDEDISK)		+= ide-disk.o
 obj-$(CONFIG_BLK_DEV_IDECD)		+= ide-cd.o
 obj-$(CONFIG_BLK_DEV_IDETAPE)		+= ide-tape.o
 obj-$(CONFIG_BLK_DEV_IDEFLOPPY)		+= ide-floppy.o
 
-obj-$(CONFIG_BLK_DEV_IDEPCI)		+= setup-pci.o
-obj-$(CONFIG_BLK_DEV_IDEDMA_PCI)	+= ide-dma.o
+ifeq ($(CONFIG_BLK_DEV_IDEPCI),y)
+obj-$(CONFIG_BLK_DEV_IDE)		+= setup-pci.o
+endif
+ifeq ($(CONFIG_BLK_DEV_IDEDMA_PCI),y)
+obj-$(CONFIG_BLK_DEV_IDE)		+= ide-dma.o
+endif
 obj-$(CONFIG_BLK_DEV_ISAPNP)		+= ide-pnp.o
 
 
@@ -50,6 +54,10 @@ ifeq ($(CONFIG_BLK_DEV_IDE),y)
   obj-y		+= legacy/idedriver-legacy.o
   obj-y		+= ppc/idedriver-ppc.o
   obj-y		+= arm/idedriver-arm.o
+else
+  ifeq ($(CONFIG_BLK_DEV_HD_ONLY),y)
+	obj-y	+= legacy/idedriver-legacy.o
+  endif
 endif
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999-2002 Petko Manolov - Petkan (petkan@users.sourceforge.net)
+ * Copyright (c) 1999-2003 Petko Manolov - Petkan (petkan@users.sourceforge.net)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as published
@@ -51,6 +51,8 @@
 #define	NO_CARRIER		0x10
 #define	LOSS_CARRIER		0x08
 #define	JABBER_TIMEOUT		0x04
+
+#define	LINK_STATUS		0x01
 
 #define	PEGASUS_REQT_READ	0xc0
 #define	PEGASUS_REQT_WRITE	0x40
@@ -122,7 +124,6 @@ struct usb_eth_dev {
 #define	VENDOR_COMPAQ		0x049f
 #define	VENDOR_COREGA		0x07aa
 #define	VENDOR_DLINK		0x2001
-#define	VENDOR_EASIDOCK		0x1342
 #define VENDOR_ELCON		0x0db7
 #define	VENDOR_ELSA		0x05cc
 #define	VENDOR_HAWKING		0x0e66
@@ -131,6 +132,7 @@ struct usb_eth_dev {
 #define	VENDOR_LANEED		0x056e
 #define	VENDOR_LINKSYS		0x066b
 #define	VENDOR_MELCO		0x0411
+#define	VENDOR_MOBILITY		0x1342
 #define VENDOR_NETGEAR		0x0846
 #define	VENDOR_SMARTBRIDGES	0x08d1
 #define	VENDOR_SMC		0x0707
@@ -164,7 +166,7 @@ PEGASUS_DEV( "USB 10/100 Fast Ethernet", VENDOR_ABOCOM, 0x200c,
 PEGASUS_DEV( "Accton USB 10/100 Ethernet Adapter", VENDOR_ACCTON, 0x1046,
 		DEFAULT_GPIO_RESET )
 PEGASUS_DEV( "SpeedStream USB 10/100 Ethernet", VENDOR_ACCTON, 0x5046,
-		DEFAULT_GPIO_RESET )
+		DEFAULT_GPIO_RESET | PEGASUS_II )
 PEGASUS_DEV( "ADMtek ADM8511 \"Pegasus II\" USB Ethernet",
 		VENDOR_ADMTEK, 0x8511,
 		DEFAULT_GPIO_RESET | PEGASUS_II )
@@ -212,7 +214,7 @@ PEGASUS_DEV( "D-Link DSB-650", VENDOR_DLINK, 0xabc1,
 		DEFAULT_GPIO_RESET )
 PEGASUS_DEV( "GOLDPFEIL USB Adapter", VENDOR_ELCON, 0x0002,
 		DEFAULT_GPIO_RESET | PEGASUS_II | HAS_HOME_PNA )
-PEGASUS_DEV( "EasiDock Ethernet", VENDOR_EASIDOCK, 0x0304,
+PEGASUS_DEV( "EasiDock Ethernet", VENDOR_MOBILITY, 0x0304,
 		DEFAULT_GPIO_RESET )
 PEGASUS_DEV( "Elsa Micolink USB2Ethernet", VENDOR_ELSA, 0x3000,
 		DEFAULT_GPIO_RESET )

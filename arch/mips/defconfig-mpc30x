@@ -604,6 +604,7 @@ CONFIG_USB_OHCI=y
 # CONFIG_USB_MOUSE is not set
 # CONFIG_USB_AIPTEK is not set
 # CONFIG_USB_WACOM is not set
+# CONFIG_USB_KBTAB is not set
 # CONFIG_USB_POWERMATE is not set
 
 #

@@ -1,5 +1,5 @@
 /*
- *  linux/drivers/ide/opti621.c		Version 0.7	Sept 10, 2002
+ *  linux/drivers/ide/pci/opti621.c		Version 0.7	Sept 10, 2002
  *
  *  Copyright (C) 1996-1998  Linus Torvalds & authors (see below)
  */
@@ -118,7 +118,7 @@
  */
 
 /* #define READ_PREFETCH 0 */
-/* Uncommnent for disable read prefetch.
+/* Uncomment for disable read prefetch.
  * There is some readprefetch capatibility in hdparm,
  * but when I type hdparm -P 1 /dev/hda, I got errors
  * and till reset drive is inaccessible.

@@ -1,7 +1,10 @@
 /*
- * linux/drivers/ide/siimage.c		Version 1.01	Sept 11, 2002
+ * linux/drivers/ide/pci/siimage.c		Version 1.02	Jan 30, 2003
  *
  * Copyright (C) 2001-2002	Andre Hedrick <andre@linux-ide.org>
+ * Copyright (C) 2003		Red Hat <alan@redhat.com>
+ *
+ *  May be copied or modified under the terms of the GNU General Public License
  */
 
 #include <linux/config.h>
@@ -23,7 +26,7 @@
 #include <linux/proc_fs.h>
 
 static u8 siimage_proc = 0;
-#define SIIMAGE_MAX_DEVS		5
+#define SIIMAGE_MAX_DEVS		16
 static struct pci_dev *siimage_devs[SIIMAGE_MAX_DEVS];
 static int n_siimage_devs;
 
@@ -55,6 +58,7 @@ static char * print_siimage_get_info (char *buf, struct pci_dev *dev, int index)
 static int siimage_get_info (char *buffer, char **addr, off_t offset, int count)
 {
 	char *p = buffer;
+	int len;
 	u16 i;
 
 	p += sprintf(p, "\n");
@@ -62,11 +66,25 @@ static int siimage_get_info (char *buffer, char **addr, off_t offset, int count)
 		struct pci_dev *dev	= siimage_devs[i];
 		p = print_siimage_get_info(p, dev, i);
 	}
-	return p-buffer;	/* => must be less than 4k! */
+	/* p - buffer must be less than 4k! */
+	len = (p - buffer) - offset;
+	*addr = buffer + offset;
+	
+	return len > count ? count : len;
 }
 
 #endif	/* defined(DISPLAY_SIIMAGE_TIMINGS) && defined(CONFIG_PROC_FS) */
 
+/**
+ *	siimage_ratemask	-	Compute available modes
+ *	@drive: IDE drive
+ *
+ *	Compute the available speeds for the devices on the interface.
+ *	For the CMD680 this depends on the clocking mode (scsc), for the
+ *	SI3312 SATA controller life is a bit simpler. Enforce UDMA33
+ *	as a limit if there is no 80pin cable present.
+ */
+ 
 static byte siimage_ratemask (ide_drive_t *drive)
 {
 	ide_hwif_t *hwif	= HWIF(drive);
@@ -81,12 +99,14 @@ static byte siimage_ratemask (ide_drive_t *drive)
 		case PCI_DEVICE_ID_SII_3112:
 			return 4;
 		case PCI_DEVICE_ID_SII_680:
-			if ((scsc & 0x10) == 0x10)	/* 133 */
+			if ((scsc & 0x30) == 0x10)	/* 133 */
+				mode = 4;
+			else if ((scsc & 0x30) == 0x20)	/* 2xPCI */
 				mode = 4;
 			else if ((scsc & 0x30) == 0x00)	/* 100 */
 				mode = 3;
-			else if ((scsc & 0x20) == 0x20)	/* 66 eek */
-				BUG();	// mode = 2;
+			else 	/* Disabled ? */
+				BUG();
 			break;
 		default:	return 0;
 	}
@@ -114,6 +134,15 @@ static byte siimage_taskfile_timing (ide_hwif_t *hwif)
 	}
 }
 
+/**
+ *	simmage_tuneproc	-	tune a drive
+ *	@drive: drive to tune
+ *	@mode_wanted: the target operating mode
+ *
+ *	Load the timing settings for this device mode into the
+ *	controller
+ */
+ 
 static void siimage_tuneproc (ide_drive_t *drive, byte mode_wanted)
 {
 	ide_hwif_t *hwif	= HWIF(drive);
@@ -182,7 +211,7 @@ static int siimage_tune_chipset (ide_drive_t *drive, byte xferspeed)
 		multi = hwif->INW(SELADDR(0x08|(unit<<unit)));
 		ultra = hwif->INW(SELADDR(0x0C|(unit<<unit)));
 	} else {
-		pci_read_config_byte(hwif->pci_dev, HWIFADDR(0x8A), &scsc);
+		pci_read_config_byte(hwif->pci_dev, 0x8A, &scsc);
 		pci_read_config_byte(hwif->pci_dev, addr_mask, &mode);
 		pci_read_config_word(hwif->pci_dev,
 				SELREG(0x08|(unit<<unit)), &multi);
@@ -220,8 +249,8 @@ static int siimage_tune_chipset (ide_drive_t *drive, byte xferspeed)
 		case XFER_UDMA_1:
 		case XFER_UDMA_0:
 			multi = dma[2];
-			ultra |= ((scsc) ? (ultra5[speed - XFER_UDMA_0]) :
-					   (ultra6[speed - XFER_UDMA_0]));
+			ultra |= ((scsc) ? (ultra6[speed - XFER_UDMA_0]) :
+					   (ultra5[speed - XFER_UDMA_0]));
 			mode |= ((unit) ? 0x30 : 0x03);
 			config_siimage_chipset_for_pio(drive, 0);
 			break;
@@ -248,9 +277,9 @@ static int config_chipset_for_dma (ide_drive_t *drive)
 {
 	u8 speed	= ide_dma_speed(drive, siimage_ratemask(drive));
 
-	config_chipset_for_pio(drive, (!(speed)));
+	config_chipset_for_pio(drive, !speed);
 
-	if ((!(speed)))
+	if (!speed)
 		return 0;
 
 	if (ide_set_xfer_rate(drive, speed))
@@ -267,7 +296,7 @@ static int siimage_config_drive_for_dma (ide_drive_t *drive)
 	ide_hwif_t *hwif	= HWIF(drive);
 	struct hd_driveid *id	= drive->id;
 
-	if ((id != NULL) && ((id->capability & 1) != 0) && drive->autodma) {
+	if ((id->capability & 1) != 0 && drive->autodma) {
 		if (!(hwif->atapi_dma))
 			goto fast_ata_pio;
 		/* Consult the list of known "bad" drives */
@@ -317,10 +346,9 @@ static int siimage_io_ide_dma_test_irq (ide_drive_t *drive)
 		return 1;
 
 	/* return 1 if Device INTR asserted */
-	if ((pci_read_config_byte(hwif->pci_dev, SELREG(1), &dma_altstat)),
-	    ((dma_altstat & 8) == 8))
+	pci_read_config_byte(hwif->pci_dev, SELREG(1), &dma_altstat);
+	if (dma_altstat & 8)
 		return 0;	//return 1;
-
 	return 0;
 }
 
@@ -355,7 +383,7 @@ static int siimage_mmio_ide_dma_test_irq (ide_drive_t *drive)
 			hwif->OUTL(sata_error, SATA_ERROR_REG);
 			watchdog = (sata_error & 0x00680000) ? 1 : 0;
 #if 1
-			printk("%s: sata_error = 0x%08x, "
+			printk(KERN_WARNING "%s: sata_error = 0x%08x, "
 				"watchdog = %d, %s\n",
 				drive->name, sata_error, watchdog,
 				__FUNCTION__);
@@ -390,6 +418,16 @@ static int siimage_mmio_ide_dma_verbose (ide_drive_t *drive)
 	return temp;
 }
 
+/**
+ *	siimage_busproc		-	bus isolation ioctl
+ *	@drive: drive to isolate/restore
+ *	@state: bus state to set
+ *
+ *	Used by the SII3112 to handle bus isolation. As this is a 
+ *	SATA controller the work required is quite limited, we 
+ *	just have to clean up the statistics
+ */
+ 
 static int siimage_busproc (ide_drive_t * drive, int state)
 {
 	ide_hwif_t *hwif	= HWIF(drive);
@@ -414,7 +452,7 @@ static int siimage_busproc (ide_drive_t * drive, int state)
 			hwif->drives[1].failures = hwif->drives[1].max_failures + 1;
 			break;
 		default:
-			return 0;
+			return -EINVAL;
 	}
 	hwif->bus_state = state;
 	return 0;
@@ -426,16 +464,10 @@ static int siimage_reset_poll (ide_drive_t *drive)
 		ide_hwif_t *hwif	= HWIF(drive);
 
 		if ((hwif->INL(SATA_STATUS_REG) & 0x03) != 0x03) {
-			printk("%s: reset phy dead, status=0x%08x\n",
+			printk(KERN_WARNING "%s: reset phy dead, status=0x%08x\n",
 				hwif->name, hwif->INL(SATA_STATUS_REG));
 			HWGROUP(drive)->poll_timeout = 0;
-#if 0
-			drive->failures++;
-			return ide_stopped;
-#else
 			return ide_started;
-#endif
-			return 1;
 		}
 		return 0;
 	} else {
@@ -443,6 +475,14 @@ static int siimage_reset_poll (ide_drive_t *drive)
 	}
 }
 
+/**
+ *	siimage_pre_reset	-	reset hook
+ *	@drive: IDE device being reset
+ *
+ *	For the SATA devices we need to handle recalibration/geometry
+ *	differently
+ */
+ 
 static void siimage_pre_reset (ide_drive_t *drive)
 {
 	if (drive->media != ide_disk)
@@ -454,6 +494,14 @@ static void siimage_pre_reset (ide_drive_t *drive)
 	}
 }
 
+/**
+ *	siimage_reset	-	reset a device on an siimage controller
+ *	@drive: drive to reset
+ *
+ *	Perform a controller level reset fo the device. For
+ *	SATA we must also check the PHY.
+ */
+ 
 static void siimage_reset (ide_drive_t *drive)
 {
 	ide_hwif_t *hwif	= HWIF(drive);
@@ -475,10 +523,10 @@ static void siimage_reset (ide_drive_t *drive)
 
 	if (SATA_STATUS_REG) {
 		u32 sata_stat = hwif->INL(SATA_STATUS_REG);
-		printk("%s: reset phy, status=0x%08x, %s\n",
+		printk(KERN_WARNING "%s: reset phy, status=0x%08x, %s\n",
 			hwif->name, sata_stat, __FUNCTION__);
 		if (!(sata_stat)) {
-			printk("%s: reset phy dead, status=0x%08x\n",
+			printk(KERN_WARNING "%s: reset phy dead, status=0x%08x\n",
 				hwif->name, sata_stat);
 			drive->failures++;
 		}
@@ -486,20 +534,28 @@ static void siimage_reset (ide_drive_t *drive)
 
 }
 
+/**
+ *	proc_reports_siimage		-	add siimage controller to proc
+ *	@dev: PCI device
+ *	@clocking: SCSC value
+ *	@name: controller name
+ *
+ *	Report the clocking mode of the controller and add it to
+ *	the /proc interface layer
+ */
+ 
 static void proc_reports_siimage (struct pci_dev *dev, u8 clocking, const char *name)
 {
 	if (dev->device == PCI_DEVICE_ID_SII_3112)
 		goto sata_skip;
 
-	printk("%s: BASE CLOCK ", name);
-	clocking &= ~0x0C;
+	printk(KERN_INFO "%s: BASE CLOCK ", name);
+	clocking &= ~0x03;
 	switch(clocking) {
 		case 0x03: printk("DISABLED !\n"); break;
 		case 0x02: printk("== 2X PCI \n"); break;
 		case 0x01: printk("== 133 \n"); break;
 		case 0x00: printk("== 100 \n"); break;
-		default:
-			BUG();
 	}
 
 sata_skip:
@@ -514,16 +570,27 @@ sata_skip:
 #endif /* DISPLAY_SIIMAGE_TIMINGS && CONFIG_PROC_FS */
 }
 
-#ifdef CONFIG_TRY_MMIO_SIIMAGE
 static unsigned int setup_mmio_siimage (struct pci_dev *dev, const char *name)
 {
 	unsigned long bar5	= pci_resource_start(dev, 5);
-	unsigned long end5	= pci_resource_end(dev, 5);
+	unsigned long len5	= pci_resource_len(dev, 5);
 	u8 tmpbyte	= 0;
 	unsigned long addr;
 	void *ioaddr;
 
-	ioaddr = ioremap_nocache(bar5, (end5 - bar5));
+	/*
+	 *	Drop back to PIO if we can't map the mmio. Some
+	 *	systems seem to get terminally confused in the PCI
+	 *	spaces.
+	 */
+	 
+	if(check_mem_region(bar5, len5)!=0)
+	{
+		printk(KERN_WARNING "siimage: IDE controller MMIO ports not available.\n");
+		return 0;
+	}
+		
+	ioaddr = ioremap_nocache(bar5, len5);
 
 	if (ioaddr == NULL)
 		return 0;
@@ -533,103 +600,89 @@ static unsigned int setup_mmio_siimage (struct pci_dev *dev, const char *name)
 	addr = (unsigned long) ioaddr;
 
 	if (dev->device == PCI_DEVICE_ID_SII_3112) {
-		sii_outl(0, DEVADDR(0x148));
-		sii_outl(0, DEVADDR(0x1C8));
+		writel(0, DEVADDR(0x148));
+		writel(0, DEVADDR(0x1C8));
 	}
 
-	sii_outb(0, DEVADDR(0xB4));
-	sii_outb(0, DEVADDR(0xF4));
-	tmpbyte = sii_inb(DEVADDR(0x4A));
+	writeb(0, DEVADDR(0xB4));
+	writeb(0, DEVADDR(0xF4));
+	tmpbyte = readb(DEVADDR(0x4A));
 
-	switch(tmpbyte) {
-		case 0x01:
-			sii_outb(tmpbyte|0x10, DEVADDR(0x4A));
-			tmpbyte = sii_inb(DEVADDR(0x4A));
-		case 0x31:
-			/* if clocking is disabled */
-			/* 133 clock attempt to force it on */
-			sii_outb(tmpbyte & ~0x20, DEVADDR(0x4A));
-			tmpbyte = sii_inb(DEVADDR(0x4A));
-		case 0x11:
-		case 0x21:
+	switch(tmpbyte & 0x30) {
+		case 0x00:
+			/* In 100 MHz clocking, try and switch to 133 */
+			writeb(tmpbyte|0x10, DEVADDR(0x4A));
 			break;
-		default:
-			tmpbyte &= ~0x30;
-			tmpbyte |= 0x20;
-			sii_outb(tmpbyte, DEVADDR(0x4A));
+		case 0x10:
+			/* On 133Mhz clocking */
+			break;
+		case 0x20:
+			/* On PCIx2 clocking */
+			break;
+		case 0x30:
+			/* Clocking is disabled */
+			/* 133 clock attempt to force it on */
+			writeb(tmpbyte & ~0x20, DEVADDR(0x4A));
 			break;
 	}
 	
-	sii_outb(0x72, DEVADDR(0xA1));
-	sii_outw(0x328A, DEVADDR(0xA2));
-	sii_outl(0x62DD62DD, DEVADDR(0xA4));
-	sii_outl(0x43924392, DEVADDR(0xA8));
-	sii_outl(0x40094009, DEVADDR(0xAC));
-	sii_outb(0x72, DEVADDR(0xE1));
-	sii_outw(0x328A, DEVADDR(0xE2));
-	sii_outl(0x62DD62DD, DEVADDR(0xE4));
-	sii_outl(0x43924392, DEVADDR(0xE8));
-	sii_outl(0x40094009, DEVADDR(0xEC));
+	writeb(0x72, DEVADDR(0xA1));
+	writew(0x328A, DEVADDR(0xA2));
+	writel(0x62DD62DD, DEVADDR(0xA4));
+	writel(0x43924392, DEVADDR(0xA8));
+	writel(0x40094009, DEVADDR(0xAC));
+	writeb(0x72, DEVADDR(0xE1));
+	writew(0x328A, DEVADDR(0xE2));
+	writel(0x62DD62DD, DEVADDR(0xE4));
+	writel(0x43924392, DEVADDR(0xE8));
+	writel(0x40094009, DEVADDR(0xEC));
 
 	if (dev->device == PCI_DEVICE_ID_SII_3112) {
-		sii_outl(0xFFFF0000, DEVADDR(0x108));
-		sii_outl(0xFFFF0000, DEVADDR(0x188));
-		sii_outl(0x00680000, DEVADDR(0x148));
-		sii_outl(0x00680000, DEVADDR(0x1C8));
+		writel(0xFFFF0000, DEVADDR(0x108));
+		writel(0xFFFF0000, DEVADDR(0x188));
+		writel(0x00680000, DEVADDR(0x148));
+		writel(0x00680000, DEVADDR(0x1C8));
 	}
 
-	tmpbyte = sii_inb(DEVADDR(0x4A));
+	tmpbyte = readb(DEVADDR(0x4A));
 
 	proc_reports_siimage(dev, (tmpbyte>>=4), name);
 	return 1;
 }
-#endif /* CONFIG_TRY_MMIO_SIIMAGE */
 
 static unsigned int __init init_chipset_siimage (struct pci_dev *dev, const char *name)
 {
 	u32 class_rev	= 0;
 	u8 tmpbyte	= 0;
-#ifdef CONFIG_TRY_MMIO_SIIMAGE
 	u8 BA5_EN	= 0;
-#endif /* CONFIG_TRY_MMIO_SIIMAGE */
 
         pci_read_config_dword(dev, PCI_CLASS_REVISION, &class_rev);
         class_rev &= 0xff;
 	pci_write_config_byte(dev, PCI_CACHE_LINE_SIZE, (class_rev) ? 1 : 255);	
 
-#ifdef CONFIG_TRY_MMIO_SIIMAGE
 	pci_read_config_byte(dev, 0x8A, &BA5_EN);
 	if ((BA5_EN & 0x01) || (pci_resource_start(dev, 5))) {
 		if (setup_mmio_siimage(dev, name)) {
 			return 0;
 		}
 	}
-#endif /* CONFIG_TRY_MMIO_SIIMAGE */
 
 	pci_write_config_byte(dev, 0x80, 0x00);
 	pci_write_config_byte(dev, 0x84, 0x00);
 	pci_read_config_byte(dev, 0x8A, &tmpbyte);
-	switch(tmpbyte) {
+	switch(tmpbyte & 0x30) {
 		case 0x00:
-		case 0x01:
 			/* 133 clock attempt to force it on */
 			pci_write_config_byte(dev, 0x8A, tmpbyte|0x10);
-			pci_read_config_byte(dev, 0x8A, &tmpbyte);
 		case 0x30:
-		case 0x31:
 			/* if clocking is disabled */
 			/* 133 clock attempt to force it on */
 			pci_write_config_byte(dev, 0x8A, tmpbyte & ~0x20);
-			pci_read_config_byte(dev, 0x8A, &tmpbyte);
 		case 0x10:
-		case 0x11:
-		case 0x20:
-		case 0x21:
+			/* 133 already */
 			break;
-		default:
-			tmpbyte &= ~0x30;
-			tmpbyte |= 0x20;
-			pci_write_config_byte(dev, 0x8A, tmpbyte);
+		case 0x20:
+			/* BIOS set PCI x2 clocking */
 			break;
 	}
 
@@ -658,17 +711,7 @@ static void __init init_mmio_iops_siimage (ide_hwif_t *hwif)
 //	u16 i			= 0;
 	hw_regs_t hw;
 
-	hwif->OUTB  = sii_outb;
-	hwif->OUTW  = sii_outw;
-	hwif->OUTL  = sii_outl;
-	hwif->OUTSW = sii_outsw;
-	hwif->OUTSL = sii_outsl;
-	hwif->INB   = sii_inb;
-	hwif->INW   = sii_inw;
-	hwif->INL   = sii_inl;
-	hwif->INSW  = sii_insw;
-	hwif->INSL  = sii_insl;
-
+	default_hwif_mmiops(hwif);
 	memset(&hw, 0, sizeof(hw_regs_t));
 
 #if 1
@@ -706,7 +749,7 @@ static void __init init_mmio_iops_siimage (ide_hwif_t *hwif)
 #endif
 
 #if 0
-	printk("%s: ", hwif->name);
+	printk(KERN_DEBUG "%s: ", hwif->name);
 	for (i = IDE_DATA_OFFSET; i <= IDE_STATUS_OFFSET; i++)
 		printk("0x%08x ", DEVADDR((ch) ? 0xC0 : 0x80)|(i));
 	printk("0x%08x ", DEVADDR((ch) ? 0xCA : 0x8A)|(i));
@@ -726,7 +769,6 @@ static void __init init_mmio_iops_siimage (ide_hwif_t *hwif)
 	hw.priv				= (void *) addr;
 //	hw.priv				= pci_get_drvdata(hwif->pci_dev);
 	hw.irq				= hwif->pci_dev->irq;
-//	hw.iops				= siimage_iops;
 
 	memcpy(&hwif->hw, &hw, sizeof(hw));
 	memcpy(hwif->io_ports, hwif->hw.io_ports, sizeof(hwif->hw.io_ports));
@@ -750,7 +792,7 @@ static void __init init_mmio_iops_siimage (ide_hwif_t *hwif)
 	hwif->dma_base			= DEVADDR((ch) ? 0x08 : 0x00);
 	hwif->dma_base2			= DEVADDR((ch) ? 0x18 : 0x10);
 #endif /* SIIMAGE_LARGE_DMA */
-	hwif->mmio			= 1;
+	hwif->mmio			= 2;
 }
 
 static void __init init_iops_siimage (ide_hwif_t *hwif)
@@ -777,9 +819,6 @@ static unsigned int __init ata66_siimage (ide_hwif_t *hwif)
 		pci_read_config_byte(hwif->pci_dev, SELREG(0), &ata66);
 		return (ata66 & 0x01) ? 1 : 0;
 	}
-#ifndef CONFIG_TRY_MMIO_SIIMAGE
-	if (hwif->mmio) BUG();
-#endif /* CONFIG_TRY_MMIO_SIIMAGE */
 
 	return (hwif->INB(SELADDR(0)) & 0x01) ? 1 : 0;
 }
@@ -787,12 +826,15 @@ static unsigned int __init ata66_siimage (ide_hwif_t *hwif)
 static void __init init_hwif_siimage (ide_hwif_t *hwif)
 {
 	hwif->autodma = 0;
-	hwif->busproc   = &siimage_busproc;
+	
 	hwif->resetproc = &siimage_reset;
 	hwif->speedproc = &siimage_tune_chipset;
 	hwif->tuneproc	= &siimage_tuneproc;
 	hwif->reset_poll = &siimage_reset_poll;
 	hwif->pre_reset = &siimage_pre_reset;
+
+	if(hwif->pci_dev->device == PCI_DEVICE_ID_SII_3112)
+		hwif->busproc   = &siimage_busproc;
 
 	if (!hwif->dma_base) {
 		hwif->drives[0].autotune = 1;
@@ -867,7 +909,7 @@ static void siimage_ide_exit(void)
 module_init(siimage_ide_init);
 module_exit(siimage_ide_exit);
 
-MODULE_AUTHOR("Andre Hedrick");
+MODULE_AUTHOR("Andre Hedrick, Alan Cox");
 MODULE_DESCRIPTION("PCI driver module for SiI IDE");
 MODULE_LICENSE("GPL");
 

@@ -76,6 +76,7 @@ MODULE_PARM(unloadable, "i");
 /* IPv6 procfs goodies... */
 
 #ifdef CONFIG_PROC_FS
+extern int anycast6_get_info(char *, char **, off_t, int);
 extern int raw6_get_info(char *, char **, off_t, int);
 extern int tcp6_get_info(char *, char **, off_t, int);
 extern int udp6_get_info(char *, char **, off_t, int);
@@ -338,6 +339,9 @@ static int inet6_release(struct socket *sock)
 	/* Free mc lists */
 	ipv6_sock_mc_close(sk);
 
+	/* Free ac lists */
+	ipv6_sock_ac_close(sk);
+
 	return inet_release(sock);
 }
 
@@ -542,6 +546,7 @@ inet6_register_protosw(struct inet_protosw *p)
 	struct list_head *lh;
 	struct inet_protosw *answer;
 	int protocol = p->protocol;
+	struct list_head *last_perm;
 
 	br_write_lock_bh(BR_NETPROTO_LOCK);
 
@@ -550,24 +555,29 @@ inet6_register_protosw(struct inet_protosw *p)
 
 	/* If we are trying to override a permanent protocol, bail. */
 	answer = NULL;
+	last_perm = &inetsw6[p->type];
 	list_for_each(lh, &inetsw6[p->type]) {
 		answer = list_entry(lh, struct inet_protosw, list);
 
 		/* Check only the non-wild match. */
-		if (protocol == answer->protocol &&
-		    (INET_PROTOSW_PERMANENT & answer->flags))
-			break;
+		if (INET_PROTOSW_PERMANENT & answer->flags) {
+			if (protocol == answer->protocol)
+				break;
+			last_perm = lh;
+		}
 
 		answer = NULL;
 	}
 	if (answer)
 		goto out_permanent;
 
-	/* Add to the BEGINNING so that we override any existing
-	 * entry.  This means that when we remove this entry, the
+	/* Add the new entry after the last permanent entry if any, so that
+	 * the new entry does not override a permanent entry when matched with
+	 * a wild-card protocol. But it is allowed to override any existing
+	 * non-permanent entry.  This means that when we remove this entry, the 
 	 * system automatically returns to the old behavior.
 	 */
-	list_add(&p->list, &inetsw6[p->type]);
+	list_add(&p->list, last_perm);
 out:
 	br_write_unlock_bh(BR_NETPROTO_LOCK);
 	return;
@@ -623,7 +633,7 @@ static int __init inet6_init(void)
 	/*
 	 *	ipngwg API draft makes clear that the correct semantics
 	 *	for TCP and UDP is to consider one TCP and UDP instance
-	 *	in a host availiable by both INET and INET6 APIs and
+	 *	in a host available by both INET and INET6 APIs and
 	 *	able to communicate via both network protocols.
 	 */
 
@@ -652,6 +662,8 @@ static int __init inet6_init(void)
 		goto proc_sockstat6_fail;
 	if (!proc_net_create("snmp6", 0, afinet6_get_snmp))
 		goto proc_snmp6_fail;
+	if (!proc_net_create("anycast6", 0, anycast6_get_info))
+		goto proc_anycast6_fail;
 #endif
 	ipv6_netdev_notif_init();
 	ipv6_packet_init();
@@ -659,6 +671,7 @@ static int __init inet6_init(void)
 	ip6_flowlabel_init();
 	addrconf_init();
 	sit_init();
+	ipv6_frag_init();
 
 	/* Init v6 transport protocols. */
 	udpv6_init();
@@ -670,6 +683,8 @@ static int __init inet6_init(void)
 	return 0;
 
 #ifdef CONFIG_PROC_FS
+proc_anycast6_fail:
+	proc_net_remove("anycast6");
 proc_snmp6_fail:
 	proc_net_remove("sockstat6");
 proc_sockstat6_fail:
@@ -705,6 +720,7 @@ static void inet6_exit(void)
 	proc_net_remove("udp6");
 	proc_net_remove("sockstat6");
 	proc_net_remove("snmp6");
+	proc_net_remove("anycast6");
 #endif
 	/* Cleanup code parts. */
 	sit_cleanup();

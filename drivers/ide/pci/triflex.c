@@ -22,6 +22,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  * 
  * Loosely based on the piix & svwks drivers.
+ *
+ * Documentation:
+ *	Not publically available.
  */
 
 #include <linux/config.h>
@@ -46,6 +49,7 @@ static struct pci_dev *triflex_dev;
 static int triflex_get_info(char *buf, char **addr, off_t offset, int count)
 {
 	char *p = buf;
+	int len;
 
 	struct pci_dev *dev	= triflex_dev;
 	unsigned long bibma = pci_resource_start(dev, 4);
@@ -82,8 +86,11 @@ static int triflex_get_info(char *buf, char **addr, off_t offset, int count)
 
 	p += sprintf(p, "DMA\n");
 	p += sprintf(p, "PIO\n");
+
+	len = (p - buf) - offset;
+	*addr = buf + offset;
 	
-	return p-buf;
+	return len > count ? count : len;
 }
 
 static int triflex_tune_chipset(ide_drive_t *drive, u8 xferspeed)
@@ -164,7 +171,7 @@ static int triflex_config_drive_xfer_rate(ide_drive_t *drive)
 	ide_hwif_t *hwif	= HWIF(drive);
 	struct hd_driveid *id	= drive->id;
 	
-	if (id && (id->capability & 1) && drive->autodma) {
+	if ((id->capability & 1) && drive->autodma) {
 		if (hwif->ide_dma_bad_drive(drive))
 			goto tune_pio;
 		if (id->field_valid & 2) {

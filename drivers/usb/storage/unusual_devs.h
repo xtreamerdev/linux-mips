@@ -255,6 +255,12 @@ UNUSUAL_DEV(  0x054c, 0x0032, 0x0000, 0x9999,
 		US_SC_UFI, US_PR_CB, NULL,
 		US_FL_SINGLE_LUN | US_FL_START_STOP ),
 		
+UNUSUAL_DEV(  0x054c, 0x0069, 0x0000, 0x9999,
+		"Sony",
+		"Memorystick MSC-U03",
+		US_SC_UFI, US_PR_CB, NULL,
+		US_FL_SINGLE_LUN | US_FL_START_STOP ),
+
 /* Submitted by Nathan Babb <nathan@lexi.com> */
 UNUSUAL_DEV(  0x054c, 0x006d, 0x0000, 0x9999,
                 "Sony",
@@ -278,6 +284,15 @@ UNUSUAL_DEV(  0x059f, 0xa601, 0x0200, 0x0200,
 		"LaCie",
 		"USB Hard Disk",
 		US_SC_RBC, US_PR_CB, NULL, 0 ), 
+
+/* Enable USB storage access to the MMC/SD and CompactFlash cards inside the
+ * Pontis SP600 MP3 player (entry found on http://www.pontis.de/).
+ */
+UNUSUAL_DEV(  0x09bc, 0x0003, 0x0000, 0x9999,
+		"PONTIS",
+		"SP600",
+		US_SC_SCSI, US_PR_BULK, NULL,
+		US_FL_START_STOP ),
 
 #ifdef CONFIG_USB_STORAGE_ISD200
 UNUSUAL_DEV(  0x05ab, 0x0031, 0x0100, 0x0110,

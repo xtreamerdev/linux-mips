@@ -125,6 +125,7 @@ static struct mii_chip_info {
 	{ "ICS LAN PHY",			0x0015, 0xF440, LAN },
 	{ "NS 83851 PHY",			0x2000, 0x5C20, MIX },
 	{ "Realtek RTL8201 PHY",		0x0000, 0x8200, LAN },
+	{ "VIA 6103 PHY",			0x0101, 0x8f20, LAN },
 	{0,},
 };
 
@@ -510,7 +511,7 @@ static int __init sis900_mii_probe (struct net_device * net_dev)
 {
 	struct sis900_private * sis_priv = net_dev->priv;
 	u16 poll_bit = MII_STAT_LINK, status = 0;
-	unsigned int timeout = jiffies + 5 * HZ;
+	unsigned long timeout = jiffies + 5 * HZ;
 	int phy_addr;
 	u8 revision;
 

@@ -561,7 +561,7 @@ out:	jr	ra
 	sys	sys_lremovexattr 2
 	sys	sys_fremovexattr 2		/* 4235 */
 	sys	sys_tkill, 2
-	sys	sys_ni_syscall, 0		/* res. for sendfile64 */
+	sys	sys_sendfile64, 5
 	sys	sys_ni_syscall, 0		/* res. for futex */
 	sys	sys_ni_syscall, 0		/* res. for sched_setaffinity */
 	sys	sys_ni_syscall, 0		/* 4240 res. for sched_getaffinity */

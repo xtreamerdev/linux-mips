@@ -349,6 +349,7 @@ struct ext3_inode {
 #else
 #define EXT2_MOUNT_NOLOAD		EXT3_MOUNT_NOLOAD
 #define EXT2_MOUNT_ABORT		EXT3_MOUNT_ABORT
+#define EXT2_MOUNT_DATA_FLAGS		EXT3_MOUNT_DATA_FLAGS
 #endif
 
 #define ext3_set_bit			ext2_set_bit
@@ -642,6 +643,7 @@ extern void ext3_discard_prealloc (struct inode *);
 extern void ext3_dirty_inode(struct inode *);
 extern int ext3_change_inode_journal_flag(struct inode *, int);
 extern void ext3_truncate (struct inode *);
+extern void ext3_set_inode_flags(struct inode *);
 
 /* ioctl.c */
 extern int ext3_ioctl (struct inode *, struct file *, unsigned int,

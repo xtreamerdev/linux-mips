@@ -703,11 +703,18 @@
 #define __NR_N32_unused210		(__NR_N32_Linux + 210)
 #define __NR_N32_rt_sigreturn		(__NR_N32_Linux + 211)
 #define __NR_N32_fcntl64		(__NR_N32_Linux + 212)
+#define __NR_N32_unused213		(__NR_N32_Linux + 213)
+#define __NR_N32_unused214		(__NR_N32_Linux + 214)
+#define __NR_N32_unused215		(__NR_N32_Linux + 215)
+#define __NR_N32_unused216		(__NR_N32_Linux + 216)
+#define __NR_N32_unused217		(__NR_N32_Linux + 217)
+#define __NR_N32_unused218		(__NR_N32_Linux + 218)
+#define __NR_N32_sendfile64		(__NR_N32_Linux + 219)
 
 /*
  * Offset of the last N32 flavoured syscall
  */
-#define __NR_N32_Linux_syscalls		212
+#define __NR_N32_Linux_syscalls		219
 
 #ifndef __ASSEMBLY__
 

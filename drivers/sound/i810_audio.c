@@ -66,6 +66,9 @@
  *
  *	This driver is cursed. (Ben LaHaise)
  *
+ *  ICH 3 caveats
+ *	Intel errata #7 for ICH3 IO. We need to disable SMI stuff
+ *	when codec probing. [Not Yet Done]
  *
  *  ICH 4 caveats
  *
@@ -2491,6 +2494,9 @@ found_virt:
 	}
 	if(file->f_mode & FMODE_WRITE) {
 		if((dmabuf->write_channel = card->alloc_pcm_channel(card)) == NULL) {
+			/* make sure we free the record channel allocated above */
+			if(file->f_mode & FMODE_READ)
+				card->free_pcm_channel(card,dmabuf->read_channel->num);
 			kfree (card->states[i]);
 			card->states[i] = NULL;;
 			return -EBUSY;
@@ -2924,23 +2930,13 @@ static int __init i810_ac97_init(struct i810_card *card)
 		
 		/* Check for an AC97 1.0 soft modem (ID1) */
 		
-		if(codec->codec_read(codec, AC97_RESET) & 2)
+		if(codec->modem)
 		{
-			printk(KERN_WARNING "i810_audio: codec %d is an AC97 1.0 softmodem - skipping.\n", ac97_id);
+			printk(KERN_WARNING "i810_audio: codec %d is a softmodem - skipping.\n", ac97_id);
 			kfree(codec);
 			continue;
 		}
 		
-		/* Check for an AC97 2.x soft modem */
-		
-		codec->codec_write(codec, AC97_EXTENDED_MODEM_ID, 0L);
-		if(codec->codec_read(codec, AC97_EXTENDED_MODEM_ID) & 1)
-		{
-			printk(KERN_WARNING "i810_audio: codec %d is an AC97 2.x softmodem - skipping.\n", ac97_id);
-			kfree(codec);
-			continue;
-		}
-	
 		card->ac97_features = eid;
 
 		/* Now check the codec for useful features to make up for

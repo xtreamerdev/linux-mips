@@ -621,9 +621,11 @@ static void rw_intr(Scsi_Cmnd * SCpnt)
 
 	/* An error occurred */
 	if (driver_byte(result) != 0 && 	/* An error occured */
-	    SCpnt->sense_buffer[0] == 0xF0) {	/* Sense data is valid */
+	    (SCpnt->sense_buffer[0] & 0x7f) == 0x70) {	/* Sense data is valid */
 		switch (SCpnt->sense_buffer[2]) {
 		case MEDIUM_ERROR:
+			if (!(SCpnt->sense_buffer[0] & 0x80))
+				break;
 			error_sector = (SCpnt->sense_buffer[3] << 24) |
 			(SCpnt->sense_buffer[4] << 16) |
 			(SCpnt->sense_buffer[5] << 8) |
@@ -729,15 +731,17 @@ static int check_scsidisk_media_change(kdev_t full_dev)
 				 * check_disk_change */
 	}
 
-	/* Using Start/Stop enables differentiation between drive with
+	/*
+	 * Using TEST_UNIT_READY enables differentiation between drive with
 	 * no cartridge loaded - NOT READY, drive with changed cartridge -
 	 * UNIT ATTENTION, or with same cartridge - GOOD STATUS.
-	 * This also handles drives that auto spin down. eg iomega jaz 1GB
-	 * as this will spin up the drive.
+	 *
+	 * Drives that auto spin down. eg iomega jaz 1G, will be started
+	 * by sd_init_onedisk(), whenever revalidate_scsidisk() is called.
 	 */
 	retval = -ENODEV;
 	if (scsi_block_when_processing_errors(SDev))
-		retval = scsi_ioctl(SDev, SCSI_IOCTL_START_UNIT, NULL);
+		retval = scsi_ioctl(SDev, SCSI_IOCTL_TEST_UNIT_READY, NULL);
 
 	if (retval) {		/* Unable to test, unit probably not ready.
 				 * This usually means there is no disc in the
@@ -1001,7 +1005,7 @@ static int sd_init_onedisk(int i)
 			 */
 			int m;
 			int hard_sector = sector_size;
-			int sz = rscsi_disks[i].capacity * (hard_sector/256);
+			unsigned int sz = (rscsi_disks[i].capacity/2) * (hard_sector/256);
 
 			/* There are 16 minors allocated for each major device */
 			for (m = i << 4; m < ((i + 1) << 4); m++) {
@@ -1009,9 +1013,9 @@ static int sd_init_onedisk(int i)
 			}
 
 			printk("SCSI device %s: "
-			       "%d %d-byte hdwr sectors (%d MB)\n",
+			       "%u %d-byte hdwr sectors (%u MB)\n",
 			       nbuff, rscsi_disks[i].capacity,
-			       hard_sector, (sz/2 - sz/1250 + 974)/1950);
+			       hard_sector, (sz - sz/625 + 974)/1950);
 		}
 
 		/* Rescale capacity to 512-byte units */

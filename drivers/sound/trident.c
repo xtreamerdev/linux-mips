@@ -223,7 +223,7 @@
 #define TRIDENT_STATE_MAGIC	0x63657373 /* "cess" */
 
 #define TRIDENT_DMA_MASK	0x3fffffff /* DMA buffer mask for pci_alloc_consist */
-#define ALI_DMA_MASK		0xffffffff /* ALI Tridents lack the 30-bit limitation */
+#define ALI_DMA_MASK		0x7fffffff /* ALI Tridents have 31-bit DMA. Wow. */
 
 #define NR_HW_CH		32
 
@@ -3060,7 +3060,7 @@ static void ali_ac97_set(struct trident_card *card, int secondary, u8 reg, u16 v
         ncount = 10;
 	while(1) {
 		wcontrol = inw(TRID_REG(card, ALI_AC97_WRITE));
-		if(!wcontrol & 0x8000)
+		if(!(wcontrol & 0x8000))
 			break;
 		if(ncount <= 0)
 			break;
@@ -3942,9 +3942,8 @@ static int ali_reset_5451(struct trident_card *card)
 			return 0;
 		udelay(5000);
 	}
-
-	printk(KERN_ERR "ALi 5451 did not come out of reset.\n");
-	return 1;
+	/* This is non fatal if you have a non PM capable codec.. */
+	return 0;
 }
 
 /* AC97 codec initialisation. */

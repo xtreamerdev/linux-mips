@@ -1,5 +1,5 @@
 /*
- * linux/drivers/ide/cs5530.c		Version 0.7	Sept 10, 2002
+ * linux/drivers/ide/pci/cs5530.c		Version 0.7	Sept 10, 2002
  *
  * Copyright (C) 2000			Andre Hedrick <andre@linux-ide.org>
  * Ditto of GNU General Public License.
@@ -9,6 +9,9 @@
  *
  * Development of this chipset driver was funded
  * by the nice folks at National Semiconductor.
+ *
+ * Documentation:
+ *	CS5530 documentation available from National Semiconductor.
  */
 
 #include <linux/config.h>
@@ -177,7 +180,7 @@ static int cs5530_config_dma (ide_drive_t *drive)
 	 */
 	if (mate->present) {
 		struct hd_driveid *mateid = mate->id;
-		if (mateid && (mateid->capability & 1) &&
+		if ((mateid->capability & 1) &&
 		    !hwif->ide_dma_bad_drive(mate)) {
 			if ((mateid->field_valid & 4) &&
 			    (mateid->dma_ultra & 7))
@@ -194,7 +197,7 @@ static int cs5530_config_dma (ide_drive_t *drive)
 	 * Now see what the current drive is capable of,
 	 * selecting UDMA only if the mate said it was ok.
 	 */
-	if (id && (id->capability & 1) && drive->autodma &&
+	if ((id->capability & 1) && drive->autodma &&
 	    !hwif->ide_dma_bad_drive(drive)) {
 		if (udma_ok && (id->field_valid & 4) && (id->dma_ultra & 7)) {
 			if      (id->dma_ultra & 4)

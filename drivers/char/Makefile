@@ -24,7 +24,7 @@ obj-y	 += mem.o tty_io.o n_tty.o tty_ioctl.o raw.o pty.o misc.o random.o
 export-objs     :=	busmouse.o console.o keyboard.o sysrq.o \
 			misc.o pty.o random.o selection.o serial.o \
 			sonypi.o tty_io.o tty_ioctl.o generic_serial.o \
-			au1000_gpio.o vac-serial.o hp_psaux.o nvram.o
+			au1000_gpio.o vac-serial.o hp_psaux.o nvram.o scx200.o
 
 mod-subdirs	:=	joystick ftape drm drm-4.0 pcmcia
 
@@ -240,6 +240,7 @@ obj-$(CONFIG_ADBMOUSE) += adbmouse.o
 obj-$(CONFIG_PC110_PAD) += pc110pad.o
 obj-$(CONFIG_MK712_MOUSE) += mk712.o
 obj-$(CONFIG_RTC) += rtc.o
+obj-$(CONFIG_GEN_RTC) += genrtc.o
 obj-$(CONFIG_EFI_RTC) += efirtc.o
 obj-$(CONFIG_SGI_DS1286) += ds1286.o
 obj-$(CONFIG_MIPS_RTC) += mips_rtc.o
@@ -301,7 +302,7 @@ obj-$(CONFIG_MACHZ_WDT) += machzwd.o
 obj-$(CONFIG_SH_WDT) += shwdt.o
 obj-$(CONFIG_EUROTECH_WDT) += eurotechwdt.o
 obj-$(CONFIG_ALIM7101_WDT) += alim7101_wdt.o
-#obj-$(CONFIG_ALIM1535_WDT) += alim1535d_wdt.o
+obj-$(CONFIG_ALIM1535_WDT) += alim1535d_wdt.o
 obj-$(CONFIG_INDYDOG) += indydog.o
 obj-$(CONFIG_SC1200_WDT) += sc1200wdt.o
 obj-$(CONFIG_SCx200_WDT) += scx200_wdt.o

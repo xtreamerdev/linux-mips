@@ -33,6 +33,9 @@
 #define DELL_VENDOR_ID		0x413c
 #define DELL_AXIM_ID		0x4001
 
+#define FSC_VENDOR_ID		0x0bf8
+#define FSC_LOOX_ID		0x1001
+
 #define HP_VENDOR_ID		0x03f0
 #define HP_JORNADA_548_ID	0x1016
 #define HP_JORNADA_568_ID	0x1116
@@ -73,6 +76,9 @@
 
 #define NEC_VENDOR_ID		0x0409
 #define NEC_PRODUCT_ID		0x00d5
+
+#define ASUS_VENDOR_ID		0x0b05
+#define ASUS_A600_PRODUCT_ID	0x4201
 
 /*
  * Since we can't queue our bulk write urbs (don't know why - it just

@@ -92,6 +92,7 @@
 #define I2C_DRIVERID_STV0030	45     /* Multipurpose switch		*/
 #define I2C_DRIVERID_SAA7114H	46     /* video decoder			*/
 #define I2C_DRIVERID_MAX1617	47     /* temp sensor			*/
+#define I2C_DRIVERID_ADV717X	48     /* video encoder			*/
 
 #define I2C_DRIVERID_EXP0	0xF0	/* experimental use id's	*/
 #define I2C_DRIVERID_EXP1	0xF1

@@ -309,6 +309,7 @@ CONFIG_TULIP=y
 # CONFIG_DGRS is not set
 # CONFIG_DM9102 is not set
 # CONFIG_EEPRO100 is not set
+# CONFIG_EEPRO100_PIO is not set
 # CONFIG_E100 is not set
 # CONFIG_LNE390 is not set
 # CONFIG_FEALNX is not set

@@ -1,5 +1,5 @@
 /*
- *  linux/drivers/ide/falconide.c -- Atari Falcon IDE Driver
+ *  linux/drivers/ide/legacy/falconide.c -- Atari Falcon IDE Driver
  *
  *     Created 12 Jul 1997 by Geert Uytterhoeven
  *
@@ -46,6 +46,14 @@ static int falconide_offsets[IDE_NR_PORTS] __initdata = {
     ATA_HD_DATA, ATA_HD_ERROR, ATA_HD_NSECTOR, ATA_HD_SECTOR, ATA_HD_LCYL,
     ATA_HD_HCYL, ATA_HD_SELECT, ATA_HD_STATUS, ATA_HD_CONTROL, -1
 };
+
+
+    /*
+     *  falconide_intr_lock is used to obtain access to the IDE interrupt,
+     *  which is shared between several drivers.
+     */
+
+int falconide_intr_lock;
 
 
     /*

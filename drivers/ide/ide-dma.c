@@ -1,8 +1,10 @@
 /*
- *  linux/drivers/ide/ide-dma.c		Version 4.10	June 9, 2000
+ *  linux/drivers/ide/ide-dma.c		Version 4.13	May 21, 2003
  *
  *  Copyright (c) 1999-2000	Andre Hedrick <andre@linux-ide.org>
  *  May be copied or modified under the terms of the GNU General Public License
+ *
+ *  Portions Copyright Red Hat 2003
  */
 
 /*
@@ -490,7 +492,7 @@ static int config_drive_for_dma (ide_drive_t *drive)
 	struct hd_driveid *id = drive->id;
 	ide_hwif_t *hwif = HWIF(drive);
 
-	if (id && (id->capability & 1) && hwif->autodma) {
+	if ((id->capability & 1) && hwif->autodma) {
 		/* Consult the list of known "bad" drives */
 		if (hwif->ide_dma_bad_drive(drive))
 			return hwif->ide_dma_off(drive);
@@ -689,11 +691,6 @@ int __ide_dma_read (ide_drive_t *drive /*, struct request *rq */)
 	drive->waiting_for_dma = 1;
 	if (drive->media != ide_disk)
 		return 0;
-	/* paranoia check */
-	if (HWGROUP(drive)->handler != NULL)
-		BUG();
-	ide_set_handler(drive, &ide_dma_intr, 2*WAIT_CMD, dma_timer_expiry);
-
 	/*
 	 * FIX ME to use only ACB ide_task_t args Struct
 	 */
@@ -710,8 +707,7 @@ int __ide_dma_read (ide_drive_t *drive /*, struct request *rq */)
 	}
 #endif
 	/* issue cmd to drive */
-	hwif->OUTB(command, IDE_COMMAND_REG);
-
+	ide_execute_command(drive, command, &ide_dma_intr, 2*WAIT_CMD, dma_timer_expiry);
 	return HWIF(drive)->ide_dma_count(drive);
 }
 
@@ -741,10 +737,6 @@ int __ide_dma_write (ide_drive_t *drive /*, struct request *rq */)
 	drive->waiting_for_dma = 1;
 	if (drive->media != ide_disk)
 		return 0;
-	/* paranoia check */
-	if (HWGROUP(drive)->handler != NULL)
-		BUG();
-	ide_set_handler(drive, &ide_dma_intr, 2*WAIT_CMD, dma_timer_expiry);
 	/*
 	 * FIX ME to use only ACB ide_task_t args Struct
 	 */
@@ -761,7 +753,7 @@ int __ide_dma_write (ide_drive_t *drive /*, struct request *rq */)
 	}
 #endif
 	/* issue cmd to drive */
-	hwif->OUTB(command, IDE_COMMAND_REG);
+	ide_execute_command(drive, command, &ide_dma_intr, 2*WAIT_CMD, dma_timer_expiry);
 	return HWIF(drive)->ide_dma_count(drive);
 }
 
@@ -825,7 +817,9 @@ int __ide_dma_test_irq (ide_drive_t *drive)
 	if (!drive->waiting_for_dma)
 		printk(KERN_WARNING "%s: (%s) called while not waiting\n",
 			drive->name, __FUNCTION__);
+#if 0
 	drive->waiting_for_dma++;
+#endif
 	return 0;
 }
 
@@ -1023,6 +1017,9 @@ int ide_release_dma (ide_hwif_t *hwif)
 		return 1;
 
 	ide_release_dma_engine(hwif);
+	
+	if (hwif->mmio==2)
+		return 1;
 	if (hwif->mmio)
 		return ide_release_mmio_dma(hwif);
 	return ide_release_iomio_dma(hwif);
@@ -1046,6 +1043,24 @@ int ide_allocate_dma_engine (ide_hwif_t *hwif)
 
 	ide_release_dma_engine(hwif);
 	return 1;
+}
+
+int ide_mapped_mmio_dma (ide_hwif_t *hwif, unsigned long base, unsigned int ports)
+{
+	printk(KERN_INFO "    %s: MMIO-DMA ", hwif->name);
+	hwif->dma_base = base;
+	if ((hwif->cds->extra) && (hwif->channel == 0))
+		hwif->dma_extra = hwif->cds->extra;
+	
+	/* There is an issue to watch here. The master might not be 
+	   registered because the BIOS disabled it. Eventually this should
+	   be fixed by always registering the mate */
+	   
+	if(hwif->mate == NULL)
+		hwif->dma_master = base;
+	else
+		hwif->dma_master = (hwif->channel) ? hwif->mate->dma_base : base;
+	return 0;
 }
 
 int ide_mmio_dma (ide_hwif_t *hwif, unsigned long base, unsigned int ports)
@@ -1115,6 +1130,8 @@ int ide_iomio_dma (ide_hwif_t *hwif, unsigned long base, unsigned int ports)
  */
 int ide_dma_iobase (ide_hwif_t *hwif, unsigned long base, unsigned int ports)
 {
+	if (hwif->mmio == 2)
+		return ide_mapped_mmio_dma(hwif, base, ports);
 	if (hwif->mmio)
 		return ide_mmio_dma(hwif, base, ports);
 	return ide_iomio_dma(hwif, base, ports);

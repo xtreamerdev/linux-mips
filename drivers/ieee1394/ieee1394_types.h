@@ -7,29 +7,9 @@
 #include <linux/version.h>
 #include <linux/list.h>
 #include <linux/init.h>
+#include <asm/semaphore.h>
 #include <asm/byteorder.h>
 
-
-/* The great kdev_t changeover in 2.5.x */
-#include <linux/kdev_t.h>
-#ifndef minor
-#define minor(dev) MINOR(dev)
-#endif
-
-#ifndef __devexit_p
-#define __devexit_p(x) x
-#endif
-
-#include <linux/spinlock.h>
-
-#ifndef list_for_each_safe
-#define list_for_each_safe(pos, n, head) \
-	for (pos = (head)->next, n = pos->next; pos != (head); \
-		pos = n, n = pos->next)
-
-#endif
-
-#define pte_offset_kernel pte_offset
 
 #ifndef MIN
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -40,13 +20,23 @@
 #endif
 
 
-/* Use task queue */
-#include <linux/tqueue.h>
-#define hpsb_queue_struct tq_struct
-#define hpsb_queue_list list
-#define hpsb_schedule_work(x) schedule_task(x)
-#define HPSB_INIT_WORK(x,y,z) INIT_TQUEUE(x,y,z)
-#define HPSB_PREPARE_WORK(x,y,z) PREPARE_TQUEUE(x,y,z)
+/* Transaction Label handling */
+struct hpsb_tlabel_pool {
+	DECLARE_BITMAP(pool, 64);
+	spinlock_t lock;
+	u8 next;
+	u32 allocations;
+	struct semaphore count;
+};
+
+#define HPSB_TPOOL_INIT(_tp)			\
+do {						\
+	CLEAR_BITMAP((_tp)->pool, 64);		\
+	spin_lock_init(&(_tp)->lock);		\
+	(_tp)->next = 0;			\
+	(_tp)->allocations = 0;			\
+	sema_init(&(_tp)->count, 63);		\
+} while(0)
 
 
 typedef u32 quadlet_t;
@@ -58,14 +48,17 @@ typedef u64 nodeaddr_t;
 typedef u16 arm_length_t;
 
 #define BUS_MASK  0xffc0
+#define BUS_SHIFT 6
 #define NODE_MASK 0x003f
 #define LOCAL_BUS 0xffc0
 #define ALL_NODES 0x003f
 
+#define NODEID_TO_BUS(nodeid)	((nodeid & BUS_MASK) >> BUS_SHIFT)
+#define NODEID_TO_NODE(nodeid)	(nodeid & NODE_MASK)
+
 /* Can be used to consistently print a node/bus ID. */
-#define NODE_BUS_FMT    "%02d:%04d"
-#define NODE_BUS_ARGS(nodeid) \
-	(nodeid & NODE_MASK), ((nodeid & BUS_MASK) >> 6)
+#define NODE_BUS_FMT		"%02d:%04d"
+#define NODE_BUS_ARGS(nodeid)	NODEID_TO_NODE(nodeid), NODEID_TO_BUS(nodeid)
 
 #define HPSB_PRINT(level, fmt, args...) printk(level "ieee1394: " fmt "\n" , ## args)
 

@@ -1,7 +1,7 @@
 /* -*- linux-c -*- */
 
 /* 
- * Driver for USB Scanners (linux-2.4.21)
+ * Driver for USB Scanners (linux-2.4)
  *
  * Copyright (C) 1999, 2000, 2001, 2002 David E. Nelson
  * Copyright (C) 2002, 2003 Henning Meier-Geinitz
@@ -334,6 +334,12 @@
  *      <oliver@neukum.name>.
  *
  * 0.4.10  01/07/2003
+ *    - Added vendor/product ids for Artec, Canon, Compaq, Epson, HP, Microtek 
+ *      and Visioneer scanners. Thanks to William Lam <wklam@triad.rr.com>,
+ *      Till Kamppeter <till.kamppeter@gmx.net> and others for all the ids.
+ *    - Cleaned up list of vendor/product ids.
+ *    - Print ids and device number when a device was detected.
+ *    - Don't print errors when the device is busy.
  *    - Added vendor/product ids for Visioneer scanners.
  *    - Print information about user-supplied ids only once at startup instead
  *      of everytime any USB device is plugged in.
@@ -343,7 +349,19 @@
  *    - Move the scanner ioctls to usb_scanner_ioctl.h to allow access by archs
  *      that need it (by Greg KH).
  *    - New maintainer: Henning Meier-Geinitz.
+ *    - Print ids and device number when a device was detected.
+ *    - Don't print errors when the device is busy.
  *      
+ * 0.4.11  2003-02-25
+ *    - Added vendor/product ids for Artec, Avision, Brother, Canon, Compaq,
+ *      Fujitsu, Hewlett-Packard, Lexmark, LG Electronics, Medion, Microtek,
+ *      Primax, Prolink,  Plustek, SYSCAN, Trust and UMAX scanners.
+ *
+ * 0.4.12  2003-04-16
+ *    - Fixed endpoint detection. The endpoints were numbered from 1 to n but
+ *      that assumption is not correct in all cases.
+ *
+ *
  * TODO
  *    - Performance
  *    - Select/poll methods
@@ -456,7 +474,7 @@ open_scanner(struct inode * inode, struct file * file)
 	}
 
 	if (scn->isopen) {
-		err("open_scanner(%d): Scanner device is already open", scn_minor);
+		dbg("open_scanner(%d): Scanner device is already open", scn_minor);
 		err = -EBUSY;
 		goto out_error;
 	}
@@ -900,7 +918,7 @@ probe_scanner(struct usb_device *dev, unsigned int ifnum,
 				info ("probe_scanner: ignoring additional bulk_in_ep:%d", ep_cnt);
 				continue;
 			}
-			have_bulk_in = ep_cnt;
+			have_bulk_in = endpoint[ep_cnt - 1].bEndpointAddress & USB_ENDPOINT_NUMBER_MASK;
 			dbg("probe_scanner: bulk_in_ep:%d", have_bulk_in);
 			continue;
 		}
@@ -911,7 +929,7 @@ probe_scanner(struct usb_device *dev, unsigned int ifnum,
 				info ("probe_scanner: ignoring additional bulk_out_ep:%d", ep_cnt);
 				continue;
 			}
-			have_bulk_out = ep_cnt;
+			have_bulk_out = endpoint[ep_cnt - 1].bEndpointAddress & USB_ENDPOINT_NUMBER_MASK;
 			dbg("probe_scanner: bulk_out_ep:%d", have_bulk_out);
 			continue;
 		}
@@ -922,7 +940,7 @@ probe_scanner(struct usb_device *dev, unsigned int ifnum,
 				info ("probe_scanner: ignoring additional intr_ep:%d", ep_cnt);
 				continue;
 			}
-			have_intr = ep_cnt;
+			have_intr = endpoint[ep_cnt - 1].bEndpointAddress & USB_ENDPOINT_NUMBER_MASK;
 			dbg("probe_scanner: intr_ep:%d", have_intr);
 			continue;
 		}
@@ -1047,6 +1065,8 @@ probe_scanner(struct usb_device *dev, unsigned int ifnum,
 	if (scn->devfs == NULL)
 		dbg("scanner%d: device node registration failed", scn_minor);
 
+	info ("USB scanner device (0x%04x/0x%04x) now attached to %s",
+	      dev->descriptor.idVendor, dev->descriptor.idProduct, name);
 	p_scn_table[scn_minor] = scn;
 
 	up(&scn_mutex);

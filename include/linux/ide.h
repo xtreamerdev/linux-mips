@@ -93,6 +93,13 @@ void cmd640_dump_regs (void);
 #endif
 
 /*
+ * Used to indicate "no IRQ", should be a value that cannot be an IRQ
+ * number.
+ */
+ 
+#define IDE_NO_IRQ		(-1)
+
+/*
  * IDE_DRIVE_CMD is used to implement many features of the hdparm utility
  */
 #define IDE_DRIVE_CMD			99	/* (magic) undef to reduce kernel size*/
@@ -276,9 +283,6 @@ typedef unsigned char	byte;	/* used everywhere */
 	return ((hwif)->chipset == chipset) ? 1 : 0;		\
 }
 
-#define IDE_DEBUG(lineno) \
-	printk("%s,%s,line=%d\n", __FILE__, __FUNCTION__, (lineno))
-
 /*
  * Check for an interrupt and acknowledge the interrupt status
  */
@@ -301,21 +305,6 @@ typedef enum {	ide_unknown,	ide_generic,	ide_pci,
 		ide_pmac,	ide_etrax100,	ide_acorn
 } hwif_chipset_t;
 
-typedef struct ide_io_ops_s {
-	/* insert io operations here! */
-	void (*OUTB)(u8 addr, unsigned long port);
-	void (*OUTW)(u16 addr, unsigned long port);
-	void (*OUTL)(u32 addr, unsigned long port);
-	void (*OUTSW)(unsigned long port, void *addr, u32 count);
-	void (*OUTSL)(unsigned long port, void *addr, u32 count);
-
-	u8  (*INB)(unsigned long port);
-	u16 (*INW)(unsigned long port);
-	u32 (*INL)(unsigned long port);
-	void (*INSW)(unsigned long port, void *addr, u32 count);
-	void (*INSL)(unsigned long port, void *addr, u32 count);
-} ide_io_ops_t;
-
 /*
  * Structure to hold all information about the location of this port
  */
@@ -326,9 +315,6 @@ typedef struct hw_regs_s {
 	ide_ack_intr_t	*ack_intr;		/* acknowledge interrupt */
 	void		*priv;			/* interface specific data */
 	hwif_chipset_t  chipset;
-#if 0
-	ide_io_ops_t	*iops;			/* */
-#endif
 	sata_ioreg_t	sata_scr[SATA_NR_PORTS];
 	sata_ioreg_t	sata_misc[SATA_NR_PORTS];
 } hw_regs_t;
@@ -355,17 +341,14 @@ void ide_setup_ports(	hw_regs_t *hw,
 #include <asm/ide.h>
 
 /* Currently only m68k, apus and m8xx need it */
-#ifdef IDE_ARCH_ACK_INTR
-extern int ide_irq_lock;
-# define ide_ack_intr(hwif) (hwif->hw.ack_intr ? hwif->hw.ack_intr(hwif) : 1)
-#else
+#ifndef IDE_ARCH_ACK_INTR
 # define ide_ack_intr(hwif) (1)
 #endif
 
 /* Currently only Atari needs it */
 #ifndef IDE_ARCH_LOCK
-# define ide_release_lock(lock)			do {} while (0)
-# define ide_get_lock(lock, hdlr, data)		do {} while (0)
+# define ide_release_lock()			do {} while (0)
+# define ide_get_lock(hdlr, data)		do {} while (0)
 #endif /* IDE_ARCH_LOCK */
 
 /*
@@ -696,6 +679,15 @@ typedef union {
 struct ide_driver_s;
 struct ide_settings_s;
 
+/*
+ * Status returned from various ide_ functions
+ */
+typedef enum {
+	ide_stopped,	/* no drive operation was started */
+	ide_started	/* a drive operation was started, handler was set */
+} ide_startstop_t;
+
+
 typedef struct ide_drive_s {
 	char		name[4];	/* drive name, such as "hda" */
         char            driver_req[10];	/* requests specific driver */
@@ -754,6 +746,7 @@ typedef struct ide_drive_s {
 	unsigned remap_0_to_1	: 2;	/* 0=remap if ezdrive, 1=remap, 2=noremap */
 	unsigned ata_flash	: 1;	/* 1=present, 0=default */
 	unsigned dead		: 1;	/* 1=dead, no new attachments */
+	unsigned id_read	: 1;	/* 1=id read from disk 0 = synthetic */
 	unsigned addressing;		/*      : 3;
 					 *  0=28-bit
 					 *  1=48-bit
@@ -765,6 +758,7 @@ typedef struct ide_drive_s {
         u8	quirk_list;	/* considered quirky, set for a specific host */
         u8	suspend_reset;	/* drive suspend mode flag, soft-reset recovers */
         u8	init_speed;	/* transfer rate set at boot */
+        u8	pio_speed;      /* unused by core, used by some drivers for fallback from DMA */
         u8	current_speed;	/* current transfer rate set */
         u8	dn;		/* now wide spread use */
         u8	wcache;		/* status of write cache */
@@ -838,12 +832,12 @@ typedef struct ide_dma_ops_s {
 #define ide_rq_offset(rq) \
 	(((rq)->hard_cur_sectors - (rq)->current_nr_sectors) << 9)
 
-extern inline void *ide_map_buffer(struct request *rq, unsigned long *flags)
+static inline void *ide_map_buffer(struct request *rq, unsigned long *flags)
 {
 	return bh_kmap_irq(rq->bh, flags) + ide_rq_offset(rq);
 }
 
-extern inline void ide_unmap_buffer(char *buffer, unsigned long *flags)
+static inline void ide_unmap_buffer(char *buffer, unsigned long *flags)
 {
 	bh_kunmap_irq(buffer, flags);
 }
@@ -887,6 +881,8 @@ typedef struct hwif_s {
 	struct pci_dev  *pci_dev;	/* for pci chipsets */
 	struct ide_pci_device_s	*cds;	/* chipset device struct */
 
+	ide_startstop_t	(*rw_disk)(ide_drive_t *, struct request *, unsigned long);
+	
 #if 0
 	ide_hwif_ops_t	*hwifops;
 #else
@@ -951,10 +947,8 @@ typedef struct hwif_s {
 	int (*ide_dma_timeout)(ide_drive_t *drive);
 #endif
 
-#if 0
-	ide_io_ops_t	*iops;
-#else
 	void (*OUTB)(u8 addr, unsigned long port);
+	void (*OUTBSYNC)(ide_drive_t *drive, u8 addr, unsigned long port);
 	void (*OUTW)(u16 addr, unsigned long port);
 	void (*OUTL)(u32 addr, unsigned long port);
 	void (*OUTSW)(unsigned long port, void *addr, u32 count);
@@ -965,7 +959,6 @@ typedef struct hwif_s {
 	u32 (*INL)(unsigned long port);
 	void (*INSW)(unsigned long port, void *addr, u32 count);
 	void (*INSL)(unsigned long port, void *addr, u32 count);
-#endif
 
 	/* dma physical region descriptor table (cpu view) */
 	unsigned int	*dmatable_cpu;
@@ -1002,6 +995,7 @@ typedef struct hwif_s {
 
 	unsigned	noprobe    : 1;	/* don't probe for this interface */
 	unsigned	present    : 1;	/* this interface exists */
+	unsigned	hold       : 1; /* this interface is always present */
 	unsigned	serialized : 1;	/* serialized all channel operation */
 	unsigned	sharing_irq: 1;	/* 1 = sharing irq with another hwif */
 	unsigned	reset      : 1;	/* reset after probe */
@@ -1012,14 +1006,6 @@ typedef struct hwif_s {
 
 	void		*hwif_data;	/* extra hwif data */
 } ide_hwif_t;
-
-/*
- * Status returned from various ide_ functions
- */
-typedef enum {
-	ide_stopped,	/* no drive operation was started */
-	ide_started	/* a drive operation was started, handler was set */
-} ide_startstop_t;
 
 /*
  *  internal ide interrupt handler type
@@ -1094,12 +1080,13 @@ typedef struct ide_settings_s {
 	struct ide_settings_s	*next;
 } ide_settings_t;
 
-void ide_add_setting(ide_drive_t *drive, const char *name, int rw, int read_ioctl, int write_ioctl, int data_type, int min, int max, int mul_factor, int div_factor, void *data, ide_procset_t *set);
-void ide_remove_setting(ide_drive_t *drive, char *name);
-ide_settings_t *ide_find_setting_by_name(ide_drive_t *drive, char *name);
-int ide_read_setting(ide_drive_t *t, ide_settings_t *setting);
-int ide_write_setting(ide_drive_t *drive, ide_settings_t *setting, int val);
-void ide_add_generic_settings(ide_drive_t *drive);
+extern struct semaphore ide_setting_sem;
+extern int ide_add_setting(ide_drive_t *drive, const char *name, int rw, int read_ioctl, int write_ioctl, int data_type, int min, int max, int mul_factor, int div_factor, void *data, ide_procset_t *set);
+extern void ide_remove_setting(ide_drive_t *drive, char *name);
+extern ide_settings_t *ide_find_setting_by_name(ide_drive_t *drive, char *name);
+extern int ide_read_setting(ide_drive_t *t, ide_settings_t *setting);
+extern int ide_write_setting(ide_drive_t *drive, ide_settings_t *setting, int val);
+extern void ide_add_generic_settings(ide_drive_t *drive);
 
 /*
  * /proc/ide interface
@@ -1164,6 +1151,7 @@ typedef struct ide_driver_s {
 	int		(*end_request)(ide_drive_t *, int);
 	u8		(*sense)(ide_drive_t *, const char *, u8);
 	ide_startstop_t	(*error)(ide_drive_t *, const char *, u8);
+	ide_startstop_t	(*abort)(ide_drive_t *, const char *);
 	int		(*ioctl)(ide_drive_t *, struct inode *, struct file *, unsigned int, unsigned long);
 	int		(*open)(struct inode *, struct file *, ide_drive_t *);
 	void		(*release)(struct inode *, struct file *, ide_drive_t *);
@@ -1278,10 +1266,17 @@ extern int noautodma;
 extern int ide_end_request(ide_drive_t *, int /* uptodate */);
 
 /*
- * This is used on exit from the driver, to designate the next irq handler
+ * This is used on exit from the driver to designate the next irq handler
  * and also to start the safety timer.
  */
 extern void ide_set_handler(ide_drive_t *, ide_handler_t *, unsigned int, ide_expiry_t *);
+
+/*
+ * This is used on exit from the driver to designate the next irq handler
+ * and start the safety time safely and atomically from the IRQ handler
+ * with respect to the command issue (which it also does)
+ */
+extern void ide_execute_command(ide_drive_t *, task_ioreg_t cmd, ide_handler_t *, unsigned int, ide_expiry_t *);
 
 /*
  * Error reporting, in human readable form (luxurious, but a memory hog).
@@ -1297,6 +1292,7 @@ extern u8 ide_dump_status(ide_drive_t *, const char *, u8);
  * (drive, msg, status)
  */
 extern ide_startstop_t ide_error(ide_drive_t *, const char *, u8);
+extern ide_startstop_t ide_abort(ide_drive_t *, const char *);
 
 /*
  * Issue a simple drive command
@@ -1578,6 +1574,7 @@ extern u8 eighty_ninty_three (ide_drive_t *);
 extern int set_transfer(ide_drive_t *, ide_task_t *);
 extern int taskfile_lib_get_identify(ide_drive_t *drive, u8 *);
 
+extern ide_startstop_t __ide_do_rw_disk(ide_drive_t *, struct request *, unsigned long);
 /*
  * ide_system_bus_speed() returns what we think is the system VESA/PCI
  * bus speed (in MHz).  This is used for calculating interface PIO timings.
@@ -1597,14 +1594,6 @@ extern void ide_stall_queue(ide_drive_t *, unsigned long);
  */
 extern request_queue_t *ide_get_queue(kdev_t dev);
 
-/*
- * CompactFlash cards and their brethern pretend to be removable hard disks,
- * but they never have a slave unit, and they don't have doorlock mechanisms.
- * This test catches them, and is invoked elsewhere when setting appropriate
- * config bits.
- */
-extern int drive_is_flashcard(ide_drive_t *);
-
 extern int ide_spin_wait_hwgroup(ide_drive_t *);
 extern void ide_timer_expiry(unsigned long);
 extern void ide_intr(int irq, void *dev_id, struct pt_regs *regs);
@@ -1617,6 +1606,8 @@ extern ide_proc_entry_t generic_subdriver_entries[];
 extern int ide_attach_drive(ide_drive_t *);
 
 extern int ideprobe_init(void);
+extern int idedefault_attach(ide_drive_t *);
+extern int idedefault_init(void);
 extern int idedisk_attach(ide_drive_t *);
 extern int idedisk_init(void);
 extern int ide_cdrom_attach(ide_drive_t *);
@@ -1725,6 +1716,7 @@ extern int __ide_dma_retune(ide_drive_t *);
 extern int __ide_dma_lostirq(ide_drive_t *);
 extern int __ide_dma_timeout(ide_drive_t *);
 #else
+static inline void ide_setup_dma(ide_hwif_t *x, unsigned long y, unsigned int z) {;}
 static inline void ide_release_dma(ide_hwif_t *x) {;}
 #endif
 

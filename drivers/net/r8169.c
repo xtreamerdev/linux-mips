@@ -41,6 +41,8 @@ VERSION 1.2	<2002/11/30>
 #include <linux/etherdevice.h>
 #include <linux/delay.h>
 #include <linux/crc32.h>
+#include <linux/init.h>
+#include <asm/io.h>
 
 #define RTL8169_VERSION "1.2"
 #define MODULENAME "r8169"
@@ -819,6 +821,13 @@ rtl8169_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	void *ioaddr = tp->mmio_addr;
 	int entry = tp->cur_tx % NUM_TX_DESC;
 
+	if(skb->len < ETH_ZLEN)
+	{
+		skb = skb_padto(skb, ETH_ZLEN);
+		if(skb == NULL)
+			return 0;
+	}
+	
 	spin_lock_irq(&tp->lock);
 
 	if ((tp->TxDescArray[entry].status & OWNbit) == 0) {
@@ -1101,7 +1110,7 @@ static struct pci_driver rtl8169_pci_driver = {
 	.name		= MODULENAME,
 	.id_table	= rtl8169_pci_tbl,
 	.probe		= rtl8169_init_one,
-	.remove		= rtl8169_remove_one,
+	.remove		= __devexit_p(rtl8169_remove_one),
 	.suspend	= NULL,
 	.resume		= NULL,
 };

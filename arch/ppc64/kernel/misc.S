@@ -481,9 +481,9 @@ _GLOBAL(cvt_df)
 
 /*
  * Create a kernel thread
- *   kernel_thread(fn, arg, flags)
+ *   arch_kernel_thread(fn, arg, flags)
  */
-_GLOBAL(kernel_thread)
+_GLOBAL(arch_kernel_thread)
 	mr	r6,r3		/* function */
 	ori	r3,r5,CLONE_VM	/* flags */
 	li	r0,__NR_clone
@@ -717,24 +717,7 @@ _GLOBAL(sys_call_table32)
 	.llong .sys_madvise		/* 205 */
 	.llong .sys_mincore		/* 206 */
 	.llong .sys_gettid		/* 207 */
-#if 0 /* Reserved syscalls */
-	.llong .sys_tkill		/* 208 */
-	.llong .sys_setxattr
-	.llong .sys_lsetxattr	/* 210 */
-	.llong .sys_fsetxattr
-	.llong .sys_getxattr
-	.llong .sys_lgetxattr
-	.llong .sys_fgetxattr
-	.llong .sys_listxattr	/* 215 */
-	.llong .sys_llistxattr
-	.llong .sys_flistxattr
-	.llong .sys_removexattr
-	.llong .sys_lremovexattr
-	.llong .sys_fremovexattr	/* 220 */
-	.llong .sys_futex
-#endif
-	.llong .sys_perfmonctl   /* Put this here for now ... */
-	.rept NR_syscalls-222
+	.rept NR_syscalls-208
 		.llong .sys_ni_syscall
 	.endr
 #endif
@@ -948,23 +931,6 @@ _GLOBAL(sys_call_table)
 	.llong .sys_madvise		/* 205 */
 	.llong .sys_mincore		/* 206 */
 	.llong .sys_gettid		/* 207 */
-#if 0 /* Reserved syscalls */
-	.llong .sys_tkill		/* 208 */
-	.llong .sys_setxattr
-	.llong .sys_lsetxattr	/* 210 */
-	.llong .sys_fsetxattr
-	.llong .sys_getxattr
-	.llong .sys_lgetxattr
-	.llong .sys_fgetxattr
-	.llong .sys_listxattr	/* 215 */
-	.llong .sys_llistxattr
-	.llong .sys_flistxattr
-	.llong .sys_removexattr
-	.llong .sys_lremovexattr
-	.llong .sys_fremovexattr	/* 220 */
-	.llong .sys_futex
-#endif
-	.llong .sys_perfmonctl   /* Put this here for now ... */
-	.rept NR_syscalls-222
+	.rept NR_syscalls-208
 	.llong .sys_ni_syscall
 	.endr

@@ -51,6 +51,21 @@ extern __inline__ void __udelay(unsigned long usecs, unsigned long lpj)
 	__delay(usecs);
 }
 
+extern __inline__ void __ndelay(unsigned long nsecs, unsigned long lpj)
+{
+	unsigned long lo;
+
+	/*
+	 * Excessive precission?  Probably ...
+	 */
+	nsecs *= (unsigned long) (((0x8000000000000000ULL / (500000000 / HZ)) +
+	                           0x80000000ULL) >> 32);
+	__asm__("multu\t%2,%3"
+		:"=h" (nsecs), "=l" (lo)
+		:"r" (nsecs),"r" (lpj));
+	__delay(nsecs);
+}
+
 #ifdef CONFIG_SMP
 #define __udelay_val cpu_data[smp_processor_id()].udelay_val
 #else
@@ -58,5 +73,6 @@ extern __inline__ void __udelay(unsigned long usecs, unsigned long lpj)
 #endif
 
 #define udelay(usecs) __udelay((usecs),__udelay_val)
+#define ndelay(usecs) __udelay((usecs),__udelay_val)
 
 #endif /* _ASM_DELAY_H */

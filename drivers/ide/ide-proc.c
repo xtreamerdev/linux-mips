@@ -1,7 +1,8 @@
 /*
- *  linux/drivers/ide/ide-proc.c	Version 1.03	January  2, 1998
+ *  linux/drivers/ide/ide-proc.c	Version 1.05	Mar 05, 2003
  *
  *  Copyright (C) 1997-1998	Mark Lord
+ *  Copyright (C) 2003		Red Hat <alan@redhat.com>
  */
 
 /*
@@ -72,6 +73,11 @@
 #include <linux/ide.h>
 
 #include <asm/io.h>
+
+#ifdef CONFIG_ALL_PPC
+#include <asm/prom.h>
+#include <asm/pci-bridge.h>
+#endif
 
 #ifndef MIN
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
@@ -418,12 +424,34 @@ int proc_ide_read_imodel
 		case ide_cmd646:	name = "cmd646";	break;
 		case ide_cy82c693:	name = "cy82c693";	break;
 		case ide_4drives:	name = "4drives";	break;
-		case ide_pmac:		name = "mac-io";	break;
+		case ide_pmac:		name = "pmac";		break;
 		default:		name = "(unknown)";	break;
 	}
 	len = sprintf(page, "%s\n", name);
 	PROC_IDE_READ_RETURN(page,start,off,count,eof,len);
 }
+
+#ifdef CONFIG_ALL_PPC
+static int proc_ide_read_devspec
+	(char *page, char **start, off_t off, int count, int *eof, void *data)
+{
+	ide_hwif_t		*hwif = (ide_hwif_t *) data;
+	int			len;
+	struct device_node	*ofnode = NULL;
+
+#ifdef CONFIG_BLK_DEV_IDE_PMAC
+	extern struct device_node* pmac_ide_get_of_node(int index);
+	if (hwif->chipset == ide_pmac)
+		ofnode = pmac_ide_get_of_node(hwif->index);
+#endif /* CONFIG_BLK_DEV_IDE_PMAC */
+#ifdef CONFIG_PCI
+	if (ofnode == NULL && hwif->pci_dev)
+		ofnode = pci_device_to_OF_node(hwif->pci_dev);
+#endif /* CONFIG_PCI */		
+	len = sprintf(page, "%s\n", ofnode ? ofnode->full_name : "");
+	PROC_IDE_READ_RETURN(page,start,off,count,eof,len);
+}
+#endif /* CONFIG_ALL_PPC */
 
 EXPORT_SYMBOL(proc_ide_read_imodel);
 
@@ -461,20 +489,40 @@ int proc_ide_read_identify
 {
 	ide_drive_t	*drive = (ide_drive_t *)data;
 	int		len = 0, i = 0;
+	int		err = 0;
 
-	if (drive && !taskfile_lib_get_identify(drive, page)) {
+	len = sprintf(page, "\n");
+	
+	if (drive)
+	{
 		unsigned short *val = (unsigned short *) page;
-		char *out = ((char *)val) + (SECTOR_WORDS * 4);
-		page = out;
-		do {
-			out += sprintf(out, "%04x%c",
-				le16_to_cpu(*val), (++i & 7) ? ' ' : '\n');
-			val += 1;
-		} while (i < (SECTOR_WORDS * 2));
-		len = out - page;
+		
+		/*
+		 *	The current code can't handle a driverless
+		 *	identify query taskfile. Now the right fix is
+		 *	to add a 'default' driver but that is a bit
+		 *	more work. 
+		 *
+		 *	FIXME: this has to be fixed for hotswap devices
+		 */
+		 
+		if(DRIVER(drive))
+			err = taskfile_lib_get_identify(drive, page);
+		else	/* This relies on the ID changes */
+			val = (unsigned short *)drive->id;
+
+		if(!err)
+		{						
+			char *out = ((char *)page) + (SECTOR_WORDS * 4);
+			page = out;
+			do {
+				out += sprintf(out, "%04x%c",
+					le16_to_cpu(*val), (++i & 7) ? ' ' : '\n');
+				val += 1;
+			} while (i < (SECTOR_WORDS * 2));
+			len = out - page;
+		}
 	}
-	else
-		len = sprintf(page, "\n");
 	PROC_IDE_READ_RETURN(page,start,off,count,eof,len);
 }
 
@@ -488,6 +536,7 @@ int proc_ide_read_settings
 	char		*out = page;
 	int		len, rc, mul_factor, div_factor;
 
+	down(&ide_setting_sem);
 	out += sprintf(out, "name\t\t\tvalue\t\tmin\t\tmax\t\tmode\n");
 	out += sprintf(out, "----\t\t\t-----\t\t---\t\t---\t\t----\n");
 	while(setting) {
@@ -507,6 +556,7 @@ int proc_ide_read_settings
 		setting = setting->next;
 	}
 	len = out - page;
+	up(&ide_setting_sem);
 	PROC_IDE_READ_RETURN(page,start,off,count,eof,len);
 }
 
@@ -575,12 +625,17 @@ int proc_ide_write_settings
 				--n;
 				++p;
 			}
+			
+			down(&ide_setting_sem);
 			setting = ide_find_setting_by_name(drive, name);
 			if (!setting)
+			{
+				up(&ide_setting_sem);
 				goto parse_error;
-
+			}
 			if (for_real)
 				ide_write_setting(drive, setting, val * setting->div_factor / setting->mul_factor);
+			up(&ide_setting_sem);
 		}
 	} while (!for_real++);
 	return count;
@@ -595,14 +650,10 @@ int proc_ide_read_capacity
 	(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
 	ide_drive_t	*drive = (ide_drive_t *) data;
-	ide_driver_t    *driver = (ide_driver_t *) drive->driver;
 	int		len;
 
-	if (!driver)
-		len = sprintf(page, "(none)\n");
-        else
-		len = sprintf(page,"%llu\n",
-			      (u64) ((ide_driver_t *)drive->driver)->capacity(drive));
+	len = sprintf(page,"%llu\n",
+		      (u64) ((ide_driver_t *)drive->driver)->capacity(drive));
 	PROC_IDE_READ_RETURN(page,start,off,count,eof,len);
 }
 
@@ -647,11 +698,8 @@ int proc_ide_read_driver
 	ide_driver_t	*driver = (ide_driver_t *) drive->driver;
 	int		len;
 
-	if (!driver)
-		len = sprintf(page, "(none)\n");
-	else
-		len = sprintf(page, "%s version %s\n",
-			driver->name, driver->version);
+	len = sprintf(page, "%s version %s\n",
+		driver->name, driver->version);
 	PROC_IDE_READ_RETURN(page,start,off,count,eof,len);
 }
 
@@ -803,8 +851,7 @@ void destroy_proc_ide_device(ide_hwif_t *hwif, ide_drive_t *drive)
 	ide_driver_t *driver = drive->driver;
 
 	if (drive->proc) {
-		if (driver)
-			ide_remove_proc_entries(drive->proc, driver->proc);
+		ide_remove_proc_entries(drive->proc, driver->proc);
 		ide_remove_proc_entries(drive->proc, generic_drive_entries);
 		remove_proc_entry(drive->name, proc_ide_root);
 		remove_proc_entry(drive->name, hwif->proc);
@@ -832,6 +879,9 @@ static ide_proc_entry_t hwif_entries[] = {
 	{ "config",	S_IFREG|S_IRUGO|S_IWUSR,proc_ide_read_config,	proc_ide_write_config },
 	{ "mate",	S_IFREG|S_IRUGO,	proc_ide_read_mate,	NULL },
 	{ "model",	S_IFREG|S_IRUGO,	proc_ide_read_imodel,	NULL },
+#ifdef CONFIG_ALL_PPC
+	{ "devspec",	S_IFREG|S_IRUGO,	proc_ide_read_devspec,	NULL },
+#endif	
 	{ NULL,	0, NULL, NULL }
 };
 

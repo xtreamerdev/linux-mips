@@ -27,6 +27,7 @@ mod-subdirs	:= pcmcia ../acorn/scsi
 
 subdir-$(CONFIG_SCSI_AACRAID)	+= aacraid
 subdir-$(CONFIG_SCSI_AIC7XXX)	+= aic7xxx
+subdir-$(CONFIG_SCSI_AIC79XX)	+= aic79xx
 subdir-$(CONFIG_PCMCIA)		+= pcmcia
 
 
@@ -50,7 +51,7 @@ obj-$(CONFIG_OKTAGON_SCSI)	+= NCR53C9x.o	oktagon_esp.o	oktagon_io.o
 obj-$(CONFIG_ATARI_SCSI)	+= atari_scsi.o
 obj-$(CONFIG_MAC_SCSI)		+= mac_scsi.o
 obj-$(CONFIG_SCSI_MAC_ESP)	+= mac_esp.o	NCR53C9x.o
-obj-$(CONFIG_SUN3_SCSI)		+= sun3_scsi.o
+obj-$(CONFIG_SUN3_SCSI)		+= sun3_scsi.o  sun3_scsi_vme.o
 obj-$(CONFIG_MVME16x_SCSI)	+= mvme16x.o	53c7xx.o
 obj-$(CONFIG_BVME6000_SCSI)	+= bvme6000.o	53c7xx.o
 obj-$(CONFIG_SCSI_SIM710)	+= sim710.o
@@ -70,6 +71,9 @@ ifeq ($(CONFIG_SCSI_AACRAID),y)
 endif
 ifeq ($(CONFIG_SCSI_AIC7XXX),y)
   obj-$(CONFIG_SCSI_AIC7XXX)	+= aic7xxx/aic7xxx.o
+endif
+ifeq ($(CONFIG_SCSI_AIC79XX),y)
+  obj-$(CONFIG_SCSI_AIC79XX)	+= aic79xx/aic79xx.o
 endif
 obj-$(CONFIG_SCSI_AIC7XXX_OLD)	+= aic7xxx_old.o
 obj-$(CONFIG_SCSI_IPS)		+= ips.o

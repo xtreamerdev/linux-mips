@@ -93,6 +93,7 @@ enum kcs_states {
 #define MAX_ERROR_RETRIES 10
 
 #define IPMI_ERR_MSG_TRUNCATED	0xc6
+#define IPMI_ERR_UNSPECIFIED	0xff
 
 struct kcs_data
 {
@@ -219,6 +220,7 @@ static inline int check_ibf(struct kcs_data *kcs,
 		kcs->ibf_timeout -= time;
 		if (kcs->ibf_timeout < 0) {
 			start_error_recovery(kcs, "IBF not ready in time");
+			kcs->ibf_timeout = IBF_RETRY_TIMEOUT;
 			return 1;
 		}
 		return 0;
@@ -291,6 +293,12 @@ int kcs_get_result(struct kcs_data *kcs, unsigned char *data, int length)
 
 	memcpy(data, kcs->read_data, kcs->read_pos);
 
+	if ((length >= 3) && (kcs->read_pos < 3)) {
+		/* Guarantee that we return at least 3 bytes, with an
+		   error in the third byte if it is too short. */
+		data[2] = IPMI_ERR_UNSPECIFIED;
+		kcs->read_pos = 3;
+	}
 	if (kcs->truncated) {
 		/* Report a truncated error.  We might overwrite
 		   another error, but that's too bad, the user needs
@@ -324,6 +332,9 @@ enum kcs_result kcs_event(struct kcs_data *kcs, long time)
 
 	switch (kcs->state) {
 	case KCS_IDLE:
+		/* If there's and interrupt source, turn it off. */
+		clear_obf(kcs, status);
+
 		if (GET_STATUS_ATN(status))
 			return KCS_ATTN;
 		else
@@ -391,13 +402,20 @@ enum kcs_result kcs_event(struct kcs_data *kcs, long time)
 				"Not in read or idle in read state");
 			break;
 		}
-		if (! check_obf(kcs, status, time))
-			return KCS_CALL_WITH_DELAY;
 
 		if (state == KCS_READ_STATE) {
+			if (! check_obf(kcs, status, time))
+				return KCS_CALL_WITH_DELAY;
 			read_next_byte(kcs);
 		} else {
-			read_data(kcs);
+			/* We don't implement this exactly like the state
+			   machine in the spec.  Some broken hardware
+			   does not write the final dummy byte to the
+			   read register.  Thus obf will never go high
+			   here.  We just go straight to idle, and we
+			   handle clearing out obf in idle state if it
+			   happens to come in. */
+			clear_obf(kcs, status);
 			kcs->orig_write_count = 0;
 			kcs->state = KCS_IDLE;
 			return KCS_TRANSACTION_COMPLETE;
@@ -450,7 +468,7 @@ enum kcs_result kcs_event(struct kcs_data *kcs, long time)
 		break;
 			
 	case KCS_HOSED:
-		return KCS_SM_HOSED;
+		break;
 	}
 
 	if (kcs->state == KCS_HOSED) {

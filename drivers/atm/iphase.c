@@ -1889,7 +1889,7 @@ static int open_tx(struct atm_vcc *vcc)
                     return -EINVAL; 
                 }
                 if (vcc->qos.txtp.max_pcr > iadev->LineRate) {
-                   IF_CBR(printk("PCR is not availble\n");)
+                   IF_CBR(printk("PCR is not available\n");)
                    return -1;
                 }
                 vc->type = CBR;
@@ -1899,7 +1899,7 @@ static int open_tx(struct atm_vcc *vcc)
                 }
        } 
 	else  
-           printk("iadev:  Non UBR, ABR and CBR traffic not supportedn"); 
+           printk("iadev:  Non UBR, ABR and CBR traffic not supported\n"); 
         
         iadev->testTable[vcc->vci]->vc_status |= VC_ACTIVE;
 	IF_EVENT(printk("ia open_tx returning \n");)  
@@ -2931,7 +2931,7 @@ static int ia_pkt_tx (struct atm_vcc *vcc, struct sk_buff *skb) {
         struct tx_buf_desc *buf_desc_ptr;
         int desc;
         int comp_code;
-        int total_len, pad, last;
+        int total_len;
         struct cpcs_trailer *trailer;
         struct ia_vcc *iavcc;
 
@@ -2955,12 +2955,18 @@ static int ia_pkt_tx (struct atm_vcc *vcc, struct sk_buff *skb) {
           return 0;
         }
         if ((u32)skb->data & 3) {
-           printk("Misaligned SKB\n");
-           if (vcc->pop)
-                 vcc->pop(vcc, skb);
-           else
-                 dev_kfree_skb_any(skb);
-           return 0;
+           /* The copy will end up aligned */
+           struct sk_buff *newskb = skb_copy(skb, GFP_ATOMIC);
+           if(newskb == NULL)
+           {
+	           if (vcc->pop)
+	                 vcc->pop(vcc, skb);
+	           else
+	                 dev_kfree_skb_any(skb);
+	           return 0;
+	   }
+	   kfree(skb);
+	   skb = newskb;
         }       
 	/* Get a descriptor number from our free descriptor queue  
 	   We get the descr number from the TCQ now, since I am using  
@@ -3013,10 +3019,8 @@ static int ia_pkt_tx (struct atm_vcc *vcc, struct sk_buff *skb) {
 	/* Figure out the exact length of the packet and padding required to 
            make it  aligned on a 48 byte boundary.  */
 	total_len = skb->len + sizeof(struct cpcs_trailer);  
-	last = total_len - (total_len/48)*48;  
-	pad = 48 - last;  
-	total_len = pad + total_len;  
-	IF_TX(printk("ia packet len:%d padding:%d\n", total_len, pad);)  
+	total_len = ((total_len + 47) / 48) * 48;
+	IF_TX(printk("ia packet len:%d padding:%d\n", total_len, total_len - skb->len);)  
  
 	/* Put the packet in a tx buffer */   
 	trailer = iadev->tx_buf[desc-1].cpcs;
@@ -3322,7 +3326,7 @@ static struct pci_driver ia_driver = {
 	.name =         DEV_LABEL,
 	.id_table =     ia_pci_tbl,
 	.probe =        ia_init_one,
-	.remove =       ia_remove_one,
+	.remove =       __devexit_p(ia_remove_one),
 };
 
 static int __init ia_init_module(void)

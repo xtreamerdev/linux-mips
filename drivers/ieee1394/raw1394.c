@@ -46,9 +46,11 @@
 #include "ieee1394_core.h"
 #include "hosts.h"
 #include "highlevel.h"
+#include "iso.h"
 #include "ieee1394_transactions.h"
+#include "ieee1394_hotplug.h"
 #include "raw1394.h"
-
+#include "raw1394-private.h"
 
 #if BITS_PER_LONG == 64
 #define int2ptr(x) ((void *)x)
@@ -76,10 +78,10 @@ static int host_count;
 static spinlock_t host_info_lock = SPIN_LOCK_UNLOCKED;
 static atomic_t internal_generation = ATOMIC_INIT(0);
 
-static struct hpsb_highlevel *hl_handle;
-
 static atomic_t iso_buffer_size;
 static const int iso_buffer_max = 4 * 1024 * 1024; /* 4 MB */
+
+static struct hpsb_highlevel raw1394_highlevel;
 
 static int arm_read (struct hpsb_host *host, int nodeid, quadlet_t *buffer,
              u64 addr, unsigned int length, u16 flags);
@@ -90,10 +92,10 @@ static int arm_lock (struct hpsb_host *host, int nodeid, quadlet_t *store,
 static int arm_lock64 (struct hpsb_host *host, int nodeid, octlet_t *store,
                u64 addr, octlet_t data, octlet_t arg, int ext_tcode, u16 flags);
 static struct hpsb_address_ops arm_ops = {
-        read:     arm_read,
-        write:    arm_write,
-        lock:     arm_lock,
-        lock64:   arm_lock64,
+	.read	= arm_read,
+	.write	= arm_write,
+	.lock	= arm_lock,
+	.lock64	= arm_lock64,
 };
 
 static void queue_complete_cb(struct pending_request *req);
@@ -107,7 +109,6 @@ static struct pending_request *__alloc_pending_request(int flags)
         if (req != NULL) {
                 memset(req, 0, sizeof(struct pending_request));
                 INIT_LIST_HEAD(&req->list);
-                HPSB_INIT_WORK(&req->tq, (void(*)(void*))queue_complete_cb, NULL);
         }
 
         return req;
@@ -132,18 +133,25 @@ static void free_pending_request(struct pending_request *req)
         kfree(req);
 }
 
+/* fi->reqlists_lock must be taken */
+static void __queue_complete_req(struct pending_request *req)
+{
+	struct file_info *fi = req->file_info;
+	list_del(&req->list);
+        list_add_tail(&req->list, &fi->req_complete);
+
+	up(&fi->complete_sem);
+        wake_up_interruptible(&fi->poll_wait_complete);
+}
+
 static void queue_complete_req(struct pending_request *req)
 {
         unsigned long flags;
         struct file_info *fi = req->file_info;
 
         spin_lock_irqsave(&fi->reqlists_lock, flags);
-        list_del(&req->list);
-        list_add_tail(&req->list, &fi->req_complete);
+	__queue_complete_req(req);
         spin_unlock_irqrestore(&fi->reqlists_lock, flags);
-
-        up(&fi->complete_sem);
-        wake_up_interruptible(&fi->poll_wait_complete);
 }
 
 static void queue_complete_cb(struct pending_request *req)
@@ -171,11 +179,11 @@ static void queue_complete_cb(struct pending_request *req)
                 req->req.length = 0;
         }
 
-	if ((req->req.type == RAW1394_REQ_ASYNC_READ) ||
+        if ((req->req.type == RAW1394_REQ_ASYNC_READ) ||
 	    (req->req.type == RAW1394_REQ_ASYNC_WRITE) ||
 	    (req->req.type == RAW1394_REQ_LOCK) ||
 	    (req->req.type == RAW1394_REQ_LOCK64))
-                free_tlabel(packet->host, packet->node_id, packet->tlabel);
+                hpsb_free_tlabel(packet);
 
         queue_complete_req(req);
 }
@@ -186,7 +194,8 @@ static void add_host(struct hpsb_host *host)
         struct host_info *hi;
         unsigned long flags;
 
-        hi = (struct host_info *)kmalloc(sizeof(struct host_info), SLAB_KERNEL);
+        hi = (struct host_info *)kmalloc(sizeof(struct host_info), GFP_KERNEL);
+
         if (hi != NULL) {
                 INIT_LIST_HEAD(&hi->list);
                 hi->host = host;
@@ -229,7 +238,7 @@ static void remove_host(struct hpsb_host *host)
                 list_del(&hi->list);
                 host_count--;
                 /* 
-                   FIXME: adressranges should be removed 
+                   FIXME: address ranges should be removed 
                    and fileinfo states should be initialized
                    (including setting generation to 
                    internal-generation ...)
@@ -272,8 +281,8 @@ static void host_reset(struct hpsb_host *host)
                                         req->req.misc = (host->node_id << 16)
                                                 | host->node_count;
                                         if (fi->protocol_version > 3) {
-                                                req->req.misc |= ((host->irm_id
-                                                                   & NODE_MASK) << 8);
+                                                req->req.misc |= (NODEID_TO_NODE(host->irm_id)
+                                                                  << 8);
                                         }
 
                                         queue_complete_req(req);
@@ -549,7 +558,7 @@ static int state_initialized(struct file_info *fi, struct pending_request *req)
                                 lh = lh->next;
                         }
                         hi = list_entry(lh, struct host_info, list);
-                        hpsb_ref_host(hi->host);
+                        hpsb_ref_host(hi->host); // XXX Need to handle failure case
                         list_add_tail(&fi->list, &hi->file_info_list);
                         fi->host = hi->host;
                         fi->state = connected;
@@ -562,8 +571,7 @@ static int state_initialized(struct file_info *fi, struct pending_request *req)
                         req->req.misc = (fi->host->node_id << 16) 
                                 | fi->host->node_count;
                         if (fi->protocol_version > 3) {
-                                req->req.misc |=
-                                        (fi->host->irm_id & NODE_MASK) << 8;
+                                req->req.misc |= NODEID_TO_NODE(fi->host->irm_id) << 8;
                         }
                 } else {
                         req->req.error = RAW1394_ERROR_INVALID_ARG;
@@ -594,17 +602,20 @@ static void handle_iso_listen(struct file_info *fi, struct pending_request *req)
                 if (fi->listen_channels & (1ULL << channel)) {
                         req->req.error = RAW1394_ERROR_ALREADY;
                 } else {
-                        fi->listen_channels |= 1ULL << channel;
-                        hpsb_listen_channel(hl_handle, fi->host, channel);
-                        fi->iso_buffer = int2ptr(req->req.recvb);
-                        fi->iso_buffer_length = req->req.length;
+                        if(hpsb_listen_channel(&raw1394_highlevel, fi->host, channel)) {
+				req->req.error = RAW1394_ERROR_ALREADY;
+			} else {
+				fi->listen_channels |= 1ULL << channel;
+				fi->iso_buffer = int2ptr(req->req.recvb);
+				fi->iso_buffer_length = req->req.length;
+			}
                 }
         } else {
                 /* deallocate channel (one's complement neg) req.misc */
                 channel = ~channel;
 
                 if (fi->listen_channels & (1ULL << channel)) {
-                        hpsb_unlisten_channel(hl_handle, fi->host, channel);
+                        hpsb_unlisten_channel(&raw1394_highlevel, fi->host, channel);
                         fi->listen_channels &= ~(1ULL << channel);
                 } else {
                         req->req.error = RAW1394_ERROR_INVALID_ARG;
@@ -645,47 +656,39 @@ static int handle_async_request(struct file_info *fi,
 
         switch (req->req.type) {
         case RAW1394_REQ_ASYNC_READ:
-                if (req->req.length == 4) {
-                        DBGMSG("quadlet_read_request called");        
-                        packet = hpsb_make_readqpacket(fi->host, node, addr);
-                        if (!packet) return -ENOMEM;
+		DBGMSG("read_request called");
+		packet = hpsb_make_readpacket(fi->host, node, addr, req->req.length);
 
-                        req->data = &packet->header[3];
-                } else {
-                        DBGMSG("block_read_request called");
-                        packet = hpsb_make_readbpacket(fi->host, node, addr,
-                                                       req->req.length);
-                        if (!packet) return -ENOMEM;
+		if (!packet)
+			return -ENOMEM;
 
-                        req->data = packet->data;
-                }
+		if (req->req.length == 4)
+			req->data = &packet->header[3];
+		else
+			req->data = packet->data;
+  
                 break;
 
-        case RAW1394_REQ_ASYNC_WRITE:
-                if (req->req.length == 4) {
-                        quadlet_t x;
+	case RAW1394_REQ_ASYNC_WRITE:
+		DBGMSG("write_request called");
 
-                        DBGMSG("quadlet_write_request called");
-                        if (copy_from_user(&x, int2ptr(req->req.sendb), 4)) {
-                                req->req.error = RAW1394_ERROR_MEMFAULT;
-                        }
+		packet = hpsb_make_writepacket(fi->host, node, addr, NULL,
+					       req->req.length);
+		if (!packet)
+			return -ENOMEM;
 
-                        packet = hpsb_make_writeqpacket(fi->host, node, addr,
-                                                        x);
-                        if (!packet) return -ENOMEM;
-                } else {
-                        DBGMSG("block_write_request called");
-                        packet = hpsb_make_writebpacket(fi->host, node, addr,
-                                                        req->req.length);
-                        if (!packet) return -ENOMEM;
-
-                        if (copy_from_user(packet->data, int2ptr(req->req.sendb),
-                                           req->req.length)) {
-                                req->req.error = RAW1394_ERROR_MEMFAULT;
-                        }
-                }
-                req->req.length = 0;
-                break;
+		if (req->req.length == 4) {
+			if (copy_from_user(&packet->header[3], int2ptr(req->req.sendb),
+					req->req.length))
+				req->req.error = RAW1394_ERROR_MEMFAULT;
+		} else {
+			if (copy_from_user(packet->data, int2ptr(req->req.sendb),
+					req->req.length))
+				req->req.error = RAW1394_ERROR_MEMFAULT;
+		}
+			
+		req->req.length = 0;
+	    break;
 
         case RAW1394_REQ_LOCK:
                 DBGMSG("lock_request called");
@@ -703,7 +706,7 @@ static int handle_async_request(struct file_info *fi,
                 }
 
                 packet = hpsb_make_lockpacket(fi->host, node, addr,
-                                              req->req.misc);
+                                              req->req.misc, NULL, 0);
                 if (!packet) return -ENOMEM;
 
                 if (copy_from_user(packet->data, int2ptr(req->req.sendb),
@@ -731,7 +734,7 @@ static int handle_async_request(struct file_info *fi,
                         }
                 }
                 packet = hpsb_make_lock64packet(fi->host, node, addr,
-                                                req->req.misc);
+                                                req->req.misc, NULL, 0);
                 if (!packet) return -ENOMEM;
 
                 if (copy_from_user(packet->data, int2ptr(req->req.sendb),
@@ -756,8 +759,7 @@ static int handle_async_request(struct file_info *fi,
                 return sizeof(struct raw1394_request);
         }
 
-        req->tq.data = req;
-        hpsb_add_packet_complete_task(packet, &req->tq);
+	hpsb_set_packet_complete_task(packet, (void(*)(void*))queue_complete_cb, req);
 
         spin_lock_irq(&fi->reqlists_lock);
         list_add_tail(&req->list, &fi->req_pending);
@@ -768,7 +770,7 @@ static int handle_async_request(struct file_info *fi,
         if (!hpsb_send_packet(packet)) {
                 req->req.error = RAW1394_ERROR_SEND_ERROR;
                 req->req.length = 0;
-                free_tlabel(packet->host, packet->node_id, packet->tlabel);
+                hpsb_free_tlabel(packet);
                 queue_complete_req(req);
         }
         return sizeof(struct raw1394_request);
@@ -779,15 +781,14 @@ static int handle_iso_send(struct file_info *fi, struct pending_request *req,
 {
         struct hpsb_packet *packet;
 
-        packet = alloc_hpsb_packet(req->req.length);
-        if (!packet) return -ENOMEM;
-        req->packet = packet;
+	packet = hpsb_make_isopacket(fi->host, req->req.length, channel & 0x3f,
+				     (req->req.misc >> 16) & 0x3, req->req.misc & 0xf);
+	if (!packet)
+		return -ENOMEM;
 
-        fill_iso_packet(packet, req->req.length, channel & 0x3f,
-                        (req->req.misc >> 16) & 0x3, req->req.misc & 0xf);
-        packet->type = hpsb_iso;
         packet->speed_code = req->req.address & 0x3;
-        packet->host = fi->host;
+
+	req->packet = packet;
 
         if (copy_from_user(packet->data, int2ptr(req->req.sendb),
                            req->req.length)) {
@@ -797,16 +798,15 @@ static int handle_iso_send(struct file_info *fi, struct pending_request *req,
                 return sizeof(struct raw1394_request);
         }
 
-	HPSB_PREPARE_WORK(&req->tq, (void (*)(void*))queue_complete_req, req);
         req->req.length = 0;
-	hpsb_add_packet_complete_task(packet, &req->tq);
+	hpsb_set_packet_complete_task(packet, (void (*)(void*))queue_complete_req, req);
 
         spin_lock_irq(&fi->reqlists_lock);
         list_add_tail(&req->list, &fi->req_pending);
         spin_unlock_irq(&fi->reqlists_lock);
 
 	/* Update the generation of the packet just before sending. */
-	packet->generation = get_hpsb_generation(fi->host);
+	packet->generation = req->req.generation;
 
         if (!hpsb_send_packet(packet)) {
                 req->req.error = RAW1394_ERROR_SEND_ERROR;
@@ -860,16 +860,15 @@ static int handle_async_send(struct file_info *fi, struct pending_request *req)
         packet->header_size=header_length;
         packet->data_size=req->req.length-header_length;
 
-	HPSB_PREPARE_WORK(&req->tq, (void (*)(void*))queue_complete_req, req);
         req->req.length = 0;
-        hpsb_add_packet_complete_task(packet, &req->tq);
+        hpsb_set_packet_complete_task(packet, (void(*)(void*))queue_complete_cb, req);
 
         spin_lock_irq(&fi->reqlists_lock);
         list_add_tail(&req->list, &fi->req_pending);
         spin_unlock_irq(&fi->reqlists_lock);
 
         /* Update the generation of the packet just before sending. */
-        packet->generation = get_hpsb_generation(fi->host);
+        packet->generation = req->req.generation;
 
         if (!hpsb_send_packet(packet)) {
                 req->req.error = RAW1394_ERROR_SEND_ERROR;
@@ -1681,7 +1680,7 @@ static int arm_register(struct file_info *fi, struct pending_request *req)
                 spin_unlock_irqrestore(&host_info_lock, flags);
                 return sizeof(struct raw1394_request);
         }
-        retval = hpsb_register_addrspace(hl_handle, &arm_ops, req->req.address,
+        retval = hpsb_register_addrspace(&raw1394_highlevel, &arm_ops, req->req.address,
                 req->req.address + req->req.length);
         if (retval) {
                /* INSERT ENTRY */
@@ -1768,7 +1767,7 @@ static int arm_unregister(struct file_info *fi, struct pending_request *req)
                 spin_unlock_irqrestore(&host_info_lock, flags);
                 return sizeof(struct raw1394_request);
         } 
-        retval = hpsb_unregister_addrspace(hl_handle, addr->start);
+        retval = hpsb_unregister_addrspace(&raw1394_highlevel, addr->start);
         if (!retval) {
                 printk(KERN_ERR "raw1394: arm_Unregister failed -> EINVAL\n");
                 spin_unlock_irqrestore(&host_info_lock, flags);
@@ -1809,8 +1808,7 @@ static int write_phypacket(struct file_info *fi, struct pending_request *req)
         if (!packet) return -ENOMEM;
         req->req.length=0;
         req->packet=packet;
-        req->tq.data=req;
-        hpsb_add_packet_complete_task(packet, &req->tq);
+        hpsb_set_packet_complete_task(packet, (void(*)(void*))queue_complete_cb, req);
         spin_lock_irq(&fi->reqlists_lock);
         list_add_tail(&req->list, &fi->req_pending);
         spin_unlock_irq(&fi->reqlists_lock);
@@ -2000,6 +1998,323 @@ static ssize_t raw1394_write(struct file *file, const char *buffer, size_t count
         return retval;
 }
 
+/* rawiso operations */
+
+/* check if any RAW1394_REQ_RAWISO_ACTIVITY event is already in the
+ * completion queue (reqlists_lock must be taken) */
+static inline int __rawiso_event_in_queue(struct file_info *fi)
+{
+	struct list_head *lh;
+	struct pending_request *req;
+
+	list_for_each(lh, &fi->req_complete) {
+		req = list_entry(lh, struct pending_request, list);
+		if(req->req.type == RAW1394_REQ_RAWISO_ACTIVITY) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+/* put a RAWISO_ACTIVITY event in the queue, if one isn't there already */
+static void queue_rawiso_event(struct file_info *fi)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&fi->reqlists_lock, flags);
+
+	/* only one ISO activity event may be in the queue */
+	if(!__rawiso_event_in_queue(fi)) {
+		struct pending_request *req = __alloc_pending_request(SLAB_ATOMIC);
+
+		if(req) {
+			req->file_info = fi;
+			req->req.type = RAW1394_REQ_RAWISO_ACTIVITY;
+			req->req.generation = get_hpsb_generation(fi->host);
+			__queue_complete_req(req);
+		} else {
+			/* on allocation failure, signal an overflow */
+			if(fi->iso_handle) {
+				atomic_inc(&fi->iso_handle->overflows);
+			}
+		}
+	}
+	spin_unlock_irqrestore(&fi->reqlists_lock, flags);
+}
+
+static void rawiso_activity_cb(struct hpsb_iso *iso)
+{
+	unsigned long flags;
+        struct list_head *lh;
+        struct host_info *hi;
+
+        spin_lock_irqsave(&host_info_lock, flags);
+        hi = find_host_info(iso->host);
+
+	if (hi != NULL) {
+		list_for_each(lh, &hi->file_info_list) {
+			struct file_info *fi = list_entry(lh, struct file_info, list);
+			if(fi->iso_handle == iso)
+				queue_rawiso_event(fi);
+		}
+	}
+
+	spin_unlock_irqrestore(&host_info_lock, flags);
+}
+
+/* helper function - gather all the kernel iso status bits for returning to user-space */
+static void raw1394_iso_fill_status(struct hpsb_iso *iso, struct raw1394_iso_status *stat)
+{
+	stat->config.data_buf_size = iso->buf_size;
+	stat->config.buf_packets = iso->buf_packets;
+	stat->config.channel = iso->channel;
+	stat->config.speed = iso->speed;
+	stat->config.irq_interval = iso->irq_interval;
+	stat->n_packets = hpsb_iso_n_ready(iso);
+	stat->overflows = atomic_read(&iso->overflows);
+	stat->xmit_cycle = iso->xmit_cycle;
+}
+
+static int raw1394_iso_xmit_init(struct file_info *fi, void *uaddr)
+{
+	struct raw1394_iso_status stat;
+
+	if(copy_from_user(&stat, uaddr, sizeof(stat)))
+		return -EFAULT;
+
+	fi->iso_handle = hpsb_iso_xmit_init(fi->host,
+					    stat.config.data_buf_size,
+					    stat.config.buf_packets,
+					    stat.config.channel,
+					    stat.config.speed,
+					    stat.config.irq_interval,
+					    rawiso_activity_cb);
+	if(!fi->iso_handle)
+		return -ENOMEM;
+
+	fi->iso_state = RAW1394_ISO_XMIT;
+
+	raw1394_iso_fill_status(fi->iso_handle, &stat);
+	if(copy_to_user(uaddr, &stat, sizeof(stat)))
+		return -EFAULT;
+
+	/* queue an event to get things started */
+	rawiso_activity_cb(fi->iso_handle);
+
+	return 0;
+}
+
+static int raw1394_iso_recv_init(struct file_info *fi, void *uaddr)
+{
+	struct raw1394_iso_status stat;
+
+	if(copy_from_user(&stat, uaddr, sizeof(stat)))
+		return -EFAULT;
+
+	fi->iso_handle = hpsb_iso_recv_init(fi->host,
+					    stat.config.data_buf_size,
+					    stat.config.buf_packets,
+					    stat.config.channel,
+					    stat.config.irq_interval,
+					    rawiso_activity_cb);
+	if(!fi->iso_handle)
+		return -ENOMEM;
+
+	fi->iso_state = RAW1394_ISO_RECV;
+
+	raw1394_iso_fill_status(fi->iso_handle, &stat);
+	if(copy_to_user(uaddr, &stat, sizeof(stat)))
+		return -EFAULT;
+	return 0;
+}
+
+static int raw1394_iso_get_status(struct file_info *fi, void *uaddr)
+{
+	struct raw1394_iso_status stat;
+	struct hpsb_iso *iso = fi->iso_handle;
+
+	raw1394_iso_fill_status(fi->iso_handle, &stat);
+	if(copy_to_user(uaddr, &stat, sizeof(stat)))
+		return -EFAULT;
+
+	/* reset overflow counter */
+	atomic_set(&iso->overflows, 0);
+
+	return 0;
+}
+
+/* copy N packet_infos out of the ringbuffer into user-supplied array */
+static int raw1394_iso_recv_packets(struct file_info *fi, void *uaddr)
+{
+	struct raw1394_iso_packets upackets;
+	unsigned int packet = fi->iso_handle->first_packet;
+	int i;
+
+	if(copy_from_user(&upackets, uaddr, sizeof(upackets)))
+		return -EFAULT;
+
+	if(upackets.n_packets > hpsb_iso_n_ready(fi->iso_handle))
+		return -EINVAL;
+
+	/* ensure user-supplied buffer is accessible and big enough */
+	if(verify_area(VERIFY_WRITE, upackets.infos,
+		       upackets.n_packets * sizeof(struct raw1394_iso_packet_info)))
+		return -EFAULT;
+
+	/* copy the packet_infos out */
+	for(i = 0; i < upackets.n_packets; i++) {
+		if(__copy_to_user(&upackets.infos[i],
+				  &fi->iso_handle->infos[packet],
+				  sizeof(struct raw1394_iso_packet_info)))
+			return -EFAULT;
+		
+		packet = (packet + 1) % fi->iso_handle->buf_packets;
+	}
+
+	return 0;
+}
+
+/* copy N packet_infos from user to ringbuffer, and queue them for transmission */
+static int raw1394_iso_send_packets(struct file_info *fi, void *uaddr)
+{
+	struct raw1394_iso_packets upackets;
+	int i, rv;
+
+	if(copy_from_user(&upackets, uaddr, sizeof(upackets)))
+		return -EFAULT;
+
+	if(upackets.n_packets > hpsb_iso_n_ready(fi->iso_handle))
+		return -EINVAL;
+
+	/* ensure user-supplied buffer is accessible and big enough */
+	if(verify_area(VERIFY_READ, upackets.infos,
+		       upackets.n_packets * sizeof(struct raw1394_iso_packet_info)))
+		return -EFAULT;
+
+	/* copy the infos structs in and queue the packets */
+	for(i = 0; i < upackets.n_packets; i++) {
+		struct raw1394_iso_packet_info info;
+
+		if(__copy_from_user(&info, &upackets.infos[i],
+				    sizeof(struct raw1394_iso_packet_info)))
+			return -EFAULT;
+
+		rv = hpsb_iso_xmit_queue_packet(fi->iso_handle, info.offset,
+						info.len, info.tag, info.sy);
+		if(rv)
+			return rv;
+	}
+
+	return 0;
+}
+
+static void raw1394_iso_shutdown(struct file_info *fi)
+{
+	if(fi->iso_handle)
+		hpsb_iso_shutdown(fi->iso_handle);
+
+	fi->iso_handle = NULL;
+	fi->iso_state = RAW1394_ISO_INACTIVE;
+}
+
+/* mmap the rawiso xmit/recv buffer */
+static int raw1394_mmap(struct file *file, struct vm_area_struct *vma)
+{
+	struct file_info *fi = file->private_data;
+
+	if(fi->iso_state == RAW1394_ISO_INACTIVE)
+		return -EINVAL;
+
+	return dma_region_mmap(&fi->iso_handle->data_buf, file, vma);
+}
+
+/* ioctl is only used for rawiso operations */
+static int raw1394_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
+{
+	struct file_info *fi = file->private_data;
+
+	switch(fi->iso_state) {
+	case RAW1394_ISO_INACTIVE:
+		switch(cmd) {
+		case RAW1394_IOC_ISO_XMIT_INIT:
+			return raw1394_iso_xmit_init(fi, (void*) arg);
+		case RAW1394_IOC_ISO_RECV_INIT:
+			return raw1394_iso_recv_init(fi, (void*) arg);
+		default:
+			break;
+		}
+		break;
+	case RAW1394_ISO_RECV:
+		switch(cmd) {
+		case RAW1394_IOC_ISO_RECV_START: {
+			/* copy args from user-space */
+			int args[3];
+			if(copy_from_user(&args[0], (void*) arg, sizeof(args)))
+				return -EFAULT;
+			return hpsb_iso_recv_start(fi->iso_handle, args[0], args[1], args[2]);
+		}
+		case RAW1394_IOC_ISO_XMIT_RECV_STOP:
+			hpsb_iso_stop(fi->iso_handle);
+			return 0;
+		case RAW1394_IOC_ISO_RECV_LISTEN_CHANNEL:
+			return hpsb_iso_recv_listen_channel(fi->iso_handle, arg);
+		case RAW1394_IOC_ISO_RECV_UNLISTEN_CHANNEL:
+			return hpsb_iso_recv_unlisten_channel(fi->iso_handle, arg);
+		case RAW1394_IOC_ISO_RECV_SET_CHANNEL_MASK: {
+			/* copy the u64 from user-space */
+			u64 mask;
+			if(copy_from_user(&mask, (void*) arg, sizeof(mask)))
+				return -EFAULT;
+			return hpsb_iso_recv_set_channel_mask(fi->iso_handle, mask);
+		}
+		case RAW1394_IOC_ISO_GET_STATUS:
+			return raw1394_iso_get_status(fi, (void*) arg);
+		case RAW1394_IOC_ISO_RECV_PACKETS:
+			return raw1394_iso_recv_packets(fi, (void*) arg);
+		case RAW1394_IOC_ISO_RECV_RELEASE_PACKETS:
+			return hpsb_iso_recv_release_packets(fi->iso_handle, arg);
+		case RAW1394_IOC_ISO_SHUTDOWN:
+			raw1394_iso_shutdown(fi);
+			return 0;
+		case RAW1394_IOC_ISO_QUEUE_ACTIVITY:
+			queue_rawiso_event(fi);
+			return 0;
+		}
+		break;
+	case RAW1394_ISO_XMIT:
+		switch(cmd) {
+		case RAW1394_IOC_ISO_XMIT_START: {
+			/* copy two ints from user-space */
+			int args[2];
+			if(copy_from_user(&args[0], (void*) arg, sizeof(args)))
+				return -EFAULT;
+			return hpsb_iso_xmit_start(fi->iso_handle, args[0], args[1]);
+		}
+		case RAW1394_IOC_ISO_XMIT_SYNC:
+			return hpsb_iso_xmit_sync(fi->iso_handle);
+		case RAW1394_IOC_ISO_XMIT_RECV_STOP:
+			hpsb_iso_stop(fi->iso_handle);
+			return 0;
+		case RAW1394_IOC_ISO_GET_STATUS:
+			return raw1394_iso_get_status(fi, (void*) arg);
+		case RAW1394_IOC_ISO_XMIT_PACKETS:
+			return raw1394_iso_send_packets(fi, (void*) arg);
+		case RAW1394_IOC_ISO_SHUTDOWN:
+			raw1394_iso_shutdown(fi);
+			return 0;
+		case RAW1394_IOC_ISO_QUEUE_ACTIVITY:
+			queue_rawiso_event(fi);
+			return 0;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return -EINVAL;
+}
+
 static unsigned int raw1394_poll(struct file *file, poll_table *pt)
 {
         struct file_info *fi = file->private_data;
@@ -2060,9 +2375,12 @@ static int raw1394_release(struct inode *inode, struct file *file)
         struct arm_addr  *arm_addr = NULL;
         int another_host;
 
+	if(fi->iso_state != RAW1394_ISO_INACTIVE)
+		raw1394_iso_shutdown(fi);
+
         for (i = 0; i < 64; i++) {
                 if (fi->listen_channels & (1ULL << i)) {
-                        hpsb_unlisten_channel(hl_handle, fi->host, i);
+                        hpsb_unlisten_channel(&raw1394_highlevel, fi->host, i);
                 }
         }
 
@@ -2107,7 +2425,7 @@ static int raw1394_release(struct inode *inode, struct file *file)
                 }
                 if (!another_host) {
                         DBGMSG("raw1394_release: call hpsb_arm_unregister");
-                        retval = hpsb_unregister_addrspace(hl_handle, addr->start);
+                        retval = hpsb_unregister_addrspace(&raw1394_highlevel, addr->start);
                         if (!retval) {
                                 ++fail;
                                 printk(KERN_ERR "raw1394_release arm_Unregister failed\n");
@@ -2121,7 +2439,7 @@ static int raw1394_release(struct inode *inode, struct file *file)
         spin_unlock_irq(&host_info_lock);
         if (fail > 0) {
                 printk(KERN_ERR "raw1394: during addr_list-release "
-                        "error(s) occured \n");
+                        "error(s) occurred \n");
         }
 
         while (!done) {
@@ -2156,7 +2474,38 @@ static int raw1394_release(struct inode *inode, struct file *file)
         return 0;
 }
 
-static struct hpsb_highlevel_ops hl_ops = {
+
+/*** HOTPLUG STUFF **********************************************************/
+/*
+ * Export information about protocols/devices supported by this driver.
+ */
+static struct ieee1394_device_id raw1394_id_table[] = {
+	{
+		.match_flags	= IEEE1394_MATCH_SPECIFIER_ID | IEEE1394_MATCH_VERSION,
+		.specifier_id	= AVC_UNIT_SPEC_ID_ENTRY & 0xffffff,
+		.version	= AVC_SW_VERSION_ENTRY & 0xffffff
+	},
+	{
+		.match_flags	= IEEE1394_MATCH_SPECIFIER_ID | IEEE1394_MATCH_VERSION,
+		.specifier_id	= CAMERA_UNIT_SPEC_ID_ENTRY & 0xffffff,
+		.version	= CAMERA_SW_VERSION_ENTRY & 0xffffff
+	},
+	{ }
+};
+
+MODULE_DEVICE_TABLE(ieee1394, raw1394_id_table);
+
+static struct hpsb_protocol_driver raw1394_driver = {
+	.name =		"raw1394 Driver",
+	.id_table = 	raw1394_id_table,
+};
+
+
+/******************************************************************************/
+
+
+static struct hpsb_highlevel raw1394_highlevel = {
+	.name =		RAW1394_DEVICE_NAME,
         .add_host =    add_host,
         .remove_host = remove_host,
         .host_reset =  host_reset,
@@ -2167,7 +2516,9 @@ static struct hpsb_highlevel_ops hl_ops = {
 static struct file_operations file_ops = {
 	.owner =	THIS_MODULE,
         .read =		raw1394_read, 
-        .write =	raw1394_write, 
+        .write =	raw1394_write,
+	.mmap =         raw1394_mmap,
+	.ioctl =        raw1394_ioctl,
         .poll =		raw1394_poll, 
         .open =		raw1394_open, 
         .release =	raw1394_release, 
@@ -2175,11 +2526,7 @@ static struct file_operations file_ops = {
 
 static int __init init_raw1394(void)
 {
-        hl_handle = hpsb_register_highlevel(RAW1394_DEVICE_NAME, &hl_ops);
-        if (hl_handle == NULL) {
-                HPSB_ERR("raw1394 failed to register with ieee1394 highlevel");
-                return -ENOMEM;
-        }
+	hpsb_register_highlevel(&raw1394_highlevel);
 
         devfs_handle = devfs_register(NULL,
                                       RAW1394_DEVICE_NAME, DEVFS_FL_NONE,
@@ -2192,18 +2539,23 @@ static int __init init_raw1394(void)
                                       THIS_MODULE, &file_ops)) {
                 HPSB_ERR("raw1394 failed to register minor device block");
                 devfs_unregister(devfs_handle);
-                hpsb_unregister_highlevel(hl_handle);
+                hpsb_unregister_highlevel(&raw1394_highlevel);
                 return -EBUSY;
         }
+
         printk(KERN_INFO "raw1394: /dev/%s device initialized\n", RAW1394_DEVICE_NAME);
+
+	hpsb_register_protocol(&raw1394_driver);
+
         return 0;
 }
 
 static void __exit cleanup_raw1394(void)
 {
+	hpsb_unregister_protocol(&raw1394_driver);
         ieee1394_unregister_chardev(IEEE1394_MINOR_BLOCK_RAW1394);
         devfs_unregister(devfs_handle);
-        hpsb_unregister_highlevel(hl_handle);
+        hpsb_unregister_highlevel(&raw1394_highlevel);
 }
 
 module_init(init_raw1394);

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 1999-2002 Petko Manolov (petkan@users.sourceforge.net)
+ *  Copyright (c) 1999-2003 Petko Manolov (petkan@users.sourceforge.net)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -42,7 +42,7 @@
 /*
  * Version Information
  */
-#define DRIVER_VERSION "v0.4.29 (2002/12/31)"
+#define DRIVER_VERSION "v0.4.30 (2003/04/01)"
 #define DRIVER_AUTHOR "Petko Manolov <petkan@users.sourceforge.net>"
 #define DRIVER_DESC "Pegasus/Pegasus II USB Ethernet driver"
 
@@ -230,7 +230,7 @@ static int set_register(pegasus_t * pegasus, u16 indx, u8 data)
 
 	pegasus->dr.bRequestType = PEGASUS_REQT_WRITE;
 	pegasus->dr.bRequest = PEGASUS_REQ_SET_REG;
-	pegasus->dr.wValue = cpu_to_le16p(&data);
+	pegasus->dr.wValue = cpu_to_le16(data);
 	pegasus->dr.wIndex = cpu_to_le16p(&indx);
 	pegasus->dr.wLength = cpu_to_le16(1);
 	pegasus->ctrl_urb->transfer_buffer_length = 1;
@@ -625,8 +625,12 @@ static void intr_callback(struct urb *urb)
 			pegasus->stats.tx_aborted_errors++;
 		if (d[0] & LATE_COL)
 			pegasus->stats.tx_window_errors++;
-		if (d[0] & (NO_CARRIER | LOSS_CARRIER))
+		if (d[5] & LINK_STATUS) {
+			netif_carrier_on(net);
+		} else {
+			netif_carrier_off(net);
 			pegasus->stats.tx_carrier_errors++;
+		}
 	}
 }
 #endif

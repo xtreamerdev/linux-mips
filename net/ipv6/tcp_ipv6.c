@@ -24,7 +24,6 @@
  *      2 of the License, or (at your option) any later version.
  */
 
-#define __NO_VERSION__
 #include <linux/module.h>
 #include <linux/config.h>
 #include <linux/errno.h>
@@ -37,6 +36,7 @@
 #include <linux/in6.h>
 #include <linux/netdevice.h>
 #include <linux/init.h>
+#include <linux/jhash.h>
 #include <linux/ipsec.h>
 
 #include <linux/ipv6.h>
@@ -369,12 +369,24 @@ __inline__ struct sock *tcp_v6_lookup(struct in6_addr *saddr, u16 sport,
  * Open request hash tables.
  */
 
-static __inline__ unsigned tcp_v6_synq_hash(struct in6_addr *raddr, u16 rport)
+static u32 tcp_v6_synq_hash(struct in6_addr *raddr, u16 rport, u32 rnd)
 {
-	unsigned h = raddr->s6_addr32[3] ^ rport;
-	h ^= h>>16;
-	h ^= h>>8;
-	return h&(TCP_SYNQ_HSIZE-1);
+	u32 a, b, c;
+
+	a = raddr->s6_addr32[0];
+	b = raddr->s6_addr32[1];
+	c = raddr->s6_addr32[2];
+
+	a += JHASH_GOLDEN_RATIO;
+	b += JHASH_GOLDEN_RATIO;
+	c += rnd;
+	__jhash_mix(a, b, c);
+
+	a += raddr->s6_addr32[3];
+	b += (u32) rport;
+	__jhash_mix(a, b, c);
+
+	return c & (TCP_SYNQ_HSIZE - 1);
 }
 
 static struct open_request *tcp_v6_search_req(struct tcp_opt *tp,
@@ -387,7 +399,7 @@ static struct open_request *tcp_v6_search_req(struct tcp_opt *tp,
 	struct tcp_listen_opt *lopt = tp->listen_opt;
 	struct open_request *req, **prev;  
 
-	for (prev = &lopt->syn_table[tcp_v6_synq_hash(raddr, rport)];
+	for (prev = &lopt->syn_table[tcp_v6_synq_hash(raddr, rport, lopt->hash_rnd)];
 	     (req = *prev) != NULL;
 	     prev = &req->dl_next) {
 		if (req->rmt_port == rport &&
@@ -776,7 +788,7 @@ void tcp_v6_err(struct sk_buff *skb, struct inet6_skb_parm *opt,
 
 			dst = ip6_route_output(sk, &fl);
 		} else
-			dst_clone(dst);
+			dst_hold(dst);
 
 		if (dst->error) {
 			sk->err_soft = -dst->error;
@@ -937,7 +949,7 @@ static void tcp_v6_send_check(struct sock *sk, struct tcphdr *th, int len,
 	struct ipv6_pinfo *np = &sk->net_pinfo.af_inet6;
 
 	if (skb->ip_summed == CHECKSUM_HW) {
-		th->check = csum_ipv6_magic(&np->saddr, &np->daddr, len, IPPROTO_TCP,  0);
+		th->check = ~csum_ipv6_magic(&np->saddr, &np->daddr, len, IPPROTO_TCP,  0);
 		skb->csum = offsetof(struct tcphdr, check);
 	} else {
 		th->check = csum_ipv6_magic(&np->saddr, &np->daddr, len, IPPROTO_TCP, 
@@ -1136,7 +1148,7 @@ static void tcp_v6_synq_add(struct sock *sk, struct open_request *req)
 {
 	struct tcp_opt *tp = &sk->tp_pinfo.af_tcp;
 	struct tcp_listen_opt *lopt = tp->listen_opt;
-	unsigned h = tcp_v6_synq_hash(&req->af.v6_req.rmt_addr, req->rmt_port);
+	u32 h = tcp_v6_synq_hash(&req->af.v6_req.rmt_addr, req->rmt_port, lopt->hash_rnd);
 
 	req->sk = NULL;
 	req->expires = jiffies + TCP_TIMEOUT_INIT;
@@ -1427,9 +1439,6 @@ static int tcp_v6_checksum_init(struct sk_buff *skb)
  */
 static int tcp_v6_do_rcv(struct sock *sk, struct sk_buff *skb)
 {
-#ifdef CONFIG_FILTER
-	struct sk_filter *filter;
-#endif
 	struct sk_buff *opt_skb = NULL;
 
 	/* Imagine: socket is IPv6. IPv4 packet arrives,
@@ -1442,12 +1451,6 @@ static int tcp_v6_do_rcv(struct sock *sk, struct sk_buff *skb)
 
 	if (skb->protocol == htons(ETH_P_IP))
 		return tcp_v4_do_rcv(sk, skb);
-
-#ifdef CONFIG_FILTER
-	filter = sk->filter;
-	if (filter && sk_filter(skb, filter))
-		goto discard;
-#endif /* CONFIG_FILTER */
 
 	/*
 	 *	socket locking is here for SMP purposes as backlog rcv
@@ -1601,6 +1604,9 @@ process:
 	if(sk->state == TCP_TIME_WAIT)
 		goto do_time_wait;
 
+	if (sk_filter(sk, skb, 0))
+		goto discard_and_relse;
+		
 	skb->dev = NULL;
 
 	bh_lock_sock(sk);

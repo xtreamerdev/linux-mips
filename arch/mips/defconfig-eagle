@@ -434,6 +434,7 @@ CONFIG_PCNET32=y
 # CONFIG_DGRS is not set
 # CONFIG_DM9102 is not set
 # CONFIG_EEPRO100 is not set
+# CONFIG_EEPRO100_PIO is not set
 # CONFIG_E100 is not set
 # CONFIG_LNE390 is not set
 # CONFIG_FEALNX is not set
@@ -589,6 +590,7 @@ CONFIG_WATCHDOG=y
 # CONFIG_WATCHDOG_NOWAYOUT is not set
 # CONFIG_ACQUIRE_WDT is not set
 # CONFIG_ADVANTECH_WDT is not set
+# CONFIG_ALIM1535_WDT is not set
 # CONFIG_ALIM7101_WDT is not set
 # CONFIG_SC520_WDT is not set
 # CONFIG_PCWATCHDOG is not set
@@ -813,6 +815,7 @@ CONFIG_USB_OHCI=y
 # CONFIG_USB_MOUSE is not set
 # CONFIG_USB_AIPTEK is not set
 # CONFIG_USB_WACOM is not set
+# CONFIG_USB_KBTAB is not set
 # CONFIG_USB_POWERMATE is not set
 
 #

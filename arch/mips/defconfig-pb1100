@@ -777,6 +777,7 @@ CONFIG_DUMMY_CONSOLE=y
 # CONFIG_FB_ATY is not set
 # CONFIG_FB_RADEON is not set
 # CONFIG_FB_ATY128 is not set
+# CONFIG_FB_INTEL is not set
 # CONFIG_FB_SIS is not set
 # CONFIG_FB_NEOMAGIC is not set
 # CONFIG_FB_3DFX is not set

@@ -935,6 +935,12 @@ static int hcd_alloc_dev (struct usb_device *udev)
 
 /*-------------------------------------------------------------------------*/
 
+static void hcd_panic (void *_hcd)
+{
+	struct usb_hcd *hcd = _hcd;
+	hcd->driver->stop (hcd);
+}
+
 static void hc_died (struct usb_hcd *hcd)
 {
 	struct list_head	*devlist, *urblist;
@@ -962,7 +968,10 @@ static void hc_died (struct usb_hcd *hcd)
 
 	if (urb)
 		rh_status_dequeue (hcd, urb);
-	hcd->driver->stop (hcd);
+
+	/* hcd->stop() needs a task context */
+	INIT_TQUEUE (&hcd->work, hcd_panic, hcd);
+	(void) schedule_task (&hcd->work);
 }
 
 /*-------------------------------------------------------------------------*/
@@ -1025,7 +1034,7 @@ static int hcd_submit_urb (struct urb *urb)
 		return -EPIPE;
 
 	/* NOTE: 2.5 passes this value explicitly in submit() */
-	mem_flags = in_interrupt () ? GFP_ATOMIC : GFP_KERNEL;
+	mem_flags = GFP_ATOMIC;
 
 	/* FIXME there should be a sharable lock protecting us against
 	 * config/altsetting changes and disconnects, kicking in here.
