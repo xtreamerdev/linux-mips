@@ -9,6 +9,7 @@
 #ifndef _ASM_SIGINFO_H
 #define _ASM_SIGINFO_H
 
+#include <linux/config.h>
 #include <linux/types.h>
 
 /* This structure matches IRIX 32/n32 ABIs for binary compatibility. */
