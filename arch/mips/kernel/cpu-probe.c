@@ -97,6 +97,7 @@ static inline void check_wait(void)
 	case CPU_AU1000:
 	case CPU_AU1100:
 	case CPU_AU1500:
+	case CPU_AU1550:
 		if (au1k_wait_ptr != NULL) {
 			cpu_wait = au1k_wait_ptr;
 			printk(" available.\n");
@@ -482,6 +483,7 @@ static inline void cpu_probe_mips(struct cpuinfo_mips *c)
 static inline void cpu_probe_alchemy(struct cpuinfo_mips *c)
 {
 	decode_config1(c);
+	c->options |= MIPS_CPU_PREFETCH;
 	switch (c->processor_id & 0xff00) {
 	case PRID_IMP_AU1_REV1:
 	case PRID_IMP_AU1_REV2:
