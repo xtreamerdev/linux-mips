@@ -186,7 +186,7 @@ LOADADDR	:= 0x80100000
 endif
 
 ifdef CONFIG_PCI
-CORE_FILES    += arch/mips/pci/pci-mips.o
+CORE_FILES    += arch/mips/pci/pci-core.o
 SUBDIRS       += arch/mips/pci
 endif
 

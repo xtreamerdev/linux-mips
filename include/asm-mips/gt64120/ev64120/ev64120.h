@@ -8,29 +8,12 @@
 #ifndef __ASM_GALILEO_BOARDS_MIPS_EV64120_H
 #define __ASM_GALILEO_BOARDS_MIPS_EV64120_H
 
-#include <asm/addrspace.h>
-#include <asm/byteorder.h>
-
 /*
  *   GT64120 config space base address
  */
 extern unsigned long gt64120_base;
 
 #define GT64120_BASE	(gt64120_base)
-
-/*
- * Because of an error/peculiarity in the Galileo chip, we need to swap the
- * bytes when running bigendian.
- */
-
-#define GT_READ(ofs, data)						\
-do {									\
-	*(data) = le32_to_cpu(*(volatile u32 *)(GT64120_BASE+(ofs)));	\
-} while(0)
-#define GT_WRITE(ofs, data)						\
-do {									\
-             *(volatile u32 *)(GT64120_BASE+(ofs)) = cpu_to_le32(data);	\
-} while (0)
 
 /*
  *   PCI Bus allocation

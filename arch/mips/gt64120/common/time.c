@@ -25,10 +25,10 @@ static void gt64120_irq(int irq, void *dev_id, struct pt_regs *regs)
 	unsigned int irq_src, int_high_src, irq_src_mask, int_high_src_mask;
 	int handled = 0;
 
-	GT_READ(GT_INTRCAUSE_OFS, &irq_src);
-	GT_READ(GT_INTRMASK_OFS, &irq_src_mask);
-	GT_READ(GT_HINTRCAUSE_OFS, &int_high_src);
-	GT_READ(GT_HINTRMASK_OFS, &int_high_src_mask);
+	irq_src = GT_READ(GT_INTRCAUSE_OFS);
+	irq_src_mask = GT_READ(GT_INTRMASK_OFS);
+	int_high_src = GT_READ(GT_HINTRCAUSE_OFS);
+	int_high_src_mask = GT_READ(GT_HINTRMASK_OFS);
 	irq_src = irq_src & irq_src_mask;
 	int_high_src = int_high_src & int_high_src_mask;
 

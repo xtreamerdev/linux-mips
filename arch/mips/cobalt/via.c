@@ -13,10 +13,9 @@
 #include <linux/irq.h>
 #include <linux/kernel.h>
 
-#include <asm/gt64120.h>
 #include <asm/ptrace.h>
 #include <asm/io.h>
-
+#include <asm/gt64120/gt64120.h>
 #include <asm/cobalt/cobalt.h>
 
 asmlinkage void via_irq(struct pt_regs *regs)

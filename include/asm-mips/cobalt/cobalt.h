@@ -93,6 +93,4 @@
 #define GALILEO_ENTC0		0x01
 #define GALILEO_SELTC0		0x02
 
-
 #endif /* __ASM_MIPS_COBALT_H */
-

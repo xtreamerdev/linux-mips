@@ -357,6 +357,7 @@ fi
 if [ "$CONFIG_MIPS_EV96100" = "y" ]; then
    define_bool CONFIG_BOARD_SCACHE y
    define_bool CONFIG_PCI y
+   define_bool CONFIG_MIPS_GT64120 y
    define_bool CONFIG_MIPS_GT96100 y
    define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
@@ -394,6 +395,8 @@ if [ "$CONFIG_LASAT" = "y" ]; then
    define_bool CONFIG_BOARD_SCACHE y
    define_bool CONFIG_R5000_CPU_SCACHE y
    define_bool CONFIG_PCI y
+   define_bool CONFIG_MIPS_GT64120 y
+   define_bool CONFIG_MIPS_NILE4 y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_NEW_TIME_C y
 fi
@@ -410,6 +413,9 @@ fi
 if [ "$CONFIG_MIPS_ATLAS" = "y" ]; then
    define_bool CONFIG_BOOT_ELF32 y
    define_int CONFIG_L1_CACHE_SHIFT 5
+   define_bool CONFIG_MIPS_BONITO64 y
+   define_bool CONFIG_MIPS_GT64120 y
+   define_bool CONFIG_MIPS_MSC y
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PCI y
@@ -432,6 +438,9 @@ if [ "$CONFIG_MIPS_MALTA" = "y" ]; then
    define_bool CONFIG_BOOT_ELF32 y
    define_bool CONFIG_HAVE_STD_PC_SERIAL_PORT y
    define_bool CONFIG_I8259 y
+   define_bool CONFIG_MIPS_BONITO64 y
+   define_bool CONFIG_MIPS_GT64120 y
+   define_bool CONFIG_MIPS_MSC y
    define_int CONFIG_L1_CACHE_SHIFT 5
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y

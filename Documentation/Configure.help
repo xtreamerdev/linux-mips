@@ -2247,11 +2247,6 @@ CONFIG_JAZZ_ESP
   4000, Acer PICA, Olivetti M700-10 and a few other identical OEM
   systems.
 
-MIPS GT96100 support
-CONFIG_MIPS_GT96100
-  Say Y here to support the Galileo Technology GT96100 communications
-  controller card.  There is a web page at <http://www.galileot.com/>.
-
 MIPS GT96100 Ethernet support
 CONFIG_MIPS_GT96100ETH
   Say Y here to support the Ethernet subsystem on your GT96100 card.

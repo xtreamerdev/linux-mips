@@ -17,6 +17,8 @@
 #define sc_lsize	32
 #define tc_pagesize	(32*128)
 
+static unsigned long scache_way_size = 32;		/* HACKKKKK!!! */
+
 /* Secondary cache parameters. */
 #define scache_size	(256*1024)	/* Fixed to 256KiB on RM7000 */
 

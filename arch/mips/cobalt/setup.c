@@ -23,7 +23,7 @@
 #include <asm/irq.h>
 #include <asm/processor.h>
 #include <asm/reboot.h>
-#include <asm/gt64120.h>
+#include <asm/gt64120/gt64120.h>
 
 #include <asm/cobalt/cobalt.h>
 

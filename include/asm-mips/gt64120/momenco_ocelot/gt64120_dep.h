@@ -10,9 +10,6 @@
 #ifndef _ASM_GT64120_MOMENCO_OCELOT_GT64120_DEP_H
 #define _ASM_GT64120_MOMENCO_OCELOT_GT64120_DEP_H
 
-#include <asm/addrspace.h>		/* for KSEG1ADDR() */
-#include <asm/byteorder.h>
-
 /*
  * PCI address allocation
  */
@@ -24,20 +21,6 @@
 extern unsigned long gt64120_base;
 
 #define GT64120_BASE       (gt64120_base)
-
-/*
- * Because of an error/peculiarity in the Galileo chip, we need to swap the
- * bytes when running bigendian.
- */
-
-#define GT_READ(ofs, data)						\
-do {									\
-	*(data) = le32_to_cpu(*(volatile u32 *)(GT64120_BASE+(ofs)));	\
-} while (0)
-#define GT_WRITE(ofs, data)						\
-do {									\
-	*(volatile u32 *)(GT64120_BASE+(ofs)) = cpu_to_le32(data);	\
-} while (0)
 
 /*
  * GT timer irq

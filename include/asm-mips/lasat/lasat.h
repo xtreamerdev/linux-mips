@@ -239,9 +239,6 @@ extern void (* prom_printf)(const char *fmt, ...);
 #define LASAT_SERVICEMODE_MAGIC_1     0xdeadbeef
 #define LASAT_SERVICEMODE_MAGIC_2     0xfedeabba
 
-/* Lasat 100 boards */
-#define LASAT_GT_BASE           (KSEG1ADDR(0x14000000))
-
 /* Lasat 200 boards */
 #define Vrc5074_PHYS_BASE       0x1fa00000
 #define Vrc5074_BASE            (KSEG1ADDR(Vrc5074_PHYS_BASE))

@@ -39,8 +39,7 @@
 #include <linux/kernel.h>
 
 #include <asm/delay.h>
-#include <asm/gt64120.h>
-#include <asm/galileo-boards/ev96100.h>
+#include <asm/gt64120/gt64120.h>
 #include <asm/pci_channel.h>
 
 #define PCI_ACCESS_READ  0
@@ -50,198 +49,24 @@
 #define GT_PCI_MEM_SIZE    0x02000000
 #define GT_PCI_IO_BASE     0x10000000
 #define GT_PCI_IO_SIZE     0x02000000
+
 static struct resource pci_io_resource = {
 	"io pci IO space",
 	0x10000000,
 	0x10000000 + 0x02000000,
-	IORESOURCE_IO};
+	IORESOURCE_IO
+};
 
 static struct resource pci_mem_resource = {
 	"ext pci memory space",
 	0x12000000,
 	0x12000000 + 0x02000000,
-	IORESOURCE_MEM};
-
-extern struct pci_ops gt96100_pci_ops;
-
-struct pci_channel mips_pci_channels[] = {
-	{ &gt96100_pci_ops, &pci_io_resource, &pci_mem_resource, 1, 0xff },
-	{ NULL, NULL, NULL, NULL, NULL}
+	IORESOURCE_MEM
 };
 
-int
-static gt96100_config_access(unsigned char access_type, struct pci_dev *dev,
-                           unsigned char where, u32 *data)
-{
-	unsigned char bus = dev->bus->number;
-	unsigned char dev_fn = dev->devfn;
-        u32 intr;
+extern struct pci_ops gt64120_pci_ops;
 
-
-	if ((bus == 0) && (dev_fn >= PCI_DEVFN(31,0))) {
-            return -1; /* Because of a bug in the galileo (for slot 31). */
-        }
-
-	/* Clear cause register bits */
-	GT_WRITE(GT_INTRCAUSE_OFS, ~(GT_INTRCAUSE_MASABORT0_BIT |
-	                             GT_INTRCAUSE_TARABORT0_BIT));
-
-	/* Setup address */
-	GT_WRITE(GT_PCI0_CFGADDR_OFS,
-		 (bus         << GT_PCI0_CFGADDR_BUSNUM_SHF)   |
-		 (dev_fn      << GT_PCI0_CFGADDR_FUNCTNUM_SHF) |
-		 ((where / 4) << GT_PCI0_CFGADDR_REGNUM_SHF)   |
-		 GT_PCI0_CFGADDR_CONFIGEN_BIT);
-	udelay(2);
-
-
-	if (access_type == PCI_ACCESS_WRITE) {
-		if (dev_fn != 0) {
-		*data = le32_to_cpu(*data);
-		}
-		GT_WRITE(GT_PCI0_CFGDATA_OFS, *data);
-	}
-        else {
-		GT_READ(GT_PCI0_CFGDATA_OFS, *data);
-		if (dev_fn != 0) {
-		*data = le32_to_cpu(*data);
-		}
-	}
-
-	udelay(2);
-
-	/* Check for master or target abort */
-	GT_READ(GT_INTRCAUSE_OFS, intr);
-
-	if (intr & (GT_INTRCAUSE_MASABORT0_BIT | GT_INTRCAUSE_TARABORT0_BIT))
-	{
-	        /* Error occured */
-
-	        /* Clear bits */
-	        GT_WRITE( GT_INTRCAUSE_OFS, ~(GT_INTRCAUSE_MASABORT0_BIT |
-					      GT_INTRCAUSE_TARABORT0_BIT) );
-
-		if (access_type == PCI_ACCESS_READ) {
-			*data = 0xffffffff;
-		}
-		return -1;
-	}
-	return 0;
-}
-
-
-/*
- * We can't address 8 and 16 bit words directly.  Instead we have to
- * read/write a 32bit word and mask/modify the data we actually want.
- */
-static int
-read_config_byte (struct pci_dev *dev, int where, u8 *val)
-{
-	u32 data = 0;
-
-	if (gt96100_config_access(PCI_ACCESS_READ, dev, where, &data)) {
-		*val = 0xff;
-		return -1;
-	}
-
-	*val = (data >> ((where & 3) << 3)) & 0xff;
-
-	return PCIBIOS_SUCCESSFUL;
-}
-
-
-static int
-read_config_word (struct pci_dev *dev, int where, u16 *val)
-{
-	u32 data = 0;
-
-	if (where & 1)
-		return PCIBIOS_BAD_REGISTER_NUMBER;
-
-	if (gt96100_config_access(PCI_ACCESS_READ, dev, where, &data)) {
-		*val = 0xffff;
-		return -1;
-	}
-
-	*val = (data >> ((where & 3) << 3)) & 0xffff;
-
-	return PCIBIOS_SUCCESSFUL;
-}
-
-static int
-read_config_dword (struct pci_dev *dev, int where, u32 *val)
-{
-	u32 data = 0;
-
-	if (where & 3)
-		return PCIBIOS_BAD_REGISTER_NUMBER;
-
-	if (gt96100_config_access(PCI_ACCESS_READ, dev, where, &data)) {
-		*val = 0xffffffff;
-		return -1;
-	}
-
-	*val = data;
-
-	return PCIBIOS_SUCCESSFUL;
-}
-
-
-static int
-write_config_byte (struct pci_dev *dev, int where, u8 val)
-{
-	u32 data = 0;
-
-	if (gt96100_config_access(PCI_ACCESS_READ, dev, where, &data))
-		return -1;
-
-	data = (data & ~(0xff << ((where & 3) << 3))) |
-	       (val << ((where & 3) << 3));
-
-	if (gt96100_config_access(PCI_ACCESS_WRITE, dev, where, &data))
-		return -1;
-
-	return PCIBIOS_SUCCESSFUL;
-}
-
-static int
-write_config_word (struct pci_dev *dev, int where, u16 val)
-{
-        u32 data = 0;
-
-	if (where & 1)
-		return PCIBIOS_BAD_REGISTER_NUMBER;
-
-        if (gt96100_config_access(PCI_ACCESS_READ, dev, where, &data))
-	       return -1;
-
-	data = (data & ~(0xffff << ((where & 3) << 3))) |
-	       (val << ((where & 3) << 3));
-
-	if (gt96100_config_access(PCI_ACCESS_WRITE, dev, where, &data))
-	       return -1;
-
-
-	return PCIBIOS_SUCCESSFUL;
-}
-
-static int
-write_config_dword(struct pci_dev *dev, int where, u32 val)
-{
-	if (where & 3)
-		return PCIBIOS_BAD_REGISTER_NUMBER;
-
-	if (gt96100_config_access(PCI_ACCESS_WRITE, dev, where, &val))
-	       return -1;
-
-	return PCIBIOS_SUCCESSFUL;
-}
-
-struct pci_ops gt96100_pci_ops = {
-	read_config_byte,
-	read_config_word,
-	read_config_dword,
-	write_config_byte,
-	write_config_word,
-	write_config_dword
+struct pci_channel mips_pci_channels[] = {
+	{ &gt64120_pci_ops, &pci_io_resource, &pci_mem_resource, 1, 0xff },
+	{ NULL, NULL, NULL, NULL, NULL}
 };

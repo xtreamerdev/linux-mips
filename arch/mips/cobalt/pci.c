@@ -17,8 +17,7 @@
 
 #include <asm/pci.h>
 #include <asm/io.h>
-#include <asm/gt64120.h>
-
+#include <asm/gt64120/gt64120.h>
 #include <asm/cobalt/cobalt.h>
 
 #ifdef CONFIG_PCI

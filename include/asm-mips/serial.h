@@ -108,7 +108,7 @@
  * Both Galileo boards have the same UART mappings.
  */
 #if defined (CONFIG_MIPS_EV96100) || defined (CONFIG_MIPS_EV64120)
-#include <asm/galileo-boards/ev96100.h>
+#include <asm/gt64120/gt64120.h>
 #include <asm/galileo-boards/ev96100int.h>
 #define EV96100_SERIAL_PORT_DEFNS                                  \
     { .baud_base = EV96100_BASE_BAUD, .irq = EV96100INT_UART_0, \

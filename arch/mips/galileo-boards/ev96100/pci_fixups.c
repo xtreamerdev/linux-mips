@@ -33,8 +33,7 @@
 #include <linux/init.h>
 #include <linux/pci_ids.h>
 
-#include <asm/gt64120.h>
-#include <asm/galileo-boards/ev96100.h>
+#include <asm/gt64120/gt64120.h>
 
 extern unsigned short get_gt_devid(void);
 
