@@ -73,8 +73,6 @@ extern phys_t (*fixup_bigphys_addr)(phys_t phys_addr, phys_t size);
 static phys_t db_fixup_bigphys_addr(phys_t phys_addr, phys_t size);
 #endif
 
-void __init bus_error_init(void) { /* nothing */ }
-
 void __init au1x00_setup(void)
 {
 	char *argptr;

@@ -10,7 +10,7 @@
  *
  * Kevin D. Kissell, kevink@mips.com and Carsten Langgaard, carstenl@mips.com
  * Copyright (C) 2000, 01 MIPS Technologies, Inc.
- * Copyright (C) 2002  Maciej W. Rozycki
+ * Copyright (C) 2002, 2003  Maciej W. Rozycki
  */
 #include <linux/config.h>
 #include <linux/init.h>
@@ -62,7 +62,8 @@ extern asmlinkage void handle_reserved(void);
 extern int fpu_emulator_cop1Handler(int xcptno, struct pt_regs *xcp,
 	struct mips_fpu_soft_struct *ctx);
 
-int (*be_board_handler)(struct pt_regs *regs, int is_fixup);
+void (*board_be_init)(void);
+int (*board_be_handler)(struct pt_regs *regs, int is_fixup);
 
 int kstack_depth_to_print = 24;
 
@@ -472,8 +473,8 @@ asmlinkage void do_be(struct pt_regs *regs)
 	if (fixup)
 		action = MIPS_BE_FIXUP;
 
-	if (be_board_handler)
-		action = be_board_handler(regs, fixup != 0);
+	if (board_be_handler)
+		action = board_be_handler(regs, fixup != 0);
 
 	switch (action) {
 	case MIPS_BE_DISCARD:
@@ -960,7 +961,8 @@ void __init trap_init(void)
 	 * by external hardware.  Therefore these two exceptions
 	 * may have board specific handlers.
 	 */
-	bus_error_init();
+	if (board_be_init)
+		board_be_init();
 
 	set_except_vector(1, handle_mod);
 	set_except_vector(2, handle_tlbl);

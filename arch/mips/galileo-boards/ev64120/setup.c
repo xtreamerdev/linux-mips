@@ -107,9 +107,6 @@ struct rtc_ops galileo_rtc_ops = {
 };
 
 
-void __init bus_error_init(void) { /* nothing */ }
-
-
 /********************************************************************
  *ev64120_setup -
  *

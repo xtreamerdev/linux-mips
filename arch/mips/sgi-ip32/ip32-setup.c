@@ -22,6 +22,7 @@
 #include <asm/ip32/mace.h>
 #include <asm/ip32/ip32_ints.h>
 #include <asm/sgialib.h>
+#include <asm/traps.h>
 
 extern struct rtc_ops ip32_rtc_ops;
 extern u32 cc_interval;
@@ -93,6 +94,7 @@ void __init ip32_setup(void)
 	ip32_reboot_setup();
 
 	rtc_ops = &ip32_rtc_ops;
+	board_be_init = ip32_be_init;
 	board_time_init = ip32_time_init;
 
 	crime_init ();

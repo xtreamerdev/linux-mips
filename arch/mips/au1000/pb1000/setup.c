@@ -75,8 +75,6 @@ extern void au1000_power_off(void);
 extern struct resource ioport_resource;
 extern struct resource iomem_resource;
 
-void __init bus_error_init(void) { /* nothing */ }
-
 void __init au1x00_setup(void)
 {
 	char *argptr;

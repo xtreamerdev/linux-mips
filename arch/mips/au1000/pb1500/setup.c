@@ -83,8 +83,6 @@ static phys_t pb1500_fixup_bigphys_addr(phys_t phys_addr, phys_t size);
 #endif
 
 
-void __init bus_error_init(void) { /* nothing */ }
-
 void __init au1x00_setup(void)
 {
 	char *argptr;

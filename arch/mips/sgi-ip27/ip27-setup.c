@@ -29,6 +29,7 @@
 #include <asm/pci/bridge.h>
 #include <asm/paccess.h>
 #include <asm/sn/sn0/ip27.h>
+#include <asm/traps.h>
 
 /* Check against user dumbness.  */
 #ifdef CONFIG_VT
@@ -312,5 +313,7 @@ void __init ip27_setup(void)
 	per_cpu_init();
 
 	set_io_port_base(IO_BASE);
+
+	board_be_init = ip27_be_init;
 	board_time_init = ip27_time_init;
 }

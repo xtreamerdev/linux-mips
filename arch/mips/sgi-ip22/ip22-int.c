@@ -266,7 +266,7 @@ void indy_local1_irqdispatch(struct pt_regs *regs)
 	return;
 }
 
-extern void be_ip22_interrupt(int irq, struct pt_regs *regs);
+extern void ip22_be_interrupt(int irq, struct pt_regs *regs);
 
 void indy_buserror_irq(struct pt_regs *regs)
 {
@@ -275,7 +275,7 @@ void indy_buserror_irq(struct pt_regs *regs)
 
 	irq_enter(cpu, irq);
 	kstat.irqs[cpu][irq]++;
-	be_ip22_interrupt(irq, regs);
+	ip22_be_interrupt(irq, regs);
 	irq_exit(cpu, irq);
 }
 
