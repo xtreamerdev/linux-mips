@@ -584,9 +584,7 @@ struct proto {
 	/* Keeping track of sk's, looking them up, and port selection methods. */
 	void			(*hash)(struct sock *sk);
 	void			(*unhash)(struct sock *sk);
-	void			(*rehash)(struct sock *sk);
-	unsigned short		(*good_socknum)(void);
-	int			(*verify_bind)(struct sock *sk, unsigned short snum);
+	int			(*get_port)(struct sock *sk, unsigned short snum);
 
 	unsigned short		max_header;
 	unsigned long		retransmits;

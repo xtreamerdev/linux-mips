@@ -5,7 +5,7 @@
  *
  *		PF_INET protocol family socket handler.
  *
- * Version:	$Id: af_inet.c,v 1.87.2.1 1999/05/29 04:32:01 davem Exp $
+ * Version:	$Id: af_inet.c,v 1.87.2.2 1999/06/20 20:14:39 davem Exp $
  *
  * Authors:	Ross Biro, <bir7@leland.Stanford.Edu>
  *		Fred N. van Kempen, <waltje@uWalt.NL.Mugnet.ORG>
@@ -262,8 +262,7 @@ static int inet_autobind(struct sock *sk)
 {
 	/* We may need to bind the socket. */
 	if (sk->num == 0) {
-		sk->num = sk->prot->good_socknum();
-		if (sk->num == 0) 
+		if (sk->prot->get_port(sk, 0) != 0)
 			return(-EAGAIN);
 		sk->sport = htons(sk->num);
 		sk->prot->hash(sk);
@@ -279,28 +278,38 @@ static int inet_autobind(struct sock *sk)
 int inet_listen(struct socket *sock, int backlog)
 {
 	struct sock *sk = sock->sk;
+	unsigned char old_state;
 
 	if (sock->state != SS_UNCONNECTED || sock->type != SOCK_STREAM)
 		return(-EINVAL);
 
-	if (inet_autobind(sk) != 0)
-		return -EAGAIN;
-
-	/* We might as well re use these. */ 
 	if ((unsigned) backlog == 0)	/* BSDism */
 		backlog = 1;
 	if ((unsigned) backlog > SOMAXCONN)
 		backlog = SOMAXCONN;
 	sk->max_ack_backlog = backlog;
-	if (sk->state != TCP_LISTEN) {
-		sk->ack_backlog = 0;
+
+	/* Really, if the socket is already in listen state
+	 * we can only allow the backlog to be adjusted.
+	 */
+	old_state = sk->state;
+	if (old_state != TCP_LISTEN) {
 		sk->state = TCP_LISTEN;
+		sk->ack_backlog = 0;
+		if (sk->num == 0) {
+			if (sk->prot->get_port(sk, 0) != 0) {
+				sk->state = old_state;
+				return -EAGAIN;
+			}
+			sk->sport = htons(sk->num);
+			add_to_prot_sklist(sk);
+		}
+
 		dst_release(xchg(&sk->dst_cache, NULL));
-		sk->prot->rehash(sk);
-		add_to_prot_sklist(sk);
+		sk->prot->hash(sk);
+		sk->socket->flags |= SO_ACCEPTCON;
 	}
-	sk->socket->flags |= SO_ACCEPTCON;
-	return(0);
+	return 0;
 }
 
 /*
@@ -528,20 +537,17 @@ static int inet_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len)
 	if((snum >= PORT_MASQ_BEGIN) && (snum <= PORT_MASQ_END))
 		return -EADDRINUSE;
 #endif		 
-	if (snum == 0) 
-		snum = sk->prot->good_socknum();
-	if (snum < PROT_SOCK && !capable(CAP_NET_BIND_SERVICE))
+	if (snum && snum < PROT_SOCK && !capable(CAP_NET_BIND_SERVICE))
 		return(-EACCES);
 	
 	/* Make sure we are allowed to bind here. */
-	if(sk->prot->verify_bind(sk, snum))
+	if (sk->prot->get_port(sk, snum) != 0)
 		return -EADDRINUSE;
 
-	sk->num = snum;
-	sk->sport = htons(snum);
+	sk->sport = htons(sk->num);
 	sk->daddr = 0;
 	sk->dport = 0;
-	sk->prot->rehash(sk);
+	sk->prot->hash(sk);
 	add_to_prot_sklist(sk);
 	dst_release(sk->dst_cache);
 	sk->dst_cache=NULL;
@@ -611,11 +617,13 @@ int inet_stream_connect(struct socket *sock, struct sockaddr * uaddr,
 		if (flags & O_NONBLOCK)
 			return -EALREADY;
 	} else {
+		if (sk->prot->connect == NULL) 
+			return(-EOPNOTSUPP);
+
 		/* We may need to bind the socket. */
 		if (inet_autobind(sk) != 0)
 			return(-EAGAIN);
-		if (sk->prot->connect == NULL) 
-			return(-EOPNOTSUPP);
+
 		err = sk->prot->connect(sk, uaddr, addr_len);
 		/* Note: there is a theoretical race here when an wake up
 		   occurred before inet_wait_for_connect is entered. In 2.3
@@ -789,7 +797,7 @@ int inet_sendmsg(struct socket *sock, struct msghdr *msg, int size,
 		return sock_error(sk);
 
 	/* We may need to bind the socket. */
-	if(inet_autobind(sk) != 0)
+	if (inet_autobind(sk) != 0)
 		return -EAGAIN;
 
 	return sk->prot->sendmsg(sk, msg, size);
