@@ -4,6 +4,7 @@
  * Heavily inspired by the Alpha implementation
  */
 #include <linux/config.h>
+#include <linux/errno.h>
 #include <linux/module.h>
 #include <linux/sched.h>
 
@@ -49,10 +50,6 @@ void __up_wakeup(struct semaphore *sem)
 
 EXPORT_SYMBOL(__up_wakeup);
 
-#define sem_read(a) ((a)->counter)
-#define sem_inc(a) (((a)->counter)++)
-#define sem_dec(a) (((a)->counter)--)
-
 #ifdef CONFIG_CPU_HAS_LLSC
 
 static inline int waking_non_zero(struct semaphore *sem)
@@ -77,14 +74,16 @@ static inline int waking_non_zero(struct semaphore *sem)
 static inline int waking_non_zero(struct semaphore *sem)
 {
 	unsigned long flags;
-	int ret = 0;
+	int waking, ret = 0;
 
-	local_irq_save(flags);
-	if (sem_read(&sem->waking) > 0) {
-		sem_dec(&sem->waking);
+	spin_lock_irqsave(&semaphore_lock, flags);
+	waking = atomic_read(&sem->waking);
+	if (waking > 0) {
+		atomic_set(&sem->waking, waking - 1);
 		ret = 1;
 	}
-	local_irq_restore(flags);
+	spin_unlock_irqrestore(&semaphore_lock, flags);
+
 	return ret;
 }
 
@@ -109,8 +108,8 @@ void __down(struct semaphore * sem)
 {
 	struct task_struct *tsk = current;
 	wait_queue_t wait;
-	init_waitqueue_entry(&wait, tsk);
 
+	init_waitqueue_entry(&wait, tsk);
 	__set_current_state(TASK_UNINTERRUPTIBLE);
 	add_wait_queue_exclusive(&sem->wait, &wait);
 
@@ -207,18 +206,22 @@ waking_non_zero_interruptible(struct semaphore *sem, struct task_struct *tsk)
 static inline int waking_non_zero_interruptible(struct semaphore *sem,
 						struct task_struct *tsk)
 {
-	int ret = 0;
+	int waking, pending, ret = 0;
 	unsigned long flags;
 
-	local_irq_save(flags);
-	if (sem_read(&sem->waking) > 0) {
-		sem_dec(&sem->waking);
+	pending = signal_pending(tsk);
+
+	spin_lock_irqsave(&semaphore_lock, flags);
+	waking = atomic_read(&sem->waking);
+	if (waking > 0) {
+		atomic_set(&sem->waking, waking - 1);
 		ret = 1;
-	} else if (signal_pending(tsk)) {
-		sem_inc(&sem->count);
+	} else if (pending) {
+		atomic_set(&sem->count, atomic_read(&sem->count) + 1);
 		ret = -EINTR;
 	}
-	local_irq_restore(flags);
+	spin_unlock_irqrestore(&semaphore_lock, flags);
+
 	return ret;
 }
 
@@ -226,11 +229,11 @@ static inline int waking_non_zero_interruptible(struct semaphore *sem,
 
 int __down_interruptible(struct semaphore * sem)
 {
-	int ret = 0;
 	struct task_struct *tsk = current;
 	wait_queue_t wait;
-	init_waitqueue_entry(&wait, tsk);
+	int ret = 0;
 
+	init_waitqueue_entry(&wait, tsk);
 	__set_current_state(TASK_INTERRUPTIBLE);
 	add_wait_queue_exclusive(&sem->wait, &wait);
 
