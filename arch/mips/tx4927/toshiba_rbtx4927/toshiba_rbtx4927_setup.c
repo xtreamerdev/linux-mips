@@ -1057,7 +1057,6 @@ void __init toshiba_rbtx4927_setup(void)
 #endif
 
 	tx4927_pci_setup();
-#endif
 
 
 	{
@@ -1071,6 +1070,7 @@ void __init toshiba_rbtx4927_setup(void)
 			printk("backplane board NOT installed\n");
 		}
 	}
+#endif
 
 
 	/* this is only done if backplane board installed, so must wait for pci */
