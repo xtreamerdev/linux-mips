@@ -1,7 +1,7 @@
 /*
  *
  * BRIEF MODULE DESCRIPTION
- *	Alchemy Db1000 board setup.
+ *	Alchemy Db1x00 board setup.
  *
  * Copyright 2000 MontaVista Software Inc.
  * Author: MontaVista Software, Inc.
@@ -72,6 +72,8 @@ extern struct resource iomem_resource;
 extern phys_t (*fixup_bigphys_addr)(phys_t phys_addr, phys_t size);
 static phys_t db_fixup_bigphys_addr(phys_t phys_addr, phys_t size);
 #endif
+
+static BCSR * const bcsr = (BCSR *)0xAE000000;
 
 void __init au1x00_setup(void)
 {
@@ -185,6 +187,16 @@ void __init au1x00_setup(void)
 
 #ifdef CONFIG_BLK_DEV_IDE
 	ide_ops = &std_ide_ops;
+#endif
+
+#if defined(CONFIG_IRDA) && (defined(CONFIG_SOC_AU1000) || defined(CONFIG_SOC_AU1000))
+	/* set IRFIRSEL instead of GPIO15 */
+	pin_func = au_readl(SYS_PINFUNC) | (u32)((1<<8));
+	au_writel(pin_func, SYS_PINFUNC);
+	/* power off until the driver is in use */
+	bcsr->resets &= ~BCSR_RESETS_IRDA_MODE_MASK;
+	bcsr->resets |= BCSR_RESETS_IRDA_MODE_OFF;
+	au_sync();
 #endif
 
 #if 0

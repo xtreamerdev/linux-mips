@@ -45,6 +45,7 @@ typedef volatile struct
 
 } BCSR;
 
+
 /*
  * Register/mask bit definitions for the BCSRs
  */
@@ -75,6 +76,12 @@ typedef volatile struct
 #define BCSR_RESETS_PHY0		0x0001
 #define BCSR_RESETS_PHY1		0x0002
 #define BCSR_RESETS_DC			0x0004
+#define BCSR_RESETS_FIR_SEL		0x2000
+#define BCSR_RESETS_IRDA_MODE_MASK	0xC000
+#define BCSR_RESETS_IRDA_MODE_FULL	0x0000
+#define BCSR_RESETS_IRDA_MODE_OFF	0x4000
+#define BCSR_RESETS_IRDA_MODE_2_3	0x8000
+#define BCSR_RESETS_IRDA_MODE_1_3	0xC000
 
 #define BCSR_PCMCIA_PC0VPP		0x0003
 #define BCSR_PCMCIA_PC0VCC		0x000C

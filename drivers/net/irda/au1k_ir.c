@@ -48,6 +48,10 @@
 #include <asm/au1000.h>
 #if defined(CONFIG_MIPS_PB1000) || defined(CONFIG_MIPS_PB1100)
 #include <asm/pb1000.h>
+#elif defined(CONFIG_MIPS_DB1000) || defined(CONFIG_MIPS_DB1100)
+#include <asm/db1x00.h>
+#else 
+#error au1k_ir: unsupported board
 #endif
 
 #include <net/irda/irda.h>
@@ -73,9 +77,11 @@ static void dma_free(void *, size_t);
 static int qos_mtt_bits = 0x07;  /* 1 ms or more */
 static struct net_device *ir_devs[NUM_IR_IFF];
 static char version[] __devinitdata =
-    "au1k_ircc:1.1 ppopov@mvista.com\n";
+    "au1k_ircc:1.2 ppopov@mvista.com\n";
 
 #define RUN_AT(x) (jiffies + (x))
+
+static BCSR * const bcsr = (BCSR *)0xAE000000;
 
 static spinlock_t ir_lock = SPIN_LOCK_UNLOCKED;
 
@@ -296,6 +302,14 @@ static int au1k_irda_net_init(struct net_device *dev)
 		aup->tx_ring[i]->flags = 0;
 		aup->tx_db_inuse[i] = pDB;
 	}
+
+#if defined(CONFIG_MIPS_DB1000) || defined(CONFIG_MIPS_DB1100)
+	/* power on */
+	bcsr->resets &= ~BCSR_RESETS_IRDA_MODE_MASK;
+	bcsr->resets |= BCSR_RESETS_IRDA_MODE_FULL;
+	au_sync();
+#endif
+
 	return 0;
 
 out:
@@ -755,18 +769,14 @@ au1k_irda_set_speed(struct net_device *dev, int speed)
 
 	if (speed == 4000000) {
 #if defined(CONFIG_MIPS_DB1000) || defined(CONFIG_MIPS_DB1100)
-		irda_resets = au_readl(0xae00000c); /* irda_resets register */
-		irda_resets = (irda_resets | (1<<13)) & ~(3<<14);
-		au_writel(irda_resets, 0xae00000c);
+		bcsr->resets |= BCSR_RESETS_FIR_SEL;
 #else /* Pb1000 and Pb1100 */
 		writel(1<<13, CPLD_AUX1);
 #endif
 	}
 	else {
 #if defined(CONFIG_MIPS_DB1000) || defined(CONFIG_MIPS_DB1100)
-		irda_resets = au_readl(0xae00000c); /* irda_resets register */
-		irda_resets = irda_resets & ~((1<<13) | (3<<14));
-		au_writel(irda_resets, 0xae00000c);
+		bcsr->resets &= ~BCSR_RESETS_FIR_SEL;
 #else /* Pb1000 and Pb1100 */
 		writel(readl(CPLD_AUX1) & ~(1<<13), CPLD_AUX1);
 #endif
