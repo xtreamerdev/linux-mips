@@ -67,6 +67,7 @@ au1000_ss-objs-$(CONFIG_MIPS_PB1500)		+= au1000_pb1x00.o
 au1000_ss-objs-$(CONFIG_MIPS_DB1000)		+= au1000_db1x00.o
 au1000_ss-objs-$(CONFIG_MIPS_DB1100)		+= au1000_db1x00.o
 au1000_ss-objs-$(CONFIG_MIPS_DB1500)		+= au1000_db1x00.o
+au1000_ss-objs-$(CONFIG_MIPS_DB1550)		+= au1000_db1x00.o
 au1000_ss-objs-$(CONFIG_MIPS_PB1550)		+= au1000_pb1550.o
 au1000_ss-objs-$(CONFIG_MIPS_HYDROGEN3)		+= au1000_hydrogen3.o
 au1000_ss-objs-$(CONFIG_MIPS_XXS1500) 		+= au1000_xxs1500.o
