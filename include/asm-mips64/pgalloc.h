@@ -87,14 +87,14 @@ static inline void free_pgd_fast(pgd_t *pgd)
 
 static inline void free_pgd_slow(pgd_t *pgd)
 {
-	free_pages((unsigned long)pgd, 1);
+	free_pages((unsigned long)pgd, PGD_ORDER);
 }
 
 static inline pte_t *pte_alloc_one(struct mm_struct *mm, unsigned long address)
 {
 	pte_t *pte;
 
-	pte = (pte_t *) __get_free_page(GFP_KERNEL);
+	pte = (pte_t *) __get_free_pages(GFP_KERNEL, PTE_ORDER);
 	if (pte)
 		clear_page(pte);
 	return pte;
@@ -135,14 +135,14 @@ static inline void free_pte_fast(pte_t *pte)
 
 static inline void free_pte_slow(pte_t *pte)
 {
-	free_pages((unsigned long)pte, 0);
+	free_pages((unsigned long)pte, PTE_ORDER);
 }
 
 static inline pmd_t *pmd_alloc_one(struct mm_struct *mm, unsigned long address)
 {
 	pmd_t *pmd;
 
-	pmd = (pmd_t *) __get_free_pages(GFP_KERNEL, 1);
+	pmd = (pmd_t *) __get_free_pages(GFP_KERNEL, PMD_ORDER);
 	if (pmd)
 		pmd_init((unsigned long)pmd, (unsigned long)invalid_pte_table);
 	return pmd;
@@ -185,7 +185,7 @@ static inline void free_pmd_fast(pmd_t *pmd)
 
 static inline void free_pmd_slow(pmd_t *pmd)
 {
-	free_pages((unsigned long)pmd, 1);
+	free_pages((unsigned long)pmd, PMD_ORDER);
 }
 
 #define pte_free(pte)           free_pte_fast(pte)
