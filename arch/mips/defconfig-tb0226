@@ -318,6 +318,7 @@ CONFIG_SCSI_CONSTANTS=y
 # CONFIG_SCSI_DC390T is not set
 # CONFIG_SCSI_T128 is not set
 # CONFIG_SCSI_U14_34F is not set
+# CONFIG_SCSI_NSP32 is not set
 # CONFIG_SCSI_DEBUG is not set
 
 #
@@ -362,6 +363,7 @@ CONFIG_NET_ETHERNET=y
 # CONFIG_NET_ISA is not set
 CONFIG_NET_PCI=y
 # CONFIG_PCNET32 is not set
+# CONFIG_AMD8111_ETH is not set
 # CONFIG_ADAPTEC_STARFIRE is not set
 # CONFIG_APRICOT is not set
 # CONFIG_CS89x0 is not set
@@ -405,6 +407,7 @@ CONFIG_EEPRO100=y
 # CONFIG_NS83820 is not set
 # CONFIG_HAMACHI is not set
 # CONFIG_YELLOWFIN is not set
+# CONFIG_R8169 is not set
 # CONFIG_SK98LIN is not set
 # CONFIG_TIGON3 is not set
 # CONFIG_FDDI is not set
@@ -491,6 +494,11 @@ CONFIG_UNIX98_PTY_COUNT=256
 # Input core support is needed for joysticks
 #
 # CONFIG_QIC02_TAPE is not set
+# CONFIG_IPMI_HANDLER is not set
+# CONFIG_IPMI_PANIC_EVENT is not set
+# CONFIG_IPMI_DEVICE_INTERFACE is not set
+# CONFIG_IPMI_KCS is not set
+# CONFIG_IPMI_WATCHDOG is not set
 
 #
 # Watchdog Cards
@@ -509,6 +517,7 @@ CONFIG_WATCHDOG=y
 # CONFIG_MIXCOMWD is not set
 # CONFIG_60XX_WDT is not set
 # CONFIG_SC1200_WDT is not set
+# CONFIG_SCx200_WDT is not set
 # CONFIG_SOFT_WATCHDOG is not set
 # CONFIG_W83877F_WDT is not set
 # CONFIG_WDT is not set
@@ -516,6 +525,7 @@ CONFIG_WATCHDOG=y
 # CONFIG_MACHZ_WDT is not set
 # CONFIG_INDYDOG is not set
 # CONFIG_AMD7XX_TCO is not set
+# CONFIG_SCx200_GPIO is not set
 # CONFIG_AMD_PM768 is not set
 # CONFIG_NVRAM is not set
 # CONFIG_RTC is not set
@@ -664,7 +674,6 @@ CONFIG_USB=y
 #
 CONFIG_USB_DEVICEFS=y
 CONFIG_USB_BANDWIDTH=y
-CONFIG_USB_LONG_TIMEOUT=y
 
 #
 # USB Host Controller Drivers
@@ -708,6 +717,7 @@ CONFIG_USB_STORAGE=y
 # CONFIG_USB_MOUSE is not set
 # CONFIG_USB_AIPTEK is not set
 # CONFIG_USB_WACOM is not set
+# CONFIG_USB_POWERMATE is not set
 
 #
 # USB Imaging devices

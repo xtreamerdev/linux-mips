@@ -138,6 +138,7 @@ CONFIG_MTD=y
 # CONFIG_MTD_PARTITIONS is not set
 # CONFIG_MTD_CONCAT is not set
 # CONFIG_MTD_REDBOOT_PARTS is not set
+# CONFIG_MTD_CMDLINE_PARTS is not set
 
 #
 # User Modules And Translation Layers
@@ -160,6 +161,7 @@ CONFIG_MTD_CFI_NOSWAP=y
 # CONFIG_MTD_CFI_GEOMETRY is not set
 CONFIG_MTD_CFI_INTELEXT=y
 # CONFIG_MTD_CFI_AMDSTD is not set
+# CONFIG_MTD_CFI_STAA is not set
 # CONFIG_MTD_RAM is not set
 # CONFIG_MTD_ROM is not set
 # CONFIG_MTD_ABSENT is not set
@@ -183,6 +185,7 @@ CONFIG_MTD_PHYSMAP_BUSWIDTH=4
 # CONFIG_MTD_OCELOT is not set
 # CONFIG_MTD_LASAT is not set
 # CONFIG_MTD_PCI is not set
+# CONFIG_MTD_PCMCIA is not set
 
 #
 # Self-contained MTD device drivers
@@ -499,6 +502,11 @@ CONFIG_PSMOUSE=y
 # Input core support is needed for joysticks
 #
 # CONFIG_QIC02_TAPE is not set
+# CONFIG_IPMI_HANDLER is not set
+# CONFIG_IPMI_PANIC_EVENT is not set
+# CONFIG_IPMI_DEVICE_INTERFACE is not set
+# CONFIG_IPMI_KCS is not set
+# CONFIG_IPMI_WATCHDOG is not set
 
 #
 # Watchdog Cards
