@@ -203,6 +203,7 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
         "$CONFIG_SIBYTE_STANDALONE" != "y" ]; then
       define_bool CONFIG_SMP_CAPABLE y
    fi
+   define_bool CONFIG_MIPS_RTC y
 fi
 bool 'Support for SNI RM200 PCI' CONFIG_SNI_RM200_PCI
 bool 'Support for TANBAC TB0226 (Mbase)' CONFIG_TANBAC_TB0226
