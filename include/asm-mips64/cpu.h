@@ -168,8 +168,11 @@
 #define CPU_AU1100		52
 #define CPU_SR71000		53
 #define CPU_RM9000		54
-#define CPU_VR4133		55
-#define CPU_LAST		55
+#define CPU_25KF		55
+#define CPU_VR4133		56
+#define CPU_AU1550		57
+#define CPU_24K			58
+#define CPU_LAST		58
 
 /*
  * ISA Level encodings
