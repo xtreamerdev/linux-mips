@@ -55,6 +55,7 @@ void (*_show_regs)(struct pt_regs *);
 extern void ld_mmu_r4xx0(void);
 extern void ld_mmu_andes(void);
 extern void ld_mmu_sb1(void);
+extern void sb1_tlb_init(void);
 
 void __init load_mmu(void)
 {
@@ -92,6 +93,7 @@ void __init load_mmu(void)
 	case CPU_SB1:
 		printk("Loading SB1 MMU routines.\n");
 		ld_mmu_sb1();
+		sb1_tlb_init();
 		break;
 #endif
 
