@@ -1096,6 +1096,14 @@ extern au1xxx_irq_map_t au1xxx_irq_map[];
   #define AC97C_RS              (1<<1)
   #define AC97C_CE              (1<<0)
 
+ 
+/* Secure Digital (SD) Controller */
+#define SD0_XMIT_FIFO	0xB0600000
+#define SD0_RECV_FIFO	0xB0600004
+#define SD1_XMIT_FIFO	0xB0680000
+#define SD1_RECV_FIFO	0xB0680004
+
+
 #if defined (CONFIG_SOC_AU1500) || defined(CONFIG_SOC_AU1550)
 /* Au1500 PCI Controller */
 #define Au1500_CFG_BASE           0xB4005000 // virtual, kseg0 addr
