@@ -21,7 +21,7 @@ struct semaphore {
 	atomic_t count;
 	atomic_t waking;
 	struct wait_queue *wait;
-};
+} __attribute__((__aligned__(8)));
 
 #define MUTEX ((struct semaphore) \
  { ATOMIC_INIT(1), ATOMIC_INIT(0), NULL })
