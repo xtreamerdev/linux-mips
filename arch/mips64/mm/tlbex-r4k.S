@@ -10,7 +10,9 @@
 #include <linux/config.h>
 #include <linux/init.h>
 #include <linux/threads.h>
+
 #include <asm/asm.h>
+#include <asm/hazards.h>
 #include <asm/regdef.h>
 #include <asm/mipsregs.h>
 #include <asm/pgtable.h>
@@ -73,7 +75,7 @@
 	 * Determine that fault address is within vmalloc range.
 	 */
 	dla	\tmp, ekptbl
-	slt	\tmp, \ptr, \tmp
+	sltu	\tmp, \ptr, \tmp
 	beqz	\tmp, \not_vmalloc		# not vmalloc
 	 nop
 	.endm
@@ -144,9 +146,11 @@ LEAF(handle_vec1_r4k)
 	ld	k0, 0(k1)			# get even pte
 	ld	k1, 8(k1)			# get odd pte
 	PTE_RELOAD k0 k1
+	rm9000_tlb_hazard
 	b	1f
 	 tlbwr
 1:	nop
+	rm9000_tlb_hazard
 	eret
 
 9:						# handle the vmalloc range
@@ -154,9 +158,11 @@ LEAF(handle_vec1_r4k)
 	ld	k0, 0(k1)			# get even pte
 	ld	k1, 8(k1)			# get odd pte
 	PTE_RELOAD k0 k1
+	rm9000_tlb_hazard
 	b	1f
 	 tlbwr
 1:	nop
+	rm9000_tlb_hazard
 	eret
 END(handle_vec1_r4k)
 
@@ -184,8 +190,10 @@ LEAF(handle_vec1_r10k)
 	ld	k0, 0(k1)			# get even pte
 	ld	k1, 8(k1)			# get odd pte
 	PTE_RELOAD k0 k1
+	rm9000_tlb_hazard
 	nop
 	tlbwr
+	rm9000_tlb_hazard
 	eret
 
 9:						# handle the vmalloc range
@@ -193,8 +201,10 @@ LEAF(handle_vec1_r10k)
 	ld	k0, 0(k1)			# get even pte
 	ld	k1, 8(k1)			# get odd pte
 	PTE_RELOAD k0 k1
+	rm9000_tlb_hazard
 	nop
 	tlbwr
+	rm9000_tlb_hazard
 	eret
 END(handle_vec1_r10k)
 

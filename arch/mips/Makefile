@@ -97,6 +97,10 @@ ifdef CONFIG_CPU_RM7000
 GCCFLAGS	+= $(call check_gcc, -march=rm7000, -mcpu=r5000) \
 		   -mips2 -Wa,--trap
 endif
+ifdef CONFIG_CPU_RM9000
+GCCFLAGS	+= $(call check_gcc, -march=rm9000, -mcpu=r5000) \
+		   -mips2 -Wa,--trap
+endif
 ifdef CONFIG_CPU_SB1
 GCCFLAGS	+= $(call check_gcc, -mcpu=sb1, -mcpu=r5000) \
 		   -mips2 -Wa,--trap

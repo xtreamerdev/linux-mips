@@ -72,6 +72,7 @@ dep_bool 'Support for MIPS SEAD board (EXPERIMENTAL)' CONFIG_MIPS_SEAD $CONFIG_E
 bool 'Support for Momentum Ocelot board' CONFIG_MOMENCO_OCELOT
 bool 'Support for Momentum Ocelot-G board' CONFIG_MOMENCO_OCELOT_G
 bool 'Support for Momentum Ocelot-C and -CS boards' CONFIG_MOMENCO_OCELOT_C
+
 dep_bool 'Support for NEC DDB Vrc-5074 (EXPERIMENTAL)' CONFIG_DDB5074 $CONFIG_EXPERIMENTAL
 bool 'Support for NEC DDB Vrc-5476' CONFIG_DDB5476
 bool 'Support for NEC DDB Vrc-5477' CONFIG_DDB5477
@@ -225,7 +226,6 @@ define_bool CONFIG_RWSEM_XCHGADD_ALGORITHM n
 #
 # Select some configuration options automatically based on user selections.
 #
-
 if [ "$CONFIG_ACER_PICA_61" = "y" ]; then
    define_bool CONFIG_ARC32 y
    define_bool CONFIG_I8259 y
@@ -380,7 +380,6 @@ if [ "$CONFIG_MIPS_EV64120" = "y" ]; then
    define_bool CONFIG_OLD_TIME_C y
 fi
 if [ "$CONFIG_MIPS_EV96100" = "y" ]; then
-   define_bool CONFIG_BOARD_SCACHE y
    define_bool CONFIG_PCI y
    define_bool CONFIG_MIPS_GT64120 y
    define_bool CONFIG_MIPS_GT96100 y
@@ -482,7 +481,6 @@ if [ "$CONFIG_MIPS_SEAD" = "y" ]; then
    define_bool CONFIG_PCI n
 fi
 if [ "$CONFIG_MOMENCO_OCELOT" = "y" ]; then
-   define_bool CONFIG_BOARD_SCACHE y
    define_bool CONFIG_PCI y
    define_bool CONFIG_SYSCLK_100 y
    define_bool CONFIG_SWAP_IO_SPACE_W y
@@ -503,6 +501,7 @@ if [ "$CONFIG_MOMENCO_OCELOT_C" = "y" ]; then
    define_bool CONFIG_SWAP_IO_SPACE y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_NEW_TIME_C y
+   define_bool CONFIG_BOOT_ELF32 y
 fi
 if [ "$CONFIG_DDB5074" = "y" ]; then
    define_bool CONFIG_HAVE_STD_PC_SERIAL_PORT y
@@ -697,6 +696,7 @@ choice 'CPU type' \
 	 R8000	CONFIG_CPU_R8000 \
 	 R10000	CONFIG_CPU_R10000 \
 	 RM7000	CONFIG_CPU_RM7000 \
+	 RM9000	CONFIG_CPU_RM9000 \
 	 SB1	CONFIG_CPU_SB1" R4x00
 
 if [ "$CONFIG_SMP_CAPABLE" = "y" ]; then
@@ -714,7 +714,14 @@ if [ "$CONFIG_CPU_MIPS64" = "y" ]; then
 fi
 
 if [ "$CONFIG_CPU_RM7000" = "y" ]; then
+   define_bool CONFIG_BOARD_SCACHE y
    define_bool CONFIG_CPU_HAS_PREFETCH y
+   define_bool CONFIG_RM7000_CPU_SCACHE y
+fi
+if [ "$CONFIG_CPU_RM9000" = "y" ]; then
+   define_bool CONFIG_BOARD_SCACHE y
+   define_bool CONFIG_CPU_HAS_PREFETCH y
+   define_bool CONFIG_RM7000_CPU_SCACHE y
 fi
 
 if [ "$CONFIG_CPU_SB1" = "y" ]; then
@@ -741,6 +748,7 @@ fi
 if [ "$CONFIG_CPU_R4X00"  = "y" -o \
      "$CONFIG_CPU_R5000"  = "y" -o \
      "$CONFIG_CPU_RM7000" = "y" -o \
+     "$CONFIG_CPU_RM9000" = "y" -o \
      "$CONFIG_CPU_R10000" = "y" -o \
      "$CONFIG_CPU_SB1"    = "y" -o \
      "$CONFIG_CPU_MIPS32" = "y" -o \

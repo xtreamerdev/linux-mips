@@ -114,6 +114,14 @@ extern __inline__ int get_order(unsigned long size)
 #if defined(CONFIG_SIBYTE_SB1xxx_SOC)
 #define PAGE_OFFSET	0xa800000000000000UL
 #endif
+#if defined(CONFIG_MOMENCO_OCELOT_C)
+#define PAGE_OFFSET	0x9800000000000000UL
+#define UNCAC_BASE	0x9000000000000000UL
+#endif
+#if defined(CONFIG_MOMENCO_JAGUAR_ATX)
+#define PAGE_OFFSET	0xa800000000000000UL    /* cached, coherent writeback */
+#define UNCAC_BASE	0x9000000000000000UL    /* uncac, blocking */
+#endif
 
 #define __pa(x)		((unsigned long) (x) - PAGE_OFFSET)
 #define __va(x)		((void *)((unsigned long) (x) + PAGE_OFFSET))

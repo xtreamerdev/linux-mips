@@ -83,6 +83,12 @@ ifdef CONFIG_CPU_MIPS64
 #CFLAGS		+= -mips64	# Should be used then we get a MIPS64 compiler
 CFLAGS		+= -mcpu=r8000 -mips4
 endif
+ifdef CONFIG_CPU_RM7000
+GCCFLAGS	+= -mcpu=r8000 -mips4
+endif
+ifdef CONFIG_CPU_RM9000
+GCCFLAGS	+= -mcpu=r8000 -mips4
+endif
 
 #
 # We unconditionally build the math emulator
@@ -182,8 +188,6 @@ endif
 # Momentum Ocelot-C and -CS boards
 #
 ifdef CONFIG_MOMENCO_OCELOT_C
-# The Ocelot-C[S] setup.o must be linked early - it does the ioremap() for the
-# mips_io_port_base.
 CORE_FILES	+= arch/mips/momentum/ocelot_c/ocelot_c.o
 SUBDIRS		+= arch/mips/momentum/ocelot_c
 LOADADDR	:= 0x80100000

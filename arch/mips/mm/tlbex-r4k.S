@@ -180,9 +180,11 @@
 	PTE_SRL	k1, k1, 6			# convert to entrylo1
 	P_MTC0	k1, CP0_ENTRYLO1		# load it
 	b	1f
+	rm9000_tlb_hazard
 	tlbwr					# write random tlb entry
 1:
 	nop
+	rm9000_tlb_hazard
 	eret					# return from trap
 	END(except_vec0_r4000)
 
@@ -461,11 +463,13 @@ invalid_tlbl:
 	PTE_PRESENT(k0, k1, nopage_tlbl)
 	PTE_MAKEVALID(k0, k1)
 	PTE_RELOAD(k1, k0)
+	rm9000_tlb_hazard
 	nop
 	b	1f
 	 tlbwi
 1:
 	nop
+	rm9000_tlb_hazard
 	.set	mips3
 	eret
 	.set	mips0
@@ -487,11 +491,13 @@ nopage_tlbl:
 	PTE_WRITABLE(k0, k1, nopage_tlbs)
 	PTE_MAKEWRITE(k0, k1)
 	PTE_RELOAD(k1, k0)
+	rm9000_tlb_hazard
 	nop
 	b	1f
 	 tlbwi
 1:
 	nop
+	rm9000_tlb_hazard
 	.set	mips3
 	eret
 	.set	mips0
@@ -518,10 +524,12 @@ nopage_tlbs:
 
 	/* Now reload the entry into the tlb. */
 	PTE_RELOAD(k1, k0)
+	rm9000_tlb_hazard
 	nop
 	b	1f
 	 tlbwi
 1:
+	rm9000_tlb_hazard
 	nop
 	.set	mips3
 	eret
@@ -531,4 +539,3 @@ nopage_tlbs:
 nowrite_mod:
 	DO_FAULT(1)
 	END(handle_mod)
-
