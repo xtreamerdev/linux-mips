@@ -1039,14 +1039,16 @@ static void reset_mac(struct net_device *dev)
 	spin_lock_irqsave(&aup->lock, flags);
 	del_timer(&aup->timer);
 	hard_stop(dev);
-	#ifndef CONFIG_BCM5222_DUAL_PHY
+	#ifdef CONFIG_BCM5222_DUAL_PHY
 	if (aup->mac_id != 0) {
+	#endif
 		/* If BCM5222, we can't leave MAC0 in reset because then 
 		 * we can't access the dual phy for ETH1 */
 		*aup->enable = MAC_EN_CLOCK_ENABLE;
 		au_sync_delay(2);
 		*aup->enable = 0;
 		au_sync_delay(2);
+	#ifdef CONFIG_BCM5222_DUAL_PHY
 	}
 	#endif
 	aup->tx_full = 0;
