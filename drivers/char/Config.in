@@ -119,6 +119,12 @@ if [ "$CONFIG_SERIAL_NONSTANDARD" = "y" ]; then
       dep_bool '    DZ11 serial support' CONFIG_DZ $CONFIG_SERIAL_DEC $CONFIG_MIPS32
       dep_bool '    Z85C30 serial support' CONFIG_ZS $CONFIG_SERIAL_DEC $CONFIG_TC
    fi
+   if [ "$CONFIG_SGI_IP22" = "y" ]; then
+      bool 'SGI Zilog85C30 serial support' CONFIG_IP22_SERIAL
+      if [ "$CONFIG_IP22_SERIAL" = "y" ]; then
+	 bool '  Support for console on serial port' CONFIG_IP22_SERIAL_CONSOLE
+      fi
+   fi
 fi
 
 if [ "$CONFIG_EXPERIMENTAL" = "y" -a "$CONFIG_ZORRO" = "y" ]; then
@@ -283,6 +289,9 @@ if [ "$CONFIG_OBSOLETE" = "y" -a "$CONFIG_ALPHA_BOOK1" = "y" ]; then
 fi
 if [ "$CONFIG_MIPS" = "y" -a "$CONFIG_NEW_TIME_C" = "y" ]; then
    tristate 'Generic MIPS RTC Support' CONFIG_MIPS_RTC
+fi
+if [ "$CONFIG_SGI_IP22" = "y" ]; then
+   bool 'SGI DS1286  RTC support' CONFIG_SGI_DS1286
 fi
 
 tristate 'Double Talk PC internal speech card support' CONFIG_DTLK

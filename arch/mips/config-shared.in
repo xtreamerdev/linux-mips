@@ -495,7 +495,6 @@ if [ "$CONFIG_SGI_IP22" = "y" ]; then
    define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
    define_bool CONFIG_PC_KEYB y
-   define_bool CONFIG_SGI y
 fi
 if [ "$CONFIG_SGI_IP27" = "y" ]; then
    define_bool CONFIG_BOOT_ELF64 y
@@ -962,10 +961,6 @@ if [ "$CONFIG_SOUND" != "n" ]; then
    source drivers/sound/Config.in
 fi
 endmenu
-
-if [ "$CONFIG_SGI_IP22" = "y" ]; then
-   source drivers/sgi/Config.in
-fi
 
 source drivers/usb/Config.in
 

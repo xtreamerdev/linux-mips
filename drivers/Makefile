@@ -6,7 +6,7 @@
 #
 
 
-mod-subdirs :=	dio hil mtd sbus video macintosh usb input telephony sgi ide \
+mod-subdirs :=	dio hil mtd sbus video macintosh usb input telephony ide \
 		message/i2o message/fusion scsi md ieee1394 pnp isdn atm \
 		fc4 net/hamradio i2c acpi bluetooth
 
@@ -30,7 +30,6 @@ subdir-$(CONFIG_PPC32)		+= macintosh
 subdir-$(CONFIG_USB)		+= usb
 subdir-$(CONFIG_INPUT)		+= input
 subdir-$(CONFIG_PHONE)		+= telephony
-subdir-$(CONFIG_SGI)		+= sgi
 subdir-$(CONFIG_IDE)		+= ide
 subdir-$(CONFIG_SCSI)		+= scsi
 subdir-$(CONFIG_I2O)		+= message/i2o
