@@ -12,6 +12,7 @@
 #include <linux/types.h>
 #include <linux/sched.h>
 #include <linux/mm.h>
+#include <linux/signal.h>
 
 #include <asm/ptrace.h>
 #include <asm/processor.h>
@@ -36,6 +37,9 @@ linefeed;
 void output_ptreg_defines(void)
 {
 	text("/* MIPS pt_regs offsets. */");
+	offset("#define PT_SCRATCH0 ", struct pt_regs, pad0[4]);
+	offset("#define PT_SCRATCH1 ", struct pt_regs, pad0[5]);
+
 	offset("#define PT_R0     ", struct pt_regs, regs[0]);
 	offset("#define PT_R1     ", struct pt_regs, regs[1]);
 	offset("#define PT_R2     ", struct pt_regs, regs[2]);
