@@ -280,7 +280,7 @@ unsigned long cal_r4koff(void)
 			cpu_speed = count * 2;
 		}
 #else
-		cpu_speed = (au_readl(SYS_CPUPLL) & 0x0000007f) * 
+		cpu_speed = (au_readl(SYS_CPUPLL) & 0x0000003f) * 
 			AU1000_SRC_CLK;
 		count = cpu_speed / 2;
 #endif
@@ -290,7 +290,7 @@ unsigned long cal_r4koff(void)
 		 * isn't one and grab the processor speed from the PLL.
 		 * NOTE: some old silicon doesn't allow reading the PLL.
 		 */
-		cpu_speed = (au_readl(SYS_CPUPLL) & 0x0000007f) * AU1000_SRC_CLK;
+		cpu_speed = (au_readl(SYS_CPUPLL) & 0x0000003f) * AU1000_SRC_CLK;
 		count = cpu_speed / 2;
 		no_au1xxx_32khz = 1;
 	}
