@@ -62,7 +62,7 @@ extern void r4k_tlb_init(void);
 
 void __init load_mmu(void)
 {
-	if (mips_cpu.options & MIPS_CPU_4KTLB) {
+	if (current_cpu_data.options & MIPS_CPU_4KTLB) {
 #if defined (CONFIG_CPU_R4300)						\
     || defined (CONFIG_CPU_R4X00)					\
     || defined (CONFIG_CPU_R5000)					\
@@ -86,7 +86,7 @@ void __init load_mmu(void)
 		r4k_tlb_init();
 #endif
 
-	} else switch(mips_cpu.cputype) {
+	} else switch(current_cpu_data.cputype) {
 #ifdef CONFIG_CPU_R10000
 	case CPU_R10000:
 	case CPU_R12000:

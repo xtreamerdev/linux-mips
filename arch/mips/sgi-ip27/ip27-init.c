@@ -423,6 +423,7 @@ void __init start_secondary(void)
 	extern atomic_t smp_commenced;
 
 	CPUMASK_CLRB(boot_barrier, getcpuid());	/* needs atomicity */
+	cpu_probe();
 	per_cpu_init();
 	per_cpu_trap_init();
 #if 0
