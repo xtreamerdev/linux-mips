@@ -36,6 +36,12 @@ extern pte_t *kmap_pte;
 extern pgprot_t kmap_prot;
 extern pte_t *pkmap_page_table;
 
+/* This gets set in {srmmu,sun4c}_paging_init() */
+extern unsigned long fix_kmap_begin;
+
+/* Only used and set with srmmu? */
+extern unsigned long pkmap_base;
+
 extern void kmap_init(void) __init;
 
 /*
@@ -45,9 +51,9 @@ extern void kmap_init(void) __init;
  */
 #define LAST_PKMAP 1024
 
-#define LAST_PKMAP_MASK (LAST_PKMAP-1)
-#define PKMAP_NR(virt)  ((virt-PKMAP_BASE) >> PAGE_SHIFT)
-#define PKMAP_ADDR(nr)  (PKMAP_BASE + ((nr) << PAGE_SHIFT))
+#define LAST_PKMAP_MASK (LAST_PKMAP - 1)
+#define PKMAP_NR(virt)  ((virt - pkmap_base) >> PAGE_SHIFT)
+#define PKMAP_ADDR(nr)  (pkmap_base + ((nr) << PAGE_SHIFT))
 
 extern void *kmap_high(struct page *page);
 extern void kunmap_high(struct page *page);
@@ -85,7 +91,7 @@ static inline void *kmap_atomic(struct page *page, enum km_type type)
 		return page_address(page);
 
 	idx = type + KM_TYPE_NR*smp_processor_id();
-	vaddr = FIX_KMAP_BEGIN + idx * PAGE_SIZE;
+	vaddr = fix_kmap_begin + idx * PAGE_SIZE;
 
 /* XXX Fix - Anton */
 #if 0
@@ -114,10 +120,10 @@ static inline void kunmap_atomic(void *kvaddr, enum km_type type)
 	unsigned long vaddr = (unsigned long) kvaddr;
 	unsigned long idx = type + KM_TYPE_NR*smp_processor_id();
 
-	if (vaddr < FIX_KMAP_BEGIN) // FIXME
+	if (vaddr < fix_kmap_begin) // FIXME
 		return;
 
-	if (vaddr != FIX_KMAP_BEGIN + idx * PAGE_SIZE)
+	if (vaddr != fix_kmap_begin + idx * PAGE_SIZE)
 		BUG();
 
 /* XXX Fix - Anton */

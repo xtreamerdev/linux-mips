@@ -230,6 +230,7 @@ CONFIG_BLK_DEV_LOOP=y
 # CONFIG_BLK_DEV_NBD is not set
 # CONFIG_BLK_DEV_RAM is not set
 # CONFIG_BLK_DEV_INITRD is not set
+# CONFIG_BLK_STATS is not set
 
 #
 # Multi-device support (RAID and LVM)
@@ -423,6 +424,7 @@ CONFIG_MIPS_AU1000_ENET=y
 #
 # CONFIG_ACENIC is not set
 # CONFIG_DL2K is not set
+# CONFIG_E1000 is not set
 # CONFIG_MYRI_SBUS is not set
 # CONFIG_NS83820 is not set
 # CONFIG_HAMACHI is not set
@@ -560,6 +562,7 @@ CONFIG_SERIAL_NONSTANDARD=y
 # CONFIG_MOXA_SMARTIO is not set
 # CONFIG_ISI is not set
 # CONFIG_SYNCLINK is not set
+# CONFIG_SYNCLINKMP is not set
 # CONFIG_N_HDLC is not set
 # CONFIG_RISCOM8 is not set
 # CONFIG_SPECIALIX is not set
@@ -622,6 +625,7 @@ CONFIG_RTC=y
 # PCMCIA character devices
 #
 # CONFIG_PCMCIA_SERIAL_CS is not set
+# CONFIG_SYNCLINK_CS is not set
 # CONFIG_AU1000_GPIO is not set
 # CONFIG_TS_AU1000_ADS7846 is not set
 
@@ -638,6 +642,8 @@ CONFIG_REISERFS_FS=m
 # CONFIG_ADFS_FS_RW is not set
 # CONFIG_AFFS_FS is not set
 # CONFIG_HFS_FS is not set
+# CONFIG_BEFS_FS is not set
+# CONFIG_BEFS_DEBUG is not set
 # CONFIG_BFS_FS is not set
 CONFIG_EXT3_FS=y
 CONFIG_JBD=y
@@ -658,6 +664,9 @@ CONFIG_RAMFS=y
 # CONFIG_ISO9660_FS is not set
 # CONFIG_JOLIET is not set
 # CONFIG_ZISOFS is not set
+# CONFIG_JFS_FS is not set
+# CONFIG_JFS_DEBUG is not set
+# CONFIG_JFS_STATISTICS is not set
 # CONFIG_MINIX_FS is not set
 # CONFIG_VXFS_FS is not set
 # CONFIG_NTFS_FS is not set
@@ -688,6 +697,7 @@ CONFIG_NFS_FS=y
 CONFIG_ROOT_NFS=y
 CONFIG_NFSD=m
 # CONFIG_NFSD_V3 is not set
+# CONFIG_NFSD_TCP is not set
 CONFIG_SUNRPC=y
 CONFIG_LOCKD=y
 CONFIG_SMB_FS=m
@@ -702,7 +712,6 @@ CONFIG_SMB_FS=m
 # CONFIG_NCPFS_NLS is not set
 # CONFIG_NCPFS_EXTRAS is not set
 # CONFIG_ZISOFS_FS is not set
-CONFIG_ZLIB_FS_INFLATE=m
 
 #
 # Partition Types
@@ -813,6 +822,7 @@ CONFIG_FONT_8x16=y
 # Sound
 #
 CONFIG_SOUND=y
+# CONFIG_SOUND_ALI5455 is not set
 # CONFIG_SOUND_BT878 is not set
 # CONFIG_SOUND_CMPCI is not set
 # CONFIG_SOUND_EMU10K1 is not set
@@ -824,6 +834,7 @@ CONFIG_SOUND=y
 # CONFIG_SOUND_ESSSOLO1 is not set
 # CONFIG_SOUND_MAESTRO is not set
 # CONFIG_SOUND_MAESTRO3 is not set
+# CONFIG_SOUND_FORTE is not set
 # CONFIG_SOUND_ICH is not set
 # CONFIG_SOUND_RME96XX is not set
 # CONFIG_SOUND_SONICVIBES is not set
@@ -855,3 +866,9 @@ CONFIG_CROSSCOMPILE=y
 # CONFIG_DEBUG is not set
 # CONFIG_MAGIC_SYSRQ is not set
 # CONFIG_MIPS_UNCACHED is not set
+
+#
+# Library routines
+#
+CONFIG_ZLIB_INFLATE=m
+CONFIG_ZLIB_DEFLATE=m

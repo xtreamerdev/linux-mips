@@ -397,7 +397,7 @@ int agp_unbind_memory(agp_memory * curr)
 static void agp_generic_agp_enable(u32 mode)
 {
 	struct pci_dev *device = NULL;
-	u32 command, scratch, cap_id;
+	u32 command, scratch;
 	u8 cap_ptr;
 
 	pci_read_config_dword(agp_bridge.dev,
@@ -497,6 +497,7 @@ static int agp_generic_create_gatt_table(void)
 	int i;
 	void *temp;
 	struct page *page;
+	int err = 0;
 
 	/* The generic routines can't handle 2 level gatt's */
 	if (agp_bridge.size_type == LVL2_APER_SIZE) {
@@ -561,6 +562,7 @@ static int agp_generic_create_gatt_table(void)
 					    agp_bridge.current_size;
 					break;
 				}
+				temp = agp_bridge.current_size;
 			} else {
 				agp_bridge.aperture_size_idx = i;
 			}
@@ -582,12 +584,15 @@ static int agp_generic_create_gatt_table(void)
 		SetPageReserved(page);
 
 	agp_bridge.gatt_table_real = (unsigned long *) table;
-	CACHE_FLUSH();
+#ifdef CONFIG_X86
+	err = change_page_attr(virt_to_page(table), 1<<page_order, PAGE_KERNEL_NOCACHE);
+#endif
+	if (!err) 
 	agp_bridge.gatt_table = ioremap_nocache(virt_to_phys(table),
 					(PAGE_SIZE * (1 << page_order)));
 	CACHE_FLUSH();
 
-	if (agp_bridge.gatt_table == NULL) {
+	if (agp_bridge.gatt_table == NULL || err) {
 		for (page = virt_to_page(table); page <= virt_to_page(table_end); page++)
 			ClearPageReserved(page);
 
@@ -651,6 +656,10 @@ static int agp_generic_free_gatt_table(void)
 	 * from the table.
 	 */
 
+#ifdef CONFIG_X86
+	change_page_attr(virt_to_page(agp_bridge.gatt_table_real), 1<<page_order, 
+			 PAGE_KERNEL);
+#endif
 	iounmap(agp_bridge.gatt_table);
 	table = (char *) agp_bridge.gatt_table_real;
 	table_end = table + ((PAGE_SIZE * (1 << page_order)) - 1);
@@ -769,6 +778,12 @@ static unsigned long agp_generic_alloc_page(void)
 	if (page == NULL) {
 		return 0;
 	}
+#ifdef CONFIG_X86
+	if (change_page_attr(page, 1, PAGE_KERNEL_NOCACHE) < 0) {
+		__free_page(page); 
+		return 0;
+	}
+#endif
 	get_page(page);
 	LockPage(page);
 	atomic_inc(&agp_bridge.current_memory_agp);
@@ -785,6 +800,9 @@ static void agp_generic_destroy_page(unsigned long addr)
 	}
 	
 	page = virt_to_page(pt);
+#ifdef CONFIG_X86
+	change_page_attr(page, 1, PAGE_KERNEL); 
+#endif	
 	put_page(page);
 	UnlockPage(page);
 	free_page((unsigned long) pt);
@@ -1406,7 +1424,7 @@ static int intel_8xx_fetch_size(void)
         /* Intel 815 chipsets have a _weird_ APSIZE register with only
          * one non-reserved bit, so mask the others out ... */
         if (agp_bridge.type == INTEL_I815) 
-          temp &= (1 << 3);
+		temp &= (1 << 3);
         
 	values = A_SIZE_8(agp_bridge.aperture_sizes);
 
@@ -1685,6 +1703,12 @@ static int intel_845_configure(void)
 	pci_write_config_word(agp_bridge.dev, INTEL_I845_ERRSTS, 0x001c); 
 	return 0;
 }
+
+static void intel_845_resume(void)
+{
+   intel_845_configure();
+}
+
 
 static int intel_850_configure(void)
 {
@@ -1994,7 +2018,7 @@ static int __init intel_845_setup (struct pci_dev *pdev)
 	agp_bridge.agp_alloc_page = agp_generic_alloc_page;
 	agp_bridge.agp_destroy_page = agp_generic_destroy_page;
 	agp_bridge.suspend = agp_generic_suspend;
-	agp_bridge.resume = agp_generic_resume;
+	agp_bridge.resume = intel_845_resume;
 	agp_bridge.cant_use_aperture = 0;
 
 	return 0;
@@ -2318,6 +2342,7 @@ static struct _amd_irongate_private {
 static int amd_create_page_map(amd_page_map *page_map)
 {
 	int i;
+	int err = 0;
 
 	page_map->real = (unsigned long *) __get_free_page(GFP_KERNEL);
 	if (page_map->real == NULL) {
@@ -2325,9 +2350,13 @@ static int amd_create_page_map(amd_page_map *page_map)
 	}
 	SetPageReserved(virt_to_page(page_map->real));
 	CACHE_FLUSH();
+#ifdef CONFIG_X86
+	err = change_page_attr(virt_to_page(page_map->real), 1, PAGE_KERNEL_NOCACHE);
+#endif
+	if (!err) 
 	page_map->remapped = ioremap_nocache(virt_to_phys(page_map->real), 
 					    PAGE_SIZE);
-	if (page_map->remapped == NULL) {
+	if (page_map->remapped == NULL || err) {
 		ClearPageReserved(virt_to_page(page_map->real));
 		free_page((unsigned long) page_map->real);
 		page_map->real = NULL;
@@ -2345,6 +2374,9 @@ static int amd_create_page_map(amd_page_map *page_map)
 static void amd_free_page_map(amd_page_map *page_map)
 {
 	iounmap(page_map->remapped);
+#ifdef CONFIG_X86
+	change_page_attr(virt_to_page(page_map->real), 1, PAGE_KERNEL);
+#endif
 	ClearPageReserved(virt_to_page(page_map->real));
 	free_page((unsigned long) page_map->real);
 }
@@ -2824,36 +2856,31 @@ static void ali_cache_flush(void)
 	}
 }
 
+
 static unsigned long ali_alloc_page(void)
 {
-	struct page *page;
-	u32 temp;
-
-	page = alloc_page(GFP_KERNEL);
-	if (page == NULL)
+	unsigned long p = agp_generic_alloc_page(); 
+	if (!p) 
 		return 0;
 
-	get_page(page);
-	LockPage(page);
-	atomic_inc(&agp_bridge.current_memory_agp);
-
+	/* probably not needed anymore */
 	global_cache_flush();
 
 	if (agp_bridge.type == ALI_M1541) {
+		u32 temp;
 		pci_read_config_dword(agp_bridge.dev, ALI_CACHE_FLUSH_CTRL, &temp);
 		pci_write_config_dword(agp_bridge.dev, ALI_CACHE_FLUSH_CTRL,
 				(((temp & ALI_CACHE_FLUSH_ADDR_MASK) |
-				  virt_to_phys(page_address(page))) |
+				  virt_to_phys((void *)p)) |
 				    ALI_CACHE_FLUSH_EN ));
 	}
-	return (unsigned long)page_address(page);
+	return p;
 }
 
 static void ali_destroy_page(unsigned long addr)
 {
 	u32 temp;
 	void *pt = (void *) addr;
-	struct page *page;
 
 	if (pt == NULL)
 		return;
@@ -2864,15 +2891,11 @@ static void ali_destroy_page(unsigned long addr)
 		pci_read_config_dword(agp_bridge.dev, ALI_CACHE_FLUSH_CTRL, &temp);
 		pci_write_config_dword(agp_bridge.dev, ALI_CACHE_FLUSH_CTRL,
 				(((temp & ALI_CACHE_FLUSH_ADDR_MASK) |
-				  virt_to_phys((void *)pt)) |
+				  virt_to_phys(pt)) |
 				    ALI_CACHE_FLUSH_EN));
 	}
 
-	page = virt_to_page(pt);
-	put_page(page);
-	UnlockPage(page);
-	free_page((unsigned long) pt);
-	atomic_dec(&agp_bridge.current_memory_agp);
+	agp_generic_destroy_page(addr);
 }
 
 /* Setup function */
@@ -2947,16 +2970,21 @@ static struct _serverworks_private {
 static int serverworks_create_page_map(serverworks_page_map *page_map)
 {
 	int i;
+	int err = 0;
 
 	page_map->real = (unsigned long *) __get_free_page(GFP_KERNEL);
 	if (page_map->real == NULL) {
 		return -ENOMEM;
 	}
 	SetPageReserved(virt_to_page(page_map->real));
+#ifdef CONFIG_X86
+	err = change_page_attr(virt_to_page(page_map->real), 1, PAGE_KERNEL_NOCACHE);
+#endif
 	CACHE_FLUSH();
+	if (!err) 
 	page_map->remapped = ioremap_nocache(virt_to_phys(page_map->real), 
 					    PAGE_SIZE);
-	if (page_map->remapped == NULL) {
+	if (page_map->remapped == NULL || err) {
 		ClearPageReserved(virt_to_page(page_map->real));
 		free_page((unsigned long) page_map->real);
 		page_map->real = NULL;
@@ -2973,6 +3001,9 @@ static int serverworks_create_page_map(serverworks_page_map *page_map)
 
 static void serverworks_free_page_map(serverworks_page_map *page_map)
 {
+#ifdef CONFIG_X86
+	change_page_attr(virt_to_page(page_map->real),1,PAGE_KERNEL); 
+#endif
 	iounmap(page_map->remapped);
 	ClearPageReserved(virt_to_page(page_map->real));
 	free_page((unsigned long) page_map->real);
@@ -4295,7 +4326,6 @@ static int __init agp_find_supported_device(void)
 {
 	struct pci_dev *dev = NULL;
 	u8 cap_ptr = 0x00;
-	u32 cap_id, scratch;
 
 	if ((dev = pci_find_class(PCI_CLASS_BRIDGE_HOST << 8, NULL)) == NULL)
 		return -ENODEV;

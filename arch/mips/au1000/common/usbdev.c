@@ -204,7 +204,7 @@ dump_setup(devrequest* s)
 	dbg(__FUNCTION__ ": requesttype=%d", s->requesttype);
 	dbg(__FUNCTION__ ": request=%d %s", s->request,
 	    get_std_req_name(s->request));
-	dbg(__FUNCTION__ ": value=0x%04x", s->value);
+	dbg(__FUNCTION__ ": value=0x%04x", s->wValue);
 	dbg(__FUNCTION__ ": index=%d", s->index);
 	dbg(__FUNCTION__ ": length=%d", s->length);
 }
@@ -661,13 +661,13 @@ do_clear_feature(struct usb_dev* dev, devrequest* setup)
 {
 	switch (setup->requesttype) {
 	case 0x00:	// Device
-		if ((le16_to_cpu(setup->value) & 0xff) == 1)
+		if ((le16_to_cpu(setup->wValue) & 0xff) == 1)
 			dev->remote_wakeup_en = 0;
 	else
 			endpoint_stall(&dev->ep[0]);
 		break;
 	case 0x02:	// End Point
-		if ((le16_to_cpu(setup->value) & 0xff) == 0) {
+		if ((le16_to_cpu(setup->wValue) & 0xff) == 0) {
 			endpoint_t *ep =
 				epaddr_to_ep(dev,
 					     le16_to_cpu(setup->index) & 0xff);
@@ -695,13 +695,13 @@ do_set_feature(struct usb_dev* dev, devrequest* setup)
 {
 	switch (setup->requesttype) {
 	case 0x00:	// Device
-		if ((le16_to_cpu(setup->value) & 0xff) == 1)
+		if ((le16_to_cpu(setup->wValue) & 0xff) == 1)
 			dev->remote_wakeup_en = 1;
 		else
 			endpoint_stall(&dev->ep[0]);
 		break;
 	case 0x02:	// End Point
-		if ((le16_to_cpu(setup->value) & 0xff) == 0) {
+		if ((le16_to_cpu(setup->vwValue) & 0xff) == 0) {
 			endpoint_t *ep =
 				epaddr_to_ep(dev,
 					     le16_to_cpu(setup->index) & 0xff);
@@ -719,7 +719,7 @@ static ep0_stage_t
 do_set_address(struct usb_dev* dev, devrequest* setup)
 {
 	int new_state = dev->state;
-	int new_addr = le16_to_cpu(setup->value);
+	int new_addr = le16_to_cpu(setup->wValue);
 
 	dbg(__FUNCTION__ ": our address=%d", new_addr);
 
@@ -747,7 +747,7 @@ do_get_descriptor(struct usb_dev* dev, devrequest* setup)
 {
 	int strnum, desc_len = le16_to_cpu(setup->length);
 
-		switch (le16_to_cpu(setup->value) >> 8) {
+		switch (le16_to_cpu(setup->wValue) >> 8) {
 		case USB_DT_DEVICE:
 			// send device descriptor!
 		desc_len = desc_len > dev->dev_desc->bLength ?
@@ -758,9 +758,9 @@ do_get_descriptor(struct usb_dev* dev, devrequest* setup)
 			break;
 		case USB_DT_CONFIG:
 			// If the config descr index in low-byte of
-			// setup->value	is valid, send config descr,
+			// setup->wValue	is valid, send config descr,
 			// otherwise stall ep0.
-			if ((le16_to_cpu(setup->value) & 0xff) == 0) {
+			if ((le16_to_cpu(setup->wValue) & 0xff) == 0) {
 				// send config descriptor!
 				if (desc_len <= USB_DT_CONFIG_SIZE) {
 					dbg("sending partial config desc, size=%d",
@@ -785,9 +785,9 @@ do_get_descriptor(struct usb_dev* dev, devrequest* setup)
 			endpoint_stall(&dev->ep[0]);
 			break;
 		case USB_DT_STRING:
-			// If the string descr index in low-byte of setup->value
+			// If the string descr index in low-byte of setup->wValue
 			// is valid, send string descr, otherwise stall ep0.
-			strnum = le16_to_cpu(setup->value) & 0xff;
+			strnum = le16_to_cpu(setup->wValue) & 0xff;
 			if (strnum >= 0 && strnum < 6) {
 				struct usb_string_descriptor *desc =
 				dev->str_desc[strnum];
@@ -803,7 +803,7 @@ do_get_descriptor(struct usb_dev* dev, devrequest* setup)
 	default:
 		// Invalid request
 		err("invalid get desc=%d, stalled",
-			    le16_to_cpu(setup->value) >> 8);
+			    le16_to_cpu(setup->wValue) >> 8);
 		endpoint_stall(&dev->ep[0]);	// Stall endpoint 0
 			break;
 		}
@@ -832,8 +832,8 @@ do_get_configuration(struct usb_dev* dev, devrequest* setup)
 static ep0_stage_t
 do_set_configuration(struct usb_dev* dev, devrequest* setup)
 {
-	// set active config to low-byte of setup->value
-	dev->configuration = le16_to_cpu(setup->value) & 0xff;
+	// set active config to low-byte of setup->wValue
+	dev->configuration = le16_to_cpu(setup->wValue) & 0xff;
 	dbg("set config, config=%d", dev->configuration);
 	if (!dev->configuration && dev->state > DEFAULT) {
 		dev->state = ADDRESS;
@@ -875,7 +875,7 @@ do_set_interface(struct usb_dev* dev, devrequest* setup)
 	} else if (dev->state == CONFIGURED) {
 		dev->interface = le16_to_cpu(setup->index) & 0xff;
 		dev->alternate_setting =
-			    le16_to_cpu(setup->value) & 0xff;
+			    le16_to_cpu(setup->wValue) & 0xff;
 			// interface and alternate_setting must be zero
 		if (dev->interface || dev->alternate_setting) {
 				// FIXME: respond with "request error". how?

@@ -230,12 +230,10 @@ static struct isapnp_device_id el3_isapnp_adapters[] __initdata = {
 };
 
 MODULE_DEVICE_TABLE(isapnp, el3_isapnp_adapters);
-MODULE_LICENSE("GPL");
-
 
 static u16 el3_isapnp_phys_addr[8][3];
-#endif /* CONFIG_ISAPNP || CONFIG_ISAPNP_MODULE */
 static int nopnp;
+#endif /* CONFIG_ISAPNP || CONFIG_ISAPNP_MODULE */
 
 int __init el3_probe(struct net_device *dev, int card_idx)
 {
@@ -1265,6 +1263,7 @@ MODULE_PARM(nopnp, "i");
 MODULE_PARM_DESC(nopnp, "disable ISA PnP support (0-1)");
 #endif	/* CONFIG_ISAPNP */
 MODULE_DESCRIPTION("3Com Etherlink III (3c509, 3c509B) ISA/PnP ethernet driver");
+MODULE_LICENSE("GPL");
 
 int
 init_module(void)

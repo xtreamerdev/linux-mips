@@ -1,5 +1,5 @@
 /*
- * BK Id: SCCS/s.head.S 1.43 06/25/02 17:24:29 benh
+ * BK Id: %F% %I% %G% %U% %#%
  */
 /*
  *  PowerPC version 
@@ -22,17 +22,18 @@
  *  modify it under the terms of the GNU General Public License
  *  as published by the Free Software Foundation; either version
  *  2 of the License, or (at your option) any later version.
- *	
+ *
  */
 
 #include <linux/config.h>
-#include "ppc_asm.h"
 #include <asm/processor.h>
 #include <asm/page.h>
 #include <asm/mmu.h>
 #include <asm/pgtable.h>
 #include <asm/cputable.h>
 #include <asm/cache.h>
+#include <asm/ppc_asm.h>
+#include "ppc_defs.h"
 
 #ifdef CONFIG_APUS
 #include <asm/amigappc.h>
@@ -48,9 +49,9 @@
 	ld	RB,(n*32)+24(reg);	\
 	mtspr	DBAT##n##U,RA;		\
 	mtspr	DBAT##n##L,RB;		\
-	
+
 #else /* CONFIG_PPC64BRIDGE */
-	
+
 /* 601 only have IBAT; cr0.eq is set on 601 when using this macro */
 #define LOAD_BAT(n, reg, RA, RB)	\
 	/* see the comment for clear_bats() -- Cort */ \
@@ -66,7 +67,7 @@
 	lwz	RB,(n*16)+12(reg);	\
 	mtspr	DBAT##n##U,RA;		\
 	mtspr	DBAT##n##L,RB;		\
-1:	
+1:
 #endif /* CONFIG_PPC64BRIDGE */	 
 
 	.text
@@ -113,7 +114,7 @@ _start:
  * PREP
  * This is jumped to on prep systems right after the kernel is relocated
  * to its proper place in memory by the boot loader.  The expected layout
- * of the regs is:	
+ * of the regs is:
  *   r3: ptr to residual data
  *   r4: initrd_start or if no initrd then 0
  *   r5: initrd_end - unused if r4 is 0
@@ -124,7 +125,7 @@ _start:
  * start_here() to do the real work.
  * -- Cort
  */
-	
+
 	.globl	__start
 __start:
 /*
@@ -404,16 +405,12 @@ HardwareInterrupt:
 	EXCEPTION_PROLOG;
 	addi	r3,r1,STACK_FRAME_OVERHEAD
 	li	r20,MSR_KERNEL
-#ifndef CONFIG_APUS
 	li	r4,0
 	bl	transfer_to_handler
 	.globl do_IRQ_intercept
 do_IRQ_intercept:
 	.long	do_IRQ;
 	.long	ret_from_intercept
-#else
-	bl	apus_interrupt_entry
-#endif /* CONFIG_APUS */
 
 /* Alignment exception */
 	. = 0x600
@@ -503,7 +500,7 @@ trap_0f_cont:
 Trap_0f:
 	EXCEPTION_PROLOG
 	b	trap_0f_cont
-	
+
 /*
  * Handle TLB miss for instruction on 603/603e.
  * Note: we get an alternate set of r0 - r3 to use automatically.
@@ -652,7 +649,7 @@ DataAddressInvalid:
 	mtcrf	0x80,r3		/* Restore CR0 */
 	mtmsr	r0
 	b	DataAccess
-	
+
 /*
  * Handle TLB miss for DATA Store on 603/603e
  */
@@ -891,7 +888,7 @@ load_up_fpu:
 	lwz	r21,GPR21(r21)
 	SYNC
 	RFI
-	
+
 /*
  * FP unavailable trap from kernel - print a message, but let
  * the task use FP in the kernel until it returns to user mode.
@@ -1036,7 +1033,7 @@ giveup_altivec:
 #endif /* CONFIG_SMP */
 	blr
 #endif /* CONFIG_ALTIVEC */
-	
+
 /*
  * giveup_fpu(tsk)
  * Disable FP for the task given as the argument,
@@ -1188,62 +1185,6 @@ fix_mem_constants:
 	sync				/* additional sync needed on g4 */
 	isync				/* No speculative loading until now */
 	blr
-	
-apus_interrupt_entry:
-	/* This is horrible, but there's no way around it. Enable the
-	 * data cache so the IRQ hardware register can be accessed
-	 * without cache intervention. Then disable interrupts and get
-	 * the current emulated m68k IPL value. 
-	 */
-	
-	mfmsr	20
-	xori	r20,r20,MSR_DR
-	SYNC
-	mtmsr	r20
-	isync
-
-	lis	r4,APUS_IPL_EMU@h
-
-	li	r20,(IPLEMU_SETRESET|IPLEMU_DISABLEINT)
-	stb	r20,APUS_IPL_EMU@l(r4)
-	eieio
-
-	lbz	r3,APUS_IPL_EMU@l(r4)
-
-	li	r2,IPLEMU_IPLMASK
-	rlwinm. r20,r3,32-3,29,31
-	bne	2f
-	mr	r20,r2		/* lvl7! Need to reset state machine. */
-	b	3f
-2:	cmp	0,r20,r2
-	beq	1f
-3:	eieio
-	stb     r2,APUS_IPL_EMU@l(r4)
-	ori	r20,r20,IPLEMU_SETRESET
-	eieio
-	stb     r20,APUS_IPL_EMU@l(r4)
-1:	eieio
-	li	r20,IPLEMU_DISABLEINT
-	stb	r20,APUS_IPL_EMU@l(r4)
-
-	/* At this point we could do some magic to avoid the overhead
-	 * of calling the C interrupt handler in case of a spurious
-	 * interrupt. Could not get a simple hack to work though.
-	 */
-	
-	mfmsr	r20
-	xori	r20,r20,MSR_DR
-	SYNC
-	mtmsr	r20
-	isync
-
-	stw	r3,(_CCR+4)(r21);
-
-	addi	r3,r1,STACK_FRAME_OVERHEAD;
-	li	r20,MSR_KERNEL;
-	bl	transfer_to_handler;
-	.long	do_IRQ;
-	.long	ret_from_except
 
 /***********************************************************************
  *  Please note that on APUS the exception handlers are located at the
@@ -1266,7 +1207,6 @@ __secondary_start_gemini:
         bl      prom_init
         b       __secondary_start
 #endif /* CONFIG_GEMINI */
-	
 	.globl	__secondary_start_psurge
 __secondary_start_psurge:
 	li	r24,1			/* cpu # */
@@ -1400,7 +1340,11 @@ _GLOBAL(__setup_cpu_generic)
 setup_common_caches:
 	mfspr	r11,HID0
 	andi.	r0,r11,HID0_DCE
+#ifdef CONFIG_DCACHE_DISABLE
+	ori	r11,r11,HID0_ICE
+#else
 	ori	r11,r11,HID0_ICE|HID0_DCE
+#endif
 	ori	r8,r11,HID0_ICFI
 	bne	1f			/* don't invalidate the D-cache */
 	ori	r8,r8,HID0_DCI		/* unless it wasn't enabled */
@@ -1626,12 +1570,27 @@ start_here:
 /* Load up the kernel context */
 2:
 	sync			/* Force all PTE updates to finish */
-	ISYNC_601
+	isync
 	tlbia			/* Clear all TLB entries */
 	sync			/* wait for tlbia/tlbie to finish */
 	TLBSYNC			/* ... on all CPUs */
 
 	bl	load_up_mmu
+
+#ifdef CONFIG_BDI_SWITCH
+	/* Add helper information for the Abatron bdiGDB debugger.
+	 * We do this here because we know the mmu is disabled, and
+	 * will be enabled for real in just a few instructions.
+	 */
+	lis	r5, abatron_pteptrs@h
+	ori	r5, r5, abatron_pteptrs@l
+	stw	r5, 0xf0(r0)	/* This much match your Abatron config */
+	lis	r6, swapper_pg_dir@h
+	ori	r6, r6, swapper_pg_dir@l
+	tophys(r5, r5)
+	stw	r6, 0(r5)
+#endif
+
 /* Now turn on the MMU for real! */
 	li	r4,MSR_KERNEL
 	FIX_SRR1(r4,r5)
@@ -1651,6 +1610,16 @@ _GLOBAL(set_context)
 	addis	r3,r3,0x6000	/* Set Ks, Ku bits */
 	li	r0,NUM_USER_SEGMENTS
 	mtctr	r0
+
+#ifdef CONFIG_BDI_SWITCH
+	/* Context switch the PTE pointer for the Abatron BDI2000.
+	 * The PGDIR is passed as second argument.
+	 */
+	lis	r5, KERNELBASE@h
+	lwz	r5, 0xf0(r5)
+	stw	r4, 0x4(r5)
+#endif
+
 	li	r4,0
 BEGIN_FTR_SECTION
 	DSSALL
@@ -1684,16 +1653,16 @@ clear_bats:
 	rlwinm	r9,r9,16,16,31		/* r9 = 1 for 601, 4 for 604 */
 	cmpwi	r9, 1
 	beq	1f
-	
+
 	mtspr	DBAT0U,r20
-	mtspr	DBAT0L,r20	
+	mtspr	DBAT0L,r20
 	mtspr	DBAT1U,r20
 	mtspr	DBAT1L,r20
 	mtspr	DBAT2U,r20
-	mtspr	DBAT2L,r20	
+	mtspr	DBAT2L,r20
 	mtspr	DBAT3U,r20
 	mtspr	DBAT3L,r20
-1:	
+1:
 	mtspr	IBAT0U,r20
 	mtspr	IBAT0L,r20
 	mtspr	IBAT1U,r20
@@ -1762,7 +1731,7 @@ initial_bats:
 #else
 	ori	r11,r11,BL_256M<<2|0x2	/* set up BAT registers for 604 */
 #endif /* CONFIG_APUS */
-	
+
 #ifdef CONFIG_PPC64BRIDGE
 	/* clear out the high 32 bits in the BAT */
 	clrldi	r11,r11,32
@@ -1851,12 +1820,12 @@ empty_zero_page:
 
 	.globl	swapper_pg_dir
 swapper_pg_dir:
-	.space	4096	
+	.space	4096
 
 /*
  * This space gets a copy of optional info passed to us by the bootstrap
  * Used to pass parameters into the kernel like root=/dev/sda1, etc.
- */	
+ */
 	.globl	cmd_line
 cmd_line:
 	.space	512
@@ -1869,3 +1838,11 @@ intercept_table:
 	.long 0, 0, 0, 0, 0, 0, 0, 0
 	.long 0, 0, 0, 0, 0, 0, 0, 0
 	.long 0, 0, 0, 0, 0, 0, 0, 0
+
+#ifdef CONFIG_BDI_SWITCH
+/* Room for two PTE pointers, usually the kernel and current user pointers
+ * to their respective root page table.
+ */
+abatron_pteptrs:
+	.space	8
+#endif

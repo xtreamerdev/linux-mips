@@ -217,6 +217,7 @@ CONFIG_BLK_DEV_LOOP=y
 # CONFIG_BLK_DEV_NBD is not set
 # CONFIG_BLK_DEV_RAM is not set
 # CONFIG_BLK_DEV_INITRD is not set
+# CONFIG_BLK_STATS is not set
 
 #
 # Multi-device support (RAID and LVM)
@@ -376,18 +377,7 @@ CONFIG_IT8172_TUNING=y
 # CONFIG_BLK_DEV_SLC90E66 is not set
 # CONFIG_BLK_DEV_TRM290 is not set
 # CONFIG_BLK_DEV_VIA82CXXX is not set
-CONFIG_IDE_CHIPSETS=y
-
-#
-# Note: most of these also require special kernel boot parameters
-#
-# CONFIG_BLK_DEV_4DRIVES is not set
-# CONFIG_BLK_DEV_ALI14XX is not set
-# CONFIG_BLK_DEV_DTC2278 is not set
-# CONFIG_BLK_DEV_HT6560B is not set
-# CONFIG_BLK_DEV_PDC4030 is not set
-# CONFIG_BLK_DEV_QD65XX is not set
-# CONFIG_BLK_DEV_UMC8672 is not set
+# CONFIG_IDE_CHIPSETS is not set
 CONFIG_IDEDMA_AUTO=y
 # CONFIG_IDEDMA_IVB is not set
 # CONFIG_DMA_NONPCI is not set
@@ -447,13 +437,13 @@ CONFIG_NET_PCI=y
 # CONFIG_APRICOT is not set
 # CONFIG_CS89x0 is not set
 CONFIG_TULIP=y
-# CONFIG_TC35815 is not set
 # CONFIG_TULIP_MWI is not set
 # CONFIG_TULIP_MMIO is not set
 # CONFIG_DE4X5 is not set
 # CONFIG_DGRS is not set
 # CONFIG_DM9102 is not set
 # CONFIG_EEPRO100 is not set
+# CONFIG_E100 is not set
 # CONFIG_LNE390 is not set
 # CONFIG_FEALNX is not set
 # CONFIG_NATSEMI is not set
@@ -465,11 +455,12 @@ CONFIG_8139TOO=y
 # CONFIG_8139TOO_PIO is not set
 # CONFIG_8139TOO_TUNE_TWISTER is not set
 # CONFIG_8139TOO_8129 is not set
-# CONFIG_8139_NEW_RX_RESET is not set
+# CONFIG_8139_OLD_RX_RESET is not set
 # CONFIG_SIS900 is not set
 # CONFIG_EPIC100 is not set
 # CONFIG_SUNDANCE is not set
 # CONFIG_TLAN is not set
+# CONFIG_TC35815 is not set
 # CONFIG_VIA_RHINE is not set
 # CONFIG_VIA_RHINE_MMIO is not set
 # CONFIG_WINBOND_840 is not set
@@ -481,6 +472,7 @@ CONFIG_8139TOO=y
 #
 # CONFIG_ACENIC is not set
 # CONFIG_DL2K is not set
+# CONFIG_E1000 is not set
 # CONFIG_MYRI_SBUS is not set
 # CONFIG_NS83820 is not set
 # CONFIG_HAMACHI is not set
@@ -606,6 +598,8 @@ CONFIG_RTC=y
 # CONFIG_ADFS_FS_RW is not set
 # CONFIG_AFFS_FS is not set
 # CONFIG_HFS_FS is not set
+# CONFIG_BEFS_FS is not set
+# CONFIG_BEFS_DEBUG is not set
 # CONFIG_BFS_FS is not set
 # CONFIG_EXT3_FS is not set
 # CONFIG_JBD is not set
@@ -623,6 +617,9 @@ CONFIG_RAMFS=y
 # CONFIG_ISO9660_FS is not set
 # CONFIG_JOLIET is not set
 # CONFIG_ZISOFS is not set
+# CONFIG_JFS_FS is not set
+# CONFIG_JFS_DEBUG is not set
+# CONFIG_JFS_STATISTICS is not set
 # CONFIG_MINIX_FS is not set
 # CONFIG_VXFS_FS is not set
 # CONFIG_NTFS_FS is not set
@@ -653,6 +650,7 @@ CONFIG_NFS_FS=y
 CONFIG_ROOT_NFS=y
 # CONFIG_NFSD is not set
 # CONFIG_NFSD_V3 is not set
+# CONFIG_NFSD_TCP is not set
 CONFIG_SUNRPC=y
 CONFIG_LOCKD=y
 # CONFIG_SMB_FS is not set
@@ -666,7 +664,6 @@ CONFIG_LOCKD=y
 # CONFIG_NCPFS_NLS is not set
 # CONFIG_NCPFS_EXTRAS is not set
 # CONFIG_ZISOFS_FS is not set
-# CONFIG_ZLIB_FS_INFLATE is not set
 
 #
 # Partition Types
@@ -685,6 +682,7 @@ CONFIG_MSDOS_PARTITION=y
 # Sound
 #
 CONFIG_SOUND=y
+# CONFIG_SOUND_ALI5455 is not set
 # CONFIG_SOUND_BT878 is not set
 # CONFIG_SOUND_CMPCI is not set
 # CONFIG_SOUND_EMU10K1 is not set
@@ -696,6 +694,7 @@ CONFIG_SOUND=y
 # CONFIG_SOUND_ESSSOLO1 is not set
 # CONFIG_SOUND_MAESTRO is not set
 # CONFIG_SOUND_MAESTRO3 is not set
+# CONFIG_SOUND_FORTE is not set
 # CONFIG_SOUND_ICH is not set
 CONFIG_SOUND_IT8172=y
 # CONFIG_SOUND_RME96XX is not set
@@ -728,3 +727,9 @@ CONFIG_CROSSCOMPILE=y
 # CONFIG_DEBUG is not set
 # CONFIG_MAGIC_SYSRQ is not set
 # CONFIG_MIPS_UNCACHED is not set
+
+#
+# Library routines
+#
+# CONFIG_ZLIB_INFLATE is not set
+# CONFIG_ZLIB_DEFLATE is not set

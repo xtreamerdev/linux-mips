@@ -1,5 +1,5 @@
 /*
- * Copyright 1999 Hans Reiser, see reiserfs/README for licensing and copyright details
+ * Copyright 1999-2002 Hans Reiser, see reiserfs/README for licensing and copyright details
  */
 
 #include <linux/config.h>
@@ -30,7 +30,7 @@ int direct2indirect (struct reiserfs_transaction_handle *th, struct inode * inod
                                 key of unfm pointer to be pasted */
     int	n_blk_size,
       n_retval;	  /* returned value for reiserfs_insert_item and clones */
-    struct unfm_nodeinfo unfm_ptr;  /* Handle on an unformatted node
+    unp_t unfm_ptr;  /* Handle on an unformatted node
 				       that will be inserted in the
 				       tree. */
 
@@ -59,8 +59,7 @@ int direct2indirect (struct reiserfs_transaction_handle *th, struct inode * inod
     
     p_le_ih = PATH_PITEM_HEAD (path);
 
-    unfm_ptr.unfm_nodenum = cpu_to_le32 (unbh->b_blocknr);
-    unfm_ptr.unfm_freespace = 0; // ???
+    unfm_ptr = cpu_to_le32 (unbh->b_blocknr);
     
     if ( is_statdata_le_ih (p_le_ih) )  {
 	/* Insert new indirect item. */
@@ -213,7 +212,7 @@ int indirect2direct (struct reiserfs_transaction_handle *th,
     copy_item_head (&s_ih, PATH_PITEM_HEAD(p_s_path));
 
     tail_len = (n_new_file_size & (n_block_size - 1));
-    if (!old_format_only (p_s_sb))
+    if (get_inode_sd_version (p_s_inode) == STAT_DATA_V2)
 	round_tail_len = ROUND_UP (tail_len);
     else
 	round_tail_len = tail_len;

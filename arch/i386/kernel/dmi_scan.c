@@ -190,7 +190,6 @@ struct dmi_blacklist
  *	KT7 series. On these it seems the newer BIOS has fixed them. The
  *	rule needs to be improved to match specific BIOS revisions with
  *	corruption problems
- */ 
  
 static __init int disable_ide_dma(struct dmi_blacklist *d)
 {
@@ -204,6 +203,7 @@ static __init int disable_ide_dma(struct dmi_blacklist *d)
 #endif	
 	return 0;
 }
+ */ 
 
 /* 
  * Reboot options and system auto-detection code provided by
@@ -564,6 +564,17 @@ static __initdata struct dmi_blacklist dmi_blacklist[]={
 			MATCH(DMI_BIOS_VERSION, "Version1.01"),
 			NO_MATCH, NO_MATCH,
 			} },
+	{ apm_is_horked, "Intel D850MD", { /* APM crashes */
+			MATCH(DMI_BIOS_VENDOR, "Intel Corp."),
+			MATCH(DMI_BIOS_VERSION, "MV85010A.86A.0016.P07.0201251536"),
+			NO_MATCH, NO_MATCH,
+			} },
+	{ apm_is_horked, "Dell XPS-Z", { /* APM crashes */
+			MATCH(DMI_BIOS_VENDOR, "Intel Corp."),
+			MATCH(DMI_BIOS_VERSION, "A11"),
+			MATCH(DMI_PRODUCT_NAME, "XPS-Z"),
+			NO_MATCH,
+			} },
 	{ apm_is_horked, "Sharp PC-PJ/AX", { /* APM crashes */
 			MATCH(DMI_SYS_VENDOR, "SHARP"),
 			MATCH(DMI_PRODUCT_NAME, "PC-PJ/AX"),
@@ -627,6 +638,12 @@ static __initdata struct dmi_blacklist dmi_blacklist[]={
 			MATCH(DMI_BIOS_VENDOR, "Phoenix Technologies LTD"),
 			MATCH(DMI_BIOS_VERSION, "R0203Z3"),
 			MATCH(DMI_BIOS_DATE, "08/25/00"), NO_MATCH
+			} },
+	
+	{ swab_apm_power_in_minutes, "Sony VAIO", {	/* Handle problems with APM on Sony Vaio PCG-Z505LS (with updated BIOS) */
+			MATCH(DMI_BIOS_VENDOR, "Phoenix Technologies LTD"),
+			MATCH(DMI_BIOS_VERSION, "R0209Z3"),
+			MATCH(DMI_BIOS_DATE, "05/12/01"), NO_MATCH
 			} },
 	
 	{ swab_apm_power_in_minutes, "Sony VAIO", {	/* Handle problems with APM on Sony Vaio PCG-Z505LS (with updated BIOS) */

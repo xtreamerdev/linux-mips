@@ -149,6 +149,7 @@ CONFIG_BINFMT_ELF=y
 # CONFIG_BLK_DEV_NBD is not set
 # CONFIG_BLK_DEV_RAM is not set
 # CONFIG_BLK_DEV_INITRD is not set
+# CONFIG_BLK_STATS is not set
 
 #
 # Multi-device support (RAID and LVM)
@@ -368,13 +369,13 @@ CONFIG_NET_PCI=y
 # CONFIG_APRICOT is not set
 # CONFIG_CS89x0 is not set
 CONFIG_TULIP=y
-# CONFIG_TC35815 is not set
 # CONFIG_TULIP_MWI is not set
 # CONFIG_TULIP_MMIO is not set
 # CONFIG_DE4X5 is not set
 # CONFIG_DGRS is not set
 # CONFIG_DM9102 is not set
 # CONFIG_EEPRO100 is not set
+# CONFIG_E100 is not set
 # CONFIG_LNE390 is not set
 # CONFIG_FEALNX is not set
 # CONFIG_NATSEMI is not set
@@ -386,11 +387,12 @@ CONFIG_8139TOO=y
 # CONFIG_8139TOO_PIO is not set
 # CONFIG_8139TOO_TUNE_TWISTER is not set
 # CONFIG_8139TOO_8129 is not set
-# CONFIG_8139_NEW_RX_RESET is not set
+# CONFIG_8139_OLD_RX_RESET is not set
 # CONFIG_SIS900 is not set
 # CONFIG_EPIC100 is not set
 # CONFIG_SUNDANCE is not set
 # CONFIG_TLAN is not set
+# CONFIG_TC35815 is not set
 # CONFIG_VIA_RHINE is not set
 # CONFIG_VIA_RHINE_MMIO is not set
 # CONFIG_WINBOND_840 is not set
@@ -402,6 +404,7 @@ CONFIG_8139TOO=y
 #
 # CONFIG_ACENIC is not set
 # CONFIG_DL2K is not set
+# CONFIG_E1000 is not set
 # CONFIG_MYRI_SBUS is not set
 # CONFIG_NS83820 is not set
 # CONFIG_HAMACHI is not set
@@ -550,6 +553,8 @@ CONFIG_RTC=y
 # CONFIG_ADFS_FS_RW is not set
 # CONFIG_AFFS_FS is not set
 # CONFIG_HFS_FS is not set
+# CONFIG_BEFS_FS is not set
+# CONFIG_BEFS_DEBUG is not set
 # CONFIG_BFS_FS is not set
 # CONFIG_EXT3_FS is not set
 # CONFIG_JBD is not set
@@ -567,6 +572,9 @@ CONFIG_RAMFS=y
 # CONFIG_ISO9660_FS is not set
 # CONFIG_JOLIET is not set
 # CONFIG_ZISOFS is not set
+# CONFIG_JFS_FS is not set
+# CONFIG_JFS_DEBUG is not set
+# CONFIG_JFS_STATISTICS is not set
 # CONFIG_MINIX_FS is not set
 # CONFIG_VXFS_FS is not set
 # CONFIG_NTFS_FS is not set
@@ -597,6 +605,7 @@ CONFIG_NFS_FS=y
 CONFIG_ROOT_NFS=y
 # CONFIG_NFSD is not set
 # CONFIG_NFSD_V3 is not set
+# CONFIG_NFSD_TCP is not set
 CONFIG_SUNRPC=y
 CONFIG_LOCKD=y
 # CONFIG_SMB_FS is not set
@@ -610,7 +619,6 @@ CONFIG_LOCKD=y
 # CONFIG_NCPFS_NLS is not set
 # CONFIG_NCPFS_EXTRAS is not set
 # CONFIG_ZISOFS_FS is not set
-# CONFIG_ZLIB_FS_INFLATE is not set
 
 #
 # Partition Types
@@ -668,6 +676,7 @@ CONFIG_USB_OHCI=y
 # CONFIG_USB_AUDIO is not set
 # CONFIG_USB_EMI26 is not set
 # CONFIG_USB_BLUETOOTH is not set
+# CONFIG_USB_MIDI is not set
 
 #
 #   SCSI support is needed for USB Storage
@@ -680,6 +689,7 @@ CONFIG_USB_OHCI=y
 # CONFIG_USB_STORAGE_DPCM is not set
 # CONFIG_USB_STORAGE_HP8200e is not set
 # CONFIG_USB_STORAGE_SDDR09 is not set
+# CONFIG_USB_STORAGE_SDDR55 is not set
 # CONFIG_USB_STORAGE_JUMPSHOT is not set
 # CONFIG_USB_ACM is not set
 # CONFIG_USB_PRINTER is not set
@@ -690,6 +700,7 @@ CONFIG_USB_OHCI=y
 CONFIG_USB_HID=y
 # CONFIG_USB_HIDINPUT is not set
 # CONFIG_USB_HIDDEV is not set
+# CONFIG_USB_AIPTEK is not set
 # CONFIG_USB_WACOM is not set
 
 #
@@ -728,39 +739,15 @@ CONFIG_USB_HID=y
 # USB Serial Converter support
 #
 # CONFIG_USB_SERIAL is not set
-# CONFIG_USB_SERIAL_GENERIC is not set
-# CONFIG_USB_SERIAL_BELKIN is not set
-# CONFIG_USB_SERIAL_WHITEHEAT is not set
-# CONFIG_USB_SERIAL_DIGI_ACCELEPORT is not set
-# CONFIG_USB_SERIAL_EMPEG is not set
-# CONFIG_USB_SERIAL_FTDI_SIO is not set
-# CONFIG_USB_SERIAL_VISOR is not set
-# CONFIG_USB_SERIAL_IPAQ is not set
-# CONFIG_USB_SERIAL_IR is not set
-# CONFIG_USB_SERIAL_EDGEPORT is not set
-# CONFIG_USB_SERIAL_KEYSPAN_PDA is not set
-# CONFIG_USB_SERIAL_KEYSPAN is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA28 is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA28X is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA28XA is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA28XB is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA19 is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA18X is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA19W is not set
-# CONFIG_USB_SERIAL_KEYSPAN_USA49W is not set
-# CONFIG_USB_SERIAL_MCT_U232 is not set
-# CONFIG_USB_SERIAL_KLSI is not set
-# CONFIG_USB_SERIAL_PL2303 is not set
-# CONFIG_USB_SERIAL_CYBERJACK is not set
-# CONFIG_USB_SERIAL_XIRCOM is not set
-# CONFIG_USB_SERIAL_OMNINET is not set
 
 #
 # USB Miscellaneous drivers
 #
 # CONFIG_USB_RIO500 is not set
 # CONFIG_USB_AUERSWALD is not set
+# CONFIG_USB_TIGL is not set
 # CONFIG_USB_BRLVGER is not set
+# CONFIG_USB_LCD is not set
 
 #
 # Bluetooth support
@@ -776,3 +763,9 @@ CONFIG_CROSSCOMPILE=y
 # CONFIG_DEBUG is not set
 # CONFIG_MAGIC_SYSRQ is not set
 # CONFIG_MIPS_UNCACHED is not set
+
+#
+# Library routines
+#
+# CONFIG_ZLIB_INFLATE is not set
+# CONFIG_ZLIB_DEFLATE is not set

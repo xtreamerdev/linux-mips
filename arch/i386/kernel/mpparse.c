@@ -115,6 +115,8 @@ static char __init *mpc_family(int family,int model)
 		case 0x0F:
 			if (model == 0x00)
 				return("Pentium 4(tm)");
+			if (model == 0x02)
+				return("Pentium 4(tm) XEON(tm)");
 			if (model == 0x0F)
 				return("Special controller");
 	}
@@ -815,7 +817,7 @@ void __init find_intel_smp (void)
 
 /*
  * The Visual Workstation is Intel MP compliant in the hardware
- * sense, but it doesnt have a BIOS(-configuration table).
+ * sense, but it doesn't have a BIOS(-configuration table).
  * No problem for Linux.
  */
 void __init find_visws_smp(void)

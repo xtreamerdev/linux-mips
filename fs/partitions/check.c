@@ -33,6 +33,7 @@
 #include "sun.h"
 #include "ibm.h"
 #include "ultrix.h"
+#include "efi.h"
 
 extern int *blk_size[];
 
@@ -44,6 +45,9 @@ static int (*check_part[])(struct gendisk *hd, struct block_device *bdev, unsign
 #endif
 #ifdef CONFIG_SGI_PARTITION
 	sgi_partition,
+#endif
+#ifdef CONFIG_EFI_PARTITION
+	efi_partition,		/* this must come before msdos */
 #endif
 #ifdef CONFIG_LDM_PARTITION
 	ldm_partition,		/* this must come before msdos */

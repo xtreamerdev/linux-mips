@@ -24,7 +24,7 @@ obj-y	 += mem.o tty_io.o n_tty.o tty_ioctl.o raw.o pty.o misc.o random.o
 export-objs     :=	busmouse.o console.o keyboard.o sysrq.o \
 			misc.o pty.o random.o selection.o serial.o \
 			sonypi.o tty_io.o tty_ioctl.o generic_serial.o \
-			au1000_gpio.o
+			au1000_gpio.o hp_psaux.o
 
 mod-subdirs	:=	joystick ftape drm drm-4.0 pcmcia
 
@@ -69,6 +69,21 @@ endif
 ifdef CONFIG_Q40
   KEYBD += q40_keyb.o
   SERIAL = serial.o
+endif
+
+ifdef CONFIG_APOLLO
+  KEYBD += dn_keyb.o
+endif
+
+ifeq ($(ARCH),parisc)
+   ifdef CONFIG_GSC_PS2
+      KEYBD   = hp_psaux.o hp_keyb.o
+   else
+      KEYBD   =
+   endif
+   ifdef CONFIG_PDC_CONSOLE
+      CONSOLE += pdc_console.o
+   endif
 endif
 
 ifeq ($(ARCH),arm)
@@ -150,6 +165,7 @@ else
   obj-$(CONFIG_PCI) += keyboard.o $(KEYMAP)
 endif
 
+obj-$(CONFIG_HIL) += hp_keyb.o
 obj-$(CONFIG_MAGIC_SYSRQ) += sysrq.o
 obj-$(CONFIG_ATARI_DSP56K) += dsp56k.o
 obj-$(CONFIG_ROCKETPORT) += rocket.o
@@ -166,6 +182,7 @@ obj-$(CONFIG_RISCOM8) += riscom8.o
 obj-$(CONFIG_ISI) += isicom.o
 obj-$(CONFIG_ESPSERIAL) += esp.o
 obj-$(CONFIG_SYNCLINK) += synclink.o
+obj-$(CONFIG_SYNCLINKMP) += synclinkmp.o
 obj-$(CONFIG_N_HDLC) += n_hdlc.o
 obj-$(CONFIG_SPECIALIX) += specialix.o
 obj-$(CONFIG_AMIGA_BUILTIN_SERIAL) += amiserial.o
@@ -260,10 +277,12 @@ obj-$(CONFIG_MACHZ_WDT) += machzwd.o
 obj-$(CONFIG_SH_WDT) += shwdt.o
 obj-$(CONFIG_EUROTECH_WDT) += eurotechwdt.o
 obj-$(CONFIG_ALIM7101_WDT) += alim7101_wdt.o
+#obj-$(CONFIG_ALIM1535_WDT) += alim1535d_wdt.o
 obj-$(CONFIG_INDYDOG) += indydog.o
 obj-$(CONFIG_SC1200_WDT) += sc1200wdt.o
 obj-$(CONFIG_WAFER_WDT) += wafer5823wdt.o
 obj-$(CONFIG_SOFT_WATCHDOG) += softdog.o
+obj-$(CONFIG_AMD7XX_TCO) += amd7xx_tco.o
 obj-$(CONFIG_INDYDOG) += indydog.o
 
 subdir-$(CONFIG_MWAVE) += mwave

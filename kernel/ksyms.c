@@ -104,6 +104,7 @@ EXPORT_SYMBOL(kmem_cache_destroy);
 EXPORT_SYMBOL(kmem_cache_shrink);
 EXPORT_SYMBOL(kmem_cache_alloc);
 EXPORT_SYMBOL(kmem_cache_free);
+EXPORT_SYMBOL(kmem_cache_size);
 EXPORT_SYMBOL(kmalloc);
 EXPORT_SYMBOL(kfree);
 EXPORT_SYMBOL(vfree);
@@ -122,6 +123,8 @@ EXPORT_SYMBOL(kmap_high);
 EXPORT_SYMBOL(kunmap_high);
 EXPORT_SYMBOL(highmem_start_page);
 EXPORT_SYMBOL(create_bounce);
+EXPORT_SYMBOL(kmap_prot);
+EXPORT_SYMBOL(kmap_pte);
 #endif
 
 /* filesystem internal functions */
@@ -212,6 +215,7 @@ EXPORT_SYMBOL(block_sync_page);
 EXPORT_SYMBOL(generic_cont_expand);
 EXPORT_SYMBOL(cont_prepare_write);
 EXPORT_SYMBOL(generic_commit_write);
+EXPORT_SYMBOL(block_commit_write);
 EXPORT_SYMBOL(block_truncate_page);
 EXPORT_SYMBOL(generic_block_bmap);
 EXPORT_SYMBOL(generic_file_read);
@@ -447,7 +451,8 @@ EXPORT_SYMBOL(interruptible_sleep_on);
 EXPORT_SYMBOL(interruptible_sleep_on_timeout);
 EXPORT_SYMBOL(schedule);
 EXPORT_SYMBOL(schedule_timeout);
-EXPORT_SYMBOL(sys_sched_yield);
+EXPORT_SYMBOL(yield);
+EXPORT_SYMBOL(__cond_resched);
 EXPORT_SYMBOL(jiffies);
 EXPORT_SYMBOL(xtime);
 EXPORT_SYMBOL(do_gettimeofday);
@@ -527,6 +532,8 @@ EXPORT_SYMBOL(make_bad_inode);
 EXPORT_SYMBOL(is_bad_inode);
 EXPORT_SYMBOL(event);
 EXPORT_SYMBOL(brw_page);
+EXPORT_SYMBOL(generic_osync_inode);
+EXPORT_SYMBOL(remove_suid);
 
 #ifdef CONFIG_UID16
 EXPORT_SYMBOL(overflowuid);
@@ -570,3 +577,6 @@ EXPORT_SYMBOL(init_task_union);
 
 EXPORT_SYMBOL(tasklist_lock);
 EXPORT_SYMBOL(pidhash);
+
+/* debug */
+EXPORT_SYMBOL(dump_stack);

@@ -1,5 +1,5 @@
 /*
- * BK Id: SCCS/s.pci.c 1.43 05/08/02 15:01:15 benh
+ * BK Id: %F% %I% %G% %U% %#%
  */
 /*
  * Common pmac/prep/chrp pci routines. -- Cort
@@ -21,15 +21,11 @@
 #include <asm/prom.h>
 #include <asm/sections.h>
 #include <asm/pci-bridge.h>
-#include <asm/residual.h>
 #include <asm/byteorder.h>
 #include <asm/irq.h>
-#include <asm/gg2.h>
 #include <asm/uaccess.h>
 
-#include "pci.h"
-
-#define DEBUG
+#undef DEBUG
 
 #ifdef DEBUG
 #define DBG(x...) printk(x)
@@ -184,6 +180,10 @@ pcibios_fixup_resources(struct pci_dev *dev)
 #endif
 		}
 	}
+
+	/* Call machine specific resource fixup */
+	if (ppc_md.pcibios_fixup_resources)
+		ppc_md.pcibios_fixup_resources(dev);
 }
 
 #ifdef CONFIG_ALL_PPC
@@ -795,6 +795,24 @@ pci_process_bridge_OF_ranges(struct pci_controller *hose,
 		ranges += np;
 	}
 }
+
+/* We create the "pci-OF-bus-map" property now so it appears in the
+ * /proc device tree
+ */
+void __init
+pci_create_OF_bus_map(void)
+{
+	struct property* of_prop;
+		
+	of_prop = (struct property*) alloc_bootmem(sizeof(struct property) + 256);
+	if (of_prop && find_path_device("/")) {
+		memset(of_prop, -1, sizeof(struct property) + 256);
+		of_prop->name = "pci-OF-bus-map";
+		of_prop->length = 256;
+		of_prop->value = (unsigned char *)&of_prop[1];
+		prom_add_property(find_path_device("/"), of_prop);
+	}
+}
 #endif /* CONFIG_ALL_PPC */
 
 void __init
@@ -825,6 +843,10 @@ pcibios_init(void)
 	if (pci_assign_all_busses && have_of)
 		pcibios_make_OF_bus_map();
 
+	/* Do machine dependent PCI interrupt routing */
+	if (ppc_md.pci_swizzle && ppc_md.pci_map_irq)
+		pci_fixup_irqs(ppc_md.pci_swizzle, ppc_md.pci_map_irq);
+
 	/* Call machine dependant fixup */
 	if (ppc_md.pcibios_fixup)
 		ppc_md.pcibios_fixup();
@@ -840,10 +862,23 @@ pcibios_init(void)
 		ppc_md.pcibios_after_init();
 }
 
-int __init
-pcibios_assign_all_busses(void)
+unsigned char __init
+common_swizzle(struct pci_dev *dev, unsigned char *pinp)
 {
-	return pci_assign_all_busses;
+	struct pci_controller *hose = dev->sysdata;
+
+	if (dev->bus->number != hose->first_busno) {
+		u8 pin = *pinp;
+		do {
+			pin = bridge_swizzle(pin, PCI_SLOT(dev->devfn));
+			/* Move up the chain of bridges. */
+			dev = dev->bus->self;
+		} while (dev->bus->self);
+		*pinp = pin;
+
+		/* The slot is the idsel of the last bridge. */
+	}
+	return PCI_SLOT(dev->devfn);
 }
 
 void __init
@@ -935,7 +970,7 @@ pcibios_update_irq(struct pci_dev *dev, int irq)
 	/* XXX FIXME - update OF device tree node interrupt property */
 }
 
-int pcibios_enable_device(struct pci_dev *dev)
+int pcibios_enable_device(struct pci_dev *dev, int mask)
 {
 	u16 cmd, old_cmd;
 	int idx;
@@ -948,6 +983,9 @@ int pcibios_enable_device(struct pci_dev *dev)
 	pci_read_config_word(dev, PCI_COMMAND, &cmd);
 	old_cmd = cmd;
 	for (idx=0; idx<6; idx++) {
+		if(!(mask & (1<<idx)))
+			continue;
+			
 		r = &dev->resource[idx];
 		if (!r->start && r->end) {
 			printk(KERN_ERR "PCI: Device %s not available because of resource collisions\n", dev->slot_name);
@@ -1236,6 +1274,19 @@ sys_pciconfig_iobase(long which, unsigned long bus, unsigned long devfn)
 	}
 
 	return result;
+}
+
+void __init
+pci_init_resource(struct resource *res, unsigned long start, unsigned long end,
+		  int flags, char *name)
+{
+	res->start = start;
+	res->end = end;
+	res->flags = flags;
+	res->name = name;
+	res->parent = NULL;
+	res->sibling = NULL;
+	res->child = NULL;
 }
 
 /*

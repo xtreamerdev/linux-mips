@@ -148,6 +148,7 @@ CONFIG_BINFMT_ELF=y
 CONFIG_BLK_DEV_RAM=y
 CONFIG_BLK_DEV_RAM_SIZE=512
 CONFIG_BLK_DEV_INITRD=y
+# CONFIG_BLK_STATS is not set
 
 #
 # MIPS initrd options
@@ -286,6 +287,7 @@ CONFIG_SERIAL_NONSTANDARD=y
 # CONFIG_MOXA_SMARTIO is not set
 # CONFIG_ISI is not set
 # CONFIG_SYNCLINK is not set
+# CONFIG_SYNCLINKMP is not set
 # CONFIG_N_HDLC is not set
 # CONFIG_RISCOM8 is not set
 # CONFIG_SPECIALIX is not set
@@ -352,6 +354,8 @@ CONFIG_SERIAL_TX3912_CONSOLE=y
 # CONFIG_ADFS_FS_RW is not set
 # CONFIG_AFFS_FS is not set
 # CONFIG_HFS_FS is not set
+# CONFIG_BEFS_FS is not set
+# CONFIG_BEFS_DEBUG is not set
 # CONFIG_BFS_FS is not set
 # CONFIG_EXT3_FS is not set
 # CONFIG_JBD is not set
@@ -369,6 +373,9 @@ CONFIG_RAMFS=y
 # CONFIG_ISO9660_FS is not set
 # CONFIG_JOLIET is not set
 # CONFIG_ZISOFS is not set
+# CONFIG_JFS_FS is not set
+# CONFIG_JFS_DEBUG is not set
+# CONFIG_JFS_STATISTICS is not set
 # CONFIG_MINIX_FS is not set
 # CONFIG_VXFS_FS is not set
 # CONFIG_NTFS_FS is not set
@@ -399,6 +406,7 @@ CONFIG_EXT2_FS=y
 # CONFIG_ROOT_NFS is not set
 # CONFIG_NFSD is not set
 # CONFIG_NFSD_V3 is not set
+# CONFIG_NFSD_TCP is not set
 # CONFIG_SUNRPC is not set
 # CONFIG_LOCKD is not set
 # CONFIG_SMB_FS is not set
@@ -412,7 +420,6 @@ CONFIG_EXT2_FS=y
 # CONFIG_NCPFS_NLS is not set
 # CONFIG_NCPFS_EXTRAS is not set
 # CONFIG_ZISOFS_FS is not set
-# CONFIG_ZLIB_FS_INFLATE is not set
 
 #
 # Partition Types
@@ -485,3 +492,9 @@ CONFIG_CROSSCOMPILE=y
 # CONFIG_DEBUG is not set
 # CONFIG_MAGIC_SYSRQ is not set
 # CONFIG_MIPS_UNCACHED is not set
+
+#
+# Library routines
+#
+# CONFIG_ZLIB_INFLATE is not set
+# CONFIG_ZLIB_DEFLATE is not set

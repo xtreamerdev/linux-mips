@@ -378,7 +378,7 @@ static ssize_t ppp_read(struct file *file, char *buf,
 {
 	struct ppp_file *pf = file->private_data;
 	DECLARE_WAITQUEUE(wait, current);
-	ssize_t ret;
+	ssize_t ret = 0;
 	struct sk_buff *skb = 0;
 
 	if (pf == 0)
@@ -1399,7 +1399,7 @@ ppp_receive_frame(struct ppp *ppp, struct sk_buff *skb, struct channel *pch)
 	if (skb->len > 0)
 		/* note: a 0-length skb is used as an error indication */
 		++ppp->stats.rx_length_errors;
-
+err:
 	kfree_skb(skb);
 	ppp_receive_error(ppp);
 }

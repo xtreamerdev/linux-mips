@@ -92,7 +92,7 @@
 */
 
 #define DRV_NAME	"8139too"
-#define DRV_VERSION	"0.9.25"
+#define DRV_VERSION	"0.9.26"
 
 
 #include <linux/config.h>
@@ -201,6 +201,8 @@ enum {
 	HAS_LNK_CHNG = 0x040000,
 };
 
+#define RTL_NUM_STATS 4		/* number of ETHTOOL_GSTATS u64's */
+#define RTL_REGS_VER 1		/* version of reg. data in ETHTOOL_GREGS */
 #define RTL_MIN_IO_SIZE 0x80
 #define RTL8139B_IO_SIZE 256
 
@@ -219,6 +221,8 @@ typedef enum {
 	FE2000VX,
 	ALLIED8139,
 	RTL8129,
+	FNW3603TX,
+	FNW3800TX,
 } board_t;
 
 
@@ -238,6 +242,8 @@ static struct {
 	{ "AboCom FE2000VX (RealTek RTL8139)", RTL8139_CAPS },
 	{ "Allied Telesyn 8139 CardBus", RTL8139_CAPS },
 	{ "RealTek RTL8129", RTL8129_CAPS },
+	{ "Planex FNW-3603-TX 10/100 CardBus", RTL8139_CAPS },
+	{ "Planex FNW-3800-TX 10/100 CardBus", RTL8139_CAPS },
 };
 
 
@@ -252,6 +258,8 @@ static struct pci_device_id rtl8139_pci_tbl[] __devinitdata = {
 	{0x1186, 0x1340, PCI_ANY_ID, PCI_ANY_ID, 0, 0, DFE690TXD },
 	{0x13d1, 0xab06, PCI_ANY_ID, PCI_ANY_ID, 0, 0, FE2000VX },
 	{0x1259, 0xa117, PCI_ANY_ID, PCI_ANY_ID, 0, 0, ALLIED8139 },
+	{0x14ea, 0xab06, PCI_ANY_ID, PCI_ANY_ID, 0, 0, FNW3603TX },
+	{0x14ea, 0xab07, PCI_ANY_ID, PCI_ANY_ID, 0, 0, FNW3800TX },
 
 #ifdef CONFIG_8139TOO_8129
 	{0x10ec, 0x8129, PCI_ANY_ID, PCI_ANY_ID, 0, 0, RTL8129 },
@@ -269,6 +277,14 @@ static struct pci_device_id rtl8139_pci_tbl[] __devinitdata = {
 };
 MODULE_DEVICE_TABLE (pci, rtl8139_pci_tbl);
 
+static struct {
+	const char str[ETH_GSTRING_LEN];
+} ethtool_stats_keys[] = {
+	{ "early_rx" },
+	{ "tx_buf_mapped" },
+	{ "tx_timeouts" },
+	{ "rx_lost_in_ring" },
+};
 
 /* The rest of these values should never change. */
 
@@ -446,7 +462,7 @@ enum RxConfigBits {
 
 
 /* Twister tuning parameters from RealTek.
-   Completely undocumented, but required to tune bad links. */
+   Completely undocumented, but required to tune bad links on some boards. */
 enum CSCRBits {
 	CSCR_LinkOKBit = 0x0400,
 	CSCR_LinkChangeBit = 0x0800,
@@ -461,16 +477,22 @@ enum Cfg9346Bits {
 	Cfg9346_Unlock = 0xC0,
 };
 
+#ifdef CONFIG_8139TOO_TUNE_TWISTER
 
-#define PARA78_default	0x78fa8388
-#define PARA7c_default	0xcb38de43	/* param[0][3] */
-#define PARA7c_xxx		0xcb38de43
+enum TwisterParamVals {
+	PARA78_default	= 0x78fa8388,
+	PARA7c_default	= 0xcb38de43,	/* param[0][3] */
+	PARA7c_xxx	= 0xcb38de43,
+};
+
 static const unsigned long param[4][4] = {
 	{0xcb39de43, 0xcb39ce43, 0xfb38de03, 0xcb38de43},
 	{0xcb39de43, 0xcb39ce43, 0xcb39ce83, 0xcb39ce83},
 	{0xcb39de43, 0xcb39ce43, 0xcb39ce83, 0xcb39ce83},
 	{0xbb39de43, 0xbb39ce43, 0xbb39ce83, 0xbb39ce83}
 };
+
+#endif /* CONFIG_8139TOO_TUNE_TWISTER */
 
 typedef enum {
 	CH_8139 = 0,
@@ -566,6 +588,7 @@ struct rtl8139_private {
 	struct rtl_extra_stats xstats;
 	int time_to_die;
 	struct mii_if_info mii;
+	unsigned int regs_len;
 };
 
 MODULE_AUTHOR ("Jeff Garzik <jgarzik@mandrakesoft.com>");
@@ -807,6 +830,7 @@ static int __devinit rtl8139_init_board (struct pci_dev *pdev,
 	ioaddr = (void *) pio_start;
 	dev->base_addr = pio_start;
 	tp->mmio_addr = ioaddr;
+	tp->regs_len = pio_len;
 #else
 	/* ioremap MMIO region */
 	ioaddr = ioremap (mmio_start, mmio_len);
@@ -817,6 +841,7 @@ static int __devinit rtl8139_init_board (struct pci_dev *pdev,
 	}
 	dev->base_addr = (long) ioaddr;
 	tp->mmio_addr = ioaddr;
+	tp->regs_len = mmio_len;
 #endif /* USE_IO_OPS */
 
 	/* Bring old chips out of low-power mode. */
@@ -1283,7 +1308,7 @@ static int rtl8139_open (struct net_device *dev)
 
 	tp->mii.full_duplex = tp->mii.duplex_lock;
 	tp->tx_flag = (TX_FIFO_THRESH << 11) & 0x003f0000;
-	tp->twistie = 1;
+	tp->twistie = (tp->chipset == CH_8139_K) ? 1 : 0;
 	tp->time_to_die = 0;
 
 	rtl8139_init_ring (dev);
@@ -1765,7 +1790,7 @@ static void rtl8139_rx_err (u32 rx_status, struct net_device *dev,
 			    struct rtl8139_private *tp, void *ioaddr)
 {
 	u8 tmp8;
-#ifndef CONFIG_8139_NEW_RX_RESET
+#ifdef CONFIG_8139_OLD_RX_RESET
 	int tmp_work;
 #endif
 
@@ -1788,7 +1813,7 @@ static void rtl8139_rx_err (u32 rx_status, struct net_device *dev,
 		tp->xstats.rx_lost_in_ring++;
 	}
 
-#ifdef CONFIG_8139_NEW_RX_RESET
+#ifndef CONFIG_8139_OLD_RX_RESET
 	tmp8 = RTL_R8 (ChipCmd);
 	RTL_W8 (ChipCmd, tmp8 & ~CmdRxEnb);
 	RTL_W8 (ChipCmd, tmp8);
@@ -2231,6 +2256,7 @@ static int netdev_ethtool_ioctl (struct net_device *dev, void *useraddr)
 		strcpy (info.driver, DRV_NAME);
 		strcpy (info.version, DRV_VERSION);
 		strcpy (info.bus_info, np->pci_dev->slot_name);
+		info.regdump_len = np->regs_len;
 		if (copy_to_user (useraddr, &info, sizeof (info)))
 			return -EFAULT;
 		return 0;
@@ -2310,6 +2336,104 @@ static int netdev_ethtool_ioctl (struct net_device *dev, void *useraddr)
 			return rc;
 		}
 
+/* TODO: we are too slack to do reg dumping for pio, for now */
+#ifndef CONFIG_8139TOO_PIO
+	/* NIC register dump */
+	case ETHTOOL_GREGS: {
+                struct ethtool_regs regs;
+		unsigned int regs_len = np->regs_len;
+                u8 *regbuf = kmalloc(regs_len, GFP_KERNEL);
+                int rc;
+
+		if (!regbuf)
+			return -ENOMEM;
+		memset(regbuf, 0, regs_len);
+
+                rc = copy_from_user(&regs, useraddr, sizeof(regs));
+		if (rc) {
+			rc = -EFAULT;
+			goto err_out_gregs;
+		}
+                
+                if (regs.len > regs_len)
+                        regs.len = regs_len;
+                if (regs.len < regs_len) {
+			rc = -EINVAL;
+			goto err_out_gregs;
+		}
+
+                regs.version = RTL_REGS_VER;
+                rc = copy_to_user(useraddr, &regs, sizeof(regs));
+		if (rc) {
+			rc = -EFAULT;
+			goto err_out_gregs;
+		}
+
+                useraddr += offsetof(struct ethtool_regs, data);
+
+                spin_lock_irq(&np->lock);
+                memcpy_fromio(regbuf, np->mmio_addr, regs_len);
+                spin_unlock_irq(&np->lock);
+
+                if (copy_to_user(useraddr, regbuf, regs_len))
+                        rc = -EFAULT;
+
+err_out_gregs:
+		kfree(regbuf);
+		return rc;
+	}
+#endif /* CONFIG_8139TOO_PIO */
+
+	/* get string list(s) */
+	case ETHTOOL_GSTRINGS: {
+		struct ethtool_gstrings estr = { ETHTOOL_GSTRINGS };
+
+		if (copy_from_user(&estr, useraddr, sizeof(estr)))
+			return -EFAULT;
+		if (estr.string_set != ETH_SS_STATS)
+			return -EINVAL;
+
+		estr.len = RTL_NUM_STATS;
+		if (copy_to_user(useraddr, &estr, sizeof(estr)))
+			return -EFAULT;
+		if (copy_to_user(useraddr + sizeof(estr),
+				 &ethtool_stats_keys,
+				 sizeof(ethtool_stats_keys)))
+			return -EFAULT;
+		return 0;
+	}
+
+	/* get NIC-specific statistics */
+	case ETHTOOL_GSTATS: {
+		struct ethtool_stats estats = { ETHTOOL_GSTATS };
+		u64 *tmp_stats;
+		const unsigned int sz = sizeof(u64) * RTL_NUM_STATS;
+		int i;
+
+		estats.n_stats = RTL_NUM_STATS;
+		if (copy_to_user(useraddr, &estats, sizeof(estats)))
+			return -EFAULT;
+
+		tmp_stats = kmalloc(sz, GFP_KERNEL);
+		if (!tmp_stats)
+			return -ENOMEM;
+		memset(tmp_stats, 0, sz);
+
+		i = 0;
+		tmp_stats[i++] = np->xstats.early_rx;
+		tmp_stats[i++] = np->xstats.tx_buf_mapped;
+		tmp_stats[i++] = np->xstats.tx_timeouts;
+		tmp_stats[i++] = np->xstats.rx_lost_in_ring;
+		if (i != RTL_NUM_STATS)
+			BUG();
+
+		i = copy_to_user(useraddr + sizeof(estats), tmp_stats, sz);
+		kfree(tmp_stats);
+
+		if (i)
+			return -EFAULT;
+		return 0;
+	}
 	default:
 		break;
 	}
@@ -2500,13 +2624,13 @@ static int rtl8139_resume (struct pci_dev *pdev)
 
 
 static struct pci_driver rtl8139_pci_driver = {
-	name:		DRV_NAME,
-	id_table:	rtl8139_pci_tbl,
-	probe:		rtl8139_init_one,
-	remove:		__devexit_p(rtl8139_remove_one),
+	.name		= DRV_NAME,
+	.id_table	= rtl8139_pci_tbl,
+	.probe		= rtl8139_init_one,
+	.remove		= __devexit_p(rtl8139_remove_one),
 #ifdef CONFIG_PM
-	suspend:	rtl8139_suspend,
-	resume:		rtl8139_resume,
+	.suspend	= rtl8139_suspend,
+	.resume		= rtl8139_resume,
 #endif /* CONFIG_PM */
 };
 
