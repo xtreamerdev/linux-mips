@@ -19,7 +19,6 @@
 #include <asm/bitops.h>
 #include <asm/bootinfo.h>
 #include <asm/io.h>
-#include <asm/irq.h>
 #include <asm/mipsregs.h>
 #include <asm/system.h>
 
@@ -34,7 +33,7 @@ extern void dec_init_kn03(void);
 
 extern asmlinkage void decstation_handle_int(void);
 
-volatile unsigned long irq_err_count;
+atomic_t irq_err_count;
 
 static inline void mask_irq(unsigned int irq_nr)
 {
@@ -266,6 +265,11 @@ int probe_irq_off(unsigned long irqs)
 {
 	/* TODO */
 	return 0;
+}
+
+void init_irq_proc(void)
+{
+	/* Nothing, for now.  */
 }
 
 void __init init_IRQ(void)
