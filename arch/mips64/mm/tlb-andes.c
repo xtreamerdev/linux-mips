@@ -61,7 +61,7 @@ void local_flush_tlb_mm(struct mm_struct *mm)
 #endif
 		local_irq_save(flags);
 		get_new_mmu_context(mm, smp_processor_id());
-		if(mm == current->mm)
+		if (mm == current->active_mm)
 			write_c0_entryhi(cpu_context(smp_processor_id(), mm)
 				    & ASID_MASK);
 		local_irq_restore(flags);
@@ -107,7 +107,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 			write_c0_entryhi(oldpid);
 		} else {
 			get_new_mmu_context(mm, smp_processor_id());
-			if(mm == current->mm)
+			if (mm == current->active_mm)
 				write_c0_entryhi(cpu_context(smp_processor_id(), mm)
 					    & ASID_MASK);
 		}
