@@ -268,8 +268,6 @@
 #define __NR_O32_Linux			4000
 #define __NR_O32_Linux_syscalls		240
 
-#define __NR_O32_Linux_syscalls		240
-
 #if _MIPS_SIM == _MIPS_SIM_ABI64
 
 /*
