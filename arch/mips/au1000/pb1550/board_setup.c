@@ -44,11 +44,9 @@
 #include <asm/reboot.h>
 #include <asm/pgtable.h>
 #include <asm/au1000.h>
-#include <asm/db1x00.h>
+#include <asm/pb1550.h>
 
 extern struct rtc_ops no_rtc_ops;
-
-static BCSR * const bcsr = (BCSR *)0xB3000000;
 
 void __init board_setup(void)
 {
