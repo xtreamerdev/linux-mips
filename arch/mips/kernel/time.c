@@ -62,6 +62,7 @@ static int null_rtc_set_time(unsigned long sec)
 
 unsigned long (*rtc_get_time)(void) = null_rtc_get_time;
 int (*rtc_set_time)(unsigned long) = null_rtc_set_time;
+int (*rtc_set_mmss)(unsigned long);
 
 
 /*
@@ -364,7 +365,7 @@ void timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	    xtime.tv_sec > last_rtc_update + 660 &&
 	    xtime.tv_usec >= 500000 - ((unsigned) tick) / 2 &&
 	    xtime.tv_usec <= 500000 + ((unsigned) tick) / 2) {
-		if (rtc_set_time(xtime.tv_sec) == 0) {
+		if (rtc_set_mmss(xtime.tv_sec) == 0) {
 			last_rtc_update = xtime.tv_sec;
 		} else {
 			/* do it again in 60 s */
@@ -472,6 +473,9 @@ void __init time_init(void)
 {
 	if (board_time_init)
 		board_time_init();
+
+	if (!rtc_set_mmss)
+		rtc_set_mmss = rtc_set_time;
 
 	xtime.tv_sec = rtc_get_time();
 	xtime.tv_usec = 0;
