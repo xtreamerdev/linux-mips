@@ -331,3 +331,15 @@ sys_call_table:
 	PTR	sys_cacheflush
 	PTR	sys_cachectl
 	PTR	sys_sysmips
+	PTR	sys_ni_syscall			/* 5200 */
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall			/* 5205 */
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall			/* 5210 */
+	PTR	sys_rt_sigreturn
