@@ -15,6 +15,7 @@
 #include <linux/pagemap.h>
 #include <linux/types.h>
 #include <asm/addrspace.h>
+#include <asm/pgtable-bits.h>
 #include <asm/byteorder.h>
 
 /*
@@ -134,31 +135,14 @@ extern unsigned long isa_slot_offset;
 
 extern void * __ioremap(phys_t offset, phys_t size, unsigned long flags);
 
-static inline void *ioremap(phys_t offset, unsigned long size)
-{
-	return __ioremap(offset, size, _CACHE_UNCACHED);
-}
-
-static inline void *ioremap_nocache(phys_t offset, unsigned long size)
-{
-	return __ioremap(offset, size, _CACHE_UNCACHED);
-}
-
-#if !defined(CONFIG_CPU_R3000) && !defined(CONFIG_CPU_TX39XX)
-/*
- * These will probably never be used for R3k
- */
-static inline void *ioremap_cacheable_cow(phys_t offset, unsigned long size)
-{
-	return __ioremap(offset, size, _CACHE_CACHABLE_COW);
-}
-
-static inline void *ioremap_uncached_accelerated(phys_t offset, unsigned long size)
-{
-        return __ioremap(offset, size, _CACHE_UNCACHED_ACCELERATED);
-}
-
-#endif
+#define ioremap(offset, size)						\
+	__ioremap((offset), (size), _CACHE_UNCACHED)
+#define ioremap_nocache(offset, size)					\
+	__ioremap((offset), (size), _CACHE_UNCACHED)
+#define ioremap_cacheable_cow(offset, size)				\
+	__ioremap((offset), (size), _CACHE_CACHABLE_COW)
+#define ioremap_uncached_accelerated(offset, size)			\
+	__ioremap((offset), (size), _CACHE_UNCACHED_ACCELERATED)
 
 extern void iounmap(void *addr);
 
