@@ -96,14 +96,14 @@ if [ "$CONFIG_SERIAL_NONSTANDARD" = "y" ]; then
 	    fi
          fi
       fi
-      bool 'TXx927 SIO support' CONFIG_TXX927_SERIAL 
+      bool '  TXx927 SIO support' CONFIG_TXX927_SERIAL 
       if [ "$CONFIG_TXX927_SERIAL" = "y" ]; then
-         bool 'TXx927 SIO Console support' CONFIG_TXX927_SERIAL_CONSOLE  
+         bool '    TXx927 SIO Console support' CONFIG_TXX927_SERIAL_CONSOLE  
       fi                             
       if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
          bool '  Support for BCM1xxx onchip DUART' CONFIG_SIBYTE_SB1250_DUART
          if [ "$CONFIG_SIBYTE_SB1250_DUART" = "y" ]; then
-            bool '  Console on BCM1xxx DUART' CONFIG_SIBYTE_SB1250_DUART_CONSOLE
+            bool '    Console on BCM1xxx DUART' CONFIG_SIBYTE_SB1250_DUART_CONSOLE
             if [ "$CONFIG_SIBYTE_SB1250_DUART_CONSOLE" = "y" ]; then
                define_bool CONFIG_SERIAL_CONSOLE y
             fi
@@ -120,9 +120,9 @@ if [ "$CONFIG_SERIAL_NONSTANDARD" = "y" ]; then
       dep_bool '    Z85C30 serial support' CONFIG_ZS $CONFIG_SERIAL_DEC $CONFIG_TC
    fi
    if [ "$CONFIG_SGI_IP22" = "y" ]; then
-      bool 'SGI Zilog85C30 serial support' CONFIG_IP22_SERIAL
+      bool '  SGI Zilog85C30 serial support' CONFIG_IP22_SERIAL
       if [ "$CONFIG_IP22_SERIAL" = "y" ]; then
-	 bool '  Support for console on serial port' CONFIG_IP22_SERIAL_CONSOLE
+	 bool '    Support for console on serial port' CONFIG_IP22_SERIAL_CONSOLE
       fi
    fi
 fi
