@@ -182,7 +182,7 @@ xxs1500_pcmcia_configure_socket(const struct pcmcia_configure *configure)
 	return 0;
 }
 
-struct pcmcia_low_level xxs1500_pcmcia_ops = { 
+struct pcmcia_low_level au1x00_pcmcia_ops = { 
 	xxs1500_pcmcia_init,
 	xxs1500_pcmcia_shutdown,
 	xxs1500_pcmcia_socket_state,

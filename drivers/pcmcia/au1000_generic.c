@@ -162,22 +162,7 @@ static int __init au1000_pcmcia_driver_init(void)
 		return -1;
 	}
 
-#if defined(CONFIG_MIPS_PB1000) || defined(CONFIG_MIPS_PB1100) || defined(CONFIG_MIPS_PB1500)
-	pcmcia_low_level=&pb1x00_pcmcia_ops;
-#elif defined(CONFIG_MIPS_DB1000) || defined(CONFIG_MIPS_DB1100) || defined(CONFIG_MIPS_DB1500)
-	pcmcia_low_level=&db1x00_pcmcia_ops;
-#elif defined(CONFIG_MIPS_HYDROGEN3)
-	pcmcia_low_level=&hydrogen3_pcmcia_ops;
-#elif defined(CONFIG_MIPS_XXS1500)
-	pcmcia_low_level=&xxs1500_pcmcia_ops;
-#elif defined(CONFIG_MIPS_SPARTACUS2)
-	pcmcia_low_level=&spartacus2_pcmcia_ops;
-#elif defined(CONFIG_MIPS_PICOENGINE)
-	pcmcia_low_level=&picoengine_pcmcia_ops;
-#else
-#error Unsupported AU1000 board.
-#endif
-
+	pcmcia_low_level=&au1x00_pcmcia_ops;
 	pcmcia_init.handler=au1000_pcmcia_interrupt;
 	if((socket_count=pcmcia_low_level->init(&pcmcia_init))<0) {
 		printk(KERN_ERR "Unable to initialize PCMCIA service.\n");

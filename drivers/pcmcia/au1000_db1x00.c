@@ -260,7 +260,7 @@ db1x00_pcmcia_configure_socket(const struct pcmcia_configure *configure)
 	return 0;
 }
 
-struct pcmcia_low_level db1x00_pcmcia_ops = { 
+struct pcmcia_low_level au1x00_pcmcia_ops = { 
 	db1x00_pcmcia_init,
 	db1x00_pcmcia_shutdown,
 	db1x00_pcmcia_socket_state,

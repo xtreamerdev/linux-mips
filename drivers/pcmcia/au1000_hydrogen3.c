@@ -137,7 +137,7 @@ hydrogen3_pcmcia_configure_socket(const struct pcmcia_configure *configure)
 	return 0;
 }
 
-struct pcmcia_low_level hydrogen3_pcmcia_ops = { 
+struct pcmcia_low_level au1x00_pcmcia_ops = { 
 	hydrogen3_pcmcia_init,
 	hydrogen3_pcmcia_shutdown,
 	hydrogen3_pcmcia_socket_state,
@@ -148,5 +148,5 @@ struct pcmcia_low_level hydrogen3_pcmcia_ops = {
 struct pcmcia_low_level *
 hydrogen3_get_pcmcia_ops(void)
 {
-	return &hydrogen3_pcmcia_ops;
+	return &au1x00_pcmcia_ops;
 };
