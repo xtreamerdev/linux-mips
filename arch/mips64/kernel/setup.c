@@ -436,20 +436,16 @@ void __init setup_arch(char **cmdline_p)
 #endif
 #ifdef CONFIG_MOMENCO_OCELOT
 	case MACH_GROUP_MOMENCO:
-		momenco_ocelot_setup();
-		break;
+	momenco_ocelot_setup();
 #endif
 #ifdef CONFIG_MOMENCO_OCELOT_G
 	case MACH_GROUP_MOMENCO:
-		momenco_ocelot_g_setup();
-		break;
+	momenco_ocelot_g_setup();
 #endif
 #ifdef CONFIG_MOMENCO_OCELOT_C
 	case MACH_GROUP_MOMENCO:
-		momenco_ocelot_c_setup();
-		break;
+	momenco_ocelot_c_setup();
 #endif
-
 
 	strncpy(command_line, arcs_cmdline, CL_SIZE);
 	memcpy(saved_command_line, command_line, CL_SIZE);
