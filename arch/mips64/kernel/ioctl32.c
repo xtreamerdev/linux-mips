@@ -36,6 +36,7 @@
 #include <linux/auto_fs4.h>
 #include <linux/ext2_fs.h>
 #include <linux/raid/md_u.h>
+#include <linux/serial.h>
 
 #include <scsi/scsi.h>
 #undef __KERNEL__		/* This file was born to be ugly ...  */
@@ -47,6 +48,9 @@
 #include <asm/uaccess.h>
 
 #include <linux/rtc.h>
+#ifdef CONFIG_MTD_CHAR
+#include <linux/mtd/mtd.h>
+#endif
 
 #ifdef CONFIG_SIBYTE_TBPROF
 #include <asm/sibyte/trace_prof.h>
@@ -740,6 +744,127 @@ static int ioc_settimeout(unsigned int fd, unsigned int cmd, unsigned long arg)
 	return rw_long(fd, AUTOFS_IOC_SETTIMEOUT, arg);
 }
 
+/* serial_struct_ioctl was taken from x86_64/ia32/ia32_ioctl.c and
+ * slightly modified for mips */
+/* iomem_base is unsigned char * in linux/serial.h (reserved in sgiserial.h) */
+struct serial_struct32 {
+	int	type;
+	int	line;
+	unsigned int	port;
+	int	irq;
+	int	flags;
+	int	xmit_fifo_size;
+	int	custom_divisor;
+	int	baud_base;
+	unsigned short	close_delay;
+	char	io_type;
+	char	reserved_char[1];
+	int	hub6;
+	unsigned short	closing_wait; /* time to wait before closing */
+	unsigned short	closing_wait2; /* no longer used... */
+	__u32 iomem_base;
+	unsigned short	iomem_reg_shift;
+	unsigned int	port_high;
+	int	reserved[1];
+};
+
+static int serial_struct_ioctl(unsigned fd, unsigned cmd,  void *ptr) 
+{
+	typedef struct serial_struct SS;
+	struct serial_struct32 *ss32 = ptr; 
+	int err = 0;
+	struct serial_struct ss; 
+	mm_segment_t oldseg = get_fs(); 
+	set_fs(KERNEL_DS);
+	if (cmd == TIOCSSERIAL) { 
+		err = -EFAULT;
+		if (copy_from_user(&ss, ss32, sizeof(struct serial_struct32)))
+			goto out;
+		memmove(&ss.iomem_reg_shift, ((char*)&ss.iomem_base)+4, 
+			sizeof(SS)-offsetof(SS,iomem_reg_shift)); 
+		ss.iomem_base = (void *)(long)ss.iomem_base; /* sign extend */
+	}
+	if (!err)
+		err = sys_ioctl(fd,cmd,(unsigned long)(&ss)); 
+	if (cmd == TIOCGSERIAL && err >= 0) { 
+		__u32 base;
+		if (__copy_to_user(ss32,&ss,offsetof(SS,iomem_base)) ||
+		    __copy_to_user(&ss32->iomem_reg_shift,
+				   &ss.iomem_reg_shift,
+				   sizeof(SS) - offsetof(SS, iomem_reg_shift)))
+			err = -EFAULT;
+		base = (unsigned long)ss.iomem_base;
+		err |= __put_user(base, &ss32->iomem_base); 		
+	} 
+ out:
+	set_fs(oldseg);
+	return err;	
+}
+
+/* loop_status was taken from sparc64/kernel/ioctl32.c */
+struct loop_info32 {
+	int			lo_number;      /* ioctl r/o */
+	__kernel_dev_t32	lo_device;      /* ioctl r/o */
+	unsigned int		lo_inode;       /* ioctl r/o */
+	__kernel_dev_t32	lo_rdevice;     /* ioctl r/o */
+	int			lo_offset;
+	int			lo_encrypt_type;
+	int			lo_encrypt_key_size;    /* ioctl w/o */
+	int			lo_flags;       /* ioctl r/o */
+	char			lo_name[LO_NAME_SIZE];
+	unsigned char		lo_encrypt_key[LO_KEY_SIZE]; /* ioctl w/o */
+	unsigned int		lo_init[2];
+	char			reserved[4];
+};
+
+static int loop_status(unsigned int fd, unsigned int cmd, unsigned long arg)
+{
+	mm_segment_t old_fs = get_fs();
+	struct loop_info l;
+	int err = -EINVAL;
+
+	switch(cmd) {
+	case LOOP_SET_STATUS:
+		err = get_user(l.lo_number, &((struct loop_info32 *)arg)->lo_number);
+		err |= __get_user(l.lo_device, &((struct loop_info32 *)arg)->lo_device);
+		err |= __get_user(l.lo_inode, &((struct loop_info32 *)arg)->lo_inode);
+		err |= __get_user(l.lo_rdevice, &((struct loop_info32 *)arg)->lo_rdevice);
+		err |= __copy_from_user((char *)&l.lo_offset, (char *)&((struct loop_info32 *)arg)->lo_offset,
+					   8 + (unsigned long)l.lo_init - (unsigned long)&l.lo_offset);
+		if (err) {
+			err = -EFAULT;
+		} else {
+			set_fs (KERNEL_DS);
+			err = sys_ioctl (fd, cmd, (unsigned long)&l);
+			set_fs (old_fs);
+		}
+		break;
+	case LOOP_GET_STATUS:
+		set_fs (KERNEL_DS);
+		err = sys_ioctl (fd, cmd, (unsigned long)&l);
+		set_fs (old_fs);
+		if (!err) {
+			err = put_user(l.lo_number, &((struct loop_info32 *)arg)->lo_number);
+			err |= __put_user(l.lo_device, &((struct loop_info32 *)arg)->lo_device);
+			err |= __put_user(l.lo_inode, &((struct loop_info32 *)arg)->lo_inode);
+			err |= __put_user(l.lo_rdevice, &((struct loop_info32 *)arg)->lo_rdevice);
+			err |= __copy_to_user((char *)&((struct loop_info32 *)arg)->lo_offset,
+					   (char *)&l.lo_offset, (unsigned long)l.lo_init - (unsigned long)&l.lo_offset);
+			if (err)
+				err = -EFAULT;
+		}
+		break;
+	default: {
+		static int count;
+		if (++count <= 20)
+			printk("%s: Unknown loop ioctl cmd, fd(%d) "
+			       "cmd(%08x) arg(%08lx)\n",
+			       __FUNCTION__, fd, cmd, arg);
+	}
+	}
+	return err;
+}
+
 struct ioctl32_handler {
 	unsigned int cmd;
 	int (*function)(unsigned int, unsigned int, unsigned long);
@@ -789,8 +914,8 @@ static struct ioctl32_list ioctl32_handler_table[] = {
 	IOCTL32_DEFAULT(TIOCSCTTY),
 	IOCTL32_DEFAULT(TIOCGPTN),
 	IOCTL32_DEFAULT(TIOCSPTLCK),
-	IOCTL32_DEFAULT(TIOCGSERIAL),
-	IOCTL32_DEFAULT(TIOCSSERIAL),
+	IOCTL32_HANDLER(TIOCGSERIAL, serial_struct_ioctl),
+	IOCTL32_HANDLER(TIOCSSERIAL, serial_struct_ioctl),
 	IOCTL32_DEFAULT(TIOCSERGETLSR),
 
 	IOCTL32_DEFAULT(FIOCLEX),
@@ -973,6 +1098,8 @@ static struct ioctl32_list ioctl32_handler_table[] = {
 	/* Big L */
 	IOCTL32_DEFAULT(LOOP_SET_FD),
 	IOCTL32_DEFAULT(LOOP_CLR_FD),
+	IOCTL32_HANDLER(LOOP_SET_STATUS, loop_status),
+	IOCTL32_HANDLER(LOOP_GET_STATUS, loop_status),
 
 	/* And these ioctls need translation */
 	IOCTL32_HANDLER(SIOCGIFNAME, dev_ifname32),
@@ -1137,7 +1264,18 @@ static struct ioctl32_list ioctl32_handler_table[] = {
 	IOCTL32_DEFAULT(RTC_RD_TIME),
 	IOCTL32_DEFAULT(RTC_SET_TIME),
 	IOCTL32_DEFAULT(RTC_WKALM_SET),
-	IOCTL32_DEFAULT(RTC_WKALM_RD)
+	IOCTL32_DEFAULT(RTC_WKALM_RD),
+#ifdef CONFIG_MTD_CHAR
+	/* Big M */
+	IOCTL32_DEFAULT(MEMGETINFO),
+	IOCTL32_DEFAULT(MEMERASE),
+	// IOCTL32_DEFAULT(MEMWRITEOOB32, mtd_rw_oob),
+	// IOCTL32_DEFAULT(MEMREADOOB32, mtd_rw_oob),
+	IOCTL32_DEFAULT(MEMLOCK),
+	IOCTL32_DEFAULT(MEMUNLOCK),
+	IOCTL32_DEFAULT(MEMGETREGIONCOUNT),
+	IOCTL32_DEFAULT(MEMGETREGIONINFO),
+#endif
 };
 
 #define NR_IOCTL32_HANDLERS	(sizeof(ioctl32_handler_table) /	\
