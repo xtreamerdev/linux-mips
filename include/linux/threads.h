@@ -9,9 +9,9 @@
  */
  
 #ifdef CONFIG_SMP
-#define NR_CPUS		CONFIG_NR_CPUS
+#define NR_CPUS	CONFIG_NR_CPUS
 #else
-#define NR_CPUS		1
+#define NR_CPUS	1
 #endif
 
 #define MIN_THREADS_LEFT_FOR_ROOT 4
