@@ -1,4 +1,4 @@
-/* * $Id: uaccess.h,v 1.8.2.1 1999/10/22 00:00:55 ralf Exp $
+/* * $Id: uaccess.h,v 1.8.2.2 2000/02/19 00:31:56 ralf Exp $
  *
  * This file is subject to the terms and conditions of the GNU General Public
  * License.  See the file "COPYING" in the main directory of this archive
@@ -323,8 +323,8 @@ extern size_t __copy_user(void *__to, const void *__from, size_t __n);
 		"move\t$5, %2\n\t" \
 		"move\t$6, %3\n\t" \
 		".set\tnoreorder\n\t" \
-		".set\tnoat\n\t" \
 		__MODULE_JAL(__copy_user) \
+		".set\tnoat\n\t" \
 		"addu\t$1, %2, %3\n\t" \
 		".set\tat\n\t" \
 		".set\treorder\n\t" \
@@ -372,8 +372,8 @@ extern size_t __copy_user(void *__to, const void *__from, size_t __n);
 			"move\t$5, %2\n\t" \
 			"move\t$6, %3\n\t" \
 			".set\tnoreorder\n\t" \
-			".set\tnoat\n\t" \
 			__MODULE_JAL(__copy_user) \
+			".set\tnoat\n\t" \
 			"addu\t$1, %2, %3\n\t" \
 			".set\tat\n\t" \
 			".set\treorder\n\t" \
