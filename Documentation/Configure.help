@@ -3512,13 +3512,6 @@ CONFIG_IP22_SERIAL
   If you want to use your IP22's built-in serial ports under Linux,
   answer Y.
 
-SGI Newport Graphics support
-CONFIG_SGI_NEWPORT_GFX
-  If you have an SGI machine and you want to compile the graphics
-  drivers, say Y here. This will include the code for the
-  /dev/graphics and /dev/gfx drivers into the kernel for supporting
-  virtualized access to your graphics hardware.
-
 SGI Newport Console support
 CONFIG_SGI_NEWPORT_CONSOLE
   Say Y here if you want the console on the Newport aka XL graphics
