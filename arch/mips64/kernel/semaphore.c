@@ -6,6 +6,17 @@
 #include <linux/sched.h>
 #include <asm/semaphore-helper.h>
 
+#ifdef CONFIG_CPU_HAS_LLDSCD
+/*
+ * On machines without lld/scd we need a spinlock to make the manipulation of
+ * sem->count and sem->waking atomic.  Scalability isn't an issue because
+ * this lock is used on UP only so it's just an empty variable.
+ */
+spinlock_t semaphore_lock = SPIN_LOCK_UNLOCKED;
+
+EXPORT_SYMBOL(semaphore_lock);
+#endif
+
 /*
  * Semaphores are implemented using a two-way counter:
  * The "count" variable is decremented for each process
