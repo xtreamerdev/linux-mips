@@ -44,6 +44,7 @@
 #include <asm/reboot.h>
 #include <asm/pgtable.h>
 #include <asm/au1000.h>
+#include <asm/time.h>
 
 #if defined(CONFIG_AU1X00_SERIAL_CONSOLE)
 extern void console_setup(char *, int *);
@@ -72,6 +73,8 @@ extern struct resource iomem_resource;
 extern phys_t (*fixup_bigphys_addr)(phys_t phys_addr, phys_t size);
 static phys_t au1500_fixup_bigphys_addr(phys_t phys_addr, phys_t size);
 #endif
+extern void au1xxx_time_init(void);
+extern void au1xxx_timer_setup(void);
 
 void __init au1x00_setup(void)
 {
@@ -125,6 +128,9 @@ void __init au1x00_setup(void)
 #if defined(CONFIG_64BIT_PHYS_ADDR) && defined(CONFIG_SOC_AU1500)
 	fixup_bigphys_addr = au1500_fixup_bigphys_addr;
 #endif
+
+	board_time_init = au1xxx_time_init;
+	board_timer_setup = au1xxx_timer_setup;
 
 	// IO/MEM resources. 
 	set_io_port_base(0);

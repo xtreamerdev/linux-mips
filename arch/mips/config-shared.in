@@ -246,6 +246,7 @@ fi
 if [ "$CONFIG_MIPS_MIRAGE" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1500 y
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_PCI y
    define_bool CONFIG_NEW_PCI y
@@ -255,6 +256,7 @@ fi
 if [ "$CONFIG_MIPS_BOSPORUS" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1500 y
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PC_KEYB y
    define_bool CONFIG_PCI y
    define_bool CONFIG_NEW_PCI y
@@ -264,6 +266,7 @@ fi
 if [ "$CONFIG_MIPS_PB1000" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1000 y
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PCI y
    define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
@@ -274,6 +277,7 @@ fi
 if [ "$CONFIG_MIPS_PB1100" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1100 y
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PCI y
    define_bool CONFIG_PCI_AUTO n
    define_bool CONFIG_NEW_PCI y
@@ -285,6 +289,7 @@ fi
 if [ "$CONFIG_MIPS_PB1500" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1500 y
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PCI y
    define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_PCI_AUTO y
@@ -294,6 +299,7 @@ fi
 if [ "$CONFIG_MIPS_DB1000" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1000 y
+   define_bool CONFIG_NEW_TIME_C y
    # CONFIG_PCI needed for USB
    define_bool CONFIG_PCI y
    define_bool CONFIG_NEW_PCI y
@@ -305,6 +311,7 @@ fi
 if [ "$CONFIG_MIPS_DB1500" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1500 y
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PCI y
    define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_PCI_AUTO y
@@ -314,6 +321,7 @@ fi
 if [ "$CONFIG_MIPS_DB1100" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1100 y
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PCI y
    define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_NONCOHERENT_IO y
@@ -323,6 +331,7 @@ fi
 if [ "$CONFIG_MIPS_XXS1500" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1500 y
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PCI y
    define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_PCI_AUTO y
@@ -332,6 +341,7 @@ fi
 if [ "$CONFIG_MIPS_MTX1" = "y" ]; then
    define_bool CONFIG_SOC_AU1X00 y
    define_bool CONFIG_SOC_AU1500 y
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_PCI y
    define_bool CONFIG_NEW_PCI y
    define_bool CONFIG_PCI_AUTO y

@@ -51,10 +51,10 @@
 extern void au1k_wait(void);
 static void calibrate_delay(void);
 
-extern void set_au1000_speed(unsigned int new_freq);
-extern unsigned int get_au1000_speed(void);
-extern unsigned long get_au1000_uart_baud_base(void);
-extern void set_au1000_uart_baud_base(unsigned long new_baud_base);
+extern void set_au1x00_speed(unsigned int new_freq);
+extern unsigned int get_au1x00_speed(void);
+extern unsigned long get_au1x00_uart_baud_base(void);
+extern void set_au1x00_uart_baud_base(unsigned long new_baud_base);
 extern unsigned long save_local_and_disable(int controller);
 extern void restore_local_and_enable(int controller, unsigned long mask);
 extern void local_enable_irq(unsigned int irq_nr);
@@ -187,13 +187,13 @@ static int pm_do_freq(ctl_table * ctl, int write, struct file *file,
 			return -EFAULT;
 		}
 
-		old_baud_base = get_au1000_uart_baud_base();
-		old_cpu_freq = get_au1000_speed();
+		old_baud_base = get_au1x00_uart_baud_base();
+		old_cpu_freq = get_au1x00_speed();
 
 		new_cpu_freq = pll * 12 * 1000000;
 		new_baud_base = (new_cpu_freq / 4) / 16;
-		set_au1000_speed(new_cpu_freq);
-		set_au1000_uart_baud_base(new_baud_base);
+		set_au1x00_speed(new_cpu_freq);
+		set_au1x00_uart_baud_base(new_baud_base);
 
 		old_refresh = au_readl(MEM_SDREFCFG) & 0x1ffffff;
 		new_refresh =
