@@ -132,6 +132,7 @@ static BCSR * const bcsr = (BCSR *)BCSR_PHYS_ADDR;
 #define PB1550_USER_ONLY
 #endif
 
+#define NAND_PHYS_ADDR   0x20000000
 /* Timing values as described in databook, * ns value stripped of 
  * lower 2 bits.
  * These defines are here rather than an SOC1550 generic file because 
