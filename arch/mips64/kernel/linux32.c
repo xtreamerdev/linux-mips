@@ -2586,7 +2586,7 @@ static int verify_iovec32(struct msghdr *kern_msg, struct iovec *kern_iov,
 	return tot_len;
 }
 
-extern __inline__ void
+static __inline__ void
 sockfd_put(struct socket *sock)
 {
 	fput(sock->file);

@@ -36,7 +36,7 @@ __asm__ (
 	".set\tpop\n\t"
 	".endm");
 
-extern __inline__ void
+static __inline__ void
 __sti(void)
 {
 	__asm__ __volatile__(
@@ -68,7 +68,7 @@ __asm__ (
 	".set\tpop\n\t"
 	".endm");
 
-extern __inline__ void
+static __inline__ void
 __cli(void)
 {
 	__asm__ __volatile__(
@@ -279,7 +279,7 @@ do { \
  * For 32 and 64 bit operands we can take advantage of ll and sc.
  * FIXME: This doesn't work for R3000 machines.
  */
-extern __inline__ unsigned long xchg_u32(volatile int * m, unsigned long val)
+static __inline__ unsigned long xchg_u32(volatile int * m, unsigned long val)
 {
 #ifdef CONFIG_CPU_HAS_LLSC
 	unsigned long dummy;
