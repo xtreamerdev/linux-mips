@@ -406,7 +406,8 @@ static struct irqaction timer_irqaction = {
 	0,
 	"timer",
 	NULL,
-	NULL};
+	NULL
+};
 
 void __init time_init(void)
 {
