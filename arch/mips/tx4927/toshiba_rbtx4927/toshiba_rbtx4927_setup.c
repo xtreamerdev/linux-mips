@@ -907,8 +907,47 @@ void toshiba_rbtx4927_power_off(void)
 	/* no return */
 }
 
+void toshiba_rbtx4927_nmi (struct pt_regs *regs)
+{
+	extern void show_code(unsigned int *pc);
+	extern void show_runqueue(void);
+	extern void show_stack(unsigned int *sp);
+	extern void show_state_nolock(void);
+	extern void show_trace(unsigned long *sp, unsigned int *ra,
+			       unsigned int *pc);
+
+	bust_spinlocks(1);
+	printk("\ncurrent = %d:%s\n",current->pid,current->comm);
+	show_regs(regs);
+	printk("Process %s (pid: %d, stackpage=%08lx)\n",
+		current->comm, current->pid, (unsigned long) current);
+	show_stack((unsigned int *)regs->regs[29]);
+	show_trace((unsigned long *)regs->regs[29], 
+	           (unsigned int *)regs->regs[31],
+	           (unsigned int *)regs->cp0_epc);
+	show_code((unsigned int *)regs->cp0_epc);
+	bust_spinlocks(0);
+}
+
+void toshiba_rbtx4927_nmi_handler_setup (void)
+{
+	extern void tx4927_nmi_handler (void);
+	unsigned long vec[2];
+
+	vec[0] = 0x08000000 |
+			(0x03ffffff & ((unsigned long)tx4927_nmi_handler >> 2));
+	vec[1] = 0;
+
+	/*
+	 * Our firmware (PMON in this case) has a NMI hook that
+	 * jumps to 0x80000220. We locate our NMI handler there.
+	 */
+	memcpy((void *)(KSEG0 + 0x220), &vec, 0x8);
+}
+
 void __init toshiba_rbtx4927_setup(void)
 {
+	extern void (*board_nmi_handler_setup)(void);
 	vu32 cp0_config;
 
 	printk("CPU is %s\n", toshiba_name);
@@ -927,6 +966,9 @@ void __init toshiba_rbtx4927_setup(void)
 	cp0_config = read_c0_config();
 	cp0_config = cp0_config & ~(TX49_CONF_IC | TX49_CONF_DC);
 	write_c0_config(cp0_config);
+
+	/* set up the NMI handler */
+	board_nmi_handler_setup = toshiba_rbtx4927_nmi_handler_setup;
 
 #ifdef TOSHIBA_RBTX4927_SETUP_DEBUG
 	{

@@ -63,6 +63,7 @@ extern int fpu_emulator_cop1Handler(int xcptno, struct pt_regs *xcp,
 
 void (*board_be_init)(void);
 int (*board_be_handler)(struct pt_regs *regs, int is_fixup);
+void (*board_nmi_handler_setup)(void) = NULL;
 
 int kstack_depth_to_print = 24;
 
@@ -1008,6 +1009,9 @@ void __init trap_init(void)
 		save_fp_context = fpu_emulator_save_context;
 		restore_fp_context = fpu_emulator_restore_context;
 	}
+
+	if (board_nmi_handler_setup)
+		board_nmi_handler_setup();
 
 	flush_icache_range(KSEG0, KSEG0 + 0x400);
 
