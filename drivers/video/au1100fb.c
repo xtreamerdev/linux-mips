@@ -61,7 +61,7 @@
  * Sanity check. If this is a new Au1100 based board, search for
  * the PB1100 ifdefs to make sure you modify the code accordingly.
  */
-#if defined(CONFIG_MIPS_PB1100)
+#if defined(CONFIG_MIPS_PB1100) || defined(CONFIG_MIPS_DB1100)
 #else
 error Unknown Au1100 board
 #endif

@@ -165,7 +165,7 @@ if [ "$CONFIG_FB" = "y" ]; then
 	     bool '    Use CRT on Pb1100 ' CONFIG_PB1500_CRT
 	     bool '    Use TFT Panel on Pb1100 ' CONFIG_PB1500_TFT
            fi
-           if [ "$CONFIG_MIPS_PB1100" = "y" ]; then
+           if [ "$CONFIG_SOC_AU1100" = "y" ]; then
 	     bool '    Au1100 LCD Driver' CONFIG_FB_AU1100
            fi
 	 fi
