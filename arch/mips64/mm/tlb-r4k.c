@@ -33,7 +33,7 @@
 #undef DEBUG_TLB
 #undef DEBUG_TLBUPDATE
 
-extern char except_vec1_r4k;
+extern void except_vec1_r4k(void);
 
 /* CP0 hazard avoidance. */
 #define BARRIER __asm__ __volatile__(".set noreorder\n\t" \
@@ -402,6 +402,6 @@ void __init r4k_tlb_init(void)
 	temp_tlb_entry = mips_cpu.tlbsize - 1;
 	local_flush_tlb_all();
 
-	memcpy((void *)(KSEG0 + 0x80), &except_vec1_r4k, 0x80);
+	memcpy((void *)(KSEG0 + 0x80), except_vec1_r4k, 0x80);
 	flush_icache_range(KSEG0, KSEG0 + 0x80);
 }

@@ -2300,7 +2300,10 @@ void __init ld_mmu_r4xx0(void)
 	_update_mmu_cache = r4k_update_mmu_cache;
 
 	flush_cache_l1();
+}
 
+void __init r4k_tlb_init(void)
+{
 	/*
 	 * You should never change this register:
 	 *   - On R4600 1.7 the tlbp never hits for pages smaller than
@@ -2309,5 +2312,6 @@ void __init ld_mmu_r4xx0(void)
 	 *     be set for 4kb pages.
 	 */
 	write_32bit_cp0_register(CP0_PAGEMASK, PM_4K);
+	write_32bit_cp0_register(CP0_WIRED, 0);
 	local_flush_tlb_all();
 }

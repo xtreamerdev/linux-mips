@@ -17,115 +17,7 @@
 #include <asm/system.h>
 #include <asm/mmu_context.h>
 
-static int scache_lsz64;
-
-/*
- * This version has been tuned on an Origin.  For other machines the arguments
- * of the pref instructin may have to be tuned differently.
- */
-static void andes_clear_page(void * page)
-{
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%2\n"
-		"1:\tpref 7,512(%0)\n\t"
-		"sd\t$0,(%0)\n\t"
-		"sd\t$0,8(%0)\n\t"
-		"sd\t$0,16(%0)\n\t"
-		"sd\t$0,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"sd\t$0,-32(%0)\n\t"
-		"sd\t$0,-24(%0)\n\t"
-		"sd\t$0,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		"sd\t$0,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		: "=r" (page)
-		: "0" (page), "I" (PAGE_SIZE)
-		: "memory");
-}
-
-/* R10000 has no Create_Dirty type cacheops.  */
-static void andes_copy_page(void * to, void * from)
-{
-	unsigned long dummy1, dummy2, reg1, reg2, reg3, reg4;
-
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%8\n"
-		"1:\tpref\t0,2*128(%1)\n\t"
-		"pref\t1,2*128(%0)\n\t"
-		"ld\t%2,(%1)\n\t"
-		"ld\t%3,8(%1)\n\t"
-		"ld\t%4,16(%1)\n\t"
-		"ld\t%5,24(%1)\n\t"
-		"sd\t%2,(%0)\n\t"
-		"sd\t%3,8(%0)\n\t"
-		"sd\t%4,16(%0)\n\t"
-		"sd\t%5,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"daddiu\t%1,64\n\t"
-		"ld\t%2,-32(%1)\n\t"
-		"ld\t%3,-24(%1)\n\t"
-		"ld\t%4,-16(%1)\n\t"
-		"ld\t%5,-8(%1)\n\t"
-		"sd\t%2,-32(%0)\n\t"
-		"sd\t%3,-24(%0)\n\t"
-		"sd\t%4,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		" sd\t%5,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		:"=r" (dummy1), "=r" (dummy2), "=&r" (reg1), "=&r" (reg2),
-		 "=&r" (reg3), "=&r" (reg4)
-		:"0" (to), "1" (from), "I" (PAGE_SIZE));
-}
-
-/* Cache operations.  These are only used with the virtual memory system,
-   not for non-coherent I/O so it's ok to ignore the secondary caches.  */
-static void
-andes_flush_cache_l1(void)
-{
-	blast_dcache32(); blast_icache64();
-}
-
-/*
- * This is only used during initialization time. vmalloc() also calls
- * this, but that will be changed pretty soon.
- */
-static void andes_flush_cache_l2(void)
-{
-	switch (sc_lsize()) {
-		case 64:
-			blast_scache64();
-			break;
-		case 128:
-			blast_scache128();
-			break;
-		default:
-			printk(KERN_EMERG "Unknown L2 line size\n");
-			while(1);
-	}
-}
-
-void
-andes_flush_icache_page(unsigned long page)
-{
-	if (scache_lsz64)
-		blast_scache64_page(page);
-	else
-		blast_scache128_page(page);
-}
-
-static void
-andes_flush_cache_sigtramp(unsigned long addr)
-{
-	protected_writeback_dcache_line(addr & ~(dc_lsize - 1));
-	protected_flush_icache_line(addr & ~(ic_lsize - 1));
-}
+extern void except_vec1_r10k(void);
 
 #define NTLB_ENTRIES       64
 #define NTLB_ENTRIES_HALF  32
@@ -301,37 +193,9 @@ static void andes_update_mmu_cache(struct vm_area_struct * vma,
 	__restore_flags(flags);
 }
 
-void __init ld_mmu_andes(void)
+void __init andes_tlb_init(void)
 {
-	printk("Primary instruction cache %dkb, linesize %d bytes\n",
-	       icache_size >> 10, ic_lsize);
-	printk("Primary data cache %dkb, linesize %d bytes\n",
-	       dcache_size >> 10, dc_lsize);
-	printk("Secondary cache sized at %ldK, linesize %ld\n",
-	       scache_size() >> 10, sc_lsize());
-
-	_clear_page = andes_clear_page;
-	_copy_page = andes_copy_page;
-
-	_flush_cache_l1 = andes_flush_cache_l1;
-	_flush_cache_l2 = andes_flush_cache_l2;
-	_flush_cache_sigtramp = andes_flush_cache_sigtramp;
-
-	switch (sc_lsize()) {
-		case 64:
-			scache_lsz64 = 1;
-			break;
-		case 128:
-			scache_lsz64 = 0;
-			break;
-		default:
-			printk(KERN_EMERG "Unknown L2 line size\n");
-			while(1);
-	}
-
 	_update_mmu_cache = andes_update_mmu_cache;
-
-        flush_cache_l1();
 
 	/*
 	 * You should never change this register:
@@ -341,10 +205,13 @@ void __init ld_mmu_andes(void)
 	 *     be set for 4kb pages.
 	 */
 	write_32bit_cp0_register(CP0_PAGEMASK, PM_4K);
+	write_32bit_cp0_register(CP0_WIRED, 0);
 	write_32bit_cp0_register(CP0_FRAMEMASK, 0);
 
         /* From this point on the ARC firmware is dead.  */
 	local_flush_tlb_all();
 
 	/* Did I tell you that ARC SUCKS?  */
+
+	memcpy((void *)KSEG1 + 0x080, except_vec1_r10k, 0x80);
 }
