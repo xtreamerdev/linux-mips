@@ -1299,7 +1299,7 @@ static void show_serial_version(void)
 
 int __init dz_init(void)
 {
-	int i, tmp;
+	int i;
 	long flags;
 	struct dz_serial *info;
 
@@ -1413,7 +1413,7 @@ int __init dz_init(void)
 	/* reset the chip */
 #ifndef CONFIG_SERIAL_DEC_CONSOLE
 	dz_out(info, DZ_CSR, DZ_CLR);
-	while ((tmp = dz_in(info, DZ_CSR)) & DZ_CLR);
+	while (dz_in(info, DZ_CSR) & DZ_CLR);
 	iob();
 
 	/* enable scanning */
