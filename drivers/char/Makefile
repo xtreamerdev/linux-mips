@@ -216,6 +216,8 @@ obj-$(CONFIG_AMD_RNG) += amd768_rng.o
 
 obj-$(CONFIG_ITE_GPIO) += ite_gpio.o
 obj-$(CONFIG_AU1000_GPIO) += au1000_gpio.o
+obj-$(CONFIG_AU1000_USB_TTY) += au1000_usbtty.o
+obj-$(CONFIG_AU1000_USB_RAW) += au1000_usbraw.o
 obj-$(CONFIG_COBALT_LCD) += lcd.o
 
 obj-$(CONFIG_QIC02_TAPE) += tpqic02.o
