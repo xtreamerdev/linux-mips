@@ -70,20 +70,20 @@ do {									\
 	return PCIBIOS_SUCCESSFUL;					\
 } while (0)
 
-static int
-pci_conf0_read_config_byte(struct pci_dev *dev, int where, u8 *value)
+static int pci_conf0_read_config_byte(struct pci_dev *dev, int where,
+	u8 *value)
 {
 	CF0_READ_PCI_CFG(dev,where,value,3,0xff);
 }
 
-static int
-pci_conf0_read_config_word(struct pci_dev *dev, int where, u16 *value)
+static int pci_conf0_read_config_word(struct pci_dev *dev, int where,
+	u16 *value)
 {
 	CF0_READ_PCI_CFG(dev,where,value,2,0xffff);
 }
 
-static int
-pci_conf0_read_config_dword(struct pci_dev *dev, int where, u32 *value)
+static int pci_conf0_read_config_dword(struct pci_dev *dev, int where,
+	u32 *value)
 {
 	CF0_READ_PCI_CFG(dev,where,value,0,0xffffffff);
 }
@@ -115,20 +115,20 @@ do {									\
 	return PCIBIOS_SUCCESSFUL;					\
 } while (0)
 
-static int
-pci_conf0_write_config_byte(struct pci_dev *dev, int where, u8 value)
+static int pci_conf0_write_config_byte(struct pci_dev *dev, int where,
+	u8 value)
 {
 	CF0_WRITE_PCI_CFG(dev,where,value,3,0xff);
 }
 
-static int
-pci_conf0_write_config_word(struct pci_dev *dev, int where, u16 value)
+static int pci_conf0_write_config_word(struct pci_dev *dev, int where,
+	u16 value)
 {
 	CF0_WRITE_PCI_CFG(dev,where,value,2,0xffff);
 }
 
-static int
-pci_conf0_write_config_dword(struct pci_dev *dev, int where, u32 value)
+static int pci_conf0_write_config_dword(struct pci_dev *dev, int where,
+	u32 value)
 {
 	CF0_WRITE_PCI_CFG(dev,where,value,0,0xffffffff);
 }
@@ -157,14 +157,12 @@ void __init pcibios_init(void)
 	}
 }
 
-static inline u8
-bridge_swizzle(u8 pin, u8 slot)
+static inline u8 bridge_swizzle(u8 pin, u8 slot)
 {
 	return (((pin-1) + slot) % 4) + 1;
 }
 
-static u8 __init
-pci_swizzle(struct pci_dev *dev, u8 *pinp)
+static u8 __devinit pci_swizzle(struct pci_dev *dev, u8 *pinp)
 {
 	u8 pin = *pinp;
 
@@ -186,8 +184,7 @@ pci_swizzle(struct pci_dev *dev, u8 *pinp)
  * A given PCI device, in general, should be able to intr any of the cpus
  * on any one of the hubs connected to its xbow.
  */
-static int __init
-pci_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
+static int __devinit pci_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 {
 	if ((dev->bus->number >= MAX_PCI_BUSSES)
 	    || (pin != 1)
@@ -208,15 +205,13 @@ pci_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 	return lastirq - 1;
 }
 
-void __init
-pcibios_update_irq(struct pci_dev *dev, int irq)
+void __init pcibios_update_irq(struct pci_dev *dev, int irq)
 {
 	pci_write_config_byte(dev, PCI_INTERRUPT_LINE, irq);
 }
 
-void __init
-pcibios_update_resource(struct pci_dev *dev, struct resource *root,
-                        struct resource *res, int resource)
+void pcibios_update_resource(struct pci_dev *dev, struct resource *root,
+	struct resource *res, int resource)
 {
 	unsigned long where, size;
 	u32 reg;
@@ -228,15 +223,13 @@ pcibios_update_resource(struct pci_dev *dev, struct resource *root,
 	pci_write_config_dword(dev, where, reg);
 }
 
-void __init
-pcibios_fixup_bus(struct pci_bus *b)
+void __devinit pcibios_fixup_bus(struct pci_bus *b)
 {
 	pci_fixup_irqs(pci_swizzle, pci_map_irq);
 }
 
-void __init
-pcibios_fixup_pbus_ranges(struct pci_bus * bus,
-                          struct pbus_set_ranges_data * ranges)
+void __init pcibios_fixup_pbus_ranges(struct pci_bus * bus,
+	struct pbus_set_ranges_data * ranges)
 {
 	ranges->io_start  -= bus->resource[0]->start;
 	ranges->io_end    -= bus->resource[0]->start;
@@ -244,25 +237,23 @@ pcibios_fixup_pbus_ranges(struct pci_bus * bus,
 	ranges->mem_end   -= bus->resource[1]->start;
 }
 
-int __init
-pcibios_enable_device(struct pci_dev *dev)
+int pcibios_enable_device(struct pci_dev *dev, int mask)
 {
 	/* Not needed, since we enable all devices at startup.  */
 	return 0;
 }
 
-void __init
-pcibios_align_resource(void *data, struct resource *res, unsigned long size)
+void pcibios_align_resource(void *data, struct resource *res,
+	unsigned long size)
 {
 }
 
-unsigned __init int pcibios_assign_all_busses(void)
+unsigned int pcibios_assign_all_busses(void)
 {
 	return 0;
 }
 
-char * __init
-pcibios_setup(char *str)
+char * __devinit pcibios_setup(char *str)
 {
 	/* Nothing to do for now.  */
 
@@ -276,8 +267,7 @@ pcibios_setup(char *str)
  * settings.
  */
 
-static void __init
-pci_disable_swapping(struct pci_dev *dev)
+static void __init pci_disable_swapping(struct pci_dev *dev)
 {
 	unsigned int bus_id = (unsigned) dev->bus->number;
 	bridge_t *bridge = (bridge_t *) NODE_SWIN_BASE(bus_to_nid[bus_id],
@@ -289,8 +279,7 @@ pci_disable_swapping(struct pci_dev *dev)
 	bridge->b_widget.w_tflush;		/* Flush */
 }
 
-static void __init
-pci_enable_swapping(struct pci_dev *dev)
+static void __init pci_enable_swapping(struct pci_dev *dev)
 {
 	unsigned int bus_id = (unsigned) dev->bus->number;
 	bridge_t *bridge = (bridge_t *) NODE_SWIN_BASE(bus_to_nid[bus_id],
@@ -302,8 +291,7 @@ pci_enable_swapping(struct pci_dev *dev)
 	bridge->b_widget.w_tflush;		/* Flush */
 }
 
-static void __init
-pci_fixup_ioc3(struct pci_dev *d)
+static void __init pci_fixup_ioc3(struct pci_dev *d)
 {
 	unsigned long bus_id = (unsigned) d->bus->number;
 
@@ -315,8 +303,7 @@ pci_fixup_ioc3(struct pci_dev *d)
 	pci_disable_swapping(d);
 }
 
-static void __init
-pci_fixup_isp1020(struct pci_dev *d)
+static void __init pci_fixup_isp1020(struct pci_dev *d)
 {
 	unsigned short command;
 
@@ -340,8 +327,7 @@ pci_fixup_isp1020(struct pci_dev *d)
 	pci_enable_swapping(d);
 }
 
-static void __init
-pci_fixup_isp2x00(struct pci_dev *d)
+static void __init pci_fixup_isp2x00(struct pci_dev *d)
 {
 	unsigned int bus_id = (unsigned) d->bus->number;
 	bridge_t *bridge = (bridge_t *) NODE_SWIN_BASE(bus_to_nid[bus_id],

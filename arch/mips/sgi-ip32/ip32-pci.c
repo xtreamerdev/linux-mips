@@ -270,7 +270,7 @@ void __init pcibios_init (void)
  * irqs.  I suppose a device without a pin A will thank us for doing it
  * right if there exists such a broken piece of crap.
  */
-static int __init macepci_map_irq (struct pci_dev *dev, u8 slot, u8 pin)
+static int __devinit macepci_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 {
 	chkslot (dev);
 	if (pin == 0)
@@ -326,7 +326,7 @@ static int __init macepci_map_irq (struct pci_dev *dev, u8 slot, u8 pin)
  * It's not entirely clear what this does in a system with no bridges.
  * In any case, bridges are not supported by Linux in O2.
  */
-static u8 __init macepci_swizzle (struct pci_dev *dev, u8 *pinp)
+static u8 __init macepci_swizzle(struct pci_dev *dev, u8 *pinp)
 {
 	if (PCI_SLOT (dev->devfn) == 2)
 		*pinp = 2;
@@ -336,39 +336,39 @@ static u8 __init macepci_swizzle (struct pci_dev *dev, u8 *pinp)
 }
 
 /* All devices are enabled during initialization. */
-int pcibios_enable_device (struct pci_dev *dev)
+int pcibios_enable_device(struct pci_dev *dev, int flags)
 {
 	return PCIBIOS_SUCCESSFUL;
-}
+} 
 
 char * __init pcibios_setup (char *str)
 {
 	return str;
 }
 
-void __init pcibios_align_resource (void *data, struct resource *res,
-				    unsigned long size)
+void pcibios_align_resource(void *data, struct resource *res,
+	unsigned long size)
 {
 }
 
-void __init pcibios_update_resource (struct pci_dev *dev, struct resource *root,
-				     struct resource *res, int resource)
+void pcibios_update_resource(struct pci_dev *dev, struct resource *root,
+	struct resource *res, int resource)
 {
 }
 
-void __init pcibios_update_irq (struct pci_dev *dev, int irq)
+void __init pcibios_update_irq(struct pci_dev *dev, int irq)
 {
 	pci_write_config_byte (dev, PCI_INTERRUPT_LINE, irq);
 }
 
-void __init pcibios_fixup_bus (struct pci_bus *b)
+void __devinit pcibios_fixup_bus (struct pci_bus *b)
 {
 	pci_fixup_irqs (macepci_swizzle, macepci_map_irq);
 }
 
 /* XXX anybody know what this is supposed to do? */
 void __init pcibios_fixup_pbus_ranges(struct pci_bus * bus,
-				      struct pbus_set_ranges_data * ranges)
+	struct pbus_set_ranges_data * ranges)
 {
 	ranges->io_start -= bus->resource[0]->start;
 	ranges->io_end -= bus->resource[0]->start;
@@ -382,7 +382,8 @@ void __init pcibios_fixup_pbus_ranges(struct pci_bus * bus,
  * registered on the bridge error irq.  It's conceivable that some of these
  * conditions warrant a panic.  Anybody care to say which ones?
  */
-void macepci_error (int irq, void *dev, struct pt_regs *regs) {
+void macepci_error(int irq, void *dev, struct pt_regs *regs)
+{
 	u32 flags, error_addr;
 	char space;
 
@@ -454,7 +455,8 @@ void macepci_error (int irq, void *dev, struct pt_regs *regs) {
 			       & ~MACEPCI_ERROR_INTERRUPT_TEST);
 	}
 }
-unsigned __init int pcibios_assign_all_busses(void)
+
+unsigned int pcibios_assign_all_busses(void)
 {
 	return 0;
 }

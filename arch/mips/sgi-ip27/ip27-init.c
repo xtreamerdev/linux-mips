@@ -545,7 +545,7 @@ void __init smp_boot_cpus(void)
 	init_new_context(current, &init_mm);
 	current->processor = 0;
 	init_idle();
-	smp_tune_scheduling();
+	/* smp_tune_scheduling();  XXX */
 	allowboot();
 }
 
