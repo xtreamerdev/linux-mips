@@ -145,12 +145,14 @@ unsigned long ds1603_read(void)
 	return word;
 }
 
-void ds1603_set(unsigned long time)
+int ds1603_set(unsigned long time)
 {
 	rtc_init_op();
 	rtc_write_byte(SET_TIME_CMD);
 	rtc_write_word(time);
 	rtc_end_op();
+
+	return 0;
 }
 
 void ds1603_set_trimmer(unsigned int trimval)

@@ -11,7 +11,7 @@ ifndef Version
 endif
 
 MKLASATIMG = mklasatimg
-MKLASATIMG_ARCH = mq2,mqpro
+MKLASATIMG_ARCH = mq2,mqpro,sp100,sp200
 ifdef CONFIG_LASAT_SERVICE
 MKLASATIMG_FLAG = -s
 else
