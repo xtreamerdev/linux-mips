@@ -200,9 +200,13 @@ static inline int pci_map_sg(struct pci_dev *hwdev, struct scatterlist *sg,
 			dma_cache_wback_inv((unsigned long)sg->address,
 			                    sg->length);
 			sg->dma_address = bus_to_baddr(hwdev->bus, __pa(sg->address));
-		} else
+		} else {
 			sg->dma_address = page_to_bus(sg->page) +
 			                  sg->offset;
+			dma_cache_wback_inv((unsigned long)
+				(page_address(sg->page) + sg->offset),
+				sg->length);
+		}
 	}
 
 	return nents;
