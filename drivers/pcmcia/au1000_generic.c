@@ -70,7 +70,12 @@ MODULE_DESCRIPTION("Linux PCMCIA Card Services: Au1x00 Socket Controller");
  * callback value associated with the socket:
  */
 static struct au1000_pcmcia_socket *pcmcia_socket;
-static int socket_count;
+
+/* Some boards like to support CF cards as IDE root devices, so they
+ * grab pcmcia sockets directly.
+ */
+int socket_count;
+u32 *pcmcia_base_vaddrs[2];
 
 
 /* Returned by the low-level PCMCIA interface: */
@@ -163,6 +168,10 @@ static int __init au1000_pcmcia_driver_init(void)
 	pcmcia_low_level=&db1x00_pcmcia_ops;
 #elif defined(CONFIG_MIPS_XXS1500)
 	pcmcia_low_level=&xxs1500_pcmcia_ops;
+#elif defined(CONFIG_MIPS_SPARTACUS2)
+	pcmcia_low_level=&spartacus2_pcmcia_ops;
+#elif defined(CONFIG_MIPS_PICOENGINE)
+	pcmcia_low_level=&picoengine_pcmcia_ops;
 #else
 #error Unsupported AU1000 board.
 #endif
@@ -205,7 +214,7 @@ static int __init au1000_pcmcia_driver_init(void)
 		 * access address, we need to subtract it here.
 		 */
 		if (i == 0) {
-			pcmcia_socket[i].virt_io = 
+			pcmcia_socket[i].virt_io =
 				(u32)ioremap((ioaddr_t)AU1X_SOCK0_IO, 0x1000) -
 				mips_io_port_base;
 			pcmcia_socket[i].phys_attr = 
@@ -224,6 +233,7 @@ static int __init au1000_pcmcia_driver_init(void)
 				(ioaddr_t)AU1X_SOCK1_PHYS_MEM;
 		}
 #endif
+		pcmcia_base_vaddrs[i] = (u32 *)pcmcia_socket[i].virt_io;
 	}
 
 	/* Only advertise as many sockets as we can detect: */

@@ -183,7 +183,10 @@ void __init au1x00_setup(void)
 #endif
 
 #ifdef CONFIG_BLK_DEV_IDE
-	ide_ops = &std_ide_ops;
+	/* Board setup takes precedence for unique devices.
+	*/
+	if (ide_ops == NULL)
+		ide_ops = &std_ide_ops;
 #endif
 
 	while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_E0S);
