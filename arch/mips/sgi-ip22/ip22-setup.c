@@ -139,8 +139,9 @@ void __init ip22_setup(void)
 	indy_sc_init();
 #endif
 
-	/* Set EISA IO port base for Indigo2 */
-	set_io_port_base(KSEG1ADDR(0x00080000));
+	/* Set EISA IO port base for Indigo2
+	 * ioremap cannot fail */
+	set_io_port_base((phys_t)ioremap(0x00080000, 0xffffffff - 0x00080000));
 
 	/* Nothing registered console before us, so simply use first entry */
 	c = &console_cmdline[0];
