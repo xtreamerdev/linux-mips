@@ -5,12 +5,13 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 1994 - 1999 by Ralf Baechle
+ * Copyright (C) 1994 - 1999, 2003 by Ralf Baechle
  */
 #ifndef __ASM_PAGE_H
 #define __ASM_PAGE_H
 
 #include <linux/config.h>
+#include <asm/break.h>
 
 #ifdef __KERNEL__
 
@@ -33,7 +34,11 @@
 
 #include <asm/cacheflush.h>
 
-#define BUG() do { printk("kernel BUG at %s:%d!\n", __FILE__, __LINE__); *(int *)0=0; } while (0)
+#define BUG()								\
+do {									\
+	__asm__ __volatile__("break %0" : : "i" (BRK_BUG));		\
+} while (0)
+
 #define PAGE_BUG(page) do {  BUG(); } while (0)
 
 extern void (*_clear_page)(void * page);
