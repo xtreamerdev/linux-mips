@@ -2166,9 +2166,10 @@ do_sys32_shmctl (int first, int second, void *uptr)
 
 static inline void *alloc_user_space(long len)
 {
-	unsigned long sp = (unsigned long) current + THREAD_SIZE - 32;
+	struct pt_regs *regs = (struct pt_regs *)
+		((unsigned long) current + THREAD_SIZE - 32) - 1;
  
-	return (void *) (sp - len);
+	return (void *) (regs->regs[29] - len);
 }
 
 static int sys32_semtimedop(int semid, struct sembuf *tsems, int nsems,
