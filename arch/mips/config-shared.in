@@ -163,6 +163,7 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
       int  '   Memory size (in megabytes)' CONFIG_SIBYTE_STANDALONE_RAM_SIZE 32
    fi
 
+   bool '   Support for Bus Watcher statistics' CONFIG_SIBYTE_BUS_WATCHER
    bool '   Support for SB1/SOC profiling - SB1/SCD perf counters' CONFIG_SIBYTE_SB1250_PROF
    bool '   Support for ZBbus profiling' CONFIG_BCM1250_TBPROF
 
