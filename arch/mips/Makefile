@@ -379,7 +379,7 @@ endif
 ifdef CONFIG_NEC_EAGLE
 SUBDIRS		+= arch/mips/vr41xx/common \
 		   arch/mips/vr41xx/nec-eagle
-LIBS		+= arch/mips/vr41xx/common/vr41xx.o \
+CORE_FILES	+= arch/mips/vr41xx/common/vr41xx.o \
 		   arch/mips/vr41xx/nec-eagle/eagle.o
 LOADADDR	:= 0x80000000
 endif
@@ -390,7 +390,7 @@ endif
 ifdef CONFIG_ZAO_CAPCELLA
 SUBDIRS		+= arch/mips/vr41xx/common \
 		   arch/mips/vr41xx/zao-capcella
-LIBS		+= arch/mips/vr41xx/common/vr41xx.o \
+CORE_FILES	+= arch/mips/vr41xx/common/vr41xx.o \
 		   arch/mips/vr41xx/zao-capcella/capcella.o
 LOADADDR	:= 0x80000000
 endif
@@ -401,7 +401,7 @@ endif
 ifdef CONFIG_VICTOR_MPC30X
 SUBDIRS		+= arch/mips/vr41xx/common \
 		   arch/mips/vr41xx/victor-mpc30x
-LIBS		+= arch/mips/vr41xx/common/vr41xx.o \
+CORE_FILES	+= arch/mips/vr41xx/common/vr41xx.o \
 		   arch/mips/vr41xx/victor-mpc30x/mpc30x.o
 LOADADDR	:= 0x80001000
 endif
@@ -412,7 +412,7 @@ endif
 ifdef CONFIG_IBM_WORKPAD
 SUBDIRS		+= arch/mips/vr41xx/common \
 		   arch/mips/vr41xx/ibm-workpad
-LIBS		+= arch/mips/vr41xx/common/vr41xx.o \
+CORE_FILES	+= arch/mips/vr41xx/common/vr41xx.o \
 		   arch/mips/vr41xx/ibm-workpad/workpad.o
 LOADADDR	+= 0x80004000
 endif
@@ -423,7 +423,7 @@ endif
 ifdef CONFIG_CASIO_E55
 SUBDIRS		+= arch/mips/vr41xx/common \
 		   arch/mips/vr41xx/casio-e55
-LIBS		+= arch/mips/vr41xx/common/vr41xx.o \
+CORE_FILES	+= arch/mips/vr41xx/common/vr41xx.o \
 		   arch/mips/vr41xx/casio-e55/e55.o
 LOADADDR	+= 0x80004000
 endif
@@ -434,7 +434,7 @@ endif
 ifdef CONFIG_TANBAC_TB0226
 SUBDIRS		+= arch/mips/vr41xx/common \
 		   arch/mips/vr41xx/tanbac-tb0226
-LIBS		+= arch/mips/vr41xx/common/vr41xx.o \
+CORE_FILES	+= arch/mips/vr41xx/common/vr41xx.o \
 		   arch/mips/vr41xx/tanbac-tb0226/tb0226.o
 LOADADDR	:= 0x80000000
 endif
