@@ -55,79 +55,209 @@ struct bcache_ops *bcops = &no_sc_ops;
 #define icache_waybit (icache_size >> 1)
 #define dcache_waybit (dcache_size >> 1)
 
-/*
- * If you think for one second that this stuff coming up is a lot
- * of bulky code eating too many kernel cache lines.  Think _again_.
- *
- * Consider:
- * 1) Taken branches have a 3 cycle penalty on R4k
- * 2) The branch itself is a real dead cycle on even R4600/R5000.
- * 3) Only one of the following variants of each type is even used by
- *    the kernel based upon the cache parameters we detect at boot time.
- *
- * QED.
- */
-
-static inline void r4k_flush_cache_all_s16d16i16(void)
+static void r4k_blast_dcache_page(unsigned long addr)
 {
-	blast_dcache16(); blast_icache16(); blast_scache16();
-}
+	unsigned int prid = read_c0_prid() & 0xfff0;
+	static void *l = &&init;
 
-static inline void r4k_flush_cache_all_s32d16i16(void)
-{
-	blast_dcache16(); blast_icache16(); blast_scache32();
-}
+	goto *l;
 
-static inline void r4k_flush_cache_all_s64d16i16(void)
-{
-	blast_dcache16(); blast_icache16(); blast_scache64();
-}
+dc_16:
+	blast_dcache16_page(addr);
+	return;
 
-static inline void r4k_flush_cache_all_s128d16i16(void)
-{
-	blast_dcache16(); blast_icache16(); blast_scache128();
-}
+dc_32:
+	blast_dcache32_page(addr);
+	return;
 
-static inline void r4k_flush_cache_all_s32d32i32(void)
-{
-	blast_dcache32(); blast_icache32(); blast_scache32();
-}
+dc_32_r4600:
+#ifdef R4600_V1_HIT_DCACHE_WAR
+	{
+	unsigned long flags;
 
-static inline void r4k_flush_cache_all_s64d32i32(void)
-{
-	blast_dcache32(); blast_icache32(); blast_scache64();
-}
-
-static inline void r4k_flush_cache_all_s128d32i32(void)
-{
-	blast_dcache32(); blast_icache32(); blast_scache128();
-}
-
-static inline void r4k_flush_cache_all_d16i16(void)
-{
-	blast_dcache16(); blast_icache16();
-}
-
-static inline void r4k_flush_cache_all_d32i32(void)
-{
-	blast_dcache32(); blast_icache32();
-}
-
-static void r4k_flush_cache_range_d16i16(struct mm_struct *mm,
-	unsigned long start, unsigned long end)
-{
-	if (cpu_context(smp_processor_id(), mm) != 0) {
-		blast_dcache16();
-		blast_icache16();
+	local_irq_save(flags);
+	__asm__ __volatile__("nop;nop;nop;nop");
+#endif
+	blast_dcache32_page(addr);
+#ifdef R4600_V1_HIT_DCACHE_WAR
+	local_irq_restore(flags);
+#endif
+	return;
 	}
+
+init:
+	if (prid == 0x2010)			/* R4600 V1.7 */
+		l = &&dc_32_r4600;
+	else if (dc_lsize == 16)
+		l = &&dc_16;
+	else if (dc_lsize == 32)
+		l = &&dc_32;
+	goto *l;
 }
 
-static void r4k_flush_cache_range_d32i32(struct mm_struct *mm,
+static void r4k_blast_dcache_page_indexed(unsigned long addr)
+{
+	static void *l = &&init;
+
+	goto *l;
+
+dc_16:
+	blast_dcache16_page_indexed(addr);
+	return;
+
+dc_32:
+	blast_dcache32_page_indexed(addr);
+	return;
+
+init:
+	if (dc_lsize == 16)
+		l = &&dc_16;
+	else if (dc_lsize == 32)
+		l = &&dc_32;
+	goto *l;
+}
+
+static void r4k_blast_dcache(void)
+{
+	static void *l = &&init;
+
+	goto *l;
+
+dc_16:
+	blast_dcache16();
+	return;
+
+dc_32:
+	blast_dcache32();
+	return;
+
+init:
+	if (dc_lsize == 16)
+		l = &&dc_16;
+	else if (dc_lsize == 32)
+		l = &&dc_32;
+	goto *l;
+}
+
+static void r4k_blast_icache_page(unsigned long addr)
+{
+	static void *l = &&init;
+
+	goto *l;
+
+ic_16:
+	blast_icache16_page(addr);
+	return;
+
+ic_32:
+	blast_icache32_page(addr);
+	return;
+
+init:
+	if (ic_lsize == 16)
+		l = &&ic_16;
+	else if (ic_lsize == 32)
+		l = &&ic_32;
+	goto *l;
+}
+
+static void r4k_blast_icache_page_indexed(unsigned long addr)
+{
+	static void *l = &&init;
+
+	goto *l;
+
+ic_16:
+	blast_icache16_page_indexed(addr);
+	return;
+
+ic_32:
+	blast_icache32_page_indexed(addr);
+	return;
+
+init:
+	if (ic_lsize == 16)
+		l = &&ic_16;
+	else if (ic_lsize == 32)
+		l = &&ic_32;
+	goto *l;
+}
+
+static void r4k_blast_icache(void)
+{
+	static void *l = &&init;
+
+	goto *l;
+
+ic_16:
+	blast_icache16();
+	return;
+
+ic_32:
+	blast_icache32();
+	return;
+
+init:
+	if (ic_lsize == 16)
+		l = &&ic_16;
+	else if (ic_lsize == 32)
+		l = &&ic_32;
+	goto *l;
+}
+
+static void r4k_blast_scache(void)
+{
+	static void *l = &&init;
+
+	goto *l;
+
+sc_16:
+	blast_scache16();
+	return;
+
+sc_32:
+	blast_scache32();
+	return;
+
+sc_64:
+	blast_scache64();
+	return;
+
+sc_128:
+	blast_scache128();
+	return;
+
+init:
+	if (sc_lsize == 16)
+		l = &&sc_16;
+	else if (sc_lsize == 32)
+		l = &&sc_32;
+	else if (sc_lsize == 64)
+		l = &&sc_64;
+	else if (sc_lsize == 128)
+		l = &&sc_128;
+	goto *l;
+}
+
+static inline void r4k_flush_scache_all(void)
+{
+	r4k_blast_dcache();
+	r4k_blast_icache();
+	r4k_blast_scache();
+}
+
+static inline void r4k_flush_pcache_all(void)
+{
+	r4k_blast_dcache();
+	r4k_blast_icache();
+}
+
+static void r4k_flush_cache_range(struct mm_struct *mm,
 	unsigned long start, unsigned long end)
 {
 	if (cpu_context(smp_processor_id(), mm) != 0) {
-		blast_dcache32();
-		blast_icache32();
+		r4k_blast_dcache();
+		r4k_blast_icache();
 	}
 }
 
@@ -136,70 +266,21 @@ static void r4k_flush_cache_range_d32i32(struct mm_struct *mm,
  * the cache created only by a certain context, but on the MIPS
  * (and actually certain Sparc's) we cannot.
  */
-static void r4k_flush_cache_mm_s16d16i16(struct mm_struct *mm)
+static void r4k_flush_scache_mm(struct mm_struct *mm)
 {
 	if (cpu_context(smp_processor_id(), mm) != 0) {
-		r4k_flush_cache_all_s16d16i16();
+		r4k_flush_scache_all();
 	}
 }
 
-static void r4k_flush_cache_mm_s32d16i16(struct mm_struct *mm)
+static void r4k_flush_pcache_mm(struct mm_struct *mm)
 {
 	if (cpu_context(smp_processor_id(), mm) != 0) {
-		r4k_flush_cache_all_s32d16i16();
+		r4k_flush_pcache_all();
 	}
 }
 
-static void r4k_flush_cache_mm_s64d16i16(struct mm_struct *mm)
-{
-	if (cpu_context(smp_processor_id(), mm) != 0) {
-		r4k_flush_cache_all_s64d16i16();
-	}
-}
-
-static void r4k_flush_cache_mm_s128d16i16(struct mm_struct *mm)
-{
-	if (cpu_context(smp_processor_id(), mm) != 0) {
-		r4k_flush_cache_all_s128d16i16();
-	}
-}
-
-static void r4k_flush_cache_mm_s32d32i32(struct mm_struct *mm)
-{
-	if (cpu_context(smp_processor_id(), mm) != 0) {
-		r4k_flush_cache_all_s32d32i32();
-	}
-}
-
-static void r4k_flush_cache_mm_s64d32i32(struct mm_struct *mm)
-{
-	if (cpu_context(smp_processor_id(), mm) != 0) {
-		r4k_flush_cache_all_s64d32i32();
-	}
-}
-
-static void r4k_flush_cache_mm_s128d32i32(struct mm_struct *mm)
-{
-	if (cpu_context(smp_processor_id(), mm) != 0) {
-		r4k_flush_cache_all_s128d32i32();
-	}
-}
-
-static void r4k_flush_cache_mm_d16i16(struct mm_struct *mm)
-{
-	if (cpu_context(smp_processor_id(), mm) != 0) {
-		r4k_flush_cache_all_d16i16();
-	}
-}
-
-static void r4k_flush_cache_mm_d32i32(struct mm_struct *mm)
-{
-	if (cpu_context(smp_processor_id(), mm) != 0) {
-		r4k_flush_cache_all_d32i32();
-	}
-}
-
-static void r4k_flush_cache_page_d16i16(struct vm_area_struct *vma,
+static void r4k_flush_cache_page(struct vm_area_struct *vma,
 					unsigned long page)
 {
 	int exec = vma->vm_flags & VM_EXEC;
@@ -234,9 +315,9 @@ static void r4k_flush_cache_page_d16i16(struct vm_area_struct *vma,
 	 * in that case, which doesn't overly flush the cache too much.
 	 */
 	if (mm == current->active_mm) {
-		blast_dcache16_page(page);
+		r4k_blast_dcache_page(page);
 		if (exec)
-			blast_icache16_page(page);
+			r4k_blast_icache_page(page);
 
 		return;
 	}
@@ -246,13 +327,13 @@ static void r4k_flush_cache_page_d16i16(struct vm_area_struct *vma,
 	 * to work correctly.
 	 */
 	page = (KSEG0 + (page & (dcache_size - 1)));
-	blast_dcache16_page_indexed(page);
+	r4k_blast_dcache_page_indexed(page);
 	if (exec)
-		blast_icache16_page_indexed(page);
+		r4k_blast_icache_page_indexed(page);
 }
 
-static void r4k_flush_cache_page_d32i32(struct vm_area_struct *vma,
-					unsigned long page)
+static void r4k_flush_cache_page_r4600(struct vm_area_struct *vma,
+	unsigned long page)
 {
 	int exec = vma->vm_flags & VM_EXEC;
 	struct mm_struct *mm = vma->vm_mm;
@@ -286,9 +367,9 @@ static void r4k_flush_cache_page_d32i32(struct vm_area_struct *vma,
 	 * in that case, which doesn't overly flush the cache too much.
 	 */
 	if ((mm == current->active_mm) && (pte_val(*ptep) & _PAGE_VALID)) {
-		blast_dcache32_page(page);
+		r4k_blast_dcache_page(page);
 		if (exec)
-			blast_icache32_page(page);
+			r4k_blast_icache_page(page);
 
 		return;
 	}
@@ -298,106 +379,20 @@ static void r4k_flush_cache_page_d32i32(struct vm_area_struct *vma,
 	 * tlb refills to work correctly.
 	 */
 	page = KSEG0 + (page & (dcache_size - 1));
-	blast_dcache32_page_indexed(page);
-	if (exec)
-		blast_icache32_page_indexed(page);
-}
-
-static void r4k_flush_cache_page_d32i32_r4600(struct vm_area_struct *vma,
-					      unsigned long page)
-{
-	int exec = vma->vm_flags & VM_EXEC;
-	struct mm_struct *mm = vma->vm_mm;
-	pgd_t *pgdp;
-	pmd_t *pmdp;
-	pte_t *ptep;
-
-	/*
-	 * If ownes no valid ASID yet, cannot possibly have gotten
-	 * this page into the cache.
-	 */
-	if (cpu_context(smp_processor_id(), mm) == 0)
-		return;
-
-	page &= PAGE_MASK;
-	pgdp = pgd_offset(mm, page);
-	pmdp = pmd_offset(pgdp, page);
-	ptep = pte_offset(pmdp, page);
-
-	/*
-	 * If the page isn't marked valid, the page cannot possibly be
-	 * in the cache.
-	 */
-	if (!(pte_val(*ptep) & _PAGE_PRESENT))
-		return;
-
-	/*
-	 * Doing flushes for another ASID than the current one is
-	 * too difficult since stupid R4k caches do a TLB translation
-	 * for every cache flush operation.  So we do indexed flushes
-	 * in that case, which doesn't overly flush the cache too much.
-	 */
-	if ((mm == current->active_mm) && (pte_val(*ptep) & _PAGE_VALID)) {
-		blast_dcache32_page(page);
-		if (exec)
-			blast_icache32_page(page);
-
-		return;
-	}
-
-	/*
-	 * Do indexed flush, too much work to get the (possible)
-	 * tlb refills to work correctly.
-	 */
-	page = KSEG0 + (page & (dcache_size - 1));
-	blast_dcache32_page_indexed(page);
-	blast_dcache32_page_indexed(page ^ dcache_waybit);
+	r4k_blast_dcache_page_indexed(page);
+	r4k_blast_dcache_page_indexed(page ^ dcache_waybit);
 
 	if (exec) {
-		blast_icache32_page_indexed(page);
-		blast_icache32_page_indexed(page ^ icache_waybit);
+		r4k_blast_icache_page_indexed(page);
+		r4k_blast_icache_page_indexed(page ^ icache_waybit);
 	}
 }
 
-static void r4k_flush_dcache_page_d16(struct page *page)
+static void r4k_flush_dcache_page_impl(struct page *page)
 {
-	blast_dcache16_page((unsigned long)page_address(page));
-}
+	unsigned long addr = (unsigned long) page_address(page);
 
-static void r4k_flush_dcache_page_d32(struct page *page)
-{
-	blast_dcache32_page((unsigned long)page_address(page));
-}
-
-static void r4k_flush_dcache_page_d32_r4600(struct page *page)
-{
-#ifdef R4600_V1_HIT_DCACHE_WAR
-	unsigned long flags;
-
-	local_irq_save(flags);
-	__asm__ __volatile__("nop;nop;nop;nop");
-#endif
-	blast_dcache32_page((unsigned long)page_address(page));
-#ifdef R4600_V1_HIT_DCACHE_WAR
-	local_irq_restore(flags);
-#endif
-}
-
-static void flush_dcache_page_impl(struct page *page)
-{
-	unsigned int prid = read_c0_prid() & 0xfff0;
-
-	if (prid == 0x2010) {                   /* R4600 V1.7 */
-		r4k_flush_dcache_page_d32_r4600(page);
-		return;
-	}
-
-	if (dc_lsize == 16) {
-		r4k_flush_dcache_page_d16(page);
-		return;
-	}
-
-	r4k_flush_dcache_page_d32(page);	/* dc_lsize must be 32 ...  */
+	r4k_blast_dcache_page(addr);
 }
 
 static void r4k_flush_dcache_page(struct page *page)
@@ -414,25 +409,29 @@ static void r4k_flush_dcache_page(struct page *page)
 	 * case is for exec env/arg pages and those are %99 certainly going to
 	 * get faulted into the tlb (and thus flushed) anyways.
 	 */
-	flush_dcache_page_impl(page);
+	r4k_flush_dcache_page_impl(page);
 }
 
 static void r4k_flush_icache_range(unsigned long start, unsigned long end)
 {
-	flush_cache_all();
+	r4k_flush_pcache_all();
 }
 
 /*
  * Ok, this seriously sucks.  We use them to flush a user page but don't
  * know the virtual address, so we have to blast away the whole icache
- * which is significantly more expensive than the real thing.
+ * which is significantly more expensive than the real thing.  Otoh we at
+ * least know the kernel address of the page so we can flush it
+ * selectivly.
  */
 static void r4k_flush_icache_page(struct vm_area_struct *vma,
 	struct page *page)
 {
 	if (vma->vm_flags & VM_EXEC) {
-		blast_icache16();
-		// flush_cache_all();
+		unsigned long addr = (unsigned long) page_address(page);
+
+		r4k_blast_dcache_page(addr);
+		r4k_blast_icache();
 	}
 }
 
@@ -441,7 +440,7 @@ static void r4k_dma_cache_wback_inv_pc(unsigned long addr, unsigned long size)
 	unsigned long end, a;
 
 	if (size >= dcache_size) {
-		flush_cache_all();
+		r4k_flush_pcache_all();
 	} else {
 #ifdef R4600_V2_HIT_CACHEOP_WAR
 		unsigned long flags;
@@ -472,7 +471,7 @@ static void r4k_dma_cache_wback_inv_sc(unsigned long addr, unsigned long size)
 	unsigned long end, a;
 
 	if (size >= scache_size) {
-		flush_cache_all();
+		r4k_flush_scache_all();
 		return;
 	}
 
@@ -491,7 +490,7 @@ static void r4k_dma_cache_inv_pc(unsigned long addr, unsigned long size)
 	unsigned long end, a;
 
 	if (size >= dcache_size) {
-		flush_cache_all();
+		r4k_flush_pcache_all();
 	} else {
 #ifdef R4600_V2_HIT_CACHEOP_WAR
 		unsigned long flags;
@@ -522,7 +521,7 @@ static void r4k_dma_cache_inv_sc(unsigned long addr, unsigned long size)
 	unsigned long end, a;
 
 	if (size >= scache_size) {
-		flush_cache_all();
+		r4k_flush_scache_all();
 		return;
 	}
 
@@ -585,7 +584,7 @@ void __update_cache(struct vm_area_struct *vma, unsigned long address,
 
 	if (VALID_PAGE(page) && page->mapping &&
 	    ((pg_flags = page->flags) & (1UL << PG_dcache_dirty))) {
-		flush_dcache_page_impl(page);
+		r4k_flush_dcache_page_impl(page);
 
 		ClearPageDcacheDirty(page);
 	}
@@ -718,10 +717,7 @@ static void __init setup_noscache_funcs(void)
 	case 16:
 		_clear_page = r4k_clear_page_d16;
 		_copy_page = r4k_copy_page_d16;
-		_flush_cache_all = r4k_flush_cache_all_d16i16;
-		_flush_cache_mm = r4k_flush_cache_mm_d16i16;
-		_flush_cache_range = r4k_flush_cache_range_d16i16;
-		_flush_cache_page = r4k_flush_cache_page_d16i16;
+
 		break;
 	case 32:
 		prid = read_c0_prid() & 0xfff0;
@@ -735,15 +731,14 @@ static void __init setup_noscache_funcs(void)
 			_clear_page = r4k_clear_page_d32;
 			_copy_page = r4k_copy_page_d32;
 		}
-		_flush_cache_all = r4k_flush_cache_all_d32i32;
-		_flush_cache_mm = r4k_flush_cache_mm_d32i32;
-		_flush_cache_range = r4k_flush_cache_range_d32i32;
-		_flush_cache_page = r4k_flush_cache_page_d32i32;
 		break;
 	}
+	_flush_cache_all = r4k_flush_pcache_all;
+	___flush_cache_all = r4k_flush_pcache_all;
+	_flush_cache_mm = r4k_flush_pcache_mm;
+	_flush_cache_page = r4k_flush_cache_page;
 	_flush_icache_page = r4k_flush_icache_page;
-
-	___flush_cache_all = _flush_cache_all;
+	_flush_cache_range = r4k_flush_cache_range;
 
 	_dma_cache_wback_inv = r4k_dma_cache_wback_inv_pc;
 	_dma_cache_wback = r4k_dma_cache_wback_inv_pc;
@@ -752,80 +747,34 @@ static void __init setup_noscache_funcs(void)
 
 static void __init setup_scache_funcs(void)
 {
+	if (dc_lsize > sc_lsize)
+		panic("Invalid primary cache configuration detected");
+
 	switch (sc_lsize) {
 	case 16:
-		switch (dc_lsize) {
-		case 16:
-			_flush_cache_all = r4k_flush_cache_all_d16i16;
-			_flush_cache_mm = r4k_flush_cache_mm_s16d16i16;
-			_flush_cache_range = r4k_flush_cache_range_d16i16;
-			_flush_cache_page = r4k_flush_cache_page_d16i16;
-			break;
-		case 32:
-			panic("Invalid cache configuration detected");
-		};
 		_clear_page = r4k_clear_page_s16;
 		_copy_page = r4k_copy_page_s16;
 		break;
 	case 32:
-		switch (dc_lsize) {
-		case 16:
-			_flush_cache_all = r4k_flush_cache_all_d16i16;
-			_flush_cache_mm = r4k_flush_cache_mm_s32d16i16;
-			_flush_cache_range = r4k_flush_cache_range_d16i16;
-			_flush_cache_page = r4k_flush_cache_page_d16i16;
-			break;
-		case 32:
-			_flush_cache_all = r4k_flush_cache_all_d32i32;
-			_flush_cache_mm = r4k_flush_cache_mm_s32d32i32;
-			_flush_cache_range = r4k_flush_cache_range_d32i32;
-			_flush_cache_page = r4k_flush_cache_page_d32i32;
-			break;
-		};
 		_clear_page = r4k_clear_page_s32;
 		_copy_page = r4k_copy_page_s32;
 		break;
 	case 64:
-		switch (dc_lsize) {
-		case 16:
-			_flush_cache_all = r4k_flush_cache_all_d16i16;
-			_flush_cache_mm = r4k_flush_cache_mm_s64d16i16;
-			_flush_cache_range = r4k_flush_cache_range_d16i16;
-			_flush_cache_page = r4k_flush_cache_page_d16i16;
-			break;
-		case 32:
-			_flush_cache_all = r4k_flush_cache_all_s64d32i32;
-			_flush_cache_mm = r4k_flush_cache_mm_s64d32i32;
-			_flush_cache_range = r4k_flush_cache_range_d32i32;
-			_flush_cache_page = r4k_flush_cache_page_d32i32;
-			break;
-		};
 		_clear_page = r4k_clear_page_s64;
 		_copy_page = r4k_copy_page_s64;
 		break;
 	case 128:
-		switch (dc_lsize) {
-		case 16:
-			_flush_cache_all = r4k_flush_cache_all_d16i16;
-			_flush_cache_mm = r4k_flush_cache_mm_s128d16i16;
-			_flush_cache_range = r4k_flush_cache_range_d16i16;
-			_flush_cache_page = r4k_flush_cache_page_d16i16;
-			break;
-		case 32:
-			_flush_cache_all = r4k_flush_cache_all_d32i32;
-			_flush_cache_mm = r4k_flush_cache_mm_s128d32i32;
-			_flush_cache_range = r4k_flush_cache_range_d32i32;
-			_flush_cache_page = r4k_flush_cache_page_d32i32;
-			break;
-		};
 		_clear_page = r4k_clear_page_s128;
 		_copy_page = r4k_copy_page_s128;
 		break;
 	}
 
+	_flush_cache_all = r4k_flush_pcache_all;
+	___flush_cache_all = r4k_flush_scache_all;
+	_flush_cache_mm = r4k_flush_scache_mm;
+	_flush_cache_range = r4k_flush_cache_range;
+	_flush_cache_page = r4k_flush_cache_page;
 	_flush_icache_page = r4k_flush_icache_page;
-
-	___flush_cache_all = _flush_cache_all;
 
 	_dma_cache_wback_inv = r4k_dma_cache_wback_inv_sc;
 	_dma_cache_wback = r4k_dma_cache_wback_inv_sc;
@@ -883,7 +832,7 @@ void __init ld_mmu_r4xx0(void)
 	case CPU_R4700:
 	case CPU_R5000:
 	case CPU_NEVADA:
-		_flush_cache_page = r4k_flush_cache_page_d32i32_r4600;
+		_flush_cache_page = r4k_flush_cache_page_r4600;
 	}
 
 	_flush_dcache_page = r4k_flush_dcache_page;
