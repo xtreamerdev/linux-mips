@@ -144,6 +144,26 @@ void au1000_restart(char *command)
 		au_writel(0x00, 0xb1900064); /* sys_auxpll */
 		au_writel(0x00, 0xb1900100); /* sys_pininputen */
 		break;
+	case 0x04000000: /* Au1200 */
+		au_writel(0x00, 0xb400300c); /* ddma */
+		au_writel(0x00, 0xb1a00004); /* psc 0 */
+		au_writel(0x00, 0xb1b00004); /* psc 1 */
+		au_writel(0x00d02000, 0xb4020004); /* ehci, ohci, udc, otg */
+		au_writel(0x00, 0xb5000004); /* lcd */
+		au_writel(0x00, 0xb060000c); /* sd0 */
+		au_writel(0x00, 0xb068000c); /* sd1 */
+		au_writel(0x00, 0xb1100100); /* swcnt */
+		au_writel(0x00, 0xb0300000); /* aes */
+		au_writel(0x00, 0xb4004000); /* cim */
+		au_writel(0x00, 0xb1100100); /* uart0_enable */
+		au_writel(0x00, 0xb1200100); /* uart1_enable */
+		au_writel(0x00, 0xb1900020); /* sys_freqctrl0 */
+		au_writel(0x00, 0xb1900024); /* sys_freqctrl1 */
+		au_writel(0x00, 0xb1900028); /* sys_clksrc */
+		au_writel(0x10, 0xb1900060); /* sys_cpupll */
+		au_writel(0x00, 0xb1900064); /* sys_auxpll */
+		au_writel(0x00, 0xb1900100); /* sys_pininputen */
+		break;
 
 	default:
 		break;
