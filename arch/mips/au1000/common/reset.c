@@ -142,6 +142,9 @@ void au1000_restart(char *command)
 void au1000_halt(void)
 {
 	printk(KERN_NOTICE "\n** You can safely turn off the power\n");
+#ifdef CONFIG_MIPS_MIRAGE
+	au_writel((1 << 26) | (1 << 10), GPIO2_OUTPUT);
+#endif
 #ifdef CONFIG_PM
 	au_sleep();
 

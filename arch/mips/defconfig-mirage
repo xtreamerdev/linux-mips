@@ -152,12 +152,85 @@ CONFIG_BINFMT_ELF=y
 # CONFIG_BINFMT_ELF32 is not set
 # CONFIG_BINFMT_MISC is not set
 # CONFIG_OOM_KILLER is not set
+CONFIG_CMDLINE_BOOL=y
+CONFIG_CMDLINE="root=/dev/mtdblock0 rw ip=off"
 # CONFIG_PM is not set
 
 #
 # Memory Technology Devices (MTD)
 #
-# CONFIG_MTD is not set
+CONFIG_MTD=y
+# CONFIG_MTD_DEBUG is not set
+CONFIG_MTD_PARTITIONS=y
+# CONFIG_MTD_CONCAT is not set
+# CONFIG_MTD_REDBOOT_PARTS is not set
+# CONFIG_MTD_CMDLINE_PARTS is not set
+
+#
+# User Modules And Translation Layers
+#
+CONFIG_MTD_CHAR=y
+CONFIG_MTD_BLOCK=y
+# CONFIG_FTL is not set
+# CONFIG_NFTL is not set
+
+#
+# RAM/ROM/Flash chip drivers
+#
+CONFIG_MTD_CFI=y
+# CONFIG_MTD_JEDECPROBE is not set
+CONFIG_MTD_GEN_PROBE=y
+# CONFIG_MTD_CFI_ADV_OPTIONS is not set
+# CONFIG_MTD_CFI_INTELEXT is not set
+CONFIG_MTD_CFI_AMDSTD=y
+# CONFIG_MTD_CFI_STAA is not set
+# CONFIG_MTD_RAM is not set
+# CONFIG_MTD_ROM is not set
+# CONFIG_MTD_ABSENT is not set
+# CONFIG_MTD_OBSOLETE_CHIPS is not set
+# CONFIG_MTD_AMDSTD is not set
+# CONFIG_MTD_SHARP is not set
+# CONFIG_MTD_JEDEC is not set
+
+#
+# Mapping drivers for chip access
+#
+# CONFIG_MTD_PHYSMAP is not set
+# CONFIG_MTD_PB1000 is not set
+# CONFIG_MTD_PB1500 is not set
+# CONFIG_MTD_PB1100 is not set
+# CONFIG_MTD_BOSPORUS is not set
+# CONFIG_MTD_XXS1500 is not set
+# CONFIG_MTD_MTX1 is not set
+# CONFIG_MTD_DB1X00 is not set
+# CONFIG_MTD_HYDROGEN3 is not set
+CONFIG_MTD_MIRAGE=y
+# CONFIG_MTD_CSTM_MIPS_IXX is not set
+# CONFIG_MTD_OCELOT is not set
+# CONFIG_MTD_LASAT is not set
+# CONFIG_MTD_PCI is not set
+# CONFIG_MTD_PCMCIA is not set
+
+#
+# Self-contained MTD device drivers
+#
+# CONFIG_MTD_PMC551 is not set
+# CONFIG_MTD_SLRAM is not set
+# CONFIG_MTD_MTDRAM is not set
+# CONFIG_MTD_BLKMTD is not set
+
+#
+# Disk-On-Chip Device Drivers
+#
+# CONFIG_MTD_DOC1000 is not set
+# CONFIG_MTD_DOC2000 is not set
+# CONFIG_MTD_DOC2001 is not set
+# CONFIG_MTD_DOCPROBE is not set
+
+#
+# NAND Flash Device Drivers
+#
+# CONFIG_MTD_NAND is not set
 
 #
 # Parallel port support
@@ -386,7 +459,27 @@ CONFIG_PPPOE=m
 #
 # Wireless LAN (non-hamradio)
 #
-# CONFIG_NET_RADIO is not set
+CONFIG_NET_RADIO=y
+# CONFIG_STRIP is not set
+# CONFIG_WAVELAN is not set
+# CONFIG_ARLAN is not set
+# CONFIG_AIRONET4500 is not set
+# CONFIG_AIRONET4500_NONCS is not set
+# CONFIG_AIRONET4500_PROC is not set
+# CONFIG_AIRO is not set
+# CONFIG_HERMES is not set
+# CONFIG_PLX_HERMES is not set
+# CONFIG_TMD_HERMES is not set
+# CONFIG_PCI_HERMES is not set
+
+#
+# 802.11G Intersil Prism GT/Duette/Indigo Chipset based cards -- Note: Requires firmware
+#
+CONFIG_ISLPCI=m
+CONFIG_WIRELESS_IOCTLS=y
+CONFIG_INTERSIL_EVENTS=y
+CONFIG_WDS_LINKS=y
+CONFIG_NET_WIRELESS=y
 
 #
 # Token Ring devices
@@ -469,13 +562,27 @@ CONFIG_UNIX98_PTY_COUNT=256
 #
 # I2C support
 #
-# CONFIG_I2C is not set
+CONFIG_I2C=y
+CONFIG_I2C_ALGOBIT=y
+# CONFIG_I2C_PHILIPSPAR is not set
+# CONFIG_I2C_ELV is not set
+# CONFIG_I2C_VELLEMAN is not set
+# CONFIG_SCx200_I2C is not set
+CONFIG_I2C_SM501=y
+# CONFIG_SCx200_ACB is not set
+# CONFIG_I2C_ALGOPCF is not set
+CONFIG_I2C_CHARDEV=y
+CONFIG_I2C_PROC=y
 
 #
 # Mice
 #
 # CONFIG_BUSMOUSE is not set
-# CONFIG_MOUSE is not set
+CONFIG_MOUSE=y
+CONFIG_PSMOUSE=y
+# CONFIG_82C710_MOUSE is not set
+# CONFIG_PC110_PAD is not set
+# CONFIG_MK712_MOUSE is not set
 
 #
 # Joysticks
@@ -572,7 +679,8 @@ CONFIG_AUTOFS_FS=y
 # CONFIG_VFAT_FS is not set
 # CONFIG_EFS_FS is not set
 # CONFIG_JFFS_FS is not set
-# CONFIG_JFFS2_FS is not set
+CONFIG_JFFS2_FS=y
+CONFIG_JFFS2_FS_DEBUG=0
 # CONFIG_CRAMFS is not set
 CONFIG_TMPFS=y
 CONFIG_RAMFS=y
@@ -655,7 +763,51 @@ CONFIG_MSDOS_PARTITION=y
 #
 # Frame-buffer support
 #
-# CONFIG_FB is not set
+CONFIG_FB=y
+CONFIG_DUMMY_CONSOLE=y
+# CONFIG_FB_RIVA is not set
+# CONFIG_FB_CLGEN is not set
+# CONFIG_FB_PM2 is not set
+# CONFIG_FB_PM3 is not set
+# CONFIG_FB_CYBER2000 is not set
+# CONFIG_FB_MATROX is not set
+# CONFIG_FB_ATY is not set
+# CONFIG_FB_RADEON is not set
+# CONFIG_FB_ATY128 is not set
+# CONFIG_FB_INTEL is not set
+# CONFIG_FB_SIS is not set
+CONFIG_FB_SMI501=y
+# CONFIG_FB_NEOMAGIC is not set
+# CONFIG_FB_3DFX is not set
+# CONFIG_FB_VOODOO1 is not set
+# CONFIG_FB_TRIDENT is not set
+# CONFIG_FB_E1356 is not set
+# CONFIG_FB_IT8181 is not set
+# CONFIG_FB_VIRTUAL is not set
+CONFIG_FBCON_ADVANCED=y
+# CONFIG_FBCON_MFB is not set
+# CONFIG_FBCON_CFB2 is not set
+# CONFIG_FBCON_CFB4 is not set
+CONFIG_FBCON_CFB8=y
+CONFIG_FBCON_CFB16=y
+# CONFIG_FBCON_CFB24 is not set
+# CONFIG_FBCON_CFB32 is not set
+# CONFIG_FBCON_AFB is not set
+# CONFIG_FBCON_ILBM is not set
+# CONFIG_FBCON_IPLAN2P2 is not set
+# CONFIG_FBCON_IPLAN2P4 is not set
+# CONFIG_FBCON_IPLAN2P8 is not set
+# CONFIG_FBCON_MAC is not set
+# CONFIG_FBCON_VGA_PLANES is not set
+# CONFIG_FBCON_VGA is not set
+# CONFIG_FBCON_HGA is not set
+CONFIG_FBCON_FONTWIDTH8_ONLY=y
+CONFIG_FBCON_FONTS=y
+CONFIG_FONT_8x8=y
+CONFIG_FONT_8x16=y
+# CONFIG_FONT_SUN8x16 is not set
+# CONFIG_FONT_PEARL_8x8 is not set
+# CONFIG_FONT_ACORN_8x8 is not set
 
 #
 # Sound
@@ -686,7 +838,9 @@ CONFIG_SOUND_AU1X00=y
 # CONFIG_SOUND_OSS is not set
 # CONFIG_SOUND_TVMIXER is not set
 # CONFIG_SOUND_AD1980 is not set
-# CONFIG_SOUND_WM97XX is not set
+CONFIG_SOUND_WM97XX=y
+CONFIG_WM97XX_FIVEWIRETS=y
+CONFIG_WM97XX_COMODULE=y
 
 #
 # USB support
@@ -707,6 +861,7 @@ CONFIG_USB=y
 # CONFIG_USB_UHCI is not set
 # CONFIG_USB_UHCI_ALT is not set
 CONFIG_USB_OHCI=y
+CONFIG_USB_NON_PCI_OHCI=y
 
 #
 # USB Device Class drivers
@@ -820,6 +975,6 @@ CONFIG_LOG_BUF_SHIFT=0
 # Library routines
 #
 # CONFIG_CRC32 is not set
-CONFIG_ZLIB_INFLATE=m
-CONFIG_ZLIB_DEFLATE=m
+CONFIG_ZLIB_INFLATE=y
+CONFIG_ZLIB_DEFLATE=y
 # CONFIG_FW_LOADER is not set

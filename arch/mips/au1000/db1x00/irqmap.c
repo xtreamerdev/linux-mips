@@ -95,6 +95,8 @@ au1xxx_irq_map_t au1xxx_irq_map[] = {
 	{ AU1000_GPIO_3, INTC_INT_LOW_LEVEL, 0 }, // PCMCIA Card 1 Fully_Interted#
 	{ AU1000_GPIO_4, INTC_INT_LOW_LEVEL, 0 }, // PCMCIA Card 1 STSCHG#
 	{ AU1000_GPIO_5, INTC_INT_LOW_LEVEL, 0 }, // PCMCIA Card 1 IRQ#
+#else
+	{ AU1000_GPIO_7, INTC_INT_RISE_EDGE, 0 }, /* touchscreen pendown */
 #endif
 	{ AU1000_ACSYNC_INT, INTC_INT_RISE_EDGE, 0 },
 	{ AU1000_AC97C_INT, INTC_INT_RISE_EDGE, 0 },

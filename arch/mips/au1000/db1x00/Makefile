@@ -18,5 +18,6 @@
 O_TARGET := db1x00.o
 
 obj-y := init.o board_setup.o irqmap.o
+obj-$(CONFIG_WM97XX_COMODULE) += mirage_ts.o
 
 include $(TOPDIR)/Rules.make

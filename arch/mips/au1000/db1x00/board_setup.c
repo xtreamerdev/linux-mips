@@ -73,6 +73,35 @@ void __init board_setup(void)
 #endif
 	au_writel(0, 0xAE000010); /* turn off pcmcia power */
 
+#ifdef CONFIG_MIPS_MIRAGE
+	/* enable GPIO[31:0] inputs */
+	au_writel(0, SYS_PININPUTEN);
+
+	/* GPIO[20] is output, tristate the other input primary GPIO's */
+	au_writel((u32)(~(1<<20)), SYS_TRIOUTCLR);
+
+	/* set GPIO[210:208] instead of SSI_0 */
+	pin_func = au_readl(SYS_PINFUNC) | (u32)(1);
+
+	/* set GPIO[215:211] for LED's */
+	pin_func |= (u32)((5<<2));
+
+	/* set GPIO[214:213] for more LED's */
+	pin_func |= (u32)((5<<12));
+
+	/* set GPIO[207:200] instead of PCMCIA/LCD */
+	pin_func |= (u32)((3<<17));
+	au_writel(pin_func, SYS_PINFUNC);
+
+	/* Enable speaker amplifier.  This should
+	 * be part of the audio driver.
+	 */
+	au_writel(au_readl(GPIO2_DIR) | 0x200, GPIO2_DIR);
+	au_writel(0x02000200, GPIO2_OUTPUT);
+#endif
+
+	au_sync();
+
 #ifdef CONFIG_MIPS_DB1000
     printk("AMD Alchemy Au1000/Db1000 Board\n");
 #endif
