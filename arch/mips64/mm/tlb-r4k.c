@@ -326,9 +326,8 @@ static void __init probe_tlb(unsigned long config)
 void __init r4k_tlb_init(void)
 {
 	unsigned long config = read_c0_config();
-
 	probe_tlb(config);
-	write_c0_pagemask(PM_4K);
+	write_c0__pagemask(PM_DEFAULT_MASK);
 	write_c0_wired(0);
 	temp_tlb_entry = current_cpu_data.tlbsize - 1;
 	local_flush_tlb_all();

@@ -291,7 +291,7 @@ void __init add_wired_entry(unsigned long entrylo0, unsigned long entrylo1,
  */
 void sb1_tlb_init(void)
 {
-	write_c0_pagemask(PM_4K);
+	set_pagemask(PM_DEFAULT_MASK);
 	write_c0_wired(0);
 
 	/*
