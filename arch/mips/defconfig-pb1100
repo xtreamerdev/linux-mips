@@ -56,6 +56,7 @@ CONFIG_MIPS_PB1100=y
 # CONFIG_SGI_IP32 is not set
 # CONFIG_SIBYTE_SB1xxx_SOC is not set
 # CONFIG_SNI_RM200_PCI is not set
+# CONFIG_TANBAC_TB0226 is not set
 # CONFIG_TOSHIBA_JMR3927 is not set
 # CONFIG_VICTOR_MPC30X is not set
 # CONFIG_ZAO_CAPCELLA is not set
@@ -598,6 +599,8 @@ CONFIG_RTC=y
 # CONFIG_FTAPE is not set
 # CONFIG_AGP is not set
 # CONFIG_DRM is not set
+# CONFIG_AU1X00_GPIO is not set
+# CONFIG_TS_AU1X00_ADS7846 is not set
 
 #
 # File systems

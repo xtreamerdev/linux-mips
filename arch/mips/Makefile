@@ -429,6 +429,17 @@ LOADADDR	+= 0x80004000
 endif
 
 #
+# TANBAC TB0226 Mbase (VR4131)
+#
+ifdef CONFIG_TANBAC_TB0226
+SUBDIRS		+= arch/mips/vr41xx/common \
+		   arch/mips/vr41xx/tanbac-tb0226
+LIBS		+= arch/mips/vr41xx/common/vr41xx.o \
+		   arch/mips/vr41xx/tanbac-tb0226/tb0226.o
+LOADADDR	:= 0x80000000
+endif
+
+#
 # Philips Nino
 #
 ifdef CONFIG_NINO

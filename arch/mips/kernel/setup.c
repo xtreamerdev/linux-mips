@@ -490,6 +490,7 @@ void __init setup_arch(char **cmdline_p)
 	void victor_mpc30x_setup(void);
 	void ibm_workpad_setup(void);
 	void casio_e55_setup(void);
+	void tanbac_tb0226_setup(void);
 	void jmr3927_setup(void);
  	void it8172_setup(void);
 	void swarm_setup(void);
@@ -614,6 +615,11 @@ void __init setup_arch(char **cmdline_p)
 #ifdef CONFIG_CASIO_E55
 		case MACH_CASIO_E55:
 			casio_e55_setup();
+			break;
+#endif
+#ifdef CONFIG_TANBAC_TB0226
+		case MACH_TANBAC_TB0226:
+			tanbac_tb0226_setup();
 			break;
 #endif
 		}
