@@ -348,6 +348,7 @@ if [ "$CONFIG_DECSTATION" = "y" ]; then
    define_bool CONFIG_BOOT_ELF32 y
    define_bool CONFIG_IRQ_CPU y
    define_int CONFIG_L1_CACHE_SHIFT 4
+   define_bool CONFIG_NEW_TIME_C y
    define_bool CONFIG_NONCOHERENT_IO y
 fi
 if [ "$CONFIG_MIPS_EV64120" = "y" ]; then
