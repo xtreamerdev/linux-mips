@@ -266,7 +266,7 @@ static int ds1742_ioctl(struct inode *inode, struct file *file,
 	switch (cmd) {
 	case RTC_RD_TIME:	/* Read the time/date from RTC  */
 		curr_time = rtc_ds1742_get_time();
-		memset(&tm, 0, sizeof(struct rtc_time));
+		memset(&rtc_tm, 0, sizeof(struct rtc_time));
 		to_tm(curr_time, &rtc_tm);
 		rtc_tm.tm_year -= 1900;
 		return copy_to_user((void *) arg, &rtc_tm, sizeof(rtc_tm)) ? 
