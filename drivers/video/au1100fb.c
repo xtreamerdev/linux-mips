@@ -614,7 +614,7 @@ void au1100fb_setup(char *options, int *ints)
 	for(this_opt=strtok(options, ","); this_opt;
 	    this_opt=strtok(NULL, ",")) {
 		if (!strncmp(this_opt, "panel:", 6)) {
-#ifdef CONFIG_MIPS_PB1100
+#if defined(CONFIG_MIPS_PB1100) || defined(CONFIG_MIPS_DB1100)
 			/* Read Pb1100 Switch S10 ? */
 			if (!strncmp(this_opt+6, "s10", 3))
 			{
