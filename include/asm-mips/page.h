@@ -71,15 +71,22 @@ extern void (*_copy_page)(void * to, void * from);
  * These are used to make use of C type-checking..
  */
 #ifdef CONFIG_64BIT_PHYS_ADDR
-typedef struct { unsigned long long pte; } pte_t;
+  #ifdef CONFIG_CPU_MIPS32
+    typedef struct { unsigned long pte_low, pte_high; } pte_t;
+    #define pte_val(x)    ((x).pte_low | ((unsigned long long)(x).pte_high << 32))
+  #else
+    typedef struct { unsigned long long pte_low; } pte_t;
+    #define pte_val(x)    ((x).pte_low)
+  #endif
 #else
-typedef struct { unsigned long pte; } pte_t;
+typedef struct { unsigned long pte_low; } pte_t;
+#define pte_val(x)    ((x).pte_low)
 #endif
+
 typedef struct { unsigned long pmd; } pmd_t;
 typedef struct { unsigned long pgd; } pgd_t;
 typedef struct { unsigned long pgprot; } pgprot_t;
 
-#define pte_val(x)	((x).pte)
 #define pmd_val(x)	((x).pmd)
 #define pgd_val(x)	((x).pgd)
 #define pgprot_val(x)	((x).pgprot)
