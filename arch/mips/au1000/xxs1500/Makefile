@@ -17,6 +17,6 @@
 
 O_TARGET := xxs1500.o
 
-obj-y := init.o setup.o irqmap.o
+obj-y := init.o board_setup.o irqmap.o
 
 include $(TOPDIR)/Rules.make

@@ -1044,9 +1044,27 @@ extern au1xxx_irq_map_t au1xxx_irq_map[];
 #define PCI_FIRST_DEVFN (0<<3)
 #define PCI_LAST_DEVFN  (19<<3)
 
-#endif
+#define IOPORT_RESOURCE_START 0x00000000
+#define IOPORT_RESOURCE_END   0xffffffff
+#define IOMEM_RESOURCE_START  0x10000000
+#define IOMEM_RESOURCE_END    0xffffffff
 
-#if defined(CONFIG_SOC_AU1100) || (defined(CONFIG_SOC_AU1000) && !defined(CONFIG_MIPS_PB1000))
+#else /* Au1000 and Au1100 */
+
+/* don't allow any legacy ports probing */
+#define IOPORT_RESOURCE_START 0x10000000;
+#define IOPORT_RESOURCE_END   0xffffffff
+#define IOMEM_RESOURCE_START  0x10000000
+#define IOMEM_RESOURCE_END    0xffffffff
+
+#ifdef CONFIG_MIPS_PB1000
+#define PCI_IO_START      0x10000000
+#define PCI_IO_END        0x1000ffff
+#define PCI_MEM_START     0x18000000
+#define PCI_MEM_END       0x18ffffff
+#define PCI_FIRST_DEVFN   0
+#define PCI_LAST_DEVFN    1
+#else
 /* no PCI bus controller */
 #define PCI_IO_START    0
 #define PCI_IO_END      0
@@ -1054,6 +1072,8 @@ extern au1xxx_irq_map_t au1xxx_irq_map[];
 #define PCI_MEM_END     0 
 #define PCI_FIRST_DEVFN 0
 #define PCI_LAST_DEVFN  0
+#endif
+
 #endif
 
 #if defined(CONFIG_SOC_AU1000) || defined(CONFIG_SOC_AU1500)

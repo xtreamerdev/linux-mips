@@ -14,6 +14,6 @@ USE_STANDARD_AS_RULE := true
 
 O_TARGET := pb1100.o
 
-obj-y := init.o setup.o irqmap.o
+obj-y := init.o board_setup.o irqmap.o
 
 include $(TOPDIR)/Rules.make

@@ -110,14 +110,6 @@
 
 #define PCI_BRIDGE_CONFIG 0xBE000018
 
-#define PCI_IO_START      0x10000000
-#define PCI_IO_END        0x1000ffff
-#define PCI_MEM_START     0x18000000
-#define PCI_MEM_END       0x18ffffff
-
-#define PCI_FIRST_DEVFN   0
-#define PCI_LAST_DEVFN    1
-
 static inline u8 au_pci_io_readb(u32 addr)
 {
 	writel(addr, PCI_IO_ADDR);

@@ -17,6 +17,6 @@
 
 O_TARGET := db1x00.o
 
-obj-y := init.o setup.o irqmap.o
+obj-y := init.o board_setup.o irqmap.o
 
 include $(TOPDIR)/Rules.make

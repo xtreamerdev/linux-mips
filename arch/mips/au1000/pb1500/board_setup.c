@@ -1,7 +1,7 @@
 /*
  *
  * BRIEF MODULE DESCRIPTION
- *	Alchemy Pb1000 board setup.
+ *	Alchemy Pb1500 board setup.
  *
  * Copyright 2000 MontaVista Software Inc.
  * Author: MontaVista Software, Inc.
@@ -52,81 +52,15 @@
 #define CONFIG_AU1000_OHCI_FIX
 #endif
 
-#if defined(CONFIG_AU1X00_SERIAL_CONSOLE)
-extern void console_setup(char *, int *);
-char serial_console[20];
-#endif
-
-#ifdef CONFIG_BLK_DEV_INITRD
-extern unsigned long initrd_start, initrd_end;
-extern void * __rd_start, * __rd_end;
-#endif
-
-#ifdef CONFIG_BLK_DEV_IDE
-extern struct ide_ops std_ide_ops;
-extern struct ide_ops *ide_ops;
-#endif
-
 #ifdef CONFIG_RTC
 extern struct rtc_ops pb1500_rtc_ops;
 #endif
 
-extern char * __init prom_getcmdline(void);
-extern void au1000_restart(char *);
-extern void au1000_halt(void);
-extern void au1000_power_off(void);
-extern struct resource ioport_resource;
-extern struct resource iomem_resource;
-#ifdef CONFIG_64BIT_PHYS_ADDR
-extern phys_t (*fixup_bigphys_addr)(phys_t phys_addr, phys_t size);
-static phys_t pb1500_fixup_bigphys_addr(phys_t phys_addr, phys_t size);
-#endif
-
-
-void __init au1x00_setup(void)
+void __init board_setup(void)
 {
-	char *argptr;
-	u32 pin_func, static_cfg0;
+	u32 pin_func;
 	u32 sys_freqctrl, sys_clksrc;
 
-	argptr = prom_getcmdline();
-
-	/* NOTE: The memory map is established by YAMON 2.08+ */
-
-	/* Various early Au1500 Errata corrected by this */
-	set_c0_config(1<<19); /* Config[OD] */
-
-#ifdef CONFIG_AU1X00_SERIAL_CONSOLE
-	if ((argptr = strstr(argptr, "console=")) == NULL) {
-		argptr = prom_getcmdline();
-		strcat(argptr, " console=ttyS0,115200");
-	}
-#endif
-
-#ifdef CONFIG_SOUND_AU1X00
-	strcat(argptr, " au1000_audio=vra");
-	argptr = prom_getcmdline();
-#endif
-
-	_machine_restart = au1000_restart;
-	_machine_halt = au1000_halt;
-	_machine_power_off = au1000_power_off;
-#ifdef CONFIG_64BIT_PHYS_ADDR
-	fixup_bigphys_addr = pb1500_fixup_bigphys_addr;
-#endif
-
-	// IO/MEM resources.
-	set_io_port_base(0);
-	ioport_resource.start = 0x00000000;
-	ioport_resource.end = 0xffffffff;
-	iomem_resource.start = 0x10000000;
-	iomem_resource.end = 0xffffffff;
-
-#ifdef CONFIG_BLK_DEV_INITRD
-	ROOT_DEV = MKDEV(RAMDISK_MAJOR, 0);
-	initrd_start = (unsigned long)&__rd_start;
-	initrd_end = (unsigned long)&__rd_end;
-#endif
 
 	// set AUX clock to 12MHz * 8 = 96 MHz
 	au_writel(8, SYS_AUXPLL);
@@ -134,16 +68,6 @@ void __init au1x00_setup(void)
 	udelay(100);
 
 #if defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1X00_USB_DEVICE)
-#ifdef CONFIG_USB_OHCI
-	if ((argptr = strstr(argptr, "usb_ohci=")) == NULL) {
-	        char usb_args[80];
-		argptr = prom_getcmdline();
-		memset(usb_args, 0, sizeof(usb_args));
-		sprintf(usb_args, " usb_ohci=base:0x%x,len:0x%x,irq:%d",
-			USB_OHCI_BASE, USB_OHCI_LEN, AU1000_USB_HOST_INT);
-		strcat(argptr, usb_args);
-	}
-#endif
 
 	/* GPIO201 is input for PCMCIA card detect */
 	/* GPIO203 is input for PCMCIA interrupt request */
@@ -190,43 +114,6 @@ void __init au1x00_setup(void)
 #endif // defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1X00_USB_DEVICE)
 
 
-#ifdef CONFIG_USB_OHCI
-	// enable host controller and wait for reset done
-	au_writel(0x08, USB_HOST_CONFIG);
-	udelay(1000);
-	au_writel(0x0c, USB_HOST_CONFIG);
-	udelay(1000);
-	au_readl(USB_HOST_CONFIG);
-	while (!(au_readl(USB_HOST_CONFIG) & 0x10))
-	    ;
-	au_readl(USB_HOST_CONFIG);
-#endif
-
-#ifdef CONFIG_FB
-	conswitchp = &dummy_con;
-#endif
-
-#ifdef CONFIG_FB_E1356
-	if ((argptr = strstr(argptr, "video=")) == NULL) {
-		argptr = prom_getcmdline();
-		strcat(argptr, " video=e1356fb:system:pb1500");
-	}
-#elif defined (CONFIG_FB_XPERT98)
-	if ((argptr = strstr(argptr, "video=")) == NULL) {
-		argptr = prom_getcmdline();
-		strcat(argptr, " video=atyfb:1024x768-8@70");
-	}
-#endif // CONFIG_FB_E1356
-
-#ifndef CONFIG_SERIAL_NONSTANDARD
-	/* don't touch the default serial console */
-	au_writel(0, UART0_ADDR + UART_CLK);
-#endif
-	au_writel(0, UART3_ADDR + UART_CLK);
-
-#ifdef CONFIG_BLK_DEV_IDE
-	ide_ops = &std_ide_ops;
-#endif
 
 #ifdef CONFIG_PCI
 	// Setup PCI bus controller
@@ -245,12 +132,6 @@ void __init au1x00_setup(void)
 	au_sync();
 #endif
 
-	while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_E0S);
-	au_writel(SYS_CNTRL_E0 | SYS_CNTRL_EN0, SYS_COUNTER_CNTRL);
-	au_sync();
-	while (au_readl(SYS_COUNTER_CNTRL) & SYS_CNTRL_T0S);
-	au_writel(0, SYS_TOYTRIM);
-
 	/* Enable BCLK switching */
 	au_writel(0x00000060, 0xb190003c);
 
@@ -268,23 +149,3 @@ void __init au1x00_setup(void)
 	}
 #endif
 }
-
-#ifdef CONFIG_64BIT_PHYS_ADDR
-static phys_t pb1500_fixup_bigphys_addr(phys_t phys_addr,
-					phys_t size)
-{
-	u32 pci_start = (u32)Au1500_PCI_MEM_START;
-	u32 pci_end = (u32)Au1500_PCI_MEM_END;
-
-	/* Don't fixup 36 bit addresses */
-	if ((phys_addr >> 32) != 0) return phys_addr;
-
-	/* check for pci memory window */
-	if ((phys_addr >= pci_start) && ((phys_addr + size) < pci_end)) {
-		return (phys_t)((phys_addr - pci_start) +
-				     Au1500_PCI_MEM_START);
-	}
-	else 
-		return phys_addr;
-}
-#endif
