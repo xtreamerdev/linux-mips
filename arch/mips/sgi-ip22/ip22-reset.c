@@ -5,18 +5,21 @@
  *
  * Copyright (C) 1997, 1998, 2001 by Ralf Baechle
  */
+
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/notifier.h>
 #include <linux/timer.h>
+
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/system.h>
 #include <asm/reboot.h>
 #include <asm/ds1286.h>
 #include <asm/sgialib.h>
-#include <asm/sgi/sgihpc.h>
-#include <asm/sgi/sgint23.h>
+#include <asm/sgi/ioc.h>
+#include <asm/sgi/hpc3.h>
+#include <asm/sgi/ip22.h>
 
 /*
  * Just powerdown if init hasn't done after POWERDOWN_TIMEOUT seconds.
@@ -30,8 +33,6 @@
  */
 #define POWERDOWN_FREQ		(HZ / 4)
 #define PANIC_FREQ		(HZ / 8)
-
-static unsigned char sgi_volume;
 
 static struct timer_list power_timer, blink_timer, debounce_timer, volume_timer;
 static int shuting_down = 0, has_paniced = 0, setup_done = 0;
@@ -63,12 +64,12 @@ static void sgi_machine_power_off(void)
 
 	/* Disable watchdog */
 	val = CMOS_READ(RTC_CMD);
-	CMOS_WRITE(val|RTC_WAM, RTC_CMD);
+	CMOS_WRITE(val | RTC_WAM, RTC_CMD);
 	CMOS_WRITE(0, RTC_WSEC);
 	CMOS_WRITE(0, RTC_WHSEC);
 
 	while(1) {
-		hpc3mregs->panel=0xfe;
+		sgioc->panel = ~SGIOC_PANEL_POWERON;
 		/* Good bye cruel world ...  */
 
 		/* If we're still running, we probably got sent an alarm
@@ -85,8 +86,8 @@ static void power_timeout(unsigned long data)
 static void blink_timeout(unsigned long data)
 {
 	/* XXX fix this for fullhouse  */
-	sgi_hpc_write1 ^= (HPC3_WRITE1_LC0OFF|HPC3_WRITE1_LC1OFF);
-	hpc3mregs->write1 = sgi_hpc_write1;
+	sgi_ioc_reset ^= (SGIOC_RESET_LC0OFF|SGIOC_RESET_LC1OFF);
+	sgioc->reset = sgi_ioc_reset;
 
 	mod_timer(&blink_timer, jiffies+data);
 }
@@ -94,11 +95,14 @@ static void blink_timeout(unsigned long data)
 static void debounce(unsigned long data)
 {
 	del_timer(&debounce_timer);
-	if (ioc_icontrol->istat1 & 2) { /* Interrupt still being sent.  */
+	if (sgint->istat1 & SGINT_ISTAT1_PWR) {
+		/* Interrupt still being sent. */
 		debounce_timer.expires = jiffies + 5; /* 0.05s  */
 		add_timer(&debounce_timer);
 
-		hpc3mregs->panel = 0xf3;
+		sgioc->panel = SGIOC_PANEL_POWERON | SGIOC_PANEL_POWERINTR |
+			       SGIOC_PANEL_VOLDNINTR | SGIOC_PANEL_VOLDNHOLD |
+			       SGIOC_PANEL_VOLUPINTR | SGIOC_PANEL_VOLUPHOLD;
 
 		return;
 	}
@@ -129,47 +133,29 @@ static inline void power_button(void)
 	add_timer(&power_timer);
 }
 
-void inline sgi_volume_set(unsigned char volume)
-{
-	sgi_volume = volume;
-
-	hpc3c0->pbus_extregs[2][0] = sgi_volume;
-	hpc3c0->pbus_extregs[2][1] = sgi_volume;
-}
-
-void inline sgi_volume_get(unsigned char *volume)
-{
-	*volume = sgi_volume;
-}
+void (*indy_volume_button)(int) = NULL;
 
 static inline void volume_up_button(unsigned long data)
 {
 	del_timer(&volume_timer);
 
-	if (sgi_volume < 0xff)
-		sgi_volume++;
+	if (indy_volume_button)
+		indy_volume_button(1);
 
-	hpc3c0->pbus_extregs[2][0] = sgi_volume;
-	hpc3c0->pbus_extregs[2][1] = sgi_volume;
-
-	if (ioc_icontrol->istat1 & 2) {
+	if (sgint->istat1 & SGINT_ISTAT1_PWR) {
 		volume_timer.expires = jiffies + 1;
 		add_timer(&volume_timer);
 	}
-
 }
 
 static inline void volume_down_button(unsigned long data)
 {
 	del_timer(&volume_timer);
 
-	if (sgi_volume > 0)
-		sgi_volume--;
+	if (indy_volume_button)
+		indy_volume_button(-1);
 
-	hpc3c0->pbus_extregs[2][0] = sgi_volume;
-	hpc3c0->pbus_extregs[2][1] = sgi_volume;
-
-	if (ioc_icontrol->istat1 & 2) {
+	if (sgint->istat1 & SGINT_ISTAT1_PWR) {
 		volume_timer.expires = jiffies + 1;
 		add_timer(&volume_timer);
 	}
@@ -177,12 +163,13 @@ static inline void volume_down_button(unsigned long data)
 
 static void panel_int(int irq, void *dev_id, struct pt_regs *regs)
 {
-	unsigned int buttons;
+	unsigned char buttons;
 
-	buttons = hpc3mregs->panel;
-	hpc3mregs->panel = 0x03;	/* power_interrupt | power_supply_on */
+	buttons = sgioc->panel;
+	sgioc->panel = SGIOC_PANEL_POWERON | SGIOC_PANEL_POWERINTR;
 
-	if (ioc_icontrol->istat1 & 2) { /* Wait until interrupt goes away */
+	if (sgint->istat1 & SGINT_ISTAT1_PWR) {
+		/* Wait until interrupt goes away */
 		disable_irq(SGI_PANEL_IRQ);
 		init_timer(&debounce_timer);
 		debounce_timer.function = debounce;
@@ -190,15 +177,19 @@ static void panel_int(int irq, void *dev_id, struct pt_regs *regs)
 		add_timer(&debounce_timer);
 	}
 
-	if (!(buttons & 0x02))		/* Power button was pressed */
+	/* Power button was pressed */
+	if (!(buttons & SGIOC_PANEL_POWERINTR))
 		power_button();
-	if (!(buttons & 0x40)) {	/* Volume up button was pressed */
+	/* TODO: mute/unmute */
+	/* Volume up button was pressed */
+	if (!(buttons & SGIOC_PANEL_VOLUPINTR)) {
 		init_timer(&volume_timer);
 		volume_timer.function = volume_up_button;
 		volume_timer.expires = jiffies + 1;
 		add_timer(&volume_timer);
 	}
-	if (!(buttons & 0x10)) {	/* Volume down button was pressed */
+	/* Volume down button was pressed */
+	if (!(buttons & SGIOC_PANEL_VOLDNINTR)) {
 		init_timer(&volume_timer);
 		volume_timer.function = volume_down_button;
 		volume_timer.expires = jiffies + 1;
@@ -223,7 +214,7 @@ static struct notifier_block panic_block = {
 	.notifier_call	= panic_event,
 };
 
-void indy_reboot_setup(void)
+void ip22_reboot_setup(void)
 {
 	if (setup_done)
 		return;

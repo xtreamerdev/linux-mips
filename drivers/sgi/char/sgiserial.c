@@ -37,12 +37,12 @@
 
 #include <asm/io.h>
 #include <asm/irq.h>
-#include <asm/sgialib.h>
 #include <asm/system.h>
 #include <asm/bitops.h>
-#include <asm/sgi/sgihpc.h>
-#include <asm/sgi/sgint23.h>
 #include <asm/uaccess.h>
+#include <asm/sgialib.h>
+#include <asm/sgi/ioc.h>
+#include <asm/sgi/ip22.h>
 
 #include "sgiserial.h"
 
@@ -188,8 +188,8 @@ static inline unsigned char read_zsreg(struct sgi_zschannel *channel,
 
 	udelay(2);
 	channel->control = reg;
-	if (ioc_icontrol)
-		junk = ioc_icontrol->istat0;
+	if (sgint)
+		junk = sgint->istat0;
 	udelay(1);
 	retval = channel->control;
 	return retval;
@@ -202,12 +202,12 @@ static inline void write_zsreg(struct sgi_zschannel *channel,
 
 	udelay(2);
 	channel->control = reg;
-	if (ioc_icontrol)
-		junk = ioc_icontrol->istat0;
+	if (sgint)
+		junk = sgint->istat0;
 	udelay(1);
 	channel->control = value;
-	if (ioc_icontrol)
-		junk = ioc_icontrol->istat0;
+	if (sgint)
+		junk = sgint->istat0;
 	return;
 }
 
@@ -356,10 +356,10 @@ static inline void rs_recv_clear(struct sgi_zschannel *zsc)
 
 	udelay(2);
 	zsc->control = ERR_RES;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	udelay(2);
 	zsc->control = RES_H_IUS;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 }
 
 /*
@@ -407,7 +407,7 @@ static _INLINE_ void receive_chars(struct sgi_serial *info, struct pt_regs *regs
 
 	udelay(2);
 	ch = info->zs_channel->data;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	udelay(2);
 	stat = read_zsreg(info->zs_channel, R1);
 
@@ -478,7 +478,7 @@ static _INLINE_ void transmit_chars(struct sgi_serial *info)
 		/* Send next char */
 		udelay(2);
 		info->zs_channel->data = info->x_char;
-		junk = ioc_icontrol->istat0;
+		junk = sgint->istat0;
 
 		info->x_char = 0;
 		goto clear_and_return;
@@ -488,14 +488,14 @@ static _INLINE_ void transmit_chars(struct sgi_serial *info)
 		/* That's peculiar... */
 		udelay(2);
 		info->zs_channel->control = RES_Tx_P;
-		junk = ioc_icontrol->istat0;
+		junk = sgint->istat0;
 		goto clear_and_return;
 	}
 
 	/* Send char */
 	udelay(2);
 	info->zs_channel->data = info->xmit_buf[info->xmit_tail++];
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 
 	info->xmit_tail = info->xmit_tail & (SERIAL_XMIT_SIZE-1);
 	info->xmit_cnt--;
@@ -506,7 +506,7 @@ static _INLINE_ void transmit_chars(struct sgi_serial *info)
 	if(info->xmit_cnt <= 0) {
 		udelay(2);
 		info->zs_channel->control = RES_Tx_P;
-		junk = ioc_icontrol->istat0;
+		junk = sgint->istat0;
 		goto clear_and_return;
 	}
 
@@ -514,7 +514,7 @@ clear_and_return:
 	/* Clear interrupt */
 	udelay(2);
 	info->zs_channel->control = RES_H_IUS;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	return;
 }
 
@@ -526,15 +526,15 @@ static _INLINE_ void status_handle(struct sgi_serial *info)
 	/* Get status from Read Register 0 */
 	udelay(2);
 	status = info->zs_channel->control;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	/* Clear status condition... */
 	udelay(2);
 	info->zs_channel->control = RES_EXT_INT;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	/* Clear the interrupt */
 	udelay(2);
 	info->zs_channel->control = RES_H_IUS;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 
 #if 0
 	if(status & DCD) {
@@ -699,10 +699,10 @@ static int startup(struct sgi_serial * info)
 	 */
 	udelay(2);
 	info->zs_channel->control = ERR_RES;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	udelay(2);
 	info->zs_channel->control = RES_H_IUS;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 
 	/*
 	 * Now, initialize the Zilog
@@ -730,10 +730,10 @@ static int startup(struct sgi_serial * info)
 	 */
 	udelay(2);
 	info->zs_channel->control = ERR_RES;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	udelay(2);
 	info->zs_channel->control = RES_H_IUS;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 
 	if (info->tty)
 		clear_bit(TTY_IO_ERROR, &info->tty->flags);
@@ -896,7 +896,7 @@ static void zs_cons_put_char(char ch)
 
 	udelay(2);
 	chan->data = ch;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	restore_flags(flags);
 }
 
@@ -921,7 +921,7 @@ static void rs_put_char(struct tty_struct *tty, char ch)
 
 	udelay(2);
 	chan->data = ch;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	restore_flags(flags);
 }
 
@@ -941,7 +941,7 @@ int putDebugChar(char kgdb_char)
 
 	udelay(2);
 	chan->data = kgdb_char;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	restore_flags(flags);
 
 	return 1;
@@ -955,7 +955,7 @@ char getDebugChar(void)
 	while((chan->control & Rx_CH_AV)==0)
 		udelay(2);
 
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	udelay(2);
 	return chan->data;
 }
@@ -991,7 +991,7 @@ static void rs_fair_output(void)
 	/* Last character is being transmitted now (hopefully). */
 	udelay(2);
 	zs_conschan->control = RES_Tx_P;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 
 	restore_flags(flags);
 	return;
@@ -1144,7 +1144,7 @@ static void rs_flush_chars(struct tty_struct *tty)
 		/* Send char */
 		udelay(2);
 		info->zs_channel->data = info->xmit_buf[info->xmit_tail++];
-		junk = ioc_icontrol->istat0;
+		junk = sgint->istat0;
 		info->xmit_tail = info->xmit_tail & (SERIAL_XMIT_SIZE-1);
 		info->xmit_cnt--;
 	}
@@ -1300,7 +1300,7 @@ static int get_lsr_info(struct sgi_serial * info, unsigned int *value)
 	cli();
 	udelay(2);
 	status = info->zs_channel->control;
-	junk = ioc_icontrol->istat0;
+	junk = sgint->istat0;
 	sti();
 	return put_user(status,value);
 }
@@ -1798,12 +1798,10 @@ static void show_serial_version(void)
 /* Return layout for the requested zs chip number. */
 static inline struct sgi_zslayout *get_zs(int chip)
 {
-	extern struct hpc3_miscregs *hpc3mregs;
-
 	if (chip > 0)
 		panic("Wheee, bogus zs chip number requested.");
 
-	return (struct sgi_zslayout *) (&hpc3mregs->ser1cmd);
+	return (struct sgi_zslayout *) (&sgioc->serport);
 }
 
 
