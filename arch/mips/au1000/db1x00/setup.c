@@ -141,7 +141,7 @@ void __init au1x00_setup(void)
 	// YAMON (specifically reset_db1500.s) setups all PCI
 	//
 
-#if defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1000_USB_DEVICE)
+#if defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1X00_USB_DEVICE)
 #ifdef CONFIG_USB_OHCI
 	if ((argptr = strstr(argptr, "usb_ohci=")) == NULL) {
 	        char usb_args[80];
@@ -164,13 +164,13 @@ void __init au1x00_setup(void)
 		au_readl(USB_HOST_CONFIG);
 #endif
 
-#ifdef CONFIG_AU1000_USB_DEVICE
+#ifdef CONFIG_AU1X00_USB_DEVICE
 	// 2nd USB port is USB device
 	pin_func = au_readl(SYS_PINFUNC) & (u32)(~0x8000);
 	au_writel(pin_func, SYS_PINFUNC);
 #endif
 
-#endif // defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1000_USB_DEVICE)
+#endif // defined (CONFIG_USB_OHCI) || defined (CONFIG_AU1X00_USB_DEVICE)
 
 #ifdef CONFIG_FB
 	// Needed if PCI video card in use

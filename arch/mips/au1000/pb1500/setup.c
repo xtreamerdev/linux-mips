@@ -175,14 +175,14 @@ void __init au1x00_setup(void)
 #ifdef CONFIG_USB_OHCI
 	sys_clksrc |= ((4<<12) | (0<<11) | (0<<10));
 #endif
-#ifdef CONFIG_AU1000_USB_DEVICE
+#ifdef CONFIG_AU1X00_USB_DEVICE
 	sys_clksrc |= ((4<<7) | (0<<6) | (0<<5));
 #endif
 	au_writel(sys_clksrc, SYS_CLKSRC);
 
 
 	pin_func = au_readl(SYS_PINFUNC) & (u32)(~0x8000);
-#ifndef CONFIG_AU1000_USB_DEVICE
+#ifndef CONFIG_AU1X00_USB_DEVICE
 	// 2nd USB port is USB host
 	pin_func |= 0x8000;
 #endif
