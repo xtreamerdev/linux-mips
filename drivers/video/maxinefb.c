@@ -81,9 +81,6 @@ struct maxinefb_par {
 static int currcon = 0;
 static struct maxinefb_par current_par;
 
-/* Reference to machine type set in arch/mips/dec/prom/identify.c, KM */
-extern unsigned long mips_machtype;
-
 
 /* Handle the funny Inmos RamDAC/video controller ... */
 
@@ -262,7 +259,7 @@ static void maxinefb_encode_fix(struct fb_fix_screeninfo *fix,
 	strcpy(fix->id, "maxinefb");
 	/* fix->id is a char[16], so a maximum of 15 characters, KM */
 
-	fix->smem_start = (char *) fb_start;	/* display memory base address, KM */
+	fix->smem_start = fb_start;	/* display memory base address, KM */
 	fix->smem_len = fb_size;
 	fix->type = FB_TYPE_PACKED_PIXELS;
 	fix->visual = FB_VISUAL_PSEUDOCOLOR;
@@ -300,7 +297,7 @@ static void maxinefb_set_disp(int con)
 
 	maxinefb_get_fix(&fix, con, 0);
 
-	display->screen_base = fix.smem_start;
+	display->screen_base = (char *)fix.smem_start;
 	display->visual = fix.visual;
 	display->type = fix.type;
 	display->type_aux = fix.type_aux;
@@ -325,7 +322,7 @@ static struct fb_ops maxinefb_ops = {
 
 int __init maxinefb_init(void)
 {
-	volatile unsigned char *fboff;
+	unsigned long fboff;
 	int i;
 
 	/* Validate we're on the proper machine type */
@@ -341,7 +338,7 @@ int __init maxinefb_init(void)
 
 	/* Clear screen */
 	for (fboff = fb_start; fboff < fb_start + 0x1ffff; fboff++)
-		*fboff = 0x0;
+		*(volatile unsigned char *)fboff = 0x0;
 
 	/* erase hardware cursor */
 	for (i = 0; i < 512; i++) {
