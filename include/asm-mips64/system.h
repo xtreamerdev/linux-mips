@@ -234,13 +234,11 @@ do { var = value; mb(); } while (0)
 #define set_wmb(var, value) \
 do { var = value; wmb(); } while (0)
 
-#ifdef __KERNEL__
 /*
  * switch_to(n) should switch tasks to task nr n, first
  * checking that n isn't the current task, in which case it does nothing.
  */
 extern asmlinkage void *resume(void *last, void *next);
-#endif
 
 #define prepare_to_switch()	do { } while(0)
 
