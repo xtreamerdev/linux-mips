@@ -268,8 +268,6 @@
 #define __NR_O32_Linux			4000
 #define __NR_O32_Linux_syscalls		240
 
-#define __NR_O32_Linux_syscalls		240
-
 #if _MIPS_SIM == _MIPS_SIM_ABI64
 
 /*
@@ -493,7 +491,7 @@
 #define __NR_semtimedop			(__NR_Linux + 214)
 
 /*
- * Offset of the last Linux flavoured syscall
+ * Offset of the last Linux 64-bit flavoured syscall
  */
 #define __NR_Linux_syscalls		214
 
@@ -732,7 +730,7 @@
 /*
  * Offset of the last N32 flavoured syscall
  */
-#define __NR_N32_Linux_syscalls		219
+#define __NR_Linux_syscalls		219
 
 #endif /* _MIPS_SIM == _MIPS_SIM_NABI32 */
 
@@ -756,7 +754,8 @@ type name(void) \
 	".set\treorder" \
 	: "=&r" (__v0), "=r" (__a3) \
 	: "i" (__NR_##name) \
-	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24"); \
+	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", \
+	  "memory"); \
 	\
 	if (__a3 == 0) \
 		return (type) __v0; \
@@ -783,7 +782,8 @@ type name(atype a) \
 	".set\treorder" \
 	: "=&r" (__v0), "=r" (__a3) \
 	: "r" (__a0), "i" (__NR_##name) \
-	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24"); \
+	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", \
+	  "memory"); \
 	\
 	if (__a3 == 0) \
 		return (type) __v0; \
@@ -807,7 +807,8 @@ type name(atype a, btype b) \
 	".set\treorder" \
 	: "=&r" (__v0), "=r" (__a3) \
 	: "r" (__a0), "r" (__a1), "i" (__NR_##name) \
-	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24"); \
+	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", \
+	  "memory"); \
 	\
 	if (__a3 == 0) \
 		return (type) __v0; \
@@ -832,7 +833,8 @@ type name(atype a, btype b, ctype c) \
 	".set\treorder" \
 	: "=&r" (__v0), "=r" (__a3) \
 	: "r" (__a0), "r" (__a1), "r" (__a2), "i" (__NR_##name) \
-	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24"); \
+	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", \
+	  "memory"); \
 	\
 	if (__a3 == 0) \
 		return (type) __v0; \
@@ -857,7 +859,8 @@ type name(atype a, btype b, ctype c, dtype d) \
 	".set\treorder" \
 	: "=&r" (__v0), "+r" (__a3) \
 	: "r" (__a0), "r" (__a1), "r" (__a2), "i" (__NR_##name) \
-	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24"); \
+	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", \
+	  "memory"); \
 	\
 	if (__a3 == 0) \
 		return (type) __v0; \
@@ -893,7 +896,8 @@ type name(atype a, btype b, ctype c, dtype d, etype e) \
 	: "=&r" (__v0), "+r" (__a3) \
 	: "r" (__a0), "r" (__a1), "r" (__a2), "i" (__NR_##name), \
 	  "m" ((unsigned long)e) \
-	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24"); \
+	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", \
+	  "memory"); \
 	\
 	if (__a3 == 0) \
 		return (type) __v0; \
@@ -925,7 +929,8 @@ type name(atype a, btype b, ctype c, dtype d, etype e, ftype f) \
 	: "=&r" (__v0), "+r" (__a3) \
 	: "r" (__a0), "r" (__a1), "r" (__a2), "i" (__NR_##name), \
 	  "m" ((unsigned long)e), "m" ((unsigned long)f) \
-	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24"); \
+	: "$2", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", \
+	  "memory"); \
 	\
 	if (__a3 == 0) \
 		return (type) __v0; \
@@ -953,9 +958,10 @@ type name (atype a,btype b,ctype c,dtype d,etype e) \
 	"syscall\n\t" \
 	"move\t%0, $2\n\t" \
 	".set\treorder" \
-	: "=&r" (__v0), "+r" (__a3), "+r" (__a4) \
-	: "r" (__a0), "r" (__a1), "r" (__a2), "i" (__NR_##name) \
-	: "$2","$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24"); \
+	: "=&r" (__v0), "+r" (__a3) \
+	: "r" (__a0), "r" (__a1), "r" (__a2), "r" (__a4), "i" (__NR_##name) \
+	: "$2", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", \
+	  "memory"); \
 	\
 	if (__a3 == 0) \
 		return (type) __v0; \
@@ -983,7 +989,8 @@ type name (atype a,btype b,ctype c,dtype d,etype e,ftype f) \
 	: "=&r" (__v0), "+r" (__a3) \
 	: "r" (__a0), "r" (__a1), "r" (__a2), "r" (__a4), "r" (__a5), \
 	  "i" (__NR_##name) \
-	: "$2","$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24"); \
+	: "$2", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", \
+	  "memory"); \
 	\
 	if (__a3 == 0) \
 		return (type) __v0; \
