@@ -76,7 +76,8 @@ static const char *cpu_name[] = {
 	[CPU_25KF]	"MIPS 25Kf",
 	[CPU_VR4133]	"NEC VR4133",
 	[CPU_AU1550]	"Au1550",
-	[CPU_24K]	"MIPS 24K"
+	[CPU_24K]	"MIPS 24K",
+	[CPU_AU1200]	"Au1200",
 };
 
 

@@ -160,6 +160,7 @@
 
 #ifdef CONFIG_AU1X00_UART
 #include <asm/au1000.h>
+#ifdef CONFIG_SOC_AU1000
 #define AU1000_SERIAL_PORT_DEFNS                              \
     { .baud_base = 0, .port = UART0_ADDR, .irq = AU1000_UART0_INT,  \
       .flags = STD_COM_FLAGS, .type = 1 },                        \
@@ -169,6 +170,36 @@
       .flags = STD_COM_FLAGS, .type = 1 },    \
     { .baud_base = 0, .port = UART3_ADDR, .irq = AU1000_UART3_INT,  \
       .flags = STD_COM_FLAGS, .type = 1 },
+#endif
+
+#ifdef CONFIG_SOC_AU1500
+#define AU1000_SERIAL_PORT_DEFNS                              \
+    { .baud_base = 0, .port = UART0_ADDR, .irq = AU1500_UART0_INT,  \
+      .flags = STD_COM_FLAGS, .type = 1 },                        \
+    { .baud_base = 0, .port = UART3_ADDR, .irq = AU1500_UART3_INT,  \
+      .flags = STD_COM_FLAGS, .type = 1 },
+#endif
+
+#ifdef CONFIG_SOC_AU1100
+#define AU1000_SERIAL_PORT_DEFNS                              \
+    { .baud_base = 0, .port = UART0_ADDR, .irq = AU1100_UART0_INT,  \
+      .flags = STD_COM_FLAGS, .type = 1 },                        \
+    { .baud_base = 0, .port = UART1_ADDR, .irq = AU1100_UART1_INT,  \
+      .flags = STD_COM_FLAGS, .type = 1 },     \
+    { .baud_base = 0, .port = UART3_ADDR, .irq = AU1100_UART3_INT,  \
+      .flags = STD_COM_FLAGS, .type = 1 },
+#endif
+
+#ifdef CONFIG_SOC_AU1550
+#define AU1000_SERIAL_PORT_DEFNS                              \
+    { .baud_base = 0, .port = UART0_ADDR, .irq = AU1550_UART0_INT,  \
+      .flags = STD_COM_FLAGS, .type = 1 },                        \
+    { .baud_base = 0, .port = UART1_ADDR, .irq = AU1550_UART1_INT,  \
+      .flags = STD_COM_FLAGS, .type = 1 },     \
+    { .baud_base = 0, .port = UART3_ADDR, .irq = AU1550_UART3_INT,  \
+      .flags = STD_COM_FLAGS, .type = 1 },
+#endif
+
 #else
 #define AU1000_SERIAL_PORT_DEFNS
 #endif

@@ -19,15 +19,9 @@ O_TARGET := au1000.o
 export-objs		= prom.o clocks.o power.o usbdev.o
 
 obj-y := prom.o int-handler.o irq.o puts.o time.o reset.o cputable.o \
-	au1xxx_irqmap.o clocks.o power.o setup.o sleeper.o
+	au1xxx_irqmap.o clocks.o power.o setup.o sleeper.o dma.o dbdma.o
   
-ifdef CONFIG_SOC_AU1550
-obj-y += dbdma.o
-export-objs += dbdma.o
-else
-obj-y += dma.o
-export-objs += dma.o
-endif
+export-objs += dma.o dbdma.o
 
 obj-$(CONFIG_AU1X00_USB_DEVICE) += usbdev.o
 obj-$(CONFIG_KGDB) += dbg_io.o

@@ -507,6 +507,9 @@ static inline void cpu_probe_alchemy(struct cpuinfo_mips *c)
 		case 3:
 			c->cputype = CPU_AU1550;
 			break;
+		case 4:
+			c->cputype = CPU_AU1200;
+			break;
 		default:
 			panic("Unknown Au Core!");
 			break;

@@ -41,6 +41,8 @@
 #include <asm/au1xxx_dbdma.h>
 #include <asm/system.h>
 
+#if defined(CONFIG_SOC_AU1550) || defined(CONFIG_SOC_AU1200)
+
 /*
  * The Descriptor Based DMA supports up to 16 channels.
  *
@@ -773,3 +775,6 @@ au1xxx_dbdma_dump(u32 chanid)
 		dp = phys_to_virt(DSCR_GET_NXTPTR(dp->dscr_nxtptr));
 	} while (dp != ctp->chan_desc_base);
 }
+
+#endif //if defined(CONFIG_SOC_AU1550) || defined(CONFIG_SOC_AU1200)
+
