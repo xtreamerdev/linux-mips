@@ -77,6 +77,31 @@ out:
 	return error;
 }
 
+/*
+ * All virtual indexed, non-setassociative caches are only 16kb but
+ * R4000SC checks 3 bits for a virtual coherency conflict, so we need
+ * 32kb aligned addresses.
+ */
+unsigned long get_unmapped_area(unsigned long addr, unsigned long len)
+{
+	struct vm_area_struct * vmm;
+
+	if (len > TASK_SIZE)
+		return 0;
+	if (!addr)
+		addr = TASK_UNMAPPED_BASE;
+	addr = (addr + 0x7fffUL) & 0xffff8000UL;
+
+	for (vmm = find_vma(current->mm, addr); ; vmm = vmm->vm_next) {
+		/* At this point:  (!vmm || addr < vmm->vm_end). */
+		if (TASK_SIZE - len < addr)
+			return 0;
+		if (!vmm || addr + len <= vmm->vm_start)
+			return addr;
+		addr = vmm->vm_end;
+	}
+}
+
 asmlinkage int sys_idle(void)
 {
 	unsigned long start_idle = 0;

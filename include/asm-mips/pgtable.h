@@ -6,8 +6,8 @@
  *
  * Copyright (C) 1994 - 1998 by Ralf Baechle at alii
  */
-#ifndef __ASM_MIPS_PGTABLE_H
-#define __ASM_MIPS_PGTABLE_H
+#ifndef _ASM_PGTABLE_H
+#define _ASM_PGTABLE_H
 
 #include <asm/addrspace.h>
 #include <asm/mipsconfig.h>
@@ -862,4 +862,7 @@ extern inline void set_context(unsigned long val)
 
 #endif /* !defined (_LANGUAGE_ASSEMBLY) */
 
-#endif /* __ASM_MIPS_PGTABLE_H */
+/* We use this to properly align mappings without forced addresses.  */
+#define HAVE_ARCH_UNMAPPED_AREA
+
+#endif /* _ASM_PGTABLE_H */

@@ -355,6 +355,7 @@ free_vma:
  * For mmap() without MAP_FIXED and shmat() with addr=0.
  * Return value 0 means ENOMEM.
  */
+#ifndef HAVE_ARCH_UNMAPPED_AREA
 unsigned long get_unmapped_area(unsigned long addr, unsigned long len)
 {
 	struct vm_area_struct * vmm;
@@ -374,6 +375,7 @@ unsigned long get_unmapped_area(unsigned long addr, unsigned long len)
 		addr = vmm->vm_end;
 	}
 }
+#endif
 
 #define vm_avl_empty	(struct vm_area_struct *) NULL
 
