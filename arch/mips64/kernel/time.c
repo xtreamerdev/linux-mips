@@ -396,7 +396,7 @@ void timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	 * In SMP mode, local_timer_interrupt() is invoked by appropriate
 	 * low-level local timer interrupt handler.
 	 */
-	local_timer_interrupt(0, NULL, regs);
+	local_timer_interrupt(irq, NULL, regs);
 
 #else	/* CONFIG_SMP */
 
@@ -564,14 +564,14 @@ void to_tm(unsigned long tim, struct rtc_time * tm)
 
 	/* Number of years in days */
 	for (i = STARTOFTIME; day >= days_in_year(i); i++)
-	day -= days_in_year(i);
+		day -= days_in_year(i);
 	tm->tm_year = i;
 
 	/* Number of months in days left */
 	if (leapyear(tm->tm_year))
-	days_in_month(FEBRUARY) = 29;
+		days_in_month(FEBRUARY) = 29;
 	for (i = 1; day >= days_in_month(i); i++)
-	day -= days_in_month(i);
+		day -= days_in_month(i);
 	days_in_month(FEBRUARY) = 28;
 	tm->tm_mon = i-1;	/* tm_mon starts from 0 to 11 */
 
