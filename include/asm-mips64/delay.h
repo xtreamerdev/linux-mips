@@ -86,6 +86,6 @@ static inline void __ndelay(unsigned long nsecs, unsigned long lpj)
 #endif
 
 #define udelay(usecs) __udelay((usecs),__udelay_val)
-#define ndelay(usecs) __ndelay((usecs),__udelay_val)
+#define ndelay(nsecs) __ndelay((nsecs),__udelay_val)
 
 #endif /* _ASM_DELAY_H */
