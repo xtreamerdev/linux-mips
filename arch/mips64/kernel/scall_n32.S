@@ -300,11 +300,11 @@ EXPORT(sysn32_call_table)
 	PTR	sys_reboot
 	PTR	sys_sethostname			/* 6165 */
 	PTR	sys_setdomainname
-	PTR	sys_create_module
-	PTR	sys_init_module
-	PTR	sys_delete_module
-	PTR	sys_get_kernel_syms		/* 6170 */
-	PTR	sys_query_module
+	PTR	sys32_create_module
+	PTR	sys32_init_module
+	PTR	sys32_delete_module
+	PTR	sys32_get_kernel_syms		/* 6170 */
+	PTR	sys32_query_module
 	PTR	sys_quotactl
 	PTR	sys_nfsservctl
 	PTR	sys_ni_syscall			/* res. for getpmsg */

@@ -451,9 +451,9 @@ out:	jr	ra
 	sys	sys32_adjtimex	1
 	sys	sys_mprotect	3			/* 4125 */
 	sys	sys32_sigprocmask	3
-	sys	sys_create_module 2
-	sys	sys_init_module	5
-	sys	sys_delete_module 1
+	sys	sys32_create_module 2
+	sys	sys32_init_module	5
+	sys	sys32_delete_module 1
 	sys	sys32_get_kernel_syms 1			/* 4130 */
 	sys	sys_quotactl	0
 	sys	sys_getpgid	1
@@ -511,7 +511,7 @@ out:	jr	ra
 	sys	sys_socketpair	4
 	sys	sys_setresuid	3			/* 4185 */
 	sys	sys_getresuid	3
-	sys	sys_query_module 5
+	sys	sys32_query_module 5
 	sys	sys_poll	3
 	sys	sys_nfsservctl	3
 	sys	sys_setresgid	3			/* 4190 */
