@@ -18,6 +18,7 @@
  *  - flush_tlb_page(mm, vmaddr) flushes a single page
  *  - flush_tlb_range(mm, start, end) flushes a range of pages
  *  - flush_tlb_pgtables(mm, start, end) flushes a range of page tables
+ *  - flush_tlb_one(page) flushes a single kernel page
  */
 extern void local_flush_tlb_all(void);
 extern void local_flush_tlb_mm(struct mm_struct *mm);
@@ -25,6 +26,7 @@ extern void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 			       unsigned long end);
 extern void local_flush_tlb_page(struct vm_area_struct *vma,
                                  unsigned long page);
+extern void local_flush_tlb_one(unsigned long page);
 
 #ifdef CONFIG_SMP
 
