@@ -7,7 +7,6 @@
  *
  * Copyright (C) 1994-1996  Linus Torvalds & authors
  */
-
 #ifndef __ASM_IDE_H
 #define __ASM_IDE_H
 
@@ -37,7 +36,7 @@ struct ide_ops {
 	void (*ide_free_irq)(unsigned int irq, void *dev_id);
 	int (*ide_check_region) (ide_ioreg_t from, unsigned int extent);
 	void (*ide_request_region)(ide_ioreg_t from, unsigned int extent,
-	                        const char *name);
+	                           const char *name);
 	void (*ide_release_region)(ide_ioreg_t from, unsigned int extent);
 };
 
@@ -54,7 +53,7 @@ static __inline__ ide_ioreg_t ide_default_io_base(int index)
 }
 
 static inline void ide_init_hwif_ports(hw_regs_t *hw, ide_ioreg_t data_port,
-                                       ide_ioreg_t ctrl_port, int *irq)
+	ide_ioreg_t ctrl_port, int *irq)
 {
 	ide_ops->ide_init_hwif_ports(hw, data_port, ctrl_port, irq);
 }
@@ -129,22 +128,18 @@ static __inline__ int ide_check_region (ide_ioreg_t from, unsigned int extent)
 	return ide_ops->ide_check_region(from, extent);
 }
 
-static __inline__ void ide_request_region(ide_ioreg_t from,
-                                          unsigned int extent, const char *name)
+static __inline__ void ide_request_region(ide_ioreg_t from, unsigned int extent,
+	const char *name)
 {
 	ide_ops->ide_request_region(from, extent, name);
 }
 
-static __inline__ void ide_release_region(ide_ioreg_t from,
-                                          unsigned int extent)
+static __inline__ void ide_release_region(ide_ioreg_t from, unsigned int extent)
 {
 	ide_ops->ide_release_region(from, extent);
 }
 
-#undef  SUPPORT_VLB_SYNC
-#define SUPPORT_VLB_SYNC 0
-
-#if defined(__MIPSEB__)
+#if defined(CONFIG_SWAP_IO_SPACE_L) && defined(__MIPSEB__)
 
 /* get rid of defs from io.h - ide has its private and conflicting versions */
 #ifdef insw

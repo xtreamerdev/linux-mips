@@ -7,11 +7,6 @@
  *
  * Copyright (C) 1994-1996  Linus Torvalds & authors
  */
-
-/*
- *  This file contains the MIPS architecture specific IDE code.
- */
-
 #ifndef __ASM_IDE_H
 #define __ASM_IDE_H
 
@@ -41,7 +36,7 @@ struct ide_ops {
 	void (*ide_free_irq)(unsigned int irq, void *dev_id);
 	int (*ide_check_region) (ide_ioreg_t from, unsigned int extent);
 	void (*ide_request_region)(ide_ioreg_t from, unsigned int extent,
-	                        const char *name);
+	                           const char *name);
 	void (*ide_release_region)(ide_ioreg_t from, unsigned int extent);
 };
 
@@ -58,7 +53,7 @@ static __inline__ ide_ioreg_t ide_default_io_base(int index)
 }
 
 static inline void ide_init_hwif_ports(hw_regs_t *hw, ide_ioreg_t data_port,
-                                       ide_ioreg_t ctrl_port, int *irq)
+	ide_ioreg_t ctrl_port, int *irq)
 {
 	ide_ops->ide_init_hwif_ports(hw, data_port, ctrl_port, irq);
 }
@@ -81,11 +76,11 @@ typedef union {
 	unsigned all			: 8;	/* all of the bits together */
 	struct {
 #ifdef __MIPSEB__
-		unsigned bit7           : 1;    /* always 1 */
-		unsigned lba            : 1;    /* using LBA instead of CHS */
-		unsigned bit5           : 1;    /* always 1 */
-		unsigned unit           : 1;    /* drive select number, 0 or 1 */
-		unsigned head           : 4;    /* always zeros here */
+		unsigned bit7		: 1;	/* always 1 */
+		unsigned lba		: 1;	/* using LBA instead of CHS */
+		unsigned bit5		: 1;	/* always 1 */
+		unsigned unit		: 1;	/* drive select number, 0 or 1 */
+		unsigned head		: 4;	/* always zeros here */
 #else
 		unsigned head		: 4;	/* always zeros here */
 		unsigned unit		: 1;	/* drive select number, 0 or 1 */
@@ -133,20 +128,18 @@ static __inline__ int ide_check_region (ide_ioreg_t from, unsigned int extent)
 	return ide_ops->ide_check_region(from, extent);
 }
 
-static __inline__ void ide_request_region(ide_ioreg_t from,
-                                          unsigned int extent, const char *name)
+static __inline__ void ide_request_region(ide_ioreg_t from, unsigned int extent,
+	const char *name)
 {
 	ide_ops->ide_request_region(from, extent, name);
 }
 
-static __inline__ void ide_release_region(ide_ioreg_t from,
-                                          unsigned int extent)
+static __inline__ void ide_release_region(ide_ioreg_t from, unsigned int extent)
 {
 	ide_ops->ide_release_region(from, extent);
 }
 
-
-#if defined(CONFIG_SWAP_IO_SPACE) && defined(__MIPSEB__)
+#if defined(CONFIG_SWAP_IO_SPACE_L) && defined(__MIPSEB__)
 
 /* get rid of defs from io.h - ide has its private and conflicting versions */
 #ifdef insw
@@ -169,34 +162,34 @@ static __inline__ void ide_release_region(ide_ioreg_t from,
 
 static inline void ide_insw(unsigned long port, void *addr, unsigned int count)
 {
-       while (count--) {
-               *(u16 *)addr = *(volatile u16 *)(mips_io_port_base + port);
-               addr += 2;
-       }
+	while (count--) {
+		*(u16 *)addr = *(volatile u16 *)(mips_io_port_base + port);
+		addr += 2;
+	}
 }
 
 static inline void ide_outsw(unsigned long port, void *addr, unsigned int count)
 {
-       while (count--) {
-               *(volatile u16 *)(mips_io_port_base + (port)) = *(u16 *)addr;
-               addr += 2;
-       }
+	while (count--) {
+		*(volatile u16 *)(mips_io_port_base + (port)) = *(u16 *)addr;
+		addr += 2;
+	}
 }
 
 static inline void ide_insl(unsigned long port, void *addr, unsigned int count)
 {
-       while (count--) {
-               *(u32 *)addr = *(volatile u32 *)(mips_io_port_base + port);
-               addr += 4;
-       }
+	while (count--) {
+		*(u32 *)addr = *(volatile u32 *)(mips_io_port_base + port);
+		addr += 4;
+	}
 }
 
 static inline void ide_outsl(unsigned long port, void *addr, unsigned int count)
 {
-       while (count--) {
-               *(volatile u32 *)(mips_io_port_base + (port)) = *(u32 *)addr;
-               addr += 4;
-       }
+	while (count--) {
+		*(volatile u32 *)(mips_io_port_base + (port)) = *(u32 *)addr;
+		addr += 4;
+	}
 }
 
 #define T_CHAR          (0x0000)        /* char:  don't touch  */
