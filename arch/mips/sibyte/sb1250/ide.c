@@ -27,35 +27,11 @@
 #include <asm/sibyte/board.h>
 
 extern struct ide_ops std_ide_ops;
-unsigned long ide_base;
 
-#ifdef CONFIG_SIBYTE_PCMCIA
-extern unsigned long sb_pcmcia_base;
+#ifdef CONFIG_PCMCIA_SIBYTE
 extern ide_ack_intr_t sb_pcmcia_ack_intr;
-#define SIBYTE_CS_REG(pcaddr)  (KSEG1ADDR(sb_pcmcia_base)-mips_io_port_base + pcaddr)
-#endif
-
-#ifdef CONFIG_BLK_DEV_IDE_SIBYTE
-extern ide_hwif_t *sb_ide_hwif;
-static inline int is_sibyte_ide(ide_ioreg_t from)
-{
-	return ((sb_ide_hwif &&
-		((from == sb_ide_hwif->io_ports[IDE_DATA_OFFSET]) ||
-		 (from == sb_ide_hwif->io_ports[IDE_ERROR_OFFSET]) ||
-		 (from == sb_ide_hwif->io_ports[IDE_NSECTOR_OFFSET]) ||
-		 (from == sb_ide_hwif->io_ports[IDE_SECTOR_OFFSET]) ||
-		 (from == sb_ide_hwif->io_ports[IDE_LCYL_OFFSET]) ||
-		 (from == sb_ide_hwif->io_ports[IDE_HCYL_OFFSET]) ||
-		 (from == sb_ide_hwif->io_ports[IDE_SELECT_OFFSET]) ||
-		 (from == sb_ide_hwif->io_ports[IDE_STATUS_OFFSET]) ||
-		 (from == sb_ide_hwif->io_ports[IDE_CONTROL_OFFSET])))
-#ifdef CONFIG_SIBYTE_PCMCIA
-		|| (from > 0xffff)
-#endif
-		);
-}
-#else
-#define is_sibyte_ide(f) (0)
+#define SIBYTE_CS_REG(pcaddr)  (IO_SPACE_BASE + PCMCIA_PHYS - mips_io_port_base + pcaddr)
+#define SB_PC_PORT 0xff00
 #endif
 
 /*
@@ -75,22 +51,11 @@ static ide_ioreg_t sibyte_ide_default_io_base(int index)
 static void sibyte_ide_init_hwif_ports (hw_regs_t *hw, ide_ioreg_t data_port,
 				       ide_ioreg_t ctrl_port, int *irq)
 {
-#ifdef CONFIG_SIBYTE_PCMCIA
-	if (data_port == 0xff00) {
-		hw->io_ports[IDE_DATA_OFFSET]    = SIBYTE_CS_REG(0);
-		hw->io_ports[IDE_ERROR_OFFSET]   = SIBYTE_CS_REG(1);
-		hw->io_ports[IDE_NSECTOR_OFFSET] = SIBYTE_CS_REG(2);
-		hw->io_ports[IDE_SECTOR_OFFSET]  = SIBYTE_CS_REG(3);
-		hw->io_ports[IDE_LCYL_OFFSET]    = SIBYTE_CS_REG(4);
-		hw->io_ports[IDE_HCYL_OFFSET]    = SIBYTE_CS_REG(5);
-		hw->io_ports[IDE_SELECT_OFFSET]  = SIBYTE_CS_REG(6);
-		hw->io_ports[IDE_STATUS_OFFSET]  = SIBYTE_CS_REG(7);
-		hw->io_ports[IDE_CONTROL_OFFSET] = SIBYTE_CS_REG(6); /* XXXKW ? */
-		hw->ack_intr = sb_pcmcia_ack_intr; /* XXXKW why here? */
-		if (irq)
-			*irq = 0;
-		hw->io_ports[IDE_IRQ_OFFSET] = 0;
-		return;
+#ifdef CONFIG_PCMCIA_SIBYTE
+	if (data_port == SB_PC_PORT) {
+		data_port = SIBYTE_CS_REG(0);
+		ctrl_port = SIBYTE_CS_REG(6);
+		hw->ack_intr = sb_pcmcia_ack_intr;
 	}
 #endif
 	std_ide_ops.ide_init_hwif_ports(hw, data_port, ctrl_port, irq);
