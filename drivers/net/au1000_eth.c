@@ -1017,6 +1017,7 @@ static void hard_stop(struct net_device *dev)
 
 static void reset_mac(struct net_device *dev)
 {
+	int i;
 	u32 flags;
 	struct au1000_private *aup = (struct au1000_private *) dev->priv;
 
@@ -1040,6 +1041,14 @@ static void reset_mac(struct net_device *dev)
 	}
 	#endif
 	aup->tx_full = 0;
+	for (i = 0; i < NUM_RX_DMA; i++) {
+		/* reset control bits */
+		aup->rx_dma_ring[i]->buff_stat &= ~0xf;
+	}
+	for (i = 0; i < NUM_TX_DMA; i++) {
+		/* reset control bits */
+		aup->tx_dma_ring[i]->buff_stat &= ~0xf;
+	}
 	spin_unlock_irqrestore(&aup->lock, flags);
 }
 
@@ -1139,7 +1148,7 @@ au1000_probe(u32 ioaddr, int irq, int port_num)
 		return NULL;
 	}
 
-	if (err = register_netdev(dev)) {
+	if ((err = register_netdev(dev))) {
 		printk(KERN_ERR "Au1x_eth Cannot register net device err %d\n",
 				err);
 		kfree(dev);
@@ -1325,7 +1334,8 @@ static int au1000_init(struct net_device *dev)
 	u32 control;
 	u16 link, speed;
 
-	if (au1000_debug > 4) printk("%s: au1000_init\n", dev->name);
+	if (au1000_debug > 4) 
+		printk("%s: au1000_init\n", dev->name);
 
 	spin_lock_irqsave(&aup->lock, flags);
 
@@ -1462,7 +1472,7 @@ static int au1000_close(struct net_device *dev)
 	u32 flags;
 	struct au1000_private *aup = (struct au1000_private *) dev->priv;
 
-	//if (au1000_debug > 4)
+	if (au1000_debug > 4)
 		printk("%s: close: dev=%p\n", dev->name, dev);
 
 	reset_mac(dev);
@@ -1486,10 +1496,8 @@ static void __exit au1000_cleanup_module(void)
 	struct net_device *dev;
 	struct au1000_private *aup;
 
-	printk("cleanup_module: num_ifs %d\n", num_ifs);
 	for (i = 0; i < num_ifs; i++) {
 		dev = iflist[i].dev;
-		printk("dev %x\n", dev);
 		if (dev) {
 			aup = (struct au1000_private *) dev->priv;
 			unregister_netdev(dev);
