@@ -462,7 +462,7 @@ static inline pte_t *pte_offset(pmd_t * dir, unsigned long address)
 extern void pgd_init(unsigned long page);
 extern void pmd_init(unsigned long page, unsigned long pagetable);
 
-extern pgd_t swapper_pg_dir[1024];
+extern pgd_t swapper_pg_dir[PTRS_PER_PGD];
 extern void paging_init(void);
 
 extern void __update_tlb(struct vm_area_struct *vma, unsigned long address,
