@@ -499,8 +499,6 @@ balo: vmlinux
 endif
 
 ifdef CONFIG_MIPS_EV64120
-GALILEOBOOT = $(MAKE) -C arch/$(ARCH)/galileo-boards/ev64120
-
 gboot: vmlinux
 	$(MAKE) -C arch/$(ARCH)/galileo-boards/ev64120/compressed
 endif
