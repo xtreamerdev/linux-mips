@@ -39,6 +39,7 @@ obj-$(CONFIG_MTD_PCI)		+= pci.o
 obj-$(CONFIG_MTD_PB1000)        += pb1xxx-flash.o
 obj-$(CONFIG_MTD_PB1100)        += pb1xxx-flash.o
 obj-$(CONFIG_MTD_PB1500)        += pb1xxx-flash.o
+obj-$(CONFIG_MTD_LASAT)     	+= lasat.o
 obj-$(CONFIG_MTD_AUTCPU12)	+= autcpu12-nvram.o
 
 include $(TOPDIR)/Rules.make
