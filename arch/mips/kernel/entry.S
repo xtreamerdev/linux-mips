@@ -100,6 +100,9 @@ END(except_vec1_generic)
 		 * and R4400 SC and MC versions.
 		 */
 NESTED(except_vec3_generic, 0, sp)
+#if R5432_CP0_INTERRUPT_WAR
+		mfc0	k0, CP0_INDEX
+#endif
 		mfc0	k1, CP0_CAUSE
 		la	k0, exception_handlers
 		andi	k1, k1, 0x7c
@@ -114,9 +117,6 @@ NESTED(except_vec3_r4000, 0, sp)
 		.set	push
 		.set    mips3
 		.set	noat
-#if defined(R5432_CP0_INTERRUPT_WAR)
-		mfc0	k0, CP0_INDEX
-#endif
 		mfc0	k1, CP0_CAUSE
 		li	k0, 31<<2
 		andi	k1, k1, 0x7c
