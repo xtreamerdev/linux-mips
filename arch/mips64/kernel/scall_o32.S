@@ -575,6 +575,8 @@ out:	jr	ra
 sys_call_table:
 	syscalltable
 
+	.purgem	sys
+
 	.macro	sys function, nargs
 	.byte	\nargs
 	.endm
