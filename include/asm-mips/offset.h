@@ -81,7 +81,7 @@
 /* Linux mm_struct offsets. */
 #define MM_COUNT      16
 #define MM_PGD        12
-#define MM_CONTEXT    36
+#define MM_CONTEXT    40
 
 /* Linux sigcontext offsets. */
 #define SC_REGS       0
