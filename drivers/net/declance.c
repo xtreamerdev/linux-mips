@@ -46,6 +46,7 @@
 #include <linux/crc32.h>
 #include <linux/delay.h>
 #include <linux/errno.h>
+#include <linux/if_ether.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -944,7 +945,7 @@ static void lance_load_multicast(struct net_device *dev)
 		if (!(*addrs & 1))
 			continue;
 
-		crc = ether_crc_le(6, addrs);
+		crc = ether_crc_le(ETH_ALEN, addrs);
 		crc = crc >> 26;
 		mcast_table[2 * (crc >> 4)] |= 1 << (crc & 0xf);
 	}
