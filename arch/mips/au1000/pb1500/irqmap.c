@@ -53,7 +53,6 @@ au1xxx_irq_map_t au1xxx_irq_map[] = {
 	{ AU1500_GPIO_202, INTC_INT_LOW_LEVEL, 0 },
 	{ AU1500_GPIO_203, INTC_INT_LOW_LEVEL, 0 },
 	{ AU1500_GPIO_205, INTC_INT_LOW_LEVEL, 0 },
-	{ AU1500_GPIO_207, INTC_INT_LOW_LEVEL, 0 },
 };
 
 int au1xxx_nr_irqs = sizeof(au1xxx_irq_map)/sizeof(au1xxx_irq_map_t);

@@ -48,14 +48,10 @@
 #include <asm/au1000.h>
 
 au1xxx_irq_map_t au1xxx_irq_map[] = {
-
-	{ AU1500_GPIO_204, INTC_INT_HIGH_LEVEL, 0},
-
 	{ AU1000_GPIO_9, INTC_INT_LOW_LEVEL, 0 }, // PCMCIA Card Fully_Interted#
 	{ AU1000_GPIO_10, INTC_INT_LOW_LEVEL, 0 }, // PCMCIA Card STSCHG#
 	{ AU1000_GPIO_11, INTC_INT_LOW_LEVEL, 0 }, // PCMCIA Card IRQ#
 	{ AU1000_GPIO_13, INTC_INT_LOW_LEVEL, 0 }, // DC_IRQ#
-	{ AU1000_GPIO_23, INTC_INT_LOW_LEVEL, 0 }, // 2-wire SCL
 };
 
 int au1xxx_nr_irqs = sizeof(au1xxx_irq_map)/sizeof(au1xxx_irq_map_t);

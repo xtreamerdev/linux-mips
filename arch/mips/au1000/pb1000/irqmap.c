@@ -48,7 +48,6 @@
 #include <asm/au1000.h>
 
 au1xxx_irq_map_t au1xxx_irq_map[] = {
-	{ AU1500_GPIO_204, INTC_INT_HIGH_LEVEL, 0},
 	{ AU1000_GPIO_15, INTC_INT_LOW_LEVEL, 0 },
 };
 
