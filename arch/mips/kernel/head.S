@@ -145,9 +145,8 @@ NESTED(kernel_entry, 16, sp)
 #ifdef CONFIG_SMP
 
 /*
- * SMP slave cpus entry point.  Board specific code
- * for bootstrap calls this function after setting up
- * the stack and gp registers. 
+ * SMP slave cpus entry point.  Board specific code for bootstrap calls this
+ * function after setting up the stack and gp registers. 
  */
 		LEAF(smp_bootstrap)
 		.set push
