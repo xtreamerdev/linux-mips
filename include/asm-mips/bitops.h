@@ -761,13 +761,13 @@ static inline unsigned long find_next_zero_le_bit(void *addr,
 		tmp |= ~0U >> (32-offset); /* bug or feature ? */
 		if (size < 32)
 			goto found_first;
-		if (tmp != ~0)
+		if (tmp != ~0U)
 			goto found_middle;
 		size -= 32;
 		result += 32;
 	}
 	while (size >= 32) {
-		if ((tmp = cpu_to_le32p(p++)) != ~0)
+		if ((tmp = cpu_to_le32p(p++)) != ~0U)
 			goto found_middle;
 		result += 32;
 		size -= 32;
@@ -778,7 +778,7 @@ static inline unsigned long find_next_zero_le_bit(void *addr,
 	tmp = cpu_to_le32p(p);
 found_first:
 	tmp |= ~0 << size;
-	if (tmp == ~0)			/* Are any bits zero? */
+	if (tmp == ~0U)			/* Are any bits zero? */
 		return result + size;	/* Nope. */
 
 found_middle:
