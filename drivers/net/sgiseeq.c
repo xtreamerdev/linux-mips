@@ -5,52 +5,45 @@
  */
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/errno.h>
 #include <linux/init.h>
-#include <linux/sched.h>
 #include <linux/types.h>
 #include <linux/interrupt.h>
-#include <linux/ptrace.h>
 #include <linux/ioport.h>
+#include <linux/socket.h>
 #include <linux/in.h>
+#include <linux/route.h>
 #include <linux/slab.h>
 #include <linux/string.h>
 #include <linux/delay.h>
-
-#include <asm/io.h>
-#include <asm/segment.h>
-#include <asm/system.h>
-#include <asm/bitops.h>
-#include <asm/page.h>
-#include <asm/pgtable.h>
-#include <linux/errno.h>
-#include <asm/byteorder.h>
-
-#include <linux/socket.h>
-#include <linux/route.h>
-
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 #include <linux/skbuff.h>
 
+#include <asm/byteorder.h>
+#include <asm/io.h>
+#include <asm/system.h>
+#include <asm/bitops.h>
+#include <asm/page.h>
+#include <asm/pgtable.h>
 #include <asm/sgi/hpc3.h>
 #include <asm/sgi/ip22.h>
 #include <asm/sgialib.h>
 
 #include "sgiseeq.h"
 
-static char *version =
-	"sgiseeq.c: David S. Miller (dm@engr.sgi.com)\n";
+static char *version = "sgiseeq.c: David S. Miller (dm@engr.sgi.com)\n";
 
 static char *sgiseeqstr = "SGI Seeq8003";
 
-/* If you want speed, you do something silly, it always has worked
- * for me.  So, with that in mind, I've decided to make this driver
- * look completely like a stupid Lance from a driver architecture
- * perspective.  Only difference is that here our "ring buffer" looks
- * and acts like a real Lance one does but is layed out like how the
- * HPC DMA and the Seeq want it to.  You'd be surprised how a stupid
- * idea like this can pay off in performance, not to mention making
- * this driver 2,000 times easier to write. ;-)
+/*
+ * If you want speed, you do something silly, it always has worked for me.  So,
+ * with that in mind, I've decided to make this driver look completely like a
+ * stupid Lance from a driver architecture perspective.  Only difference is that
+ * here our "ring buffer" looks and acts like a real Lance one does but is
+ * layed out like how the HPC DMA and the Seeq want it to.  You'd be surprised
+ * how a stupid idea like this can pay off in performance, not to mention
+ * making this driver 2,000 times easier to write. ;-)
  */
 
 /* Tune these if we tend to run out often etc. */
@@ -80,9 +73,10 @@ struct sgiseeq_tx_desc {
 	signed int buf_vaddr;
 };
 
-/* Warning: This structure is layed out in a certain way because
- *          HPC dma descriptors must be 8-byte aligned.  So don't
- *          touch this without some care.
+/*
+ * Warning: This structure is layed out in a certain way because HPC dma
+ *          descriptors must be 8-byte aligned.  So don't touch this without
+ *          some care.
  */
 struct sgiseeq_init_block { /* Note the name ;-) */
 	/* Ptrs to the descriptors in KSEG1 uncached space. */
@@ -111,6 +105,7 @@ struct sgiseeq_private {
 	struct net_device_stats stats;
 
 	struct net_device *next_module;
+	spinlock_t tx_lock;
 };
 
 /* A list of all installed seeq devices, for removing the driver module. */
@@ -175,7 +170,7 @@ static int seeq_init_ring(struct net_device *dev)
 
 	/* Setup tx ring. */
 	for(i = 0; i < SEEQ_TX_BUFFERS; i++) {
-		if(!ib->tx_desc[i].tdma.pbuf) {
+		if (!ib->tx_desc[i].tdma.pbuf) {
 			unsigned long buffer;
 
 			buffer = (unsigned long) kmalloc(PKT_BUF_SZ, GFP_KERNEL);
@@ -216,7 +211,7 @@ void sgiseeq_dump_rings(void)
 	struct hpc3_ethregs *hregs = gpriv->hregs;
 	int i;
 
-	if(once)
+	if (once)
 		return;
 	once++;
 	printk("RING DUMP:\n");
@@ -413,7 +408,7 @@ static inline void sgiseeq_tx(struct net_device *dev, struct sgiseeq_private *sp
 		if (!(td->tdma.cntinfo & (HPCDMA_XIU)))
 			break;
 		if (!(td->tdma.cntinfo & (HPCDMA_ETXD))) {
-			if(!(status & HPC3_ETXCTRL_ACTIVE)) {
+			if (!(status & HPC3_ETXCTRL_ACTIVE)) {
 				hregs->tx_ndptr = PHYSADDR(td);
 				hregs->tx_ctrl = HPC3_ETXCTRL_ACTIVE;
 			}
@@ -433,6 +428,8 @@ static void sgiseeq_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	struct hpc3_ethregs *hregs = sp->hregs;
 	struct sgiseeq_regs *sregs = sp->sregs;
 
+	spin_lock(&sp->tx_lock);
+
 	/* Ack the IRQ and set software state. */
 	hregs->rx_reset = HPC3_ERXRST_CLRIRQ;
 
@@ -446,6 +443,7 @@ static void sgiseeq_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	if ((TX_BUFFS_AVAIL(sp) > 0) && netif_queue_stopped(dev)) {
 		netif_wake_queue(dev);
 	}
+	spin_unlock(&sp->tx_lock);
 }
 
 static int sgiseeq_open(struct net_device *dev)
@@ -505,7 +503,7 @@ static int sgiseeq_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct sgiseeq_tx_desc *td;
 	int skblen, len, entry;
 
-	save_and_cli(flags);
+	spin_lock_irqsave(&sp->tx_lock, flags);
 
 	/* Setup... */
 	skblen = skb->len;
@@ -521,14 +519,14 @@ static int sgiseeq_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	 * 2) Do no allow the HPC to look at a new descriptor until
 	 *    we have completely set up it's state.  This means, do
 	 *    not clear HPCDMA_EOX in the current last descritptor
-	 *    until the one we are adding looks consistant and could
+	 *    until the one we are adding looks consistent and could
 	 *    be processes right now.
 	 * 3) The tx interrupt code must notice when we've added a new
 	 *    entry and the HPC got to the end of the chain before we
 	 *    added this new entry and restarted it.
 	 */
 	memcpy((char *)(long)td->buf_vaddr, skb->data, skblen);
-	if(len != skblen)
+	if (len != skblen)
 		memset((char *)(long)td->buf_vaddr + skb->len, 0, len-skblen);
 	td->tdma.cntinfo = (len & HPCDMA_BCNT) |
 	                   (HPCDMA_XIU | HPCDMA_EOXP | HPCDMA_XIE | HPCDMA_EOX);
@@ -549,7 +547,7 @@ static int sgiseeq_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	if (!TX_BUFFS_AVAIL(sp))
 		netif_stop_queue(dev);
-	restore_flags(flags);
+	spin_unlock_irqrestore(&sp->tx_lock, flags);
 
 	return 0;
 }
