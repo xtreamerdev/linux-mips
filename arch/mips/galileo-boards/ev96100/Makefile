@@ -14,7 +14,8 @@ USE_STANDARD_AS_RULE := true
 
 O_TARGET	:= ev96100.o
 
-obj-y		:= init.o irq.o pci_ops.o pci_fixups.o puts.o reset.o time.o \
-		   int-handler.o setup.o
+obj-y			:= init.o irq.o puts.o reset.o time.o int-handler.o \
+			   setup.o
+obj-$(CONFIG_PCI)	+= pci_fixups.o pci_ops.o
 
 include $(TOPDIR)/Rules.make
