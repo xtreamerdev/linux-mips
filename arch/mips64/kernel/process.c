@@ -56,13 +56,13 @@ void start_thread(struct pt_regs * regs, unsigned long pc, unsigned long sp)
 {
 	unsigned long status;
 
-	/* New thread looses kernel privileges. */
+	/* New thread loses kernel privileges. */
 	status = regs->cp0_status & ~(ST0_CU0|ST0_FR|ST0_KSU);
 	status |= KSU_USER;
 	status |= (current->thread.mflags & MF_32BIT_REGS) ? 0 : ST0_FR;
 	regs->cp0_status = status;
 	current->used_math = 0;
-	loose_fpu();
+	lose_fpu();
 	regs->cp0_epc = pc;
 	regs->regs[29] = sp;
 	current->thread.current_ds = USER_DS;
@@ -108,7 +108,7 @@ int copy_thread(int nr, unsigned long clone_flags, unsigned long usp,
 	p->thread.reg31 = (unsigned long) ret_from_fork;
 
 	/*
-	 * New tasks loose permission to use the fpu. This accelerates context
+	 * New tasks lose permission to use the fpu. This accelerates context
 	 * switching for most programs since they don't use the fpu.  Most
 	 * MIPS IV CPUs use ST0_CU3 as ST0_XX flag so we leave it unchanged.
 	 */
