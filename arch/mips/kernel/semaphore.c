@@ -69,7 +69,7 @@ void __up(struct semaphore *sem)
 									\
 									\
 	tsk->state = (task_state);					\
-	add_wait_queue(&sem->wait, &wait);				\
+	add_wait_queue_exclusive(&sem->wait, &wait);			\
 									\
 	/*								\
 	 * Ok, we're set up.  sem->count is known to be less than zero	\
