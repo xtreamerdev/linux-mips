@@ -299,7 +299,7 @@ unsigned long calibrate_div64_gettimeoffset(void)
  */
 void local_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 {
-	if(!user_mode(regs)) {
+	if (!user_mode(regs)) {
 		if (prof_buffer && current->pid) {
 			extern int _stext;
 			unsigned long pc = regs->cp0_epc;
@@ -317,7 +317,7 @@ void local_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 		}
 	}
 
-#if defined(CONFIG_SMP)
+#ifdef CONFIG_SMP
 	/* in UP mode, update_process_times() is invoked by do_timer() */
 	update_process_times(user_mode(regs));
 #endif
@@ -469,7 +469,8 @@ static struct irqaction timer_irqaction = {
 	0,
 	"timer",
 	NULL,
-	NULL};
+	NULL
+};
 
 void __init time_init(void)
 {
