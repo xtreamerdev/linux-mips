@@ -31,6 +31,8 @@
 })
 
 #ifndef __ASSEMBLY__
+#include <linux/smp.h>
+
 #include <asm/cachectl.h>
 #include <asm/mipsregs.h>
 #include <asm/reg.h>
