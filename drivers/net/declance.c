@@ -272,7 +272,7 @@ struct lance_private {
 			lp->tx_old - lp->tx_new-1)
 
 /* The lance control ports are at an absolute address, machine and tc-slot
- * dependant.
+ * dependent.
  * DECstations do only 32-bit access and the LANCE uses 16 bit addresses,
  * so we have to give the structure an extra member making rap pointing
  * at the right address
@@ -901,7 +901,7 @@ static int lance_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		  skblen);
 
 	/* Clear the slack of the packet, do I need this? */
-	/* For a firewall its a good idea - AC */
+	/* For a firewall it's a good idea - AC */
 /*
    if (len != skblen)
    memset ((char *) &ib->tx_buf [entry][skblen], 0, (len - skblen) << 1);
@@ -1032,7 +1032,8 @@ static int __init dec_lance_init(const int type, const int slot)
 
 	dev = alloc_etherdev(sizeof(struct lance_private));
 	if (!dev) {
-		printk(KERN_ERR "Sgiseeq: Etherdev alloc failed, aborting.\n");
+		printk(KERN_ERR
+			"declance: Unable to allocate etherdev, aborting.\n");
 		ret = -ENOMEM;
 		goto err_out;
 	}
@@ -1234,10 +1235,10 @@ static int __init dec_lance_init(const int type, const int slot)
 	lp->multicast_timer.data = (unsigned long) dev;
 	lp->multicast_timer.function = &lance_set_multicast_retry;
 
-	err = register_netdev(dev);
-	if (err) {
-		printk(KERN_ERR "declance: Cannot register net device, "
-		       "aborting.\n");
+	ret = register_netdev(dev);
+	if (ret) {
+		printk(KERN_ERR
+			"declance: Unable to register netdev, aborting.\n");
 		goto err_out_free_dev;
 	}
 
