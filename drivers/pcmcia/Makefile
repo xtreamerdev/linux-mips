@@ -67,6 +67,7 @@ au1000_ss-objs-$(CONFIG_PCMCIA_XXS1500) 	+= au1000_xxs1500.o
 
 obj-$(CONFIG_PCMCIA_SA1100)	+= sa1100_cs.o
 obj-$(CONFIG_PCMCIA_M8XX)	+= m8xx_pcmcia.o
+obj-$(CONFIG_PCMCIA_SIBYTE)	+= sibyte_generic.o
 
 sa1100_cs-objs-y				:= sa1100_generic.o
 sa1100_cs-objs-$(CONFIG_SA1100_ADSBITSY)	+= sa1100_adsbitsy.o sa1111_generic.o

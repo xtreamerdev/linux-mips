@@ -37,6 +37,9 @@ if [ "$CONFIG_PCMCIA" != "n" ]; then
         bool '  XXS1500 board support' CONFIG_PCMCIA_XXS1500
       fi
    fi
+   if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
+      dep_bool '  SiByte PCMCIA support' CONFIG_PCMCIA_SIBYTE $CONFIG_PCMCIA $CONFIG_BLK_DEV_IDE_SIBYTE
+   fi
    if [ "$CONFIG_VRC4173" != "n" ]; then
       dep_tristate '  NEC VRC4173 CARDU support' CONFIG_PCMCIA_VRC4173 $CONFIG_PCMCIA
    fi
