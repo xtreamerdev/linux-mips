@@ -286,7 +286,7 @@ unsigned long cal_r4koff(void)
 	count = cpu_speed / 2;
 	no_au1xxx_32khz = 1;
 #endif
-	mips_counter_frequency = count;
+	mips_hpt_frequency = count;
 	set_au1x00_uart_baud_base(((cpu_speed) / 4) / 16);
 	spin_unlock_irqrestore(&time_lock, flags);
 	return (cpu_speed / HZ);
