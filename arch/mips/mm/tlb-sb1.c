@@ -25,6 +25,8 @@
 
 extern char except_vec0_sb1[];
 
+#define UNIQUE_ENTRYHI(idx) (KSEG0 + ((idx) << (PAGE_SHIFT + 1)))
+
 /* Dump the current entry* and pagemask registers */
 static inline void dump_cur_tlb_regs(void)
 {
@@ -168,7 +170,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 				idx = read_c0_index();
 				write_c0_entrylo0(0);
 				write_c0_entrylo1(0);
-				write_c0_entryhi(KSEG0 + (idx << (PAGE_SHIFT+1)));
+				write_c0_entryhi(UNIQUE_ENTRYHI(idx));
 				if (idx < 0)
 					continue;
 				tlb_write_indexed();
@@ -200,7 +202,7 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 		if (idx < 0)
 			goto finish;
 		/* Make sure all entries differ. */
-		write_c0_entryhi(KSEG0+(idx<<(PAGE_SHIFT+1)));
+		write_c0_entryhi(UNIQUE_ENTRYHI(idx));
 		tlb_write_indexed();
 	finish:
 		write_c0_entryhi(oldpid);
@@ -224,11 +226,11 @@ void local_flush_tlb_one(unsigned long page)
 	write_c0_entryhi(page);
 	tlb_probe();
 	idx = read_c0_index();
-	write_c0_entrylo0(0);
-	write_c0_entrylo1(0);
-	if (idx > 0) {
+	if (idx >= 0) {
 		/* Make sure all entries differ. */
 		write_c0_entryhi(KSEG0 + (idx<<(PAGE_SHIFT+1)));
+		write_c0_entrylo0(0);
+		write_c0_entrylo1(0);
 		tlb_write_indexed();
 	}
 
@@ -241,7 +243,6 @@ void local_flush_tlb_one(unsigned long page)
 void local_flush_tlb_mm(struct mm_struct *mm)
 {
 	int cpu = smp_processor_id();
-
 	if (cpu_context(cpu, mm) != 0) {
 		drop_mmu_context(mm, cpu);
 	}
