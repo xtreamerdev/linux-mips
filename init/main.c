@@ -106,6 +106,9 @@ extern void ecard_init(void);
 #if defined(CONFIG_SYSVIPC)
 extern void ipc_init(void);
 #endif
+#ifdef CONFIG_PERFMON
+extern void perfmon_init(void);
+#endif
 
 /*
  * Boot command-line arguments
@@ -592,6 +595,9 @@ asmlinkage void __init start_kernel(void)
 	kmem_cache_sizes_init();
 	pgtable_cache_init();
 
+#ifdef CONFIG_PERFMON
+	perfmon_init();
+#endif
 	mempages = num_physpages;
 
 	fork_init(mempages);

@@ -56,6 +56,7 @@ void __init smp_callin(void)
 #endif
 }
 
+#ifndef CONFIG_SGI_IP27
 /*
  * Hook for doing final board-specific setup after the generic smp setup
  * is done
@@ -79,6 +80,7 @@ asmlinkage void start_secondary(void)
 	atomic_inc(&cpus_booted);
 	cpu_idle();
 }
+#endif /* CONFIG_SGI_IP27 */
 
 void __init smp_commence(void)
 {

@@ -443,7 +443,7 @@ __init void allowboot(void)
 	int		num_cpus = 0;
 	cpuid_t		cpu, mycpuid = getcpuid();
 	cnodeid_t	cnode;
-	extern void	bootstrap(void);
+	extern void	smp_bootstrap(void);
 
 	sn_mp_setup();
 	/* Master has already done per_cpu_init() */
@@ -487,14 +487,14 @@ __init void allowboot(void)
 			p->active_mm = &init_mm;
 
 			/*
-		 	 * Launch a slave into bootstrap().
+		 	 * Launch a slave into smp_bootstrap().
 		 	 * It doesn't take an argument, and we
 			 * set sp to the kernel stack of the newly 
 			 * created idle process, gp to the proc struct
 			 * (so that current-> works).
 		 	 */
 			LAUNCH_SLAVE(cputonasid(num_cpus),cputoslice(num_cpus), 
-				(launch_proc_t)MAPPED_KERN_RW_TO_K0(bootstrap),
+				(launch_proc_t)MAPPED_KERN_RW_TO_K0(smp_bootstrap),
 				0, (void *)((unsigned long)p + 
 				KERNEL_STACK_SIZE - 32), (void *)p);
 

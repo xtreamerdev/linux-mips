@@ -470,6 +470,19 @@ bad_alignment:
 	sys	sys_ni_syscall	0
 	sys	sys_gettid	0
 	sys	sys32_readahead	5
+	sys	sys_ni_syscall	0		/* reserved for setxattr */
+	sys	sys_ni_syscall	0		/* 4225 res. for lsetxattr */
+	sys	sys_ni_syscall	0		/* reserved for fsetxattr */
+	sys	sys_ni_syscall	0		/* reserved for getxattr */
+	sys	sys_ni_syscall	0		/* reserved for lgetxattr */
+	sys	sys_ni_syscall	0		/* reserved for fgetxattr */
+	sys	sys_ni_syscall	0		/* 4230 res. for listxattr */
+	sys	sys_ni_syscall	0		/* reserved for llistxattr */
+	sys	sys_ni_syscall	0		/* reserved for flistxattr */
+	sys	sys_ni_syscall	0		/* reserved for removexattr */
+	sys	sys_ni_syscall	0		/* reserved for lremovexattr */
+	sys	sys_ni_syscall	0		/* 4235 res. for fremovexattr */
+
 	.endm
 
 	.macro	sys function, nargs
