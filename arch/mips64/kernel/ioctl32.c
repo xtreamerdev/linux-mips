@@ -12,36 +12,43 @@
 #include <linux/types.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
+#include <linux/sched.h>
+#include <linux/smp.h>
+#include <linux/smp_lock.h>
+#include <linux/ioctl.h>
 #include <linux/if.h>
-#include <linux/mm.h>
-#include <linux/mtio.h>
-#include <linux/init.h>
-#include <linux/file.h>
+#include <linux/slab.h>
+#include <linux/hdreg.h>
+#include <linux/raid/md_u.h>
+#include <linux/kd.h>
+#include <linux/route.h>
+#include <linux/vt.h>
 #include <linux/fs.h>
 #include <linux/ppp_defs.h>
 #include <linux/if_ppp.h>
 #include <linux/if_pppox.h>
 #include <linux/if_tun.h>
+#include <linux/mtio.h>
 #include <linux/cdrom.h>
 #include <linux/loop.h>
-#include <linux/fb.h>
-#include <linux/vt.h>
-#include <linux/vt_kern.h>
-#include <linux/kd.h>
-#include <linux/netdevice.h>
-#include <linux/raw.h>
-#include <linux/route.h>
-#include <linux/hdreg.h>
-#include <linux/blkpg.h>
-#include <linux/blkdev.h>
-#include <linux/elevator.h>
 #include <linux/auto_fs.h>
 #include <linux/auto_fs4.h>
 #include <linux/devfs_fs.h>
+#include <linux/tty.h>
+#include <linux/vt_kern.h>
+#include <linux/fb.h>
 #include <linux/ext2_fs.h>
 #include <linux/videodev.h>
-#include <linux/raid/md_u.h>
-#include <linux/serial.h>
+#include <linux/netdevice.h>
+#include <linux/raw.h>
+#include <linux/blkpg.h>
+#include <linux/blk.h>
+#include <linux/elevator.h>
+#include <linux/rtc.h>
+#include <linux/pci.h>
+#if defined(CONFIG_BLK_DEV_LVM) || defined(CONFIG_BLK_DEV_LVM_MODULE)
+#include <linux/lvm.h>
+#endif /* LVM */
 
 #include <scsi/scsi.h>
 #undef __KERNEL__		/* This file was born to be ugly ...  */
@@ -53,10 +60,8 @@
 #include <asm/uaccess.h>
 #include <linux/soundcard.h>
 
-#include <linux/rtc.h>
-#ifdef CONFIG_MTD_CHAR
 #include <linux/mtd/mtd.h>
-#endif
+#include <linux/serial.h>
 
 #ifdef CONFIG_SIBYTE_TBPROF
 #include <asm/sibyte/trace_prof.h>
