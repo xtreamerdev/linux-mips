@@ -188,13 +188,6 @@ if [ "$CONFIG_SIBYTE_SB1xxx_SOC" = "y" ]; then
    bool '   Support for SB1/SOC profiling - SB1/SCD perf counters' CONFIG_SIBYTE_SB1250_PROF
    bool '   Support for ZBbus profiling' CONFIG_SIBYTE_TBPROF
 
-   if [ "$CONFIG_SIBYTE_SB1250" = "y" -o \
-        "$CONFIG_SIBYTE_BCM1125H" = "y" ]; then
-      if [ "$CONFIG_PCI" = "y" ]; then
-         define_bool CONFIG_SIBYTE_HAS_LDT y
-      fi
-   fi
-
    if [ "$CONFIG_SIBYTE_SWARM" = "y" -o \
         "$CONFIG_SIBYTE_LITTLESUR" = "y" -o \
         "$CONFIG_SIBYTE_PTSWARM" = "y" -o \
@@ -791,6 +784,12 @@ else
       define_bool CONFIG_PCI_AUTO n
    else
       define_bool CONFIG_PCI_AUTO y
+   fi
+fi
+if [ "$CONFIG_SIBYTE_SB1250" = "y" -o \
+     "$CONFIG_SIBYTE_BCM1125H" = "y" ]; then
+   if [ "$CONFIG_PCI" = "y" ]; then
+      define_bool CONFIG_SIBYTE_HAS_LDT y
    fi
 fi
 
