@@ -144,6 +144,10 @@ static inline void *ioremap_nocache(phys_t offset, unsigned long size)
 	return __ioremap(offset, size, _CACHE_UNCACHED);
 }
 
+#if !defined(CONFIG_CPU_R3000) && !defined(CONFIG_CPU_TX39XX)
+/*
+ * These will probably never be used for R3k
+ */
 static inline void *ioremap_cacheable_cow(phys_t offset, unsigned long size)
 {
 	return __ioremap(offset, size, _CACHE_CACHABLE_COW);
@@ -153,6 +157,8 @@ static inline void *ioremap_uncached_accelerated(phys_t offset, unsigned long si
 {
         return __ioremap(offset, size, _CACHE_UNCACHED_ACCELERATED);
 }
+
+#endif
 
 extern void iounmap(void *addr);
 
