@@ -5,7 +5,7 @@
 #include <linux/spinlock.h>
 #include <asm/bootinfo.h>
 
-#include <asm/nile4_.h>
+#include <asm/nile4.h>
 #include <asm/lasat/lasat.h>
 
 #define PCI_ACCESS_READ  0
