@@ -35,6 +35,7 @@
 #define MACH_GROUP_ALCHEMY     18 /* Alchemy Semi Eval Boards               */
 #define MACH_GROUP_NEC_VR41XX  19 /* NEC Vr41xx based boards/gadgets        */
 #define MACH_GROUP_HP_LJ       20 /* Hewlett Packard LaserJet               */
+#define MACH_GROUP_LASAT       21
 
 /*
  * Valid machtype values for group unknown (low order halfword of mips_machtype)
@@ -156,6 +157,12 @@
 #define MACH_TOSHIBA_JMR3927	3	/* JMR-TX3927 CPU/IO board */
 
 /*
+ * Valid machtype for group LASAT
+ */
+#define MACH_LASAT_100		0	/* Masquerade II/SP100/SP50/SP25 */
+#define MACH_LASAT_200		1	/* Masquerade PRO/SP200 */
+
+/*
  * Valid machtype for group Alchemy
  */
 #define MACH_PB1000		0	/* Au1000-based eval board */
@@ -171,6 +178,9 @@
 #define MACH_NEC_OSPREY		0	/* Osprey eval board */
 #define MACH_NEC_EAGLE		1	/* NEC Eagle/Hawk board */
 #define MACH_ZAO_CAPCELLA	2	/* ZAO Networks Capcella */
+#define MACH_VICTOR_MPC30X	3	/* Victor MP-C303/304 */
+#define MACH_IBM_WORKPAD	4	/* IBM WorkPad z50 */
+#define MACH_CASIO_E55		5	/* CASIO CASSIOPEIA E-10/15/55/65 */
 
 #define CL_SIZE			(256)
 
