@@ -13543,7 +13543,7 @@ CONFIG_MTD_SLRAM
 
 DEC MS02-NV NVRAM module support
 CONFIG_MTD_MS02NV
-  This is a MTD driver for the DEC's MS02-type (54-20948-01) battery
+  This is a MTD driver for the DEC's MS02-NV (54-20948-01) battery
   backed-up NVRAM module.  The module was originally meant as an NFS
   accelerator.  Say Y here if you have a DECstation 5000/2x0 or a
   DECsystem 5900 equipped with such a module.
