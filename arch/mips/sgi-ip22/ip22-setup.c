@@ -44,7 +44,6 @@ extern void console_setup(char *);
 extern void sgitime_init(void);
 
 extern struct rtc_ops ip22_rtc_ops;
-extern void ip22_reboot_setup(void);
 
 #define KBD_STAT_IBF		0x02	/* Keyboard input buffer full */
 
@@ -57,14 +56,6 @@ static void sgi_request_region(void)
 
 static int sgi_request_irq(void (*handler)(int, void *, struct pt_regs *))
 {
-	/* Dirty hack, this get's called as a callback from the keyboard
-	 * driver.  We piggyback the initialization of the front panel
-	 * button handling on it even though they're technically not
-	 * related with the keyboard driver in any way.  Doing it from
-	 * ip22_setup wouldn't work since kmalloc isn't initialized yet.
-	 */
-	ip22_reboot_setup();
-
 	return request_irq(SGI_KEYBD_IRQ, handler, 0, "keyboard", NULL);
 }
 
