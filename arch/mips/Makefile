@@ -100,6 +100,11 @@ while :; do \
 	gas_abi=; gas_opt=; gas_cpu=; gas_isa=; \
 	break; \
 done; \
+if test "$$gcc_opt" = -march= && test -n "$$gcc_abi"; then \
+	$(CC) $$gcc_abi $$gcc_opt$$gcc_cpu -S -o /dev/null \
+		-xc /dev/null > /dev/null 2>&1 && \
+		gcc_isa=; \
+fi; \
 echo $$gcc_abi $$gcc_opt$$gcc_cpu $$gcc_isa $$gas_abi $$gas_opt$$gas_cpu $$gas_isa)
 
 #

@@ -40,7 +40,7 @@ check_gas = $(shell if $(CC) $(1) -Wa,-Z -c -o /dev/null -xassembler /dev/null >
 # crossformat linking we rely on the elf2ecoff tool for format conversion.
 #
 GCCFLAGS	:= -I $(TOPDIR)/include/asm/gcc
-GCCFLAGS	+= -mabi=64 -G 0 -mno-abicalls -fno-pic -Wa,--trap -pipe
+GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -Wa,--trap -pipe
 GCCFLAGS	+= $(call check_gcc, -finline-limit=100000,)
 LINKFLAGS	+= -G 0 -static -n
 MODFLAGS	+= -mlong-calls
@@ -76,6 +76,7 @@ while :; do \
 	done; \
 	break; \
 done; \
+gcc_abi=-mabi=64; \
 gcc_cpu=$$cpu; gcc_isa=$$isa; \
 gas_cpu=$$cpu; gas_isa=-Wa,$$isa; \
 while :; do \
@@ -87,7 +88,12 @@ while :; do \
 	gas_opt=; gas_cpu=; gas_isa=; \
 	break; \
 done; \
-echo $$gcc_opt$$gcc_cpu $$gcc_isa $$gas_opt$$gas_cpu $$gas_isa)
+if test "$$gcc_opt" = -march=; then \
+	$(CC) $$gcc_abi $$gcc_opt$$gcc_cpu -S -o /dev/null \
+		-xc /dev/null > /dev/null 2>&1 && \
+		gcc_isa=; \
+fi; \
+echo $$gcc_abi $$gcc_opt$$gcc_cpu $$gcc_isa $$gas_opt$$gas_cpu $$gas_isa)
 
 #
 # CPU-dependent compiler/assembler options for optimization.
