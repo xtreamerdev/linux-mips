@@ -118,7 +118,7 @@ struct kbd_ops sgi_kbd_ops = {
 	sgi_read_status
 };
 
-void __init sgi_setup(void)
+void __init ip22_setup(void)
 {
 #ifdef CONFIG_SERIAL_CONSOLE
 	char *ctype;
