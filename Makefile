@@ -206,6 +206,7 @@ CLEAN_FILES = \
 	drivers/scsi/aic7xxx/aicasm/y.tab.h \
 	drivers/scsi/aic7xxx/aicasm/aicasm \
 	drivers/scsi/53c700_d.h \
+	drivers/tc/lk201-map.c \
 	net/khttpd/make_times_h \
 	net/khttpd/times.h \
 	submenu*
