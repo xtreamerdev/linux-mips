@@ -170,25 +170,24 @@ unsigned long lasat_flash_partition_start(int partno)
 	unsigned long dst;
 
 	switch (partno) {
-		case LASAT_MTD_BOOTLOADER:
-			dst = lasat_board_info.li_flash_service_base;
-			break;
-		case LASAT_MTD_SERVICE:
-			dst = lasat_board_info.li_flash_service_base
-				+ BOOTLOADER_SIZE;
-			break;
-		case LASAT_MTD_NORMAL:
-			dst = lasat_board_info.li_flash_normal_base;
-			break;
-		case LASAT_MTD_FS:
-			dst = lasat_board_info.li_flash_fs_base;
-			break;
-		case LASAT_MTD_CONFIG:
-			dst = lasat_board_info.li_flash_cfg_base;
-			break;
-		default:
-			dst = 0;
-			break;
+	case LASAT_MTD_BOOTLOADER:
+		dst = lasat_board_info.li_flash_service_base;
+		break;
+	case LASAT_MTD_SERVICE:
+		dst = lasat_board_info.li_flash_service_base + BOOTLOADER_SIZE;
+		break;
+	case LASAT_MTD_NORMAL:
+		dst = lasat_board_info.li_flash_normal_base;
+		break;
+	case LASAT_MTD_FS:
+		dst = lasat_board_info.li_flash_fs_base;
+		break;
+	case LASAT_MTD_CONFIG:
+		dst = lasat_board_info.li_flash_cfg_base;
+		break;
+	default:
+		dst = 0;
+		break;
 	}
 
 	return dst;
@@ -199,25 +198,24 @@ unsigned long lasat_flash_partition_size(int partno)
 	unsigned long size;
 
 	switch (partno) {
-		case LASAT_MTD_BOOTLOADER:
-			size = BOOTLOADER_SIZE;
-			break;
-		case LASAT_MTD_SERVICE:
-			size = lasat_board_info.li_flash_service_size - 
-				BOOTLOADER_SIZE;
-			break;
-		case LASAT_MTD_NORMAL:
-			size = lasat_board_info.li_flash_normal_size;
-			break;
-		case LASAT_MTD_FS:
-			size = lasat_board_info.li_flash_fs_size;
-			break;
-		case LASAT_MTD_CONFIG:
-			size = lasat_board_info.li_flash_cfg_size;
-			break;
-		default:
-			size = 0;
-			break;
+	case LASAT_MTD_BOOTLOADER:
+		size = BOOTLOADER_SIZE;
+		break;
+	case LASAT_MTD_SERVICE:
+		size = lasat_board_info.li_flash_service_size - BOOTLOADER_SIZE;
+		break;
+	case LASAT_MTD_NORMAL:
+		size = lasat_board_info.li_flash_normal_size;
+		break;
+	case LASAT_MTD_FS:
+		size = lasat_board_info.li_flash_fs_size;
+		break;
+	case LASAT_MTD_CONFIG:
+		size = lasat_board_info.li_flash_cfg_size;
+		break;
+	default:
+		size = 0;
+		break;
 	}
 
 	return size;

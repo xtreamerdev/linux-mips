@@ -27,14 +27,14 @@ char * __init pcibios_setup(char *str)
 void __init pcibios_init(void)
 {
 	switch (mips_machtype) {
-		case MACH_LASAT_100:
-			lasat_pci_ops = &lasat_pci_ops_100;
-			break;
-		case MACH_LASAT_200:
-			lasat_pci_ops = &lasat_pci_ops_200;
-			break;
-		default:
-			panic("pcibios_init: mips_machtype incorrect");
+	case MACH_LASAT_100:
+		lasat_pci_ops = &lasat_pci_ops_100;
+		break;
+	case MACH_LASAT_200:
+		lasat_pci_ops = &lasat_pci_ops_200;
+		break;
+	default:
+		panic("pcibios_init: mips_machtype incorrect");
 	}
 
 	Dprintk("pcibios_init()\n");

@@ -155,14 +155,14 @@ void __init init_IRQ(void)
 	*lasat_int_mask = 0;
 
 	switch (mips_machtype) {
-		case MACH_LASAT_100:
-			get_int_status = get_int_status_100;
-			break;
-		case MACH_LASAT_200:
-			get_int_status = get_int_status_200;
-			break;
-		default:
-			panic("init_IRQ: mips_machtype incorrect");
+	case MACH_LASAT_100:
+		get_int_status = get_int_status_100;
+		break;
+	case MACH_LASAT_200:
+		get_int_status = get_int_status_200;
+		break;
+	default:
+		panic("init_IRQ: mips_machtype incorrect");
 	}
 
 	/* Now safe to set the exception vector. */
