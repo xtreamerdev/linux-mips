@@ -128,7 +128,7 @@ SYS(sys_shutdown, 2)			/* 1106  shutdown()	      ?V*/
 SYS(irix_socket, 3)			/* 1107  socket()	       V*/
 SYS(sys_gethostname, 2)			/* 1108  sys_gethostname()    ?V*/
 SYS(sys_sethostname, 2)			/* 1109  sethostname()	      ?V*/
-SYS(sys_getdomainname, 2)		/* 1110  sys_getdomainname()  ?V*/
+SYS(irix_getdomainname, 2)		/* 1110  sys_getdomainname()  ?V*/
 SYS(sys_setdomainname, 2)		/* 1111  setdomainname()      ?V*/
 SYS(sys_truncate, 2)			/* 1112  truncate()	       V*/
 SYS(sys_ftruncate, 2)			/* 1113  ftruncate()	       V*/
