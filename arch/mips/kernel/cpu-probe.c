@@ -43,14 +43,21 @@ extern void (*au1k_wait_ptr)(void);
 void au1k_wait(void)
 {
 #ifdef CONFIG_PM
+	unsigned long addr;
 	/* using the wait instruction makes CP0 counter unusable */
-	__asm__(".set\tmips3\n\t"
+	__asm__("la %0,au1k_wait\n\t"
+		".set mips3\n\t"
+		"cache 0x14,0(%0)\n\t"
+		"cache 0x14,32(%0)\n\t"
+		"sync\n\t"
+		"nop\n\t"
 		"wait\n\t"
 		"nop\n\t"
 		"nop\n\t"
 		"nop\n\t"
 		"nop\n\t"
-		".set\tmips0");
+		".set mips0\n\t"
+		: : "r" (addr));
 #else
 	__asm__("nop\n\t"
 		"nop");
