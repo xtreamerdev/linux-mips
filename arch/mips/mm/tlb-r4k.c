@@ -73,16 +73,18 @@ void local_flush_tlb_all(void)
 
 void local_flush_tlb_mm(struct mm_struct *mm)
 {
-	if (mm->context != 0) {
+	int cpu = smp_processor_id();
+
+	if (cpu_context(cpu, mm) != 0) {
 		unsigned long flags;
 
 #ifdef DEBUG_TLB
-		printk("[tlbmm<%d>]", mm->context);
+		printk("[tlbmm<%d>]", cpu_context(cpu, mm));
 #endif
 		__save_and_cli(flags);
 		get_new_mmu_context(mm, smp_processor_id());
 		if (mm == current->active_mm)
-			write_c0_entryhi(mm->context & 0xff);
+			write_c0_entryhi(cpu_asid(cpu, mm));
 		__restore_flags(flags);
 	}
 }
@@ -90,20 +92,22 @@ void local_flush_tlb_mm(struct mm_struct *mm)
 void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 				unsigned long end)
 {
-	if (mm->context != 0) {
+	int cpu = smp_processor_id();
+
+	if (cpu_context(cpu, mm) != 0) {
 		unsigned long flags;
 		int size;
 
 #ifdef DEBUG_TLB
-		printk("[tlbrange<%02x,%08lx,%08lx>]", (mm->context & 0xff),
-		       start, end);
+		printk("[tlbrange<%02x,%08lx,%08lx>]",
+		       cpu_asid(cpu, mm), start, end);
 #endif
 		__save_and_cli(flags);
 		size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
 		size = (size + 1) >> 1;
 		if (size <= mips_cpu.tlbsize/2) {
-			int oldpid = (read_c0_entryhi() & 0xff);
-			int newpid = (mm->context & 0xff);
+			int oldpid = read_c0_entryhi() & ASID_MASK;
+			int newpid = cpu_asid(cpu, mm);
 
 			start &= (PAGE_MASK << 1);
 			end += ((PAGE_SIZE << 1) - 1);
@@ -131,7 +135,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 		} else {
 			get_new_mmu_context(mm, smp_processor_id());
 			if (mm == current->active_mm)
-				write_c0_entryhi(mm->context & 0xff);
+				write_c0_entryhi(cpu_asid(cpu, mm));
 		}
 		__restore_flags(flags);
 	}
@@ -139,14 +143,17 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 
 void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 {
-	if (!vma || vma->vm_mm->context != 0) {
+	int cpu = smp_processor_id();
+
+	if (!vma || cpu_context(cpu, vma->vm_mm) != 0) {
 		unsigned long flags;
 		int oldpid, newpid, idx;
 
 #ifdef DEBUG_TLB
-		printk("[tlbpage<%d,%08lx>]", vma->vm_mm->context, page);
+		printk("[tlbpage<%d,%08lx>]", cpu_context(cpu, vma->vm_mm),
+		       page);
 #endif
-		newpid = (vma->vm_mm->context & 0xff);
+		newpid = cpu_asid(cpu, vma->vm_mm);
 		page &= (PAGE_MASK << 1);
 		__save_and_cli(flags);
 		oldpid = (read_c0_entryhi() & 0xff);
@@ -190,12 +197,13 @@ void update_mmu_cache(struct vm_area_struct * vma, unsigned long address,
 	if (current->active_mm != vma->vm_mm)
 		return;
 
-	pid = read_c0_entryhi() & 0xff;
+	pid = read_c0_entryhi() & ASID_MASK;
 
 #ifdef DEBUG_TLB
-	if((pid != (vma->vm_mm->context & 0xff)) || (vma->vm_mm->context == 0)) {
+	if ((pid != cpu_asid(cpu, vma->vm_mm)) ||
+	    (cpu_context(vma->vm_mm) == 0)) {
 		printk("update_mmu_cache: Wheee, bogus tlbpid mmpid=%d tlbpid=%d\n",
-		       (int) (vma->vm_mm->context & 0xff), pid);
+		       (int) (cpu_asid(cpu, vma->vm_mm)), pid);
 	}
 #endif
 

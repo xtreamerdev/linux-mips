@@ -31,11 +31,8 @@
 	TLBMISS_HANDLER_SETUP_PGD(swapper_pg_dir)
 extern unsigned long pgd_current[];
 
-#ifdef CONFIG_SMP
 #define cpu_context(cpu, mm)	((mm)->context[cpu])
-#else
-#define cpu_context(cpu, mm)	((mm)->context)
-#endif
+#define cpu_asid(cpu, mm)	(cpu_context((cpu), (mm)) & ASID_MASK)
 #define asid_cache(cpu)		cpu_data[cpu].asid_cache
 
 #if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
@@ -82,18 +79,10 @@ get_new_mmu_context(struct mm_struct *mm, unsigned long cpu)
 static inline int
 init_new_context(struct task_struct *tsk, struct mm_struct *mm)
 {
-#ifdef CONFIG_SMP
-	mm->context = kmalloc(smp_num_cpus * sizeof(unsigned long), GFP_KERNEL);
-	/*
- 	 * Init the "context" values so that a tlbpid allocation
-	 * happens on the first switch.
- 	 */
-	if (mm->context == 0)
-		return -ENOMEM;
-	memset(mm->context, 0, smp_num_cpus * sizeof(unsigned long));
-#else
-	mm->context = 0;
-#endif
+	int i;
+
+	for (i = 0; i < smp_num_cpus; i++)
+		cpu_context(i, mm) = 0;
 	return 0;
 }
 
@@ -114,10 +103,6 @@ static inline void switch_mm(struct mm_struct *prev, struct mm_struct *next,
  */
 static inline void destroy_context(struct mm_struct *mm)
 {
-#ifdef CONFIG_SMP
-	if (mm->context)
-		kfree(mm->context);
-#endif
 }
 
 /*

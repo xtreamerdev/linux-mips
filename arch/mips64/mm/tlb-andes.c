@@ -151,6 +151,7 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 static void andes_update_mmu_cache(struct vm_area_struct * vma,
                                    unsigned long address, pte_t pte)
 {
+	unsigned int cpu = smp_processor_id();
 	unsigned long flags;
 	pgd_t *pgdp;
 	pmd_t *pmdp;
@@ -165,12 +166,11 @@ static void andes_update_mmu_cache(struct vm_area_struct * vma,
 
 	pid = read_c0_entryhi() & ASID_MASK;
 
-	if ((pid != (cpu_context(smp_processor_id(), vma->vm_mm) & ASID_MASK))
-	    || (cpu_context(smp_processor_id(), vma->vm_mm) == 0)) {
+	if ((pid != cpu_asid(cpu, vma->vm_mm))
+	    || (cpu_context(cpu, vma->vm_mm) == 0)) {
 		printk(KERN_WARNING
 		       "%s: Wheee, bogus tlbpid mmpid=%d tlbpid=%d\n",
-		       __FUNCTION__, (int) (cpu_context(smp_processor_id(),
-		       vma->vm_mm) & ASID_MASK), pid);
+		       __FUNCTION__, (int) cpu_asid(cpu, vma->vm_mm), pid);
 	}
 
 	__save_and_cli(flags);

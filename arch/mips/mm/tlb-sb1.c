@@ -93,7 +93,7 @@ void local_flush_tlb_all(void)
 
 	__save_and_cli(flags);
 	/* Save old context and create impossible VPN2 value */
-	old_ctx = read_c0_entryhi() & 0xff;
+	old_ctx = read_c0_entryhi() & ASID_MASK;
 	write_c0_entrylo0(0);
 	write_c0_entrylo1(0);
 	for (entry = 0; entry < mips_cpu.tlbsize; entry++) {
@@ -150,8 +150,8 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 		size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
 		size = (size + 1) >> 1;
 		if (size <= (mips_cpu.tlbsize/2)) {
-			int oldpid = read_c0_entryhi() & 0xff;
-			int newpid = cpu_context(cpu, mm) & 0xff;
+			int oldpid = read_c0_entryhi() & ASID_MASK;
+			int newpid = cpu_asid(cpu, mm);
 
 			start &= (PAGE_MASK << 1);
 			end += ((PAGE_SIZE << 1) - 1);
@@ -174,7 +174,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 		} else {
 			get_new_mmu_context(mm, cpu);
 			if (mm == current->active_mm)
-				write_c0_entryhi(cpu_context(cpu, mm) & 0xff);
+				write_c0_entryhi(cpu_asid(cpu, mm));
 		}
 	}
 	__restore_flags(flags);
@@ -194,7 +194,7 @@ void __flush_tlb_one(unsigned long page)
 	printk("[tlbpage<%d,%08lx>]", cpu_context(cpu, vma->vm_mm), page);
 #endif
 	page &= (PAGE_MASK << 1);
-	oldpid = read_c0_entryhi() & 0xff;
+	oldpid = read_c0_entryhi() & ASID_MASK;
 	write_c0_entryhi(page);
 	tlb_probe();
 	idx = read_c0_index();
@@ -229,9 +229,9 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 #ifdef DEBUG_TLB
 		printk("[tlbpage<%d,%08lx>]", cpu_context(cpu, vma->vm_mm), page);
 #endif
-		newpid = cpu_context(cpu, vma->vm_mm) & 0xff;
+		newpid = cpu_asid(cpu, vma->vm_mm);
 		page &= (PAGE_MASK << 1);
-		oldpid = read_c0_entryhi() & 0xff;
+		oldpid = read_c0_entryhi() & ASID_MASK;
 		write_c0_entryhi(page | newpid);
 		tlb_probe();
 		idx = read_c0_index();
@@ -260,7 +260,7 @@ void local_flush_tlb_mm(struct mm_struct *mm)
 	if (cpu_context(cpu, mm) != 0) {
 		get_new_mmu_context(mm, smp_processor_id());
 		if (mm == current->active_mm) {
-			write_c0_entryhi(cpu_context(cpu, mm) & 0xff);
+			write_c0_entryhi(cpu_asid(cpu, mm));
 		}
 	}
 	__restore_flags(flags);
@@ -286,12 +286,12 @@ void update_mmu_cache(struct vm_area_struct *vma, unsigned long address,
 	__save_and_cli(flags);
 
 
-	pid = read_c0_entryhi() & 0xff;
+	pid = read_c0_entryhi() & ASID_MASK;
 
 #ifdef DEBUG_TLB
-	if ((pid != (cpu_context(cpu, vma->vm_mm) & 0xff)) || (cpu_context(cpu, vma->vm_mm) == 0)) {
+	if ((pid != (cpu_asid(cpu, vma->vm_mm))) || (cpu_context(cpu, vma->vm_mm) == 0)) {
 		printk("update_mmu_cache: Wheee, bogus tlbpid mmpid=%d tlbpid=%d\n",
-		       (int) (cpu_context(cpu, vma->vm_mm) & 0xff), pid);
+		       (int) (cpu_asid(cpu, vma->vm_mm)), pid);
 	}
 #endif
 
