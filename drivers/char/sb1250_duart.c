@@ -54,17 +54,15 @@
 
 #define DEFAULT_CFLAGS          (CS8 | B115200)
 
-#define TX_INTEN 1
+#define TX_INTEN          1
+#define DUART_INITIALIZED 2
 
 #ifndef MIN
 #define MIN(a,b)	((a) < (b) ? (a) : (b))
 #endif
 
-#ifdef CONFIG_SIBYTE_SB1250_DUART_NO_PORT_1
-#define DUART_MAX_LINE 1
-#else
 #define DUART_MAX_LINE 2
-#endif
+char sb1250_duart_present[DUART_MAX_LINE] = {1,1};
 
 /*
  * Still not sure what the termios structures set up here are for, 
@@ -138,16 +136,20 @@ static inline void WRITE_SERCSR(u32 val, u32 *addr, int line)
 
 static void init_duart_port(uart_state_t *port, int line)
 {
-	port->line = line;
-	port->status = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_STATUS));
-	port->imr = (u32 *)(IO_SPACE_BASE | A_DUART_IMRREG(line));
-	port->tx_hold = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_TX_HOLD));
-	port->rx_hold = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_RX_HOLD));
-	port->mode_1 = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_MODE_REG_1));
-	port->mode_2 = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_MODE_REG_2));
-	port->clk_sel = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_CLK_SEL));
-	port->cmd = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_CMD));
+	if (!(port->flags & DUART_INITIALIZED)) {
+		port->line = line;
+		port->status = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_STATUS));
+		port->imr = (u32 *)(IO_SPACE_BASE | A_DUART_IMRREG(line));
+		port->tx_hold = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_TX_HOLD));
+		port->rx_hold = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_RX_HOLD));
+		port->mode_1 = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_MODE_REG_1));
+		port->mode_2 = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_MODE_REG_2));
+		port->clk_sel = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_CLK_SEL));
+		port->cmd = (u32 *)(IO_SPACE_BASE | A_DUART_CHANREG(line, R_DUART_CMD));
+		port->flags |= DUART_INITIALIZED;
+	}
 }
+
 /*
  * Mask out the passed interrupt lines at the duart level.  This should be
  * called while holding the associated outp_lock.
@@ -233,11 +235,11 @@ static void duart_int(int irq, void *dev_id, struct pt_regs *regs)
 		int counter = 2048;
 		unsigned int ch;
 
-		if (status & 0x10)
+		if (status & M_DUART_OVRUN_ERR)
 			tty_insert_flip_char(tty, 0, TTY_OVERRUN);
-		if (status & 0x20) {
+		if (status & M_DUART_PARITY_ERR) {
 			printk("Parity error!\n");
-		} else if (status & 0x40) {
+		} else if (status & M_DUART_FRM_ERR) {
 			printk("Frame error!\n");
 		}
 
@@ -450,10 +452,10 @@ static inline void duart_set_cflag(unsigned int line, unsigned int cflag)
 		break;
 	}
 	if (cflag & CSTOPB) {
-	        mode_reg2 |= M_DUART_STOP_BIT_LEN_2;	/* XXX was: 0x4; */
+	        mode_reg2 |= M_DUART_STOP_BIT_LEN_2;
 	}
 	if (!(cflag & PARENB)) {
-	        mode_reg1 |= V_DUART_PARITY_MODE_NONE;	/* XXX was: 0x8; */
+	        mode_reg1 |= V_DUART_PARITY_MODE_NONE;
 	}
 	if (cflag & PARODD) {
 		mode_reg1 |= M_DUART_PARITY_TYPE_ODD;
@@ -661,7 +663,7 @@ static int duart_open(struct tty_struct *tty, struct file *filp)
 
 	MOD_INC_USE_COUNT;
 
-	if ((line < 0) || (line >= DUART_MAX_LINE)) {
+	if ((line < 0) || (line >= DUART_MAX_LINE) || !sb1250_duart_present[line]) {
 		MOD_DEC_USE_COUNT;
 		return -ENODEV;
 	}
@@ -794,11 +796,12 @@ static int __init sb1250_duart_init(void)
 	for (i=0; i<DUART_MAX_LINE; i++) {
 		uart_state_t *port = uart_states + i;
 
-#ifndef CONFIG_SIBYTE_SB1250_DUART_CONSOLE
+		if (!sb1250_duart_present[i])
+			continue;
+
 		init_duart_port(port, i);
-#endif
 		spin_lock_init(&port->outp_lock);
-		duart_mask_ints(i, 0xf);
+		duart_mask_ints(i, M_DUART_IMR_ALL);
 		if (request_irq(K_INT_UART_0+i, duart_int, 0, "uart", port)) {
 			panic("Couldn't get uart0 interrupt line");
 		}
@@ -835,6 +838,8 @@ static void __exit sb1250_duart_fini(void)
 		printk(KERN_ERR "Unable to unregister sb1250 duart serial driver (%d)\n", ret);
 	}
 	for (i=0; i<DUART_MAX_LINE; i++) {
+		if (!sb1250_duart_present[i])
+			continue;
 		free_irq(K_INT_UART_0+i, &uart_states[i]);
 		disable_irq(K_INT_UART_0+i);
 	}
@@ -844,7 +849,7 @@ static void __exit sb1250_duart_fini(void)
 module_init(sb1250_duart_init);
 module_exit(sb1250_duart_fini);
 MODULE_DESCRIPTION("SB1250 Duart serial driver");
-MODULE_AUTHOR("Justin Carlson <carlson@sibyte.com>");
+MODULE_AUTHOR("Justin Carlson, Broadcom Corp.");
 
 #ifdef CONFIG_SIBYTE_SB1250_DUART_CONSOLE
 
@@ -891,7 +896,10 @@ static int ser_console_setup(struct console *cons, char *str)
 
 	for (i=0; i<DUART_MAX_LINE; i++) {
 		uart_state_t *port = uart_states + i;
-		
+
+		if (!sb1250_duart_present[i])
+			continue;
+
 		init_duart_port(port, i);
 #if SIBYTE_1956_WAR
 		last_mode1[i] = V_DUART_PARITY_MODE_NONE|V_DUART_BITS_PER_CHAR_8;

@@ -57,11 +57,9 @@ static int cfe_console_setup(struct console *cons, char *str)
 		if (!strcmp(consdev, "uart0")) {
 			setleds("u0cn");
 			cfe_consdev = MKDEV(TTY_MAJOR, SB1250_DUART_MINOR_BASE + 0);
-#ifndef CONFIG_SIBYTE_SB1250_DUART_NO_PORT_1
 		} else if (!strcmp(consdev, "uart1")) {
 			setleds("u1cn");
 			cfe_consdev = MKDEV(TTY_MAJOR, SB1250_DUART_MINOR_BASE + 1);
-#endif
 #endif
 #ifdef CONFIG_VGA_CONSOLE
 		} else if (!strcmp(consdev, "pcconsole0")) {
