@@ -6,7 +6,7 @@
  * ip22.h: Definitions for SGI IP22 machines
  *
  * Copyright (C) 1996 David S. Miller
- * Copyright (C) 1997, 1999, 2000 Ralf Baechle
+ * Copyright (C) 1997, 1998, 1999, 2000 Ralf Baechle
  */
 
 #ifndef _SGI_IP22_H
@@ -71,6 +71,7 @@
 
 #define ip22_is_fullhouse()	(sgioc->sysid & SGIOC_SYSID_FULLHOUSE)
 
-#define IP22_CLOCK_REGS (KSEG1ADDR(0x1fbe0000))
+extern unsigned short ip22_eeprom_read(volatile unsigned int *ctrl, int reg);
+extern unsigned short ip22_nvram_read(int reg);
 
 #endif
