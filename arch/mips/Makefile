@@ -41,8 +41,8 @@ GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe
 LINKFLAGS	+= -G 0 -static # -N
 MODFLAGS	+= -mlong-calls
 
-ifdef CONFIG_DEBUG
-GCCFLAGS	+= -gstabs+
+ifdef CONFIG_REMOTE_DEBUG
+GCCFLAGS	+= -g
 ifdef CONFIG_SB1XXX_CORELIS
 GCCFLAGS	+= -mno-sched-prolog -fno-omit-frame-pointer
 endif
