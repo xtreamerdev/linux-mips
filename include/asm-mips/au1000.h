@@ -200,6 +200,10 @@ extern au1xxx_irq_map_t au1xxx_irq_map[];
 #ifdef CONFIG_SOC_AU1550
 #define MEM_STNDCTL                0xB4001100
 #define MEM_STSTAT                 0xB4001104
+
+#define MEM_STNAND_CMD                  (0x0)
+#define MEM_STNAND_ADDR                 (0x4)
+#define MEM_STNAND_DATA                (0x20)
 #endif
 
 /* Interrupt Controller 0 */
