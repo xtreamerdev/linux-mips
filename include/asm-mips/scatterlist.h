@@ -14,7 +14,7 @@ struct mmu_sglist {
 	char *addr;
 	char *__dont_touch;
 	unsigned int len;
-	dma_addr_t dvma_address;
+	dma_addr_t dvma_addr;
 };
 
 #define ISA_DMA_THRESHOLD (0x00ffffff)

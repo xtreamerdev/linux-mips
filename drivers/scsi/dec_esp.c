@@ -450,12 +450,12 @@ static void dma_mmu_get_scsi_sgl(struct NCR_ESP *esp, Scsi_Cmnd * sp)
 		sg[sz].dvma_addr = PHYSADDR(sg[sz].addr);
 	sz--;
     }
-	sp->SCp.ptr = (char *) ((unsigned long) sp->SCp.buffer->dvma_address);
+	sp->SCp.ptr = (char *) ((unsigned long) sp->SCp.buffer->dma_address);
 }
 
 static void dma_advance_sg(Scsi_Cmnd * sp)
 {
-	sp->SCp.ptr = (char *) ((unsigned long) sp->SCp.buffer->dvma_address);
+	sp->SCp.ptr = (char *) ((unsigned long) sp->SCp.buffer->dma_address);
 }
 
 static void pmaz_dma_drain(struct NCR_ESP *esp)
