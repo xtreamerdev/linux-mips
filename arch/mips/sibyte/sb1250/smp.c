@@ -91,6 +91,32 @@ extern atomic_t cpus_booted;
 extern int prom_setup_smp(void);
 extern int prom_boot_secondary(int cpu, unsigned long sp, unsigned long gp);
 
+/*
+ * Hook for doing final board-specific setup after the generic smp setup
+ * is done
+ */
+asmlinkage void start_secondary(void)
+{
+	unsigned int cpu = smp_processor_id();
+
+	cpu_probe();
+	prom_init_secondary();
+	per_cpu_trap_init();
+
+	/*
+	 * XXX parity protection should be folded in here when it's converted
+	 * to an option instead of something based on .cputype
+	 */
+	pgd_current[cpu] = init_mm.pgd;
+	cpu_data[cpu].udelay_val = loops_per_jiffy;
+	prom_smp_finish();
+	printk("Slave cpu booted successfully\n");
+	CPUMASK_SETB(cpu_online_map, cpu);
+	atomic_inc(&cpus_booted);
+	while (!atomic_read(&smp_commenced));
+	cpu_idle();
+}
+
 void __init smp_boot_cpus(void)
 {
 	int i;
