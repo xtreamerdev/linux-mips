@@ -48,6 +48,12 @@
 
 extern struct rtc_ops no_rtc_ops;
 
+void board_reset (void)
+{
+    /* Hit BCSR.SYSTEM_CONTROL[SW_RST] */
+	au_writew(au_readw(0xAF00001C) & ~(1<<15), 0xAF00001C);
+}
+
 void __init board_setup(void)
 {
 	u32 pin_func;

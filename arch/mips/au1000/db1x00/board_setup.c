@@ -51,6 +51,12 @@ extern struct rtc_ops no_rtc_ops;
 /* not correct for db1550 */
 static BCSR * const bcsr = (BCSR *)0xAE000000;
 
+void board_reset (void)
+{
+	/* Hit BCSR.SYSTEM_CONTROL[SW_RST] */
+	au_writel(0x00000000, 0xAE00001C);
+}
+
 void __init board_setup(void)
 {
 	u32 pin_func;
