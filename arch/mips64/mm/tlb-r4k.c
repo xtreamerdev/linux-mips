@@ -53,7 +53,7 @@ void local_flush_tlb_all(void)
 	__save_and_cli(flags);
 	/* Save old context and create impossible VPN2 value */
 	old_ctx = (read_c0_entryhi() & 0xff);
-	write_c0_entryhi(KSEG0);
+	write_c0_entryhi(XKPHYS);
 	write_c0_entrylo0(0);
 	write_c0_entrylo1(0);
 	BARRIER;
@@ -63,7 +63,7 @@ void local_flush_tlb_all(void)
 	/* Blast 'em all away. */
 	while(entry < mips_cpu.tlbsize) {
 	        /* Make sure all entries differ. */
-	        write_c0_entryhi(KSEG0+entry*0x2000);
+	        write_c0_entryhi(XKPHYS+entry*0x2000);
 		write_c0_index(entry);
 		BARRIER;
 		tlb_write_indexed();
@@ -128,7 +128,7 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 				if(idx < 0)
 					continue;
 				/* Make sure all entries differ. */
-				write_c0_entryhi(KSEG0+idx*0x2000);
+				write_c0_entryhi(XKPHYS+idx*0x2000);
 				BARRIER;
 				tlb_write_indexed();
 				BARRIER;
@@ -167,7 +167,7 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 		if(idx < 0)
 			goto finish;
 		/* Make sure all entries differ. */
-		write_c0_entryhi(KSEG0+idx*0x2000);
+		write_c0_entryhi(XKPHYS+idx*0x2000);
 		BARRIER;
 		tlb_write_indexed();
 	finish:
