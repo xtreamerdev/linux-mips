@@ -207,7 +207,7 @@ endif
 # convert to ECOFF using elf2ecoff.
 #
 ifdef CONFIG_BOOT_ELF32
-GCCFLAGS += -Wa,-32
+GCCFLAGS += -Wa,-32 $(shell if $(CC) -Wa,-mgp64 -c -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "-Wa,-mgp64"; fi)
 LINKFLAGS += -T arch/mips64/ld.script.elf32
 endif
 #
@@ -215,7 +215,7 @@ endif
 # ELF files from 32-bit files by conversion.
 #
 ifdef CONFIG_BOOT_ELF64
-GCCFLAGS += -Wa,-32
+GCCFLAGS += -Wa,-32 $(shell if $(CC) $(1) -c -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
 LINKFLAGS += -T arch/mips64/ld.script.elf32
 #AS += -64
 #LD += -m elf64bmip
