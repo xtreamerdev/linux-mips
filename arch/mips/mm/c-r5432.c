@@ -334,7 +334,7 @@ static void r5432_flush_cache_page_d32i32(struct vm_area_struct *vma,
 
 static void r5432_flush_data_cache_page(unsigned long addr)
 {
-	blast_dcache32_page((unsigned long)page_address(page));
+	blast_dcache32_page(addr);
 }
 
 static void
