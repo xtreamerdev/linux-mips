@@ -21,9 +21,8 @@
 #include <asm/mmu_context.h>
 #include <asm/bootinfo.h>
 #include <asm/cpu.h>
-#include <asm/war.h>
 
-extern char except_vec0_r4000[], except_vec0_sb1_m3[];
+extern char except_vec0_sb1[];
 
 /* Dump the current entry* and pagemask registers */
 static inline void dump_cur_tlb_regs(void)
@@ -178,36 +177,6 @@ void local_flush_tlb_range(struct mm_struct *mm, unsigned long start,
 	local_irq_restore(flags);
 }
 
-/*
- * This one is only used for pages with the global bit set so we don't care
- * much about the ASID.
- */
-void __flush_tlb_one(unsigned long page)
-{
-	unsigned long flags;
-	int oldpid, idx;
-
-	local_irq_save(flags);
-#ifdef DEBUG_TLB
-	printk("[tlbpage<%d,%08lx>]", cpu_context(cpu, vma->vm_mm), page);
-#endif
-	page &= (PAGE_MASK << 1);
-	oldpid = read_c0_entryhi() & ASID_MASK;
-	write_c0_entryhi(page);
-	tlb_probe();
-	idx = read_c0_index();
-	write_c0_entrylo0(0);
-	write_c0_entrylo1(0);
-	if (idx >= 0) {
-		/* Make sure all entries differ. */
-		write_c0_entryhi(KSEG0+(idx<<(PAGE_SHIFT+1)));
-		tlb_write_indexed();
-	}
-	write_c0_entryhi(oldpid);
-
-	local_irq_restore(flags);
-}
-
 void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 {
 	unsigned long flags;
@@ -224,9 +193,6 @@ void local_flush_tlb_page(struct vm_area_struct *vma, unsigned long page)
 	local_irq_save(flags);
 	if (cpu_context(cpu, vma->vm_mm) != 0) {
 		int oldpid, newpid, idx;
-#ifdef DEBUG_TLB
-		printk("[tlbpage<%d,%08lx>]", cpu_context(cpu, vma->vm_mm), page);
-#endif
 		newpid = cpu_asid(cpu, vma->vm_mm);
 		page &= (PAGE_MASK << 1);
 		oldpid = read_c0_entryhi() & ASID_MASK;
@@ -276,16 +242,7 @@ void update_mmu_cache(struct vm_area_struct *vma, unsigned long address,
 
 	local_irq_save(flags);
 
-
 	pid = read_c0_entryhi() & ASID_MASK;
-
-#ifdef DEBUG_TLB
-	if ((pid != (cpu_asid(cpu, vma->vm_mm))) || (cpu_context(cpu, vma->vm_mm) == 0)) {
-		printk("update_mmu_cache: Wheee, bogus tlbpid mmpid=%d tlbpid=%d\n",
-		       (int) (cpu_asid(cpu, vma->vm_mm)), pid);
-	}
-#endif
-
 	address &= (PAGE_MASK << 1);
 	write_c0_entryhi(address | (pid));
 	pgdp = pgd_offset(vma->vm_mm, address);
@@ -295,13 +252,11 @@ void update_mmu_cache(struct vm_area_struct *vma, unsigned long address,
 	ptep = pte_offset(pmdp, address);
 	write_c0_entrylo0(pte_val(*ptep++) >> 6);
 	write_c0_entrylo1(pte_val(*ptep) >> 6);
-	write_c0_entryhi(address | (pid));
 	if (idx < 0) {
 		tlb_write_random();
 	} else {
 		tlb_write_indexed();
 	}
-	write_c0_entryhi(pid);
 	local_irq_restore(flags);
 }
 
@@ -314,6 +269,7 @@ void sb1_tlb_init(void)
 {
 	u32 config1;
 
+	write_c0_pagemask(PM_4K);
 	config1 = read_c0_config1();
 	mips_cpu.tlbsize = ((config1 >> 25) & 0x3f) + 1;
 
@@ -324,10 +280,6 @@ void sb1_tlb_init(void)
 	 */
 	sb1_sanitize_tlb();
 
-#ifdef BCM1250_M3_WAR
-	memcpy((void *)KSEG0, except_vec0_sb1_m3, 0x80);
-#else
-	memcpy((void *)KSEG0, except_vec0_r4000, 0x80);
-#endif
+	memcpy((void *)KSEG0, except_vec0_sb1, 0x80);
 	flush_icache_range(KSEG0, KSEG0 + 0x80);
 }
