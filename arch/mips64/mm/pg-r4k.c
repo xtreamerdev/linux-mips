@@ -3,11 +3,9 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 1996 David S. Miller (dm@engr.sgi.com)
- * Copyright (C) 1997, 98, 99, 2000, 01, 02, 03 Ralf Baechle (ralf@gnu.org)
- * Copyright (C) 1999, 2000 Silicon Graphics, Inc.
- * Copyright (C) 2000 Kanoj Sarcar (kanoj@sgi.com)
+ * Copyright (C) 2003 Ralf Baechle (ralf@linux-mips.org)
  */
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/sched.h>
@@ -40,26 +38,88 @@ static unsigned int clear_page_array[0xa0 / 4];
 void clear_page(void * page) __attribute__((alias("clear_page_array")));
 
 /*
+ * Maximum sizes:
+ *
+ * R4000 16 bytes D-cache, 128 bytes S-cache:		0xbc bytes
+ * R4600 v1.7:						0x80 bytes
+ * R4600 v2.0:						0x84 bytes
+ * With prefetching, 16 byte strides			0xb8 bytes
+ */
+static unsigned int copy_page_array[0xb8 / 4];
+
+void copy_page(void *to, void *from) __attribute__((alias("copy_page_array")));
+
+/*
+ * An address fits into a single register so it's safe to use 64-bit registers
+ * if we have 64-bit adresses.
+ */
+#define cpu_has_64bit_registers	cpu_has_64bit_addresses
+
+/*
  * This is suboptimal for 32-bit kernels; we assume that R10000 is only used
  * with 64-bit kernels.  The prefetch offsets have been experimentally tuned
  * an Origin 200.
  */
-static int pref_offset __initdata = 512;
-static unsigned int pref_mode __initdata;
+static int pref_offset_clear __initdata = 512;
+static int pref_offset_copy  __initdata = 256;
+
+static unsigned int pref_src_mode __initdata;
+static unsigned int pref_dst_mode __initdata;
 
 static int has_scache __initdata = 0;
+static int load_offset __initdata = 0;
 static int store_offset __initdata = 0;
+
 static unsigned int __initdata *dest, *epc;
 
-static inline void build_pref(void)
+static inline void build_src_pref(int advance)
+{
+	if (!(load_offset & (cpu_dcache_line_size() - 1))) {
+		union mips_instruction mi;
+
+		mi.i_format.opcode     = pref_op;
+		mi.i_format.rs         = 5;		/* $a1 */
+		mi.i_format.rt         = pref_src_mode;
+		mi.i_format.simmediate = load_offset + advance;
+
+		*epc++ = mi.word;
+	}
+}
+
+static inline void __build_load_reg(int reg)
+{
+	union mips_instruction mi;
+
+	if (cpu_has_64bit_registers)
+		mi.i_format.opcode     = ld_op;
+	else
+		mi.i_format.opcode     = lw_op;
+	mi.i_format.rs         = 5;		/* $a1 */
+	mi.i_format.rt         = reg;		/* $zero */
+	mi.i_format.simmediate = load_offset;
+
+	load_offset += (cpu_has_64bit_registers ? 8 : 4);
+
+	*epc++ = mi.word;
+}
+
+static inline void build_load_reg(int reg)
+{
+	if (cpu_has_prefetch)
+		build_src_pref(pref_offset_copy);
+
+	__build_load_reg(reg);
+}
+
+static inline void build_dst_pref(int advance)
 {
 	if (!(store_offset & (cpu_dcache_line_size() - 1))) {
 		union mips_instruction mi;
 
 		mi.i_format.opcode     = pref_op;
 		mi.i_format.rs         = 4;		/* $a0 */
-		mi.i_format.rt         = pref_mode;
-		mi.i_format.simmediate = store_offset;
+		mi.i_format.rt         = pref_dst_mode;
+		mi.i_format.simmediate = store_offset + advance;
 
 		*epc++ = mi.word;
 	}
@@ -116,14 +176,44 @@ static inline void __build_store_zero_reg(void)
 	*epc++ = mi.word;
 }
 
-static inline void build_store_zero_reg(void)
+static inline void __build_store_reg(int reg)
+{
+	union mips_instruction mi;
+	int reg_size;
+
+#ifdef CONFIG_MIPS32
+	if (cpu_has_64bit_registers && reg == 0) {
+		mi.i_format.opcode     = sd_op;
+		reg_size               = 8;
+	} else {
+		mi.i_format.opcode     = sw_op;
+		reg_size               = 4;
+	}
+#endif
+#ifdef CONFIG_MIPS64
+	mi.i_format.opcode     = sd_op;
+	reg_size               = 8;
+#endif
+	mi.i_format.rs         = 4;		/* $a0 */
+	mi.i_format.rt         = reg;		/* $zero */
+	mi.i_format.simmediate = store_offset;
+
+	store_offset += reg_size;
+
+	*epc++ = mi.word;
+}
+
+static inline void build_store_reg(int reg)
 {
 	if (cpu_has_prefetch)
-		build_pref();
+		if (reg)
+			build_dst_pref(pref_offset_copy);
+		else
+			build_dst_pref(pref_offset_clear);
 	else if (cpu_has_cache_cdex)
 		build_cdex();
 
-	__build_store_zero_reg();
+	__build_store_reg(reg);
 }
 
 static inline void build_addiu_at_a0(unsigned long offset)
@@ -140,6 +230,22 @@ static inline void build_addiu_at_a0(unsigned long offset)
 	*epc++ = mi.word;
 }
 
+static inline void build_addiu_a1(unsigned long offset)
+{
+	union mips_instruction mi;
+
+	BUG_ON(offset > 0x7fff);
+
+	mi.i_format.opcode     = cpu_has_64bit_addresses ? daddiu_op : addiu_op;
+	mi.i_format.rs         = 5;		/* $a1 */
+	mi.i_format.rt         = 5;		/* $a1 */
+	mi.i_format.simmediate = offset;
+
+	load_offset -= offset;
+
+	*epc++ = mi.word;
+}
+
 static inline void build_addiu_a0(unsigned long offset)
 {
 	union mips_instruction mi;
@@ -148,7 +254,7 @@ static inline void build_addiu_a0(unsigned long offset)
 
 	mi.i_format.opcode     = cpu_has_64bit_addresses ? daddiu_op : addiu_op;
 	mi.i_format.rs         = 4;		/* $a0 */
-	mi.i_format.rt         = 4;		/* $at */
+	mi.i_format.rt         = 4;		/* $a0 */
 	mi.i_format.simmediate = offset;
 
 	store_offset -= offset;
@@ -195,15 +301,17 @@ void __init build_clear_page(void)
 		switch (current_cpu_data.cputype) {
 		case CPU_R10000:
 		case CPU_R12000:
-			pref_mode = Pref_StoreRetained;
+			pref_src_mode = Pref_LoadStreamed;
+			pref_dst_mode = Pref_StoreRetained;
 			break;
 		default:
-			pref_mode = Pref_PrepareForStore;
+			pref_src_mode = Pref_LoadStreamed;
+			pref_dst_mode = Pref_PrepareForStore;
 			break;
 		}
 	}
 
-	build_addiu_at_a0(PAGE_SIZE - (cpu_has_prefetch ? pref_offset : 0));
+	build_addiu_at_a0(PAGE_SIZE - (cpu_has_prefetch ? pref_offset_clear : 0));
 
 	if (R4600_V2_HIT_CACHEOP_WAR && ((read_c0_prid() & 0xfff0) == 0x2020)) {
 		*epc++ = 0x40026000;		/* mfc0    $v0, $12	*/
@@ -218,42 +326,42 @@ void __init build_clear_page(void)
 	}
 
 dest = epc;
-	build_store_zero_reg();
-	build_store_zero_reg();
-	build_store_zero_reg();
-	build_store_zero_reg();
+	build_store_reg(0);
+	build_store_reg(0);
+	build_store_reg(0);
+	build_store_reg(0);
 	if (has_scache && cpu_scache_line_size() == 128) {
-		build_store_zero_reg();
-		build_store_zero_reg();
-		build_store_zero_reg();
-		build_store_zero_reg();
+		build_store_reg(0);
+		build_store_reg(0);
+		build_store_reg(0);
+		build_store_reg(0);
 	}
 	build_addiu_a0(2 * store_offset);
-	build_store_zero_reg();
-	build_store_zero_reg();
+	build_store_reg(0);
+	build_store_reg(0);
 	if (has_scache && cpu_scache_line_size() == 128) {
-		build_store_zero_reg();
-		build_store_zero_reg();
-		build_store_zero_reg();
-		build_store_zero_reg();
+		build_store_reg(0);
+		build_store_reg(0);
+		build_store_reg(0);
+		build_store_reg(0);
 	}
-	build_store_zero_reg();
+	build_store_reg(0);
 	build_bne(dest);
-	 build_store_zero_reg();
+	 build_store_reg(0);
 
-	if (cpu_has_prefetch && pref_offset) {
-		build_addiu_at_a0(pref_offset);
+	if (cpu_has_prefetch && pref_offset_clear) {
+		build_addiu_at_a0(pref_offset_clear);
 	dest = epc;
-		__build_store_zero_reg();
-		__build_store_zero_reg();
-		__build_store_zero_reg();
-		__build_store_zero_reg();
+		__build_store_reg(0);
+		__build_store_reg(0);
+		__build_store_reg(0);
+		__build_store_reg(0);
 		build_addiu_a0(2 * store_offset);
-		__build_store_zero_reg();
-		__build_store_zero_reg();
-		__build_store_zero_reg();
+		__build_store_reg(0);
+		__build_store_reg(0);
+		__build_store_reg(0);
 		build_bne(dest);
-		 __build_store_zero_reg();
+		 __build_store_reg(0);
 	}
 
 	build_jr_ra();
@@ -265,385 +373,97 @@ dest = epc;
 	flush_icache_range((unsigned long)&clear_page_array,
 	                   (unsigned long) epc);
 
-	BUG_ON(epc >= clear_page_array + ARRAY_SIZE(clear_page_array));
+	BUG_ON(epc > clear_page_array + ARRAY_SIZE(clear_page_array));
 }
 
-/*
- * This is still inefficient.  We only can do better if we know the
- * virtual address where the copy will be accessed.
- */
-
-void r4k_copy_page_d16(void * to, void * from)
+void __init build_copy_page(void)
 {
-	unsigned long dummy1, dummy2, reg1, reg2;
+	epc = (unsigned int *) &copy_page_array;
 
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%6\n"
-		"1:\tcache\t%7,(%0)\n\t"
-		"ld\t%2,(%1)\n\t"
-		"ld\t%3,8(%1)\n\t"
-		"sd\t%2,(%0)\n\t"
-		"sd\t%3,8(%0)\n\t"
-		"cache\t%7,16(%0)\n\t"
-		"ld\t%2,16(%1)\n\t"
-		"ld\t%3,24(%1)\n\t"
-		"sd\t%2,16(%0)\n\t"
-		"sd\t%3,24(%0)\n\t"
-		"cache\t%7,32(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"daddiu\t%1,64\n\t"
-		"ld\t%2,-32(%1)\n\t"
-		"ld\t%3,-24(%1)\n\t"
-		"sd\t%2,-32(%0)\n\t"
-		"sd\t%3,-24(%0)\n\t"
-		"cache\t%7,-16(%0)\n\t"
-		"ld\t%2,-16(%1)\n\t"
-		"ld\t%3,-8(%1)\n\t"
-		"sd\t%2,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		" sd\t%3,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		:"=r" (dummy1), "=r" (dummy2), "=&r" (reg1), "=&r" (reg2)
-		:"0" (to), "1" (from), "I" (PAGE_SIZE),
-		 "i" (Create_Dirty_Excl_D));
-}
+	build_addiu_at_a0(PAGE_SIZE - (cpu_has_prefetch ? pref_offset_copy : 0));
 
-void r4k_copy_page_d32(void * to, void * from)
-{
-	unsigned long dummy1, dummy2, reg1, reg2;
+	if (R4600_V2_HIT_CACHEOP_WAR && ((read_c0_prid() & 0xfff0) == 0x2020)) {
+		*epc++ = 0x40026000;		/* mfc0    $v0, $12	*/
+		*epc++ = 0x34410001;		/* ori     $at, v0, 0x1	*/
+		*epc++ = 0x38210001;		/* xori    $at, at, 0x1	*/
+		*epc++ = 0x40816000;		/* mtc0    $at, $12	*/
+		*epc++ = 0x00000000;		/* nop			*/
+		*epc++ = 0x00000000;		/* nop			*/
+		*epc++ = 0x00000000;		/* nop			*/
+		*epc++ = 0x3c01a000;		/* lui     $at, 0xa000  */
+		*epc++ = 0x8c200000;		/* lw      $zero, ($at) */
+	}
 
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%6\n"
-		"1:\tcache\t%7,(%0)\n\t"
-		"ld\t%2,(%1)\n\t"
-		"ld\t%3,8(%1)\n\t"
-		"sd\t%2,(%0)\n\t"
-		"sd\t%3,8(%0)\n\t"
-		"ld\t%2,16(%1)\n\t"
-		"ld\t%3,24(%1)\n\t"
-		"sd\t%2,16(%0)\n\t"
-		"sd\t%3,24(%0)\n\t"
-		"cache\t%7,32(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"daddiu\t%1,64\n\t"
-		"ld\t%2,-32(%1)\n\t"
-		"ld\t%3,-24(%1)\n\t"
-		"sd\t%2,-32(%0)\n\t"
-		"sd\t%3,-24(%0)\n\t"
-		"ld\t%2,-16(%1)\n\t"
-		"ld\t%3,-8(%1)\n\t"
-		"sd\t%2,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		" sd\t%3,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		:"=r" (dummy1), "=r" (dummy2), "=&r" (reg1), "=&r" (reg2)
-		:"0" (to), "1" (from), "I" (PAGE_SIZE),
-		 "i" (Create_Dirty_Excl_D));
-}
+dest = epc;
+	build_load_reg( 8);
+	build_load_reg( 9);
+	build_load_reg(10);
+	build_load_reg(11);
+	build_store_reg( 8);
+	build_store_reg( 9);
+	build_store_reg(10);
+	build_store_reg(11);
+	if (has_scache && cpu_scache_line_size() == 128) {
+		build_load_reg( 8);
+		build_load_reg( 9);
+		build_load_reg(10);
+		build_load_reg(11);
+		build_store_reg( 8);
+		build_store_reg( 9);
+		build_store_reg(10);
+		build_store_reg(11);
+	}
+	build_addiu_a0(2 * store_offset);
+	build_addiu_a1(2 * load_offset);
+	build_load_reg( 8);
+	build_load_reg( 9);
+	build_load_reg(10);
+	build_load_reg(11);
+	build_store_reg( 8);
+	build_store_reg( 9);
+	build_store_reg(10);
+	if (has_scache && cpu_scache_line_size() == 128) {
+		build_store_reg(11);
+		build_load_reg( 8);
+		build_load_reg( 9);
+		build_load_reg(10);
+		build_load_reg(11);
+		build_store_reg( 8);
+		build_store_reg( 9);
+		build_store_reg(10);
+	}
+	build_bne(dest);
+	 build_store_reg(11);
 
-/*
- * Again a special version for the R4600 V1.x
- */
-void r4k_copy_page_r4600_v1(void * to, void * from)
-{
-	unsigned long dummy1, dummy2, reg1, reg2;
+	if (cpu_has_prefetch && pref_offset_copy) {
+		build_addiu_at_a0(pref_offset_copy);
+	dest = epc;
+		__build_load_reg( 8);
+		__build_load_reg( 9);
+		__build_load_reg(10);
+		__build_load_reg(11);
+		__build_store_reg( 8);
+		__build_store_reg( 9);
+		__build_store_reg(10);
+		__build_store_reg(11);
+		build_addiu_a0(2 * store_offset);
+		build_addiu_a1(2 * load_offset);
+		__build_load_reg( 8);
+		__build_load_reg( 9);
+		__build_load_reg(10);
+		__build_load_reg(11);
+		__build_store_reg( 8);
+		__build_store_reg( 9);
+		__build_store_reg(10);
+		build_bne(dest);
+		 __build_store_reg(11);
+	}
 
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%6\n"
-		"1:\tnop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"\tcache\t%7,(%0)\n\t"
-		"ld\t%2,(%1)\n\t"
-		"ld\t%3,8(%1)\n\t"
-		"sd\t%2,(%0)\n\t"
-		"sd\t%3,8(%0)\n\t"
-		"ld\t%2,16(%1)\n\t"
-		"ld\t%3,24(%1)\n\t"
-		"sd\t%2,16(%0)\n\t"
-		"sd\t%3,24(%0)\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"cache\t%7,32(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"daddiu\t%1,64\n\t"
-		"ld\t%2,-32(%1)\n\t"
-		"ld\t%3,-24(%1)\n\t"
-		"sd\t%2,-32(%0)\n\t"
-		"sd\t%3,-24(%0)\n\t"
-		"ld\t%2,-16(%1)\n\t"
-		"ld\t%3,-8(%1)\n\t"
-		"sd\t%2,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		" sd\t%3,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		:"=r" (dummy1), "=r" (dummy2), "=&r" (reg1), "=&r" (reg2)
-		:"0" (to), "1" (from), "I" (PAGE_SIZE),
-		 "i" (Create_Dirty_Excl_D));
-}
+	build_jr_ra();
+	if (R4600_V2_HIT_CACHEOP_WAR && ((read_c0_prid() & 0xfff0) == 0x2020))
+		*epc++ = 0x40826000;		/* mtc0    $v0, $12	*/
+	else
+		build_nop();
 
-void r4k_copy_page_r4600_v2(void * to, void * from)
-{
-	unsigned long dummy1, dummy2, reg1, reg2;
-	unsigned long flags;
-
-	local_irq_save(flags);
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%6\n"
-		"1:\tnop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"\tcache\t%7,(%0)\n\t"
-		"ld\t%2,(%1)\n\t"
-		"ld\t%3,8(%1)\n\t"
-		"sd\t%2,(%0)\n\t"
-		"sd\t%3,8(%0)\n\t"
-		"ld\t%2,16(%1)\n\t"
-		"ld\t%3,24(%1)\n\t"
-		"sd\t%2,16(%0)\n\t"
-		"sd\t%3,24(%0)\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"nop\n\t"
-		"cache\t%7,32(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"daddiu\t%1,64\n\t"
-		"ld\t%2,-32(%1)\n\t"
-		"ld\t%3,-24(%1)\n\t"
-		"sd\t%2,-32(%0)\n\t"
-		"sd\t%3,-24(%0)\n\t"
-		"ld\t%2,-16(%1)\n\t"
-		"ld\t%3,-8(%1)\n\t"
-		"sd\t%2,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		" sd\t%3,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		:"=r" (dummy1), "=r" (dummy2), "=&r" (reg1), "=&r" (reg2)
-		:"0" (to), "1" (from), "I" (PAGE_SIZE),
-		 "i" (Create_Dirty_Excl_D));
-	local_irq_restore(flags);
-}
-
-/*
- * These are for R4000SC / R4400MC
- */
-void r4k_copy_page_s16(void * to, void * from)
-{
-	unsigned long dummy1, dummy2, reg1, reg2;
-
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%6\n"
-		"1:\tcache\t%7,(%0)\n\t"
-		"ld\t%2,(%1)\n\t"
-		"ld\t%3,8(%1)\n\t"
-		"sd\t%2,(%0)\n\t"
-		"sd\t%3,8(%0)\n\t"
-		"cache\t%7,16(%0)\n\t"
-		"ld\t%2,16(%1)\n\t"
-		"ld\t%3,24(%1)\n\t"
-		"sd\t%2,16(%0)\n\t"
-		"sd\t%3,24(%0)\n\t"
-		"cache\t%7,32(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"daddiu\t%1,64\n\t"
-		"ld\t%2,-32(%1)\n\t"
-		"ld\t%3,-24(%1)\n\t"
-		"sd\t%2,-32(%0)\n\t"
-		"sd\t%3,-24(%0)\n\t"
-		"cache\t%7,-16(%0)\n\t"
-		"ld\t%2,-16(%1)\n\t"
-		"ld\t%3,-8(%1)\n\t"
-		"sd\t%2,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		" sd\t%3,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		:"=r" (dummy1), "=r" (dummy2), "=&r" (reg1), "=&r" (reg2)
-		:"0" (to), "1" (from), "I" (PAGE_SIZE),
-		 "i" (Create_Dirty_Excl_SD));
-}
-
-void r4k_copy_page_s32(void * to, void * from)
-{
-	unsigned long dummy1, dummy2, reg1, reg2;
-
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%6\n"
-		"1:\tcache\t%7,(%0)\n\t"
-		"ld\t%2,(%1)\n\t"
-		"ld\t%3,8(%1)\n\t"
-		"sd\t%2,(%0)\n\t"
-		"sd\t%3,8(%0)\n\t"
-		"ld\t%2,16(%1)\n\t"
-		"ld\t%3,24(%1)\n\t"
-		"sd\t%2,16(%0)\n\t"
-		"sd\t%3,24(%0)\n\t"
-		"cache\t%7,32(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"daddiu\t%1,64\n\t"
-		"ld\t%2,-32(%1)\n\t"
-		"ld\t%3,-24(%1)\n\t"
-		"sd\t%2,-32(%0)\n\t"
-		"sd\t%3,-24(%0)\n\t"
-		"ld\t%2,-16(%1)\n\t"
-		"ld\t%3,-8(%1)\n\t"
-		"sd\t%2,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		" sd\t%3,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		:"=r" (dummy1), "=r" (dummy2), "=&r" (reg1), "=&r" (reg2)
-		:"0" (to), "1" (from), "I" (PAGE_SIZE),
-		 "i" (Create_Dirty_Excl_SD));
-}
-
-void r4k_copy_page_s64(void * to, void * from)
-{
-	unsigned long dummy1, dummy2, reg1, reg2;
-
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%6\n"
-		"1:\tcache\t%7,(%0)\n\t"
-		"ld\t%2,(%1)\n\t"
-		"ld\t%3,8(%1)\n\t"
-		"sd\t%2,(%0)\n\t"
-		"sd\t%3,8(%0)\n\t"
-		"ld\t%2,16(%1)\n\t"
-		"ld\t%3,24(%1)\n\t"
-		"sd\t%2,16(%0)\n\t"
-		"sd\t%3,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"daddiu\t%1,64\n\t"
-		"ld\t%2,-32(%1)\n\t"
-		"ld\t%3,-24(%1)\n\t"
-		"sd\t%2,-32(%0)\n\t"
-		"sd\t%3,-24(%0)\n\t"
-		"ld\t%2,-16(%1)\n\t"
-		"ld\t%3,-8(%1)\n\t"
-		"sd\t%2,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		" sd\t%3,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		:"=r" (dummy1), "=r" (dummy2), "=&r" (reg1), "=&r" (reg2)
-		:"0" (to), "1" (from), "I" (PAGE_SIZE),
-		 "i" (Create_Dirty_Excl_SD));
-}
-
-void r4k_copy_page_s128(void * to, void * from)
-{
-	unsigned long dummy1, dummy2;
-	unsigned long reg1, reg2, reg3, reg4;
-
-	__asm__ __volatile__(
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%8\n"
-		"1:\tcache\t%9,(%0)\n\t"
-		"ld\t%2,(%1)\n\t"
-		"ld\t%3,8(%1)\n\t"
-		"ld\t%4,16(%1)\n\t"
-		"ld\t%5,24(%1)\n\t"
-		"sd\t%2,(%0)\n\t"
-		"sd\t%3,8(%0)\n\t"
-		"sd\t%4,16(%0)\n\t"
-		"sd\t%5,24(%0)\n\t"
-		"ld\t%2,32(%1)\n\t"
-		"ld\t%3,40(%1)\n\t"
-		"ld\t%4,48(%1)\n\t"
-		"ld\t%5,56(%1)\n\t"
-		"sd\t%2,32(%0)\n\t"
-		"sd\t%3,40(%0)\n\t"
-		"sd\t%4,48(%0)\n\t"
-		"sd\t%5,56(%0)\n\t"
-		"daddiu\t%0,128\n\t"
-		"daddiu\t%1,128\n\t"
-		"ld\t%2,-64(%1)\n\t"
-		"ld\t%3,-56(%1)\n\t"
-		"ld\t%4,-48(%1)\n\t"
-		"ld\t%5,-40(%1)\n\t"
-		"sd\t%2,-64(%0)\n\t"
-		"sd\t%3,-56(%0)\n\t"
-		"sd\t%4,-48(%0)\n\t"
-		"sd\t%5,-40(%0)\n\t"
-		"ld\t%2,-32(%1)\n\t"
-		"ld\t%3,-24(%1)\n\t"
-		"ld\t%4,-16(%1)\n\t"
-		"ld\t%5,-8(%1)\n\t"
-		"sd\t%2,-32(%0)\n\t"
-		"sd\t%3,-24(%0)\n\t"
-		"sd\t%4,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		" sd\t%5,-8(%0)\n\t"
-		".set\tat\n\t"
-		".set\treorder"
-		:"=r" (dummy1), "=r" (dummy2),
-		 "=&r" (reg1), "=&r" (reg2), "=&r" (reg3), "=&r" (reg4)
-		:"0" (to), "1" (from),
-		 "I" (PAGE_SIZE),
-		 "i" (Create_Dirty_Excl_SD));
-}
-
-/*
- * This version has been tuned on an Origin.  For other machines the arguments
- * of the pref instructin may have to be tuned differently.
- */
-void andes_copy_page(void * to, void * from)
-{
-	unsigned long dummy1, dummy2, reg1, reg2, reg3, reg4;
-
-	__asm__ __volatile__(
-		".set\tpush\n\t"
-		".set\tmips4\n\t"
-		".set\tnoreorder\n\t"
-		".set\tnoat\n\t"
-		"daddiu\t$1,%0,%8\n"
-		"1:\tpref\t0,2*128(%1)\n\t"
-		"pref\t1,2*128(%0)\n\t"
-		"ld\t%2,(%1)\n\t"
-		"ld\t%3,8(%1)\n\t"
-		"ld\t%4,16(%1)\n\t"
-		"ld\t%5,24(%1)\n\t"
-		"sd\t%2,(%0)\n\t"
-		"sd\t%3,8(%0)\n\t"
-		"sd\t%4,16(%0)\n\t"
-		"sd\t%5,24(%0)\n\t"
-		"daddiu\t%0,64\n\t"
-		"daddiu\t%1,64\n\t"
-		"ld\t%2,-32(%1)\n\t"
-		"ld\t%3,-24(%1)\n\t"
-		"ld\t%4,-16(%1)\n\t"
-		"ld\t%5,-8(%1)\n\t"
-		"sd\t%2,-32(%0)\n\t"
-		"sd\t%3,-24(%0)\n\t"
-		"sd\t%4,-16(%0)\n\t"
-		"bne\t$1,%0,1b\n\t"
-		" sd\t%5,-8(%0)\n\t"
-		".set\tpop\n\t"
-		:"=r" (dummy1), "=r" (dummy2), "=&r" (reg1), "=&r" (reg2),
-		 "=&r" (reg3), "=&r" (reg4)
-		:"0" (to), "1" (from), "I" (PAGE_SIZE));
+	BUG_ON(epc > copy_page_array + ARRAY_SIZE(copy_page_array));
 }

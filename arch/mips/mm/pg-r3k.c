@@ -5,7 +5,7 @@
 #include <linux/mm.h>
 
 /* page functions */
-void r3k_clear_page(void * page)
+void clear_page(void * page)
 {
 	__asm__ __volatile__(
 		".set\tnoreorder\n\t"
@@ -28,7 +28,7 @@ void r3k_clear_page(void * page)
 		: "memory");
 }
 
-void r3k_copy_page(void * to, void * from)
+void copy_page(void * to, void * from)
 {
 	unsigned long dummy1, dummy2;
 	unsigned long reg1, reg2, reg3, reg4;

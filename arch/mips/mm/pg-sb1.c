@@ -85,8 +85,11 @@ void clear_page(void *page)
 
 #endif /* CONFIG_SIBYTE_DMA_PAGEOPS */
 
-/* This function hooked by the memory management function pointers */
-void sb1_copy_page(void *to, void *from)
+#ifdef CONFIG_SIBYTE_DMA_PAGEOPS
+static inline void copy_page_cpu(void *to, void *from)
+#else
+void copy_page(void *to, void *from)
+#endif
 {
 	/*
 	 * This should be optimized in assembly...can't use ld/sd, though,
@@ -195,7 +198,7 @@ void clear_page(void *page)
 	in64(IO_SPACE_BASE + A_DM_REGISTER(cpu, R_DM_DSCR_BASE));
 }
 
-void sb1_copy_page_dma(void *to, void *from)
+void copy_page(void *to, void *from)
 {
 	unsigned long from_phys = PHYSADDR(from);
 	unsigned long to_phys = PHYSADDR(to);
@@ -203,7 +206,7 @@ void sb1_copy_page_dma(void *to, void *from)
 
 	/* if either page is above Kseg0, use old way */
 	if ((KSEGX(to) != K0BASE) || (KSEGX(from) != K0BASE))
-		return sb1_copy_page(to, from);
+		return copy_page_cpu(to, from);
 
 	page_descr[cpu].dscr_a = PHYSADDR(to_phys) | M_DM_DSCRA_L2C_DEST | M_DM_DSCRA_INTERRUPT;
 	page_descr[cpu].dscr_b = PHYSADDR(from_phys) | V_DM_DSCRB_SRC_LENGTH(PAGE_SIZE);
@@ -218,4 +221,7 @@ void sb1_copy_page_dma(void *to, void *from)
 	in64(IO_SPACE_BASE + A_DM_REGISTER(cpu, R_DM_DSCR_BASE));
 }
 
-#endif
+#endif /* CONFIG_SIBYTE_DMA_PAGEOPS */
+
+EXPORT_SYMBOL(clear_page);
+EXPORT_SYMBOL(copy_page);
