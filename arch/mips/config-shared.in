@@ -752,6 +752,8 @@ else
    fi
 fi
 
+dep_bool 'Use 64-bit ELF format for building' CONFIG_BUILD_ELF64 $CONFIG_MIPS64
+
 if [ "$CONFIG_CPU_LITTLE_ENDIAN" = "n" ]; then
    bool 'Include IRIX binary compatibility' CONFIG_BINFMT_IRIX
 fi

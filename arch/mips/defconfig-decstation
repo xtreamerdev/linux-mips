@@ -115,6 +115,7 @@ CONFIG_CPU_HAS_WB=y
 # General setup
 #
 CONFIG_CPU_LITTLE_ENDIAN=y
+# CONFIG_BUILD_ELF64 is not set
 CONFIG_NET=y
 # CONFIG_PCI is not set
 # CONFIG_ISA is not set

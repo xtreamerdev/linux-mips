@@ -5,7 +5,7 @@
 #
 # Copyright (C) 1994, 1995, 1996 by Ralf Baechle
 # DECStation modifications by Paul M. Antoine, 1996
-# Copyright (C) 2002, 2003  Maciej W. Rozycki
+# Copyright (C) 2002, 2003, 2004  Maciej W. Rozycki
 #
 # This file is included by the global makefile so that you can add your own
 # architecture-specific flags and dependencies. Remember to do have actions
@@ -752,6 +752,11 @@ ifdef CONFIG_LASAT
 rom.bin rom.sw: vmlinux
 	$(MAKE) -C arch/$(ARCH)/lasat/image $@
 endif
+
+boot: mips-boot
+
+mips-boot: vmlinux
+	@$(MAKEBOOT) boot
 
 vmlinux.ecoff: vmlinux
 	@$(MAKEBOOT) $@

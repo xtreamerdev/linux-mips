@@ -2658,6 +2658,19 @@ CONFIG_CPU_HAS_WB
   machines which require flushing of write buffers in software.  Saying
   Y is the safe option; N may result in kernel malfunction and crashes.
 
+Use 64-bit ELF format for building
+CONFIG_BUILD_ELF64
+  A 64-bit kernel is usually built using the 64-bit ELF binary object
+  format as it's one that allows arbitrary 64-bit constructs.  For
+  kernels that are loaded within the KSEG compatibility segments the
+  32-bit ELF format can optionally be used resulting in a somewhat
+  smaller binary, but this option is not explicitly supported by the
+  toolchain and since binutils 2.14 it does not even work at all.
+
+  Say Y to use the 64-bit format or N to use the 32-bit one.
+
+  If unsure say Y.
+
 Support for large 64-bit configurations
 CONFIG_MIPS_INSANE_LARGE
   MIPS R10000 does support a 44 bit / 16TB address space as opposed to
