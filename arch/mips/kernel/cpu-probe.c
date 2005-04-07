@@ -34,15 +34,10 @@ static void r4k_wait(void)
 		".set\tmips0");
 }
 
-/* The Au1xxx wait is available only if we run CONFIG_PM and
- * the timer setup found we had a 32KHz counter available.
- * There are still problems with functions that may call au1k_wait
- * directly, but that will be discovered pretty quickly.
- */
-extern void (*au1k_wait_ptr)(void);
-void au1k_wait(void)
+/* The Au1xxx wait is available only if using 32khz counter or
+ * external timer source, but specifically not CP0 Counter. */
+static void au1k_wait(void)
 {
-#ifdef CONFIG_PM
 	unsigned long addr;
 	/* using the wait instruction makes CP0 counter unusable */
 	__asm__("la %0,au1k_wait\n\t"
@@ -58,10 +53,6 @@ void au1k_wait(void)
 		"nop\n\t"
 		".set mips0\n\t"
 		: : "r" (addr));
-#else
-	__asm__("nop\n\t"
-		"nop");
-#endif
 }
 
 static inline void check_wait(void)
@@ -100,21 +91,20 @@ static inline void check_wait(void)
 		cpu_wait = r4k_wait;
 		printk(" available.\n");
 		break;
-#ifdef CONFIG_PM
 	case CPU_AU1000:
 	case CPU_AU1100:
 	case CPU_AU1500:
 	case CPU_AU1550:
 	case CPU_AU1200:
-		if (au1k_wait_ptr != NULL) {
-			cpu_wait = au1k_wait_ptr;
+		{
+			extern int allow_au1k_wait; /* au1000/common/time.c */
+			if (allow_au1k_wait) {
+				cpu_wait = au1k_wait;
 			printk(" available.\n");
-		}
-		else {
+			} else
 			printk(" unavailable.\n");
 		}
 		break;
-#endif
 	default:
 		printk(" unavailable.\n");
 		break;
