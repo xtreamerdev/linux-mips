@@ -462,9 +462,10 @@ static inline void simulate_ll(struct pt_regs *regs, unsigned int opcode)
 	}
 	ll_task = current;
 
+	compute_return_epc(regs);
+
 	regs->regs[(opcode & RT) >> 16] = value;
 
-	compute_return_epc(regs);
 	return;
 
 sig:
@@ -505,9 +506,9 @@ static inline void simulate_sc(struct pt_regs *regs, unsigned int opcode)
 		goto sig;
 	}
 
+	compute_return_epc(regs);
 	regs->regs[reg] = 1;
 
-	compute_return_epc(regs);
 	return;
 
 sig:
