@@ -1101,6 +1101,7 @@ do_readv_writev32(int type, struct file *file, const struct iovec32 *vector,
 	 * specially as they have atomicity guarantees and can handle
 	 * iovec's natively
 	 */
+	inode = file->f_dentry->d_inode;
 	if (inode->i_sock) {
 		int err;
 		err = sock_readv_writev(type, inode, file, iov, count, tot_len);
