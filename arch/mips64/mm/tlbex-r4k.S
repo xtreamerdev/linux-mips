@@ -163,6 +163,7 @@ LEAF(handle_vec1_r4k)
 	PTE_RELOAD k0 k1
 	mtc0_tlbw_hazard
 	tlbwr
+	nop
 1:	tlbw_eret_hazard
 	eret
 END(handle_vec1_r4k)

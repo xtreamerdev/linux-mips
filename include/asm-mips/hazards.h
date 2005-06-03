@@ -68,10 +68,24 @@
 #define irq_disable_hazard						\
 	ehb		# irq_disable_hazard
 
-#else
+#elif defined(CONFIG_CPU_R10000) || defined(CONFIG_CPU_RM9000)
+
+/*
+ * R10000 rocks - all hazards handled in hardware, so this becomes a nobrainer.
+ */
 
 #define irq_enable_hazard
+
 #define irq_disable_hazard
+
+#else
+
+/*
+ * Classic MIPS needs 1 - 3 nops or ssnops
+ */
+#define irq_enable_hazard
+#define irq_disable_hazard						\
+	_ssnop; _ssnop; _ssnop
 
 #endif
 
