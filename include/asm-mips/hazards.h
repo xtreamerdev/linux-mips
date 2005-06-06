@@ -45,7 +45,8 @@
  */
 #define mtc0_tlbw_hazard						\
 	b	. + 8
-#define tlbw_eret_hazard
+#define tlbw_eret_hazard						\
+	nop
 #endif
 
 /*

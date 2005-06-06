@@ -186,7 +186,6 @@
 	P_MTC0	k1, CP0_ENTRYLO1		# load it
 	mtc0_tlbw_hazard
 	tlbwr					# write random tlb entry
-	nop
 	tlbw_eret_hazard
 	eret
 	END(except_vec0_r4000)
@@ -468,7 +467,6 @@ invalid_tlbl:
 	PTE_RELOAD(k1, k0)
 	mtc0_tlbw_hazard
 	tlbwi
-	nop
 	tlbw_eret_hazard
 	.set	mips3
 	eret
@@ -493,7 +491,6 @@ nopage_tlbl:
 	PTE_RELOAD(k1, k0)
 	mtc0_tlbw_hazard
 	tlbwi
-	nop
 	tlbw_eret_hazard
 	.set	mips3
 	eret
@@ -523,7 +520,6 @@ nopage_tlbs:
 	PTE_RELOAD(k1, k0)
 	mtc0_tlbw_hazard
 	tlbwi
-	nop
 	tlbw_eret_hazard
 	.set	mips3
 	eret
