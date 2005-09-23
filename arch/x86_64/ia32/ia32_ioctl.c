@@ -816,6 +816,11 @@ struct in6_rtmsg32 {
 
 extern struct socket *sockfd_lookup(int fd, int *err);
 
+extern __inline__ void sockfd_put(struct socket *sock)
+{
+	fput(sock->file);
+}
+
 static int routing_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg)
 {
 	int ret;
@@ -857,12 +862,17 @@ static int routing_ioctl(unsigned int fd, unsigned int cmd, unsigned long arg)
 		r = (void *) &r4;
 	}
 
-	if (ret)
-		return -EFAULT;
+	if (ret) {
+		ret = -EFAULT;
+		goto out;
+	}
 
 	set_fs (KERNEL_DS);
 	ret = sys_ioctl (fd, cmd, (long) r);
 	set_fs (old_fs);
+out:
+	if (mysock)
+		sockfd_put(mysock);
 
 	return ret;
 }
@@ -2766,17 +2776,24 @@ static int ioc_settimeout(unsigned int fd, unsigned int cmd, unsigned long arg)
 static int tiocgdev(unsigned fd, unsigned cmd,  unsigned int *ptr) 
 { 
 
-	struct file *file = fget(fd);
+	struct file *file;
 	struct tty_struct *real_tty;
+	int ret;
 
+	file = fget(fd);
 	if (!file)
 		return -EBADF;
+	ret = -EINVAL;
 	if (file->f_op->ioctl != tty_ioctl)
-		return -EINVAL; 
+		goto out;
 	real_tty = (struct tty_struct *)file->private_data;
 	if (!real_tty) 	
-		return -EINVAL; 
-	return put_user(kdev_t_to_nr(real_tty->device), ptr); 
+		goto out;
+	ret = put_user(kdev_t_to_nr(real_tty->device), ptr); 
+out:
+	fput(file);
+
+	return ret;
 } 
 
 
