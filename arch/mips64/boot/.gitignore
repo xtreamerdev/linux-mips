@@ -1,6 +1,8 @@
 .depend
 .*.flags
-mkboot zImage zImage.tmp
 addinitrd
 elf2ecoff
+mkboot
 vmlinux.ecoff
+zImage
+zImage.tmp
