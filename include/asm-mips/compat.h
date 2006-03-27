@@ -133,6 +133,11 @@ static inline void *compat_ptr(compat_uptr_t uptr)
 	return (void *)(long)uptr;
 }
 
+static inline compat_uptr_t ptr_to_compat(void __user *uptr)
+{
+	return (u32)(unsigned long)uptr;
+}
+
 static inline void *compat_alloc_user_space(long len)
 {
 	struct pt_regs *regs = (struct pt_regs *)
