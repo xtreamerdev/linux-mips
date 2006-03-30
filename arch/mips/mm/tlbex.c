@@ -765,7 +765,7 @@ static void __init build_r3000_tlb_refill_handler(void)
 	}
 #endif
 
-	memcpy((void *)CAC_BASE, tlb_handler, 0x80);
+	memcpy((void *)ebase, tlb_handler, 0x80);
 }
 
 /*
@@ -1311,7 +1311,7 @@ static void __init build_r4000_tlb_refill_handler(void)
 	}
 #endif
 
-	memcpy((void *)CAC_BASE, final_handler, 0x100);
+	memcpy((void *)ebase, final_handler, 0x100);
 }
 
 /*
