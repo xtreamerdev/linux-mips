@@ -292,17 +292,17 @@ unsigned int rtlx_write_poll(int index)
 static inline void copy_to(void *dst, void *src, size_t count, int user)
 {
 	if (user)
-		copy_to_user (dst, src, count);
+		copy_to_user(dst, src, count);
 	else
-		memcpy(dst,src,count);
+		memcpy(dst, src, count);
 }
 
 static inline void copy_from(void *dst, void *src, size_t count, int user)
 {
 	if (user)
-		copy_from_user (dst, src, count);
+		copy_from_user(dst, src, count);
 	else
-		memcpy (dst, src, count);
+		memcpy(dst, src, count);
 }
 
 ssize_t rtlx_read(int index, void *buff, size_t count, int user)
@@ -311,7 +311,7 @@ ssize_t rtlx_read(int index, void *buff, size_t count, int user)
 	struct rtlx_channel *lx;
 
 	if (rtlx == NULL)
-		return(-ENOSYS);
+		return -ENOSYS;
 
 	lx = &rtlx->channel[index];
 
@@ -323,7 +323,7 @@ ssize_t rtlx_read(int index, void *buff, size_t count, int user)
 	/* then how much from the read pointer onwards */
 	fl = min( count, (size_t)lx->buffer_size - lx->lx_read);
 
-	copy_to (buff, &lx->lx_buffer[lx->lx_read], fl, user);
+	copy_to(buff, &lx->lx_buffer[lx->lx_read], fl, user);
 
 	/* and if there is anything left at the beginning of the buffer */
 	if ( count - fl )

@@ -33,7 +33,13 @@ extern void prom_printf(char *fmt, ...);
 extern void prom_init_cmdline(void);
 extern void prom_meminit(void);
 extern void prom_fixup_mem_map(unsigned long start_mem, unsigned long end_mem);
+#ifndef CONFIG_MIPS_SIM
 extern unsigned long prom_free_prom_memory (void);
+#else
+void __init prom_free_prom_memory (void);
+#endif
+
+
 extern void mips_display_message(const char *str);
 extern void mips_display_word(unsigned int num);
 extern int get_ethernet_addr(char *ethernet_addr);

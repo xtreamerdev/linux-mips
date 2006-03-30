@@ -767,7 +767,7 @@ int vpe_run(struct vpe * v)
 	 * here...  Or set $a3 to zero and define DFLT_STACK_SIZE and
 	 * DFLT_HEAP_SIZE when you compile your program
 	 */
-        mttgpr($7, 0);
+        mttgpr(7, 0);
 
 	/* set up VPE1 */
 	/*
@@ -1038,7 +1038,7 @@ static int getcwd(char *buff, int size)
 	int ret;
 
 	old_fs = get_fs();
-	set_fs (KERNEL_DS);
+	set_fs(KERNEL_DS);
 
 	ret = sys_getcwd(buff,size);
 

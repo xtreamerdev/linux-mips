@@ -25,6 +25,12 @@ struct kspd_notifications {
 	struct list_head list;
 };
 
+#ifdef CONFIG_MIPS_APSP_KSPD
 extern void kspd_notify(struct kspd_notifications *notify);
+#else
+static inline void kspd_notify(struct kspd_notifications *notify)
+{
+}
+#endif
 
 #endif

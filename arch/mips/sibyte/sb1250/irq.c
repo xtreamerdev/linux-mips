@@ -62,6 +62,7 @@ extern unsigned long ldt_eoi_space;
 
 #ifdef CONFIG_KGDB
 static int kgdb_irq;
+extern int kgdb_flag;
 
 /* Default to UART1 */
 int kgdb_port = 1;
