@@ -1271,6 +1271,7 @@ void __init per_cpu_trap_init(void)
 	unsigned int status_set = ST0_CU0;
 #ifdef CONFIG_MIPS_MT_SMTC
 	int secondaryTC = 0;
+	int bootTC = (cpu == 0);
 
 	/*
 	 * Only do per_cpu_trap_init() for first TC of Each VPE.
@@ -1329,13 +1330,7 @@ void __init per_cpu_trap_init(void)
 #endif /* CONFIG_MIPS_MT_SMTC */
 
 	cpu_data[cpu].asid_cache = ASID_FIRST_VERSION;
-#ifdef CONFIG_MIPS_MT_SMTC
-	if (!secondaryTC) {
-#endif /* CONFIG_MIPS_MT_SMTC */
-		TLBMISS_HANDLER_SETUP();
-#ifdef CONFIG_MIPS_MT_SMTC
-	}
-#endif /* CONFIG_MIPS_MT_SMTC */
+	TLBMISS_HANDLER_SETUP();
 
 	atomic_inc(&init_mm.mm_count);
 	current->active_mm = &init_mm;
@@ -1343,7 +1338,7 @@ void __init per_cpu_trap_init(void)
 	enter_lazy_tlb(&init_mm, current);
 
 #ifdef CONFIG_MIPS_MT_SMTC
-	if(!secondaryTC) {
+	if (bootTC) {
 #endif /* CONFIG_MIPS_MT_SMTC */
 		cpu_cache_init();
 		tlb_init();
