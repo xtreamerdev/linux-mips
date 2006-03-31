@@ -196,25 +196,9 @@ int smp_call_function (void (*func) (void *info), void *info, int retry,
 
 void smp_call_function_interrupt(void)
 {
-#if 0
 	void (*func) (void *info) = call_data->func;
 	void *info = call_data->info;
 	int wait = call_data->wait;
-#else
-	void (*func) (void *info);
-	void *info;
-	int wait;
-
-	if (call_data == NULL) {
-		extern void prom_printf(char *fmt, ...);
-		prom_printf ("CPU %d: IPI with no call_data\n",
-				smp_processor_id());
-		return;
-	}
-	func = call_data->func;
-	info = call_data->info;
-	wait = call_data->wait;
-#endif
 
 	/*
 	 * Notify initiating CPU that I've grabbed the data and am
