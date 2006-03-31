@@ -108,12 +108,12 @@ void __init sanitize_tlb_entries(void)
 
 static void ipi_resched_dispatch (struct pt_regs *regs)
 {
-	do_IRQ(MIPS_CPU_IPI_RESCHED_IRQ, regs);
+	do_IRQ(MIPSCPU_INT_BASE + MIPS_CPU_IPI_RESCHED_IRQ, regs);
 }
 
 static void ipi_call_dispatch (struct pt_regs *regs)
 {
-	do_IRQ(MIPS_CPU_IPI_CALL_IRQ, regs);
+	do_IRQ(MIPSCPU_INT_BASE + MIPS_CPU_IPI_CALL_IRQ, regs);
 }
 
 irqreturn_t ipi_resched_interrupt(int irq, void *dev_id, struct pt_regs *regs)
