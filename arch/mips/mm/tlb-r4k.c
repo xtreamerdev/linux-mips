@@ -155,7 +155,6 @@ void local_flush_tlb_kernel_range(unsigned long start, unsigned long end)
 	ENTER_CRITICAL(flags);
 	size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
 	size = (size + 1) >> 1;
-	local_irq_save(flags);
 	if (size <= current_cpu_data.tlbsize / 2) {
 		int pid = read_c0_entryhi();
 
