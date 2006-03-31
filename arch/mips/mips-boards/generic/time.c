@@ -125,6 +125,13 @@ irqreturn_t mips_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 		write_c0_compare (read_c0_count() + ( mips_hpt_frequency/HZ));
 	smtc_timer_broadcast(cpu_data[cpu].vpe_id);
 
+
+	if (cpu != 0)
+		/*
+		 * Other CPUs should do profiling and process accounting
+		 */
+		local_timer_interrupt(irq, dev_id, regs);
+
 #else /* CONFIG_MIPS_MT_SMTC */
 	if (cpu == 0) {
 		/*
@@ -150,13 +157,13 @@ irqreturn_t mips_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 		 * counter/timer interrupts on multiple CPU's
 		 */
 		write_c0_compare(read_c0_count() + (mips_hpt_frequency/HZ));
+
+		/*
+		 * Other CPUs should do profiling and process accounting
+		 */
+		local_timer_interrupt(irq, dev_id, regs);
 	}
 #endif /* CONFIG_MIPS_MT_SMTC */
-
-	/*
-	 * Other CPUs should do profiling and process accounting
-	 */
-	local_timer_interrupt(irq, dev_id, regs);
 
 out:
 	return IRQ_HANDLED;
