@@ -1047,7 +1047,7 @@ struct shadow_registers {
 	int sr_allocated;	/* Bitmap of allocated shadow registers */
 } shadow_registers;
 
-void mips_srs_init(void)
+static void mips_srs_init(void)
 {
 #ifdef CONFIG_CPU_MIPSR2_SRS
 	shadow_registers.sr_supported = ((read_c0_srsctl() >> 26) & 0x0f) + 1;
@@ -1095,7 +1095,7 @@ void mips_srs_free(int set)
 	spin_unlock_irqrestore(&sr->sr_lock, flags);
 }
 
-void *set_vi_srs_handler(int n, void *addr, int srs)
+static void *set_vi_srs_handler(int n, void *addr, int srs)
 {
 	unsigned long handler;
 	unsigned long old_handler = vi_handlers[n];
