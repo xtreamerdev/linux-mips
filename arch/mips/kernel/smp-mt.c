@@ -244,16 +244,16 @@ void plat_smp_setup(void)
 	/* We'll wait until starting the secondaries before starting MVPE */
 
 	printk(KERN_INFO "Detected %i available secondary CPU(s)\n", num);
+}
 
+void __init plat_prepare_cpus(unsigned int max_cpus)
+{
 	/* set up ipi interrupts */
 	if (cpu_has_vint) {
 		set_vi_handler (MIPS_CPU_IPI_RESCHED_IRQ, ipi_resched_dispatch);
 		set_vi_handler (MIPS_CPU_IPI_CALL_IRQ, ipi_call_dispatch);
 	}
-}
 
-void __init plat_prepare_cpus(unsigned int max_cpus)
-{
 	cpu_ipi_resched_irq = MIPSCPU_INT_BASE + MIPS_CPU_IPI_RESCHED_IRQ;
 	cpu_ipi_call_irq = MIPSCPU_INT_BASE + MIPS_CPU_IPI_CALL_IRQ;
 
