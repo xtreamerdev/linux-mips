@@ -158,22 +158,17 @@ LEAF(_restore_fp)
 
 LEAF(_init_fpu)
 #ifdef CONFIG_MIPS_MT_SMTC
-	/* Read-modify-writes of Status must be atomic on a VPE */
-	DMT	10				# dmt	t2
-	move	t0,ra
-	jal	mips_ihb
-	move	ra,t0
-#endif /* CONFIG_MIPS_MT_SMTC */
+	/* Rather than manipulate per-VPE Status, set per-TC bit in TCStatus */
+	mfc0	t0, CP0_TCSTATUS
+	/* Bit position is the same for Status, TCStatus */
+	li	t1, ST0_CU1
+	or	t0, t1
+	mtc0	t0, CP0_TCSTATUS
+#else /* Normal MIPS CU1 enable */
 	mfc0	t0, CP0_STATUS
 	li	t1, ST0_CU1
 	or	t0, t1
 	mtc0	t0, CP0_STATUS
-#ifdef CONFIG_MIPS_MT_SMTC
-	ehb
-	andi	t2, t2, VPECONTROL_TE
-	beqz	t2, 1f
-	emt
-1:
 #endif /* CONFIG_MIPS_MT_SMTC */
 	fpu_enable_hazard
 
