@@ -27,6 +27,7 @@ __asm__ (
 	"xori	$1, 0x400						\n"
 	"mtc0	$1, $2, 1						\n"
 #else
+	"	.set	mips32r2					\n"
 	"	ei							\n"
 	"	.set	mips0						\n"
 #endif
@@ -79,6 +80,7 @@ __asm__ (
 	"	.set	noreorder					\n"
 	"	mtc0	$1, $2, 1					\n"
 #else
+	"	.set	mips32r2					\n"
 	"	di							\n"
 	"	.set	mips0						\n"
 #endif
@@ -133,6 +135,7 @@ __asm__ (
 	"	mtc0	$1, $2, 1					\n"
 	"	andi	\\result, \\result, 0x400			\n"
 #else
+	"	.set	mips32r2					\n"
 	"	di	\\result					\n"
 	"	andi	\\result, 1					\n"
 	"	.set	mips0						\n"
