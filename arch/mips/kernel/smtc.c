@@ -308,8 +308,6 @@ int __init mipsmt_build_cpu_map(int start_cpu_slot)
 	 * everything up so that "logical" = "physical".
 	 */
 	ntcs = ((read_c0_mvpconf0() & MVPCONF0_PTC) >> MVPCONF0_PTC_SHIFT) + 1;
-	if (tclimit > 0 && ntcs > tclimit)
-		ntcs = tclimit;
 	for (i=start_cpu_slot; i<NR_CPUS && i<ntcs; i++) {
 		cpu_set(i, phys_cpu_present_map);
 		__cpu_number_map[i] = i;
@@ -482,6 +480,15 @@ void mipsmt_prepare_cpus(void)
 		write_vpe_c0_vpecontrol(read_vpe_c0_vpecontrol() | VPECONTROL_TE);
 		/* enable the VPE */
 		write_vpe_c0_vpeconf0(read_vpe_c0_vpeconf0() | VPECONF0_VPA);
+	}
+
+	/*
+	 * Pull any physically present but unused TCs out of circulation.
+	 */
+	while (tc < (((val & MVPCONF0_PTC) >> MVPCONF0_PTC_SHIFT) + 1)) {
+		cpu_clear(tc, phys_cpu_present_map);
+		cpu_clear(tc, cpu_present_map);
+		tc++;
 	}
 
 	/* release config state */

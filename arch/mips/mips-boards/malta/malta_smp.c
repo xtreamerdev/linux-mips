@@ -97,7 +97,7 @@ void prom_init_secondary(void)
 void plat_smp_setup(void)
 {
 	if (read_c0_config3() & (1<<2))
-		mipsmt_build_cpu_map(1);
+		mipsmt_build_cpu_map(0);
 }
 
 void __init plat_prepare_cpus(unsigned int max_cpus)
