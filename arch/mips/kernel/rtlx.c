@@ -51,8 +51,11 @@ static char module_name[] = "rtlx";
 static struct chan_waitqueues {
 	wait_queue_head_t rt_queue;
 	wait_queue_head_t lx_queue;
+	int in_open;
 } channel_wqs[RTLX_CHANNELS];
 
+static struct irqaction irq;
+static int irq_num;
 static struct vpe_notifications notify;
 static int sp_stopping = 0;
 
@@ -71,8 +74,10 @@ static irqreturn_t rtlx_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 {
 	int i;
 
-	for (i = 0; i < RTLX_CHANNELS; i++)
-		wake_up_interruptible(&channel_wqs[i].lx_queue);
+	for (i = 0; i < RTLX_CHANNELS; i++) {
+			wake_up(&channel_wqs[i].lx_queue);
+			wake_up(&channel_wqs[i].rt_queue);
+	}
 
 	return IRQ_HANDLED;
 }
@@ -104,7 +109,7 @@ static __attribute_used__ void dump_rtlx(void)
 static int rtlx_init(struct rtlx_info *rtlxi)
 {
 	if (rtlxi->id != RTLX_ID) {
-		printk(KERN_ERR "no valid RTLX id at 0x%p\n", rtlxi);
+		printk(KERN_ERR "no valid RTLX id at 0x%p 0x%x\n", rtlxi, rtlxi->id);
 		return -ENOEXEC;
 	}
 
@@ -143,6 +148,18 @@ int rtlx_open(int index, int can_sleep)
 	struct rtlx_channel *chan;
 	volatile struct rtlx_info **p;
 
+	if (index >= RTLX_CHANNELS) {
+		printk(KERN_DEBUG "rtlx_open index out of range\n");
+		return -ENOSYS;
+	}
+
+	if (channel_wqs[index].in_open) {
+		printk(KERN_DEBUG "rtlx_open channel %d already opened\n", index);
+		return -EBUSY;
+	}
+
+	channel_wqs[index].in_open++;
+
 	if (rtlx == NULL) {
 		if( (p = vpe_get_shared(RTLX_TARG_VPE)) == NULL) {
 			if (can_sleep) {
@@ -164,6 +181,7 @@ int rtlx_open(int index, int can_sleep)
 			} else {
 				printk( KERN_DEBUG "No SP program loaded, and device "
 					"opened with O_NONBLOCK\n");
+				channel_wqs[index].in_open = 0;
 				return -ENOSYS;
 			}
 		}
@@ -202,6 +220,7 @@ int rtlx_open(int index, int can_sleep)
 			else {
 				printk(" *vpe_get_shared is NULL. "
 				       "Has an SP program been loaded?\n");
+				channel_wqs[index].in_open = 0;
 				return -ENOSYS;
 			}
 		}
@@ -209,20 +228,25 @@ int rtlx_open(int index, int can_sleep)
 		if ((unsigned int)*p < KSEG0) {
 			printk(KERN_WARNING "vpe_get_shared returned an invalid pointer "
 			       "maybe an error code %d\n", (int)*p);
+ 			channel_wqs[index].in_open = 0;
 			return -ENOSYS;
 		}
 
-		if ((ret = rtlx_init(*p)) < 0)
-			return ret;
+ 		if ((ret = rtlx_init(*p)) < 0) {
+ 			channel_wqs[index].in_open = 0;
+  			return ret;
+ 		}
 	}
 
 	chan = &rtlx->channel[index];
 
-	/* already open? */
-	if (chan->lx_state == RTLX_STATE_OPENED)
-		return -EBUSY;
+ 	if (chan->lx_state == RTLX_STATE_OPENED) {
+ 		channel_wqs[index].in_open = 0;
+  		return -EBUSY;
+ 	}
 
-	chan->lx_state = RTLX_STATE_OPENED;
+  	chan->lx_state = RTLX_STATE_OPENED;
+ 	channel_wqs[index].in_open = 0;
 	return 0;
 }
 
@@ -234,7 +258,12 @@ int rtlx_release(int index)
 
 unsigned int rtlx_read_poll(int index, int can_sleep)
 {
-	struct rtlx_channel *chan = &rtlx->channel[index];
+ 	struct rtlx_channel *chan;
+
+ 	if (rtlx == NULL)
+ 		return 0;
+
+ 	chan = &rtlx->channel[index];
 
 	/* data available to read? */
 	if (chan->lx_read == chan->lx_write) {
@@ -316,7 +345,7 @@ ssize_t rtlx_read(int index, void *buff, size_t count, int user)
 	lx = &rtlx->channel[index];
 
 	/* find out how much in total */
-	count = min( count,
+	count = min(count,
 		     (size_t)(lx->lx_write + lx->buffer_size - lx->lx_read)
 		     % lx->buffer_size);
 
@@ -386,13 +415,14 @@ static unsigned int file_poll(struct file *file, poll_table * wait)
 {
 	int minor;
 	unsigned int mask = 0;
-	struct rtlx_channel *chan;
 
 	minor = MINOR(file->f_dentry->d_inode->i_rdev);
-	chan = &rtlx->channel[minor];
 
 	poll_wait(file, &channel_wqs[minor].rt_queue, wait);
 	poll_wait(file, &channel_wqs[minor].lx_queue, wait);
+
+	if (rtlx == NULL)
+		return 0;
 
 	/* data available to read? */
 	if (rtlx_read_poll(minor, 0))
@@ -481,6 +511,7 @@ static int rtlx_module_init(void)
 	for (i = 0; i < RTLX_CHANNELS; i++) {
 		init_waitqueue_head(&channel_wqs[i].rt_queue);
 		init_waitqueue_head(&channel_wqs[i].lx_queue);
+		channel_wqs[i].in_open = 0;
 	}
 
 	/* set up notifiers */
@@ -506,5 +537,5 @@ module_init(rtlx_module_init);
 module_exit(rtlx_module_exit);
 
 MODULE_DESCRIPTION("MIPS RTLX");
-MODULE_AUTHOR("Elizabeth Clarke, MIPS Technologies, Inc.");
+MODULE_AUTHOR("Elizabeth Oldham, MIPS Technologies, Inc.");
 MODULE_LICENSE("GPL");

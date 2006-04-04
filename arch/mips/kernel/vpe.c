@@ -13,7 +13,6 @@
  *  You should have received a copy of the GNU General Public License along
  *  with this program; if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place - Suite 330, Boston MA 02111-1307, USA.
- *
  */
 
 /*
@@ -27,11 +26,8 @@
  *
  * To load and run, simply cat a SP 'program file' to /dev/vpe1.
  * i.e cat spapp >/dev/vpe1.
- *
- * You'll need to have the following device files.
- * mknod /dev/vpe0 c 63 0
- * mknod /dev/vpe1 c 63 1
  */
+
 #include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -70,8 +66,10 @@ typedef void *vpe_handle;
 static char module_name[] = "vpe";
 static int major;
 
-static struct kspd_notifications kspd_events;
-static int kspd_events_reqd;
+#ifdef CONFIG_MIPS_APSP_KSPD
+ static struct kspd_notifications kspd_events;
+static int kspd_events_reqd = 0;
+#endif
 
 /* grab the likely amount of memory we will need. */
 #ifdef CONFIG_MIPS_VPE_LOADER_TOM
@@ -81,8 +79,9 @@ static int kspd_events_reqd;
 #define P_SIZE (256 * 1024)
 #endif
 
-#define MAX_VPES 16
+extern unsigned long physical_memsize;
 
+#define MAX_VPES 16
 #define VPE_PATH_MAX 256
 
 enum vpe_state {
@@ -150,7 +149,7 @@ struct vpecontrol_ {
 } vpecontrol;
 
 static void release_progmem(void *ptr);
-static __attribute_used__ void dump_vpe(struct vpe * v);
+/* static __attribute_used__ void dump_vpe(struct vpe * v); */
 extern void save_gp_address(unsigned int secbase, unsigned int rel);
 
 /* get the vpe associated with this minor */
@@ -158,12 +157,14 @@ struct vpe *get_vpe(int minor)
 {
 	struct vpe *v;
 
+	if (!cpu_has_mipsmt)
+		return NULL;
+
 	list_for_each_entry(v, &vpecontrol.vpe_list, list) {
 		if (v->minor == minor)
 			return v;
 	}
 
-	printk(KERN_DEBUG "VPE: get_vpe minor %d not found\n", minor);
 	return NULL;
 }
 
@@ -177,8 +178,6 @@ struct tc *get_tc(int index)
 			return t;
 	}
 
-	printk(KERN_DEBUG "VPE: get_tc index %d not found\n", index);
-
 	return NULL;
 }
 
@@ -191,8 +190,6 @@ struct tc *get_tc_unused(void)
 			return t;
 	}
 
-	printk(KERN_DEBUG "VPE: All TC's are in use\n");
-
 	return NULL;
 }
 
@@ -202,7 +199,6 @@ struct vpe *alloc_vpe(int minor)
 	struct vpe *v;
 
 	if ((v = kzalloc(sizeof(struct vpe), GFP_KERNEL)) == NULL) {
-		printk(KERN_WARNING "VPE: alloc_vpe no mem\n");
 		return NULL;
 	}
 
@@ -220,7 +216,6 @@ struct tc *alloc_tc(int index)
 	struct tc *t;
 
 	if ((t = kzalloc(sizeof(struct tc), GFP_KERNEL)) == NULL) {
-		printk(KERN_WARNING "VPE: alloc_tc no mem\n");
 		return NULL;
 	}
 
@@ -363,9 +358,9 @@ static int apply_r_mips_gprel16(struct module *me, uint32_t *location,
 	}
 
 	if( (rel > 32768) || (rel < -32768) ) {
-		printk(KERN_ERR
-		       "apply_r_mips_gprel16: relative address out of range 0x%x %d\n",
-		       rel, rel);
+		printk(KERN_DEBUG "VPE loader: apply_r_mips_gprel16: "
+		       "relative address 0x%x out of range of gp register\n",
+		       rel);
 		return -ENOEXEC;
 	}
 
@@ -383,8 +378,8 @@ static int apply_r_mips_pc16(struct module *me, uint32_t *location,
 	rel -= 1;		// and one instruction less due to the branch delay slot.
 
 	if( (rel > 32768) || (rel < -32768) ) {
-		printk(KERN_ERR
-		       "apply_r_mips_pc16: relative address out of range 0x%x\n", rel);
+		printk(KERN_DEBUG "VPE loader: "
+ 		       "apply_r_mips_pc16: relative address out of range 0x%x\n", rel);
 		return -ENOEXEC;
 	}
 
@@ -405,7 +400,8 @@ static int apply_r_mips_26(struct module *me, uint32_t *location,
 			   Elf32_Addr v)
 {
 	if (v % 4) {
-		printk(KERN_ERR "module %s: dangerous relocation mod4\n", me->name);
+		printk(KERN_DEBUG "VPE loader: apply_r_mips_26 "
+		       " unaligned relocation\n");
 		return -ENOEXEC;
 	}
 
@@ -468,11 +464,12 @@ static int apply_r_mips_lo16(struct module *me, uint32_t *location,
 			/*
 			 * The value for the HI16 had best be the same.
 			 */
-			if (v != l->value) {
-				printk("%d != %d\n", v, l->value);
-				goto out_danger;
+ 			if (v != l->value) {
+				printk(KERN_DEBUG "VPE loader: "
+				       "apply_r_mips_lo16/hi16: 	"
+				       "inconsistent value information\n");
+				return -ENOEXEC;
 			}
-
 
 			/*
 			 * Do the HI16 relocation.  Note that we actually don't
@@ -509,11 +506,6 @@ static int apply_r_mips_lo16(struct module *me, uint32_t *location,
 	*location = insnlo;
 
 	return 0;
-
-out_danger:
-	printk(KERN_ERR "module %s: dangerous " "relocation\n", me->name);
-
-	return -ENOEXEC;
 }
 
 static int (*reloc_handlers[]) (struct module *me, uint32_t *location,
@@ -527,6 +519,15 @@ static int (*reloc_handlers[]) (struct module *me, uint32_t *location,
 	[R_MIPS_PC16] = apply_r_mips_pc16
 };
 
+static char *rstrs[] = {
+    	[R_MIPS_NONE]	= "MIPS_NONE",
+	[R_MIPS_32]	= "MIPS_32",
+	[R_MIPS_26]	= "MIPS_26",
+	[R_MIPS_HI16]	= "MIPS_HI16",
+	[R_MIPS_LO16]	= "MIPS_LO16",
+	[R_MIPS_GPREL16] = "MIPS_GPREL16",
+	[R_MIPS_PC16] = "MIPS_PC16"
+};
 
 int apply_relocations(Elf32_Shdr *sechdrs,
 		      const char *strtab,
@@ -561,15 +562,13 @@ int apply_relocations(Elf32_Shdr *sechdrs,
 
 		res = reloc_handlers[ELF32_R_TYPE(r_info)](me, location, v);
 		if( res ) {
-			printk(KERN_DEBUG
-			       "relocation error 0x%x sym refer <%s> value 0x%x "
-			       "type 0x%x r_info 0x%x\n",
-			       (unsigned int)location, strtab + sym->st_name, v,
-			       r_info, ELF32_R_TYPE(r_info));
-		}
-
-		if (res)
+			char *r = rstrs[ELF32_R_TYPE(r_info)];
+		    	printk(KERN_WARNING "VPE loader: .text+0x%x "
+			       "relocation type %s for symbol \"%s\" failed\n",
+			       rel[i].r_offset, r ? r : "UNKNOWN",
+			       strtab + sym->st_name);
 			return res;
+		}
 	}
 
 	return 0;
@@ -585,7 +584,7 @@ void save_gp_address(unsigned int secbase, unsigned int rel)
 
 
 /* Change all symbols so that sh_value encodes the pointer directly. */
-static int simplify_symbols(Elf_Shdr * sechdrs,
+static void simplify_symbols(Elf_Shdr * sechdrs,
 			    unsigned int symindex,
 			    const char *strtab,
 			    const char *secstrings,
@@ -594,7 +593,7 @@ static int simplify_symbols(Elf_Shdr * sechdrs,
 	Elf_Sym *sym = (void *)sechdrs[symindex].sh_addr;
 	unsigned long secbase, bssbase = 0;
 	unsigned int i, n = sechdrs[symindex].sh_size / sizeof(Elf_Sym);
-	int ret = 0, size;
+	int size;
 
 	/* find the .bss section for COMMON symbols */
 	for (i = 0; i < nsecs; i++) {
@@ -626,10 +625,9 @@ static int simplify_symbols(Elf_Shdr * sechdrs,
 			break;
 
 		case SHN_MIPS_SCOMMON:
-			printk(KERN_DEBUG "simplify_symbols: ignoring "
-			       "SHN_MIPS_SCOMMON symbol <%s> st_shndx %d\n",
-			       strtab + sym[i].st_name, sym[i].st_shndx);
-
+			printk(KERN_DEBUG "simplify_symbols: ignoring SHN_MIPS_SCOMMON"
+			       "symbol <%s> st_shndx %d\n", strtab + sym[i].st_name,
+			       sym[i].st_shndx);
 			// .sbss section
 			break;
 
@@ -643,10 +641,7 @@ static int simplify_symbols(Elf_Shdr * sechdrs,
 			sym[i].st_value += secbase;
 			break;
 		}
-
 	}
-
-	return ret;
 }
 
 #ifdef DEBUG_ELFLOADER
@@ -666,26 +661,26 @@ static void dump_elfsymbols(Elf_Shdr * sechdrs, unsigned int symindex,
 
 static void dump_tc(struct tc *t)
 {
-	unsigned long val;
+  	unsigned long val;
 
-	settc(t->index);
+  	settc(t->index);
+ 	printk(KERN_DEBUG "VPE loader: TC index %d targtc %ld "
+ 	       "TCStatus 0x%lx halt 0x%lx\n",
+  	       t->index, read_c0_vpecontrol() & VPECONTROL_TARGTC,
+  	       read_tc_c0_tcstatus(), read_tc_c0_tchalt());
 
-	printk(KERN_WARNING "\nVPE: TC index %d targtc %ld TCStatus 0x%lx halt 0x%lx\n",
-	       t->index, read_c0_vpecontrol() & VPECONTROL_TARGTC,
-	       read_tc_c0_tcstatus(), read_tc_c0_tchalt());
+ 	printk(KERN_DEBUG " tcrestart 0x%lx\n", read_tc_c0_tcrestart());
+ 	printk(KERN_DEBUG " tcbind 0x%lx\n", read_tc_c0_tcbind());
 
-	printk(KERN_WARNING "VPE: tcrestart 0x%lx\n", read_tc_c0_tcrestart());
-	printk(KERN_WARNING "VPE: tcbind 0x%lx\n", read_tc_c0_tcbind());
+  	val = read_c0_vpeconf0();
+ 	printk(KERN_DEBUG " VPEConf0 0x%lx MVP %ld\n", val,
+  	       (val & VPECONF0_MVP) >> VPECONF0_MVP_SHIFT);
 
-	val = read_c0_vpeconf0();
-	printk("VPEConf0 0x%lx MVP %ld\n", val,
-	       (val & VPECONF0_MVP) >> VPECONF0_MVP_SHIFT);
+ 	printk(KERN_DEBUG " c0 status 0x%lx\n", read_vpe_c0_status());
+ 	printk(KERN_DEBUG " c0 cause 0x%lx\n", read_vpe_c0_cause());
 
-	printk(KERN_WARNING "VPE: c0 status 0x%lx\n", read_vpe_c0_status());
-	printk(KERN_WARNING "VPE: c0 cause 0x%lx\n", read_vpe_c0_cause());
-
-	printk(KERN_WARNING "VPE: c0 badvaddr 0x%lx\n", read_vpe_c0_badvaddr());
-	printk(KERN_WARNING "VPE: c0 epc 0x%lx\n", read_vpe_c0_epc());
+ 	printk(KERN_DEBUG " c0 badvaddr 0x%lx\n", read_vpe_c0_badvaddr());
+ 	printk(KERN_DEBUG " c0 epc 0x%lx\n", read_vpe_c0_epc());
 }
 
 static void dump_tclist(void)
@@ -708,35 +703,34 @@ int vpe_run(struct vpe * v)
 	val = read_c0_vpeconf0();
 	if (!(val & VPECONF0_MVP)) {
 		printk(KERN_WARNING
-		       "VPE: only Master VPE's are allowed to configure MT\n");
+		       "VPE loader: only Master VPE's are allowed to configure MT\n");
 		return -1;
 	}
 
 	/* disable MT (using dvpe) */
 	dvpe();
 
+	if (!list_empty(&v->tc)) {
+                if ((t = list_entry(v->tc.next, struct tc, tc)) == NULL) {
+                        printk(KERN_WARNING "VPE loader: TC %d is already in use.\n",
+                               t->index);
+                        return -ENOEXEC;
+                }
+        } else {
+                printk(KERN_WARNING "VPE loader: No TC's associated with VPE %d\n",
+                       v->minor);
+                return -ENOEXEC;
+        }
+
 	/* Put MVPE's into 'configuration state' */
 	set_c0_mvpcontrol(MVPCONTROL_VPC);
-
-	if (!list_empty(&v->tc)) {
-		if ((t = list_entry(v->tc.next, struct tc, tc)) == NULL) {
-			printk(KERN_WARNING "VPE: TC %d is already in use.\n",
-			       t->index);
-			return -ENOEXEC;
-		}
-	} else {
-		printk(KERN_WARNING "VPE: No TC's associated with VPE %d\n",
-		       v->minor);
-		return -ENOEXEC;
-	}
 
 	settc(t->index);
 
 	/* should check it is halted, and not activated */
 	if ((read_tc_c0_tcstatus() & TCSTATUS_A) || !(read_tc_c0_tchalt() & TCHALT_H)) {
-		printk(KERN_WARNING "VPE: TC %d is already doing something!\n",
+		printk(KERN_WARNING "VPE loader: TC %d is already doing something!\n",
 		       t->index);
-
 		dump_tclist();
 		return -ENOEXEC;
 	}
@@ -749,9 +743,7 @@ int vpe_run(struct vpe * v)
 
 	/* Write the address we want it to start running from in the TCPC register. */
 	write_tc_c0_tcrestart((unsigned long)v->__start);
-
-	write_tc_c0_tccontext(0);
-
+	write_tc_c0_tccontext((unsigned long)0);
 	/*
 	 * Mark the TC as activated, not interrupt exempt and not dynamically
 	 * allocatable
@@ -767,14 +759,15 @@ int vpe_run(struct vpe * v)
 	 * here...  Or set $a3 to zero and define DFLT_STACK_SIZE and
 	 * DFLT_HEAP_SIZE when you compile your program
 	 */
-        mttgpr(7, 0);
+ 	mttgpr(7, physical_memsize);
+
 
 	/* set up VPE1 */
 	/*
 	 * bind the TC to VPE 1 as late as possible so we only have the final
 	 * VPE registers to set up, and so an EJTAG probe can trigger on it
 	 */
-        write_tc_c0_tcbind((read_tc_c0_tcbind() & ~TCBIND_CURVPE) | v->minor);
+ 	write_tc_c0_tcbind((read_tc_c0_tcbind() & ~TCBIND_CURVPE) | v->minor);
 
         /* Set up the XTC bit in vpeconf0 to point at our tc */
         write_vpe_c0_vpeconf0( (read_vpe_c0_vpeconf0() & ~(VPECONF0_XTC))
@@ -803,7 +796,7 @@ int vpe_run(struct vpe * v)
 	return 0;
 }
 
-static unsigned long find_vpe_symbols(struct vpe * v, Elf_Shdr * sechdrs,
+static int find_vpe_symbols(struct vpe * v, Elf_Shdr * sechdrs,
 				      unsigned int symindex, const char *strtab,
 				      struct module *mod)
 {
@@ -819,6 +812,9 @@ static unsigned long find_vpe_symbols(struct vpe * v, Elf_Shdr * sechdrs,
 			v->shared_ptr = (void *)sym[i].st_value;
 		}
 	}
+
+	if ( (v->__start == 0) || (v->shared_ptr == NULL))
+		return -1;
 
 	return 0;
 }
@@ -850,7 +846,7 @@ int vpe_elfload(struct vpe * v)
 	    || !elf_check_arch(hdr)
 	    || hdr->e_shentsize != sizeof(*sechdrs)) {
 		printk(KERN_WARNING
-		       "VPE program, wrong arch or weird elf version\n");
+		       "VPE loader: program wrong arch or weird elf version\n");
 
 		return -ENOEXEC;
 	}
@@ -859,7 +855,9 @@ int vpe_elfload(struct vpe * v)
 		relocate = 1;
 
 	if (len < hdr->e_shoff + hdr->e_shnum * sizeof(Elf_Shdr)) {
-		printk(KERN_ERR "VPE program length %u truncated\n", len);
+		printk(KERN_ERR "VPE loader: program length %u truncated\n",
+		       len);
+
 		return -ENOEXEC;
 	}
 
@@ -897,7 +895,7 @@ int vpe_elfload(struct vpe * v)
 	v->load_addr = alloc_progmem(mod.core_size);
 	memset(v->load_addr, 0, mod.core_size);
 
-	printk("VPE elf_loader: loading to %p\n", v->load_addr);
+	printk("VPE loader: loading to %p\n", v->load_addr);
 
 	if (relocate) {
 		for (i = 0; i < hdr->e_shnum; i++) {
@@ -916,64 +914,79 @@ int vpe_elfload(struct vpe * v)
 
 			printk(KERN_DEBUG " section sh_name %s sh_addr 0x%x\n",
 			       secstrings + sechdrs[i].sh_name, sechdrs[i].sh_addr);
-			}
-
-
-	/* Fix up syms, so that st_value is a pointer to location. */
-	err = simplify_symbols(sechdrs, symindex, strtab, secstrings,
-	                       hdr->e_shnum, &mod);
-	if (err < 0) {
-		printk(KERN_WARNING "VPE: unable to simplify symbols\n");
-		goto cleanup;
-	}
-
-	/* Now do relocations. */
-	for (i = 1; i < hdr->e_shnum; i++) {
-		const char *strtab = (char *)sechdrs[strindex].sh_addr;
-		unsigned int info = sechdrs[i].sh_info;
-
-		/* Not a valid relocation section? */
-		if (info >= hdr->e_shnum)
-			continue;
-
-		/* Don't bother with non-allocated sections */
-		if (!(sechdrs[info].sh_flags & SHF_ALLOC))
-			continue;
-
-		if (sechdrs[i].sh_type == SHT_REL)
-			err = apply_relocations(sechdrs, strtab, symindex, i,
-			                         &mod);
-		else if (sechdrs[i].sh_type == SHT_RELA)
-			err = apply_relocate_add(sechdrs, strtab, symindex, i,
-						 &mod);
-		if (err < 0) {
-			printk(KERN_WARNING
-			       "vpe_elfload: error in relocations err %ld\n",
-			       err);
-			goto cleanup;
 		}
-	}
-	} else {
-		for (i = 0; i < hdr->e_shnum; i++) {
 
-			if (!(sechdrs[i].sh_flags & SHF_ALLOC) || sechdrs[i].sh_type == PT_MIPS_REGINFO)
-				continue;
+ 		/* Fix up syms, so that st_value is a pointer to location. */
+ 		simplify_symbols(sechdrs, symindex, strtab, secstrings,
+ 				 hdr->e_shnum, &mod);
 
-			if (sechdrs[i].sh_addr < (unsigned int)v->load_addr) {
-				printk( KERN_WARNING "vpe_elfload: fully linked image has invalid "
-					"section, name %s address 0x%x, before load "
-					"address of 0x%x\n", secstrings + sechdrs[i].sh_name,
-					sechdrs[i].sh_addr, (unsigned int)v->load_addr);
-				return -ENOEXEC;
-			}
+ 		/* Now do relocations. */
+ 		for (i = 1; i < hdr->e_shnum; i++) {
+ 			const char *strtab = (char *)sechdrs[strindex].sh_addr;
+ 			unsigned int info = sechdrs[i].sh_info;
 
-			printk(KERN_DEBUG " copying section sh_name %s, sh_addr 0x%x size 0x%x\n",
+ 			/* Not a valid relocation section? */
+ 			if (info >= hdr->e_shnum)
+ 				continue;
+
+ 			/* Don't bother with non-allocated sections */
+ 			if (!(sechdrs[info].sh_flags & SHF_ALLOC))
+ 				continue;
+
+ 			if (sechdrs[i].sh_type == SHT_REL)
+ 				err = apply_relocations(sechdrs, strtab, symindex, i,
+ 							&mod);
+ 			else if (sechdrs[i].sh_type == SHT_RELA)
+ 				err = apply_relocate_add(sechdrs, strtab, symindex, i,
+ 							 &mod);
+ 			if (err < 0)
+ 				return err;
+
+  		}
+  	} else {
+  		for (i = 0; i < hdr->e_shnum; i++) {
+
+ 			/* Internal symbols and strings. */
+ 			if (sechdrs[i].sh_type == SHT_SYMTAB) {
+ 				symindex = i;
+ 				strindex = sechdrs[i].sh_link;
+ 				strtab = (char *)hdr + sechdrs[strindex].sh_offset;
+
+ 				/* mark the symtab's address for when we try to find the
+ 				   magic symbols */
+ 				sechdrs[i].sh_addr = (size_t) hdr + sechdrs[i].sh_offset;
+ 			}
+
+ 			/* filter sections we dont want in the final image */
+ 			if (!(sechdrs[i].sh_flags & SHF_ALLOC) ||
+ 			    (sechdrs[i].sh_type == SHT_MIPS_REGINFO)) {
+ 				printk( KERN_DEBUG " ignoring section, "
+ 					"name %s type %x address 0x%x \n",
+ 					secstrings + sechdrs[i].sh_name,
+ 					sechdrs[i].sh_type, sechdrs[i].sh_addr);
+ 				continue;
+ 			}
+
+  			if (sechdrs[i].sh_addr < (unsigned int)v->load_addr) {
+ 				printk( KERN_WARNING "VPE loader: "
+ 					"fully linked image has invalid section, "
+ 					"name %s type %x address 0x%x, before load "
+ 					"address of 0x%x\n",
+ 					secstrings + sechdrs[i].sh_name,
+ 					sechdrs[i].sh_type, sechdrs[i].sh_addr,
+ 					(unsigned int)v->load_addr);
+  				return -ENOEXEC;
+  			}
+
+ 			printk(KERN_DEBUG " copying section sh_name %s, sh_addr 0x%x "
+			       "size 0x%x0 from x%p\n",
 			       secstrings + sechdrs[i].sh_name, sechdrs[i].sh_addr,
-			       sechdrs[i].sh_size);
+			       sechdrs[i].sh_size, hdr + sechdrs[i].sh_offset);
 
-			if (sechdrs[i].sh_type != SHT_NOBITS)
-				memcpy((void *)sechdrs[i].sh_addr, v->pbuffer + sechdrs[i].sh_offset,
-					sechdrs[i].sh_size);
+  			if (sechdrs[i].sh_type != SHT_NOBITS)
+				memcpy((void *)sechdrs[i].sh_addr,
+				       (char *)hdr + sechdrs[i].sh_offset,
+ 				       sechdrs[i].sh_size);
 			else
 				memset((void *)sechdrs[i].sh_addr, 0, sechdrs[i].sh_size);
 		}
@@ -984,19 +997,23 @@ int vpe_elfload(struct vpe * v)
 			   (unsigned long)v->load_addr + v->len);
 
 	if ((find_vpe_symbols(v, sechdrs, symindex, strtab, &mod)) < 0) {
+		if (v->__start == 0) {
+			printk(KERN_WARNING "VPE loader: program does not contain "
+			       "a __start symbol\n");
+			return -ENOEXEC;
+		}
 
-		printk(KERN_WARNING
-		       "VPE: program doesn't contain __start or vpe_shared symbols\n");
-		err = -ENOEXEC;
+		if (v->shared_ptr == NULL)
+			printk(KERN_WARNING "VPE loader: "
+			       "program does not contain vpe_shared symbol.\n"
+			       " Unable to use AMVP (AP/SP) facilities.\n");
 	}
 
 	printk(" elf loaded\n");
-
-cleanup:
-	return err;
+	return 0;
 }
 
-static __attribute_used__ void dump_vpe(struct vpe * v)
+__attribute_used__ void dump_vpe(struct vpe * v)
 {
 	struct tc *t;
 
@@ -1056,19 +1073,20 @@ static int vpe_open(struct inode *inode, struct file *filp)
 
 	/* assume only 1 device at the mo. */
 	if ((minor = MINOR(inode->i_rdev)) != 1) {
-		printk(KERN_WARNING "VPE: only vpe1 is supported\n");
+		printk(KERN_WARNING "VPE loader: only vpe1 is supported\n");
 		return -ENODEV;
 	}
 
 	if ((v = get_vpe(minor)) == NULL) {
-		printk(KERN_WARNING "VPE: unable to get vpe\n");
+		printk(KERN_WARNING "VPE loader: unable to get vpe\n");
 		return -ENODEV;
 	}
 
 	if (v->state != VPE_STATE_UNUSED) {
 		dvpe();
 
-		printk("vpe_open tc in use dumping regs\n");
+		printk(KERN_DEBUG "VPE loader: tc in use dumping regs\n");
+
 		dump_tc(get_tc(minor));
 
 		list_for_each_entry(not, &v->notify, list) {
@@ -1091,17 +1109,21 @@ static int vpe_open(struct inode *inode, struct file *filp)
 	v->uid = filp->f_uid;
 	v->gid = filp->f_gid;
 
+#ifdef CONFIG_MIPS_APSP_KSPD
 	/* get kspd to tell us when a syscall_exit happens */
 	if (!kspd_events_reqd) {
 		kspd_notify(&kspd_events);
 		kspd_events_reqd++;
 	}
+#endif
 
 	v->cwd[0] = 0;
 	ret = getcwd(v->cwd, VPE_PATH_MAX);
 	if (ret < 0)
-		printk("VPE: open, getcwd returned %d\n", ret);
+		printk(KERN_WARNING "VPE loader: open, getcwd returned %d\n", ret);
 
+	v->shared_ptr = NULL;
+	v->__start = 0;
 	return 0;
 }
 
@@ -1122,11 +1144,11 @@ static int vpe_release(struct inode *inode, struct file *filp)
 		if (vpe_elfload(v) >= 0)
 			vpe_run(v);
 		else {
-			printk(KERN_WARNING "VPE: ELF load failed.\n");
+ 			printk(KERN_WARNING "VPE loader: ELF load failed.\n");
 			ret = -ENOEXEC;
 		}
 	} else {
-		printk(KERN_WARNING "VPE: only elf files are supported\n");
+ 		printk(KERN_WARNING "VPE loader: only elf files are supported\n");
 		ret = -ENOEXEC;
 	}
 
@@ -1157,21 +1179,19 @@ static ssize_t vpe_write(struct file *file, const char __user * buffer,
 		return -ENODEV;
 
 	if (v->pbuffer == NULL) {
-		printk(KERN_ERR "vpe_write: no pbuffer\n");
+		printk(KERN_ERR "VPE loader: no buffer for program\n");
 		return -ENOMEM;
 	}
 
 	if ((count + v->len) > v->plen) {
 		printk(KERN_WARNING
-		       "VPE Loader: elf size too big. Perhaps strip uneeded symbols\n");
+		       "VPE loader: elf size too big. Perhaps strip uneeded symbols\n");
 		return -ENOMEM;
 	}
 
 	count -= copy_from_user(v->pbuffer + v->len, buffer, count);
-	if (!count) {
-		printk("vpe_write: copy_to_user failed\n");
+	if (!count)
 		return -EFAULT;
-	}
 
 	v->len += count;
 	return ret;
@@ -1273,10 +1293,8 @@ void *vpe_get_shared(int index)
 {
 	struct vpe *v;
 
-	if ((v = get_vpe(index)) == NULL) {
-		printk(KERN_WARNING "vpe: invalid vpe index %d\n", index);
+	if ((v = get_vpe(index)) == NULL)
 		return NULL;
-	}
 
 	return v->shared_ptr;
 }
@@ -1287,10 +1305,8 @@ int vpe_getuid(int index)
 {
 	struct vpe *v;
 
-	if ((v = get_vpe(index)) == NULL) {
-		printk(KERN_WARNING "vpe: invalid vpe index %d\n", index);
+	if ((v = get_vpe(index)) == NULL)
 		return -1;
-	}
 
 	return v->uid;
 }
@@ -1301,10 +1317,8 @@ int vpe_getgid(int index)
 {
 	struct vpe *v;
 
-	if ((v = get_vpe(index)) == NULL) {
-		printk(KERN_WARNING "vpe: invalid vpe index %d\n", index);
+	if ((v = get_vpe(index)) == NULL)
 		return -1;
-	}
 
 	return v->gid;
 }
@@ -1315,10 +1329,8 @@ int vpe_notify(int index, struct vpe_notifications *notify)
 {
 	struct vpe *v;
 
-	if ((v = get_vpe(index)) == NULL) {
-		printk(KERN_WARNING "vpe: invalid vpe index %d\n", index);
+	if ((v = get_vpe(index)) == NULL)
 		return -1;
-	}
 
 	list_add(&notify->list, &v->notify);
 	return 0;
@@ -1330,20 +1342,20 @@ char *vpe_getcwd(int index)
 {
 	struct vpe *v;
 
-	if ((v = get_vpe(index)) == NULL) {
-		printk(KERN_WARNING "vpe: invalid vpe index %d\n", index);
+	if ((v = get_vpe(index)) == NULL)
 		return NULL;
-	}
 
 	return v->cwd;
 }
 
 EXPORT_SYMBOL(vpe_getcwd);
 
+#ifdef CONFIG_MIPS_APSP_KSPD
 static void kspd_sp_exit( int sp_id)
 {
 	cleanup_tc(get_tc(sp_id));
 }
+#endif
 
 static int __init vpe_module_init(void)
 {
@@ -1456,8 +1468,9 @@ static int __init vpe_module_init(void)
 	/* release config state */
 	clear_c0_mvpcontrol(MVPCONTROL_VPC);
 
+#ifdef CONFIG_MIPS_APSP_KSPD
 	kspd_events.kspd_sp_exit = kspd_sp_exit;
-
+#endif
 	return 0;
 }
 
@@ -1477,5 +1490,5 @@ static void __exit vpe_module_exit(void)
 module_init(vpe_module_init);
 module_exit(vpe_module_exit);
 MODULE_DESCRIPTION("MIPS VPE Loader");
-MODULE_AUTHOR("Elizabeth Clarke, MIPS Technologies, Inc");
+MODULE_AUTHOR("Elizabeth Oldham, MIPS Technologies, Inc.");
 MODULE_LICENSE("GPL");

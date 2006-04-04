@@ -11,7 +11,7 @@
 #define MIPSCPU_INT_BASE       16
 #define MIPS_CPU_RTLX_IRQ 0
 
-#define RTLX_VERSION 1
+#define RTLX_VERSION 2
 #define RTLX_xID 0x12345600
 #define RTLX_ID (RTLX_xID | RTLX_VERSION)
 #define RTLX_CHANNELS 8
@@ -52,14 +52,11 @@ struct rtlx_channel {
 
 	int lx_write, lx_read;
 	char *lx_buffer;
-
-	void *queues;
-
 };
 
 struct rtlx_info {
-	enum rtlx_state state;
 	unsigned long id;
+	enum rtlx_state state;
 
 	struct rtlx_channel channel[RTLX_CHANNELS];
 };

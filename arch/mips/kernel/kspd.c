@@ -18,6 +18,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/unistd.h>
+#include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/syscalls.h>
 #include <linux/workqueue.h>
@@ -30,6 +31,8 @@
 
 static struct workqueue_struct *workqueue = NULL;
 static struct work_struct work;
+
+extern unsigned long cpu_khz;
 
 struct mtsp_syscall {
 	int cmd;
@@ -63,6 +66,10 @@ static int sp_stopping = 0;
 #define MTSP_SYSCALL_WRITE	(MTSP_SYSCALL_BASE + 3)
 #define MTSP_SYSCALL_CLOSE	(MTSP_SYSCALL_BASE + 4)
 #define MTSP_SYSCALL_LSEEK32	(MTSP_SYSCALL_BASE + 5)
+#define MTSP_SYSCALL_ISATTY	(MTSP_SYSCALL_BASE + 6)
+#define MTSP_SYSCALL_GETTIME	(MTSP_SYSCALL_BASE + 7)
+#define MTSP_SYSCALL_PIPEFREQ	(MTSP_SYSCALL_BASE + 8)
+#define MTSP_SYSCALL_GETTOD	(MTSP_SYSCALL_BASE + 9)
 
 #define MTSP_O_RDONLY		0x0000
 #define MTSP_O_WRONLY		0x0001
@@ -117,12 +124,12 @@ static int sp_syscall(int num, int arg0, int arg1, int arg2, int arg3)
 	mm_segment_t old_fs;
 
 	old_fs = get_fs();
-	set_fs(KERNEL_DS);
+ 	set_fs(KERNEL_DS);
 
-	__asm__ __volatile__ (
-	"	syscall						\n"
-	: "=r" (_num), "=r" (_arg3)
-	: "r" (_num), "r" (_arg0), "r" (_arg1), "r" (_arg2), "r" (_arg3));
+  	__asm__ __volatile__ (
+ 	"	syscall					\n"
+ 	: "=r" (_num), "=r" (_arg3)
+ 	: "r" (_num), "r" (_arg0), "r" (_arg1), "r" (_arg2), "r" (_arg3));
 
 	set_fs(old_fs);
 
@@ -167,8 +174,8 @@ static void sp_setfsuidgid( uid_t uid, gid_t gid)
 	current->fsuid = uid;
 	current->fsgid = gid;
 
-//	key_fsuid_changed(current);
-//	key_fsgid_changed(current);
+	key_fsuid_changed(current);
+	key_fsgid_changed(current);
 }
 
 /*
@@ -182,6 +189,10 @@ void sp_work_handle_request(void)
 	struct mtsp_syscall_generic generic;
 	struct mtsp_syscall_ret ret;
 	struct kspd_notifications *n;
+	struct timeval tv;
+	struct timezone tz;
+	int cmd;
+
 	char *vcwd;
 	mm_segment_t old_fs;
 	int size;
@@ -195,9 +206,11 @@ void sp_work_handle_request(void)
 
 	size = sc.size;
 
-	if (!rtlx_read(RTLX_CHANNEL_SYSIO, &generic, size, 0)) {
-		printk(KERN_ERR "Expected request but nothing to read\n");
-		return;
+	if (size) {
+		if (!rtlx_read(RTLX_CHANNEL_SYSIO, &generic, size, 0)) {
+			printk(KERN_ERR "Expected request but nothing to read\n");
+			return;
+		}
 	}
 
 	/* Run the syscall at the priviledge of the user who loaded the
@@ -209,50 +222,60 @@ void sp_work_handle_request(void)
 	switch (sc.cmd) {
 	/* needs the flags argument translating from SDE kit to
 	   linux */
-	case MTSP_SYSCALL_EXIT:
-		list_for_each_entry(n, &kspd_notifylist, list) {
-			n->kspd_sp_exit(SP_VPE);
-		}
+ 	case MTSP_SYSCALL_PIPEFREQ:
+ 		ret.retval = cpu_khz * 1000;
+ 		ret.errno = 0;
+ 		break;
+
+ 	case MTSP_SYSCALL_GETTOD:
+ 		memset(&tz, 0, sizeof(tz));
+ 		if ((ret.retval = sp_syscall(__NR_gettimeofday, (int)&tv,
+ 		                             (int)&tz, 0,0)) == 0)
+		ret.retval = tv.tv_sec;
+
+		ret.errno = errno;
+		break;
+
+ 	case MTSP_SYSCALL_EXIT:
+		list_for_each_entry(n, &kspd_notifylist, list)
+ 			n->kspd_sp_exit(SP_VPE);
 		sp_stopping = 1;
 
 		printk(KERN_DEBUG "KSPD got exit syscall from SP exitcode %d\n",
 		       generic.arg0);
-		break;
+ 		break;
 
-	case MTSP_SYSCALL_OPEN:
-		generic.arg1 = translate_open_flags(generic.arg1);
+ 	case MTSP_SYSCALL_OPEN:
+ 		generic.arg1 = translate_open_flags(generic.arg1);
 
-		vcwd = vpe_getcwd(SP_VPE);
+ 		vcwd = vpe_getcwd(SP_VPE);
 
-		/* change to the cwd of the process that loaded the SP program */
+ 		/* change to the cwd of the process that loaded the SP program */
 		old_fs = get_fs();
-		set_fs (KERNEL_DS);
+		set_fs(KERNEL_DS);
 		sys_chdir(vcwd);
-		set_fs (old_fs);
+		set_fs(old_fs);
 
-		sc.cmd = __NR_open;
+ 		sc.cmd = __NR_open;
 
 		/* fall through */
 
-	default:
-		{
-		int cmd;
-
-		if ((sc.cmd >= __NR_Linux) && (sc.cmd <= (__NR_Linux +  __NR_Linux_syscalls)) )
+  	default:
+ 		if ((sc.cmd >= __NR_Linux) &&
+		    (sc.cmd <= (__NR_Linux +  __NR_Linux_syscalls)) )
 			cmd = sc.cmd;
 		else
 			cmd = translate_syscall_command(sc.cmd);
 
 		if (cmd >= 0) {
 			ret.retval = sp_syscall(cmd, generic.arg0, generic.arg1,
-						generic.arg2, generic.arg3);
+			                        generic.arg2, generic.arg3);
 			ret.errno = errno;
-		} else {
-			printk(KERN_WARNING "KSPD: Unknown SP syscall number %d\n",
-			       sc.cmd);
-		}
-		}
-	} /* switch */
+		} else
+ 			printk(KERN_WARNING
+			       "KSPD: Unknown SP syscall number %d\n", sc.cmd);
+		break;
+ 	} /* switch */
 
 	if (vpe_getuid(SP_VPE))
 		sp_setfsuidgid( 0, 0);
@@ -262,17 +285,47 @@ void sp_work_handle_request(void)
 		printk("KSPD: sp_work_handle_request failed to send to SP\n");
 }
 
+static void sp_cleanup(void)
+{
+	struct files_struct *files = current->files;
+	int i, j;
+	struct fdtable *fdt;
+
+	j = 0;
+
+	/*
+	 * It is safe to dereference the fd table without RCU or
+	 * ->file_lock
+	 */
+	fdt = files_fdtable(files);
+	for (;;) {
+		unsigned long set;
+		i = j * __NFDBITS;
+		if (i >= fdt->max_fdset || i >= fdt->max_fds)
+			break;
+		set = fdt->open_fds->fds_bits[j++];
+		while (set) {
+			if (set & 1) {
+				struct file * file = xchg(&fdt->fd[i], NULL);
+				if (file)
+					filp_close(file, files);
+			}
+			i++;
+			set >>= 1;
+		}
+	}
+}
+
 static int channel_open = 0;
 
 /* the work handler */
-static void sp_work( void *data)
+static void sp_work(void *data)
 {
 	if (!channel_open) {
 		if( rtlx_open(RTLX_CHANNEL_SYSIO, 1) != 0) {
 			printk("KSPD: unable to open sp channel\n");
 			sp_stopping = 1;
-		}
-		else {
+		} else {
 			channel_open++;
 			printk(KERN_DEBUG "KSPD: SP channel opened\n");
 		}
@@ -280,11 +333,15 @@ static void sp_work( void *data)
 		/* wait for some data, allow it to sleep */
 		rtlx_read_poll(RTLX_CHANNEL_SYSIO, 1);
 
-		sp_work_handle_request();
+		/* Check we haven't been woken because we are stopping */
+		if (!sp_stopping)
+			sp_work_handle_request();
 	}
 
 	if (!sp_stopping)
 		queue_work(workqueue, &work);
+	else
+		sp_cleanup();
 }
 
 static void startwork(int vpe)
@@ -299,8 +356,7 @@ static void startwork(int vpe)
 
 		INIT_WORK(&work, sp_work, NULL);
 		queue_work(workqueue, &work);
-	}
-	else
+	} else
 		queue_work(workqueue, &work);
 
 }
@@ -336,6 +392,7 @@ static void kspd_module_exit(void)
 
 module_init(kspd_module_init);
 module_exit(kspd_module_exit);
+
 MODULE_DESCRIPTION("MIPS KSPD");
-MODULE_AUTHOR("Elizabeth Clarke, MIPS Technologies, Inc");
+MODULE_AUTHOR("Elizabeth Oldham, MIPS Technologies, Inc.");
 MODULE_LICENSE("GPL");
