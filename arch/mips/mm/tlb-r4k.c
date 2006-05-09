@@ -18,6 +18,7 @@
 #include <asm/mmu_context.h>
 #include <asm/pgtable.h>
 #include <asm/system.h>
+#include <asm/mipsmtregs.h>
 
 extern void build_tlb_refill_handler(void);
 
@@ -36,7 +37,6 @@ extern void build_tlb_refill_handler(void);
 #ifdef CONFIG_MIPS_MT_SMTC
 
 #include <asm/smtc.h>
-#include <asm/mipsmtregs.h>
 
 #define ENTER_CRITICAL(flags) \
 	{ \
@@ -413,11 +413,51 @@ out:
 	return ret;
 }
 
-extern void __init sanitize_tlb_entries(void);
+#if !defined(CONFIG_MIPS_MT_SMTC)
+/*
+ * MT TLB configuration
+ * SMTC does it's own thing... they should get merged
+ */
+static int __initdata stlb = 1; /* most setups want shared TLB */
+
+static int __init stlb_disable(char *s)
+{
+	stlb = 0;
+	return 1;
+}
+__setup("nostlb", stlb_disable);
+
+
+/*
+ * can't use cpu_has_mipsmt
+ */
+# define cpu_supports_mipsmt		(cpu_data[0].ases & MIPS_ASE_MIPSMT)
+
+
+static inline void mt_configure_tlb (struct cpuinfo_mips *c)
+{
+	if (smp_processor_id() == 0) {
+#ifdef CONFIG_MIPS_MT_SMP
+		/* conventional SMP *requires* TLB to be split */
+		stlb = 0;
+#endif
+		set_c0_mvpcontrol (MVPCONTROL_VPC); /* Enable config mode */
+		back_to_back_c0_hazard();
+		if (stlb)
+			set_c0_mvpcontrol (MVPCONTROL_STLB);
+		else
+			clear_c0_mvpcontrol (MVPCONTROL_STLB);
+		back_to_back_c0_hazard();
+		clear_c0_mvpcontrol (MVPCONTROL_VPC);
+	}
+	if (cpu_has_tlb)
+		c->tlbsize = ((read_c0_config1() & MIPS_CONF1_TLBS) >> 25) + 1;
+}
+#endif
+
 static void __init probe_tlb(unsigned long config)
 {
 	struct cpuinfo_mips *c = &current_cpu_data;
-	unsigned int reg;
 
 	/*
 	 * If this isn't a MIPS32 / MIPS64 compliant CPU.  Config 1 register
@@ -426,20 +466,25 @@ static void __init probe_tlb(unsigned long config)
 	 */
 	if ((c->processor_id & 0xff0000) == PRID_COMP_LEGACY)
 		return;
-#ifdef CONFIG_MIPS_MT_SMTC
-	/*
-	 * If TLB is shared in SMTC system, total size already
-	 * has been calculated and written into cpu_data tlbsize
-	 */
-	if((smtc_status & SMTC_TLB_SHARED) == SMTC_TLB_SHARED)
-		return;
-#endif /* CONFIG_MIPS_MT_SMTC */
 
-	reg = read_c0_config1();
 	if (!((config >> 7) & 3))
 		panic("No TLB present");
 
-	c->tlbsize = ((reg >> 25) & 0x3f) + 1;
+	/*
+	 * TLB size is set in cpu_probe()
+	 */
+
+#if !defined(CONFIG_MIPS_MT_SMTC)
+	/*
+	 * Command line may have overridden default TLB setup
+	 * on MT capable CPU's
+	 *
+	 * It would be nice to do this in cpu_probe(), but that is called
+	 * before the command line arguments have been processed
+	 */
+	if (cpu_supports_mipsmt)
+		mt_configure_tlb(c);
+#endif
 }
 
 static int __initdata ntlb = 0;
