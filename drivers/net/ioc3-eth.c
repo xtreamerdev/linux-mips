@@ -95,6 +95,9 @@ struct ioc3_private {
 	u32 emcr, ehar_h, ehar_l;
 	spinlock_t ioc3_lock;
 	struct mii_if_info mii;
+	unsigned long flags;
+#define IOC3_FLAG_RX_CHECKSUMS	1
+
 	struct pci_dev *pdev;
 
 	/* Members used by autonegotiation  */
@@ -522,8 +525,6 @@ static struct net_device_stats *ioc3_get_stats(struct net_device *dev)
 	return &ip->stats;
 }
 
-#ifdef CONFIG_SGI_IOC3_ETH_HW_RX_CSUM
-
 static void ioc3_tcpudp_checksum(struct sk_buff *skb, uint32_t hwsum, int len)
 {
 	struct ethhdr *eh = eth_hdr(skb);
@@ -591,7 +592,6 @@ static void ioc3_tcpudp_checksum(struct sk_buff *skb, uint32_t hwsum, int len)
 	if (csum == 0xffff)
 		skb->ip_summed = CHECKSUM_UNNECESSARY;
 }
-#endif /* CONFIG_SGI_IOC3_ETH_HW_RX_CSUM */
 
 static inline void ioc3_rx(struct ioc3_private *ip)
 {
@@ -626,9 +626,9 @@ static inline void ioc3_rx(struct ioc3_private *ip)
 				goto next;
 			}
 
-#ifdef CONFIG_SGI_IOC3_ETH_HW_RX_CSUM
-			ioc3_tcpudp_checksum(skb, w0 & ERXBUF_IPCKSUM_MASK,len);
-#endif
+			if (likely(ip->flags & IOC3_FLAG_RX_CHECKSUMS))
+				ioc3_tcpudp_checksum(skb,
+					w0 & ERXBUF_IPCKSUM_MASK, len);
 
 			netif_rx(skb);
 
@@ -1289,9 +1289,7 @@ static int ioc3_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	dev->set_multicast_list	= ioc3_set_multicast_list;
 	dev->set_mac_address	= ioc3_set_mac_address;
 	dev->ethtool_ops	= &ioc3_ethtool_ops;
-#ifdef CONFIG_SGI_IOC3_ETH_HW_TX_CSUM
 	dev->features		= NETIF_F_IP_CSUM;
-#endif
 
 	sw_physid1 = ioc3_mdio_read(dev, ip->mii.phy_id, MII_PHYSID1);
 	sw_physid2 = ioc3_mdio_read(dev, ip->mii.phy_id, MII_PHYSID2);
@@ -1378,7 +1376,6 @@ static int ioc3_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	uint32_t w0 = 0;
 	int produce;
 
-#ifdef CONFIG_SGI_IOC3_ETH_HW_TX_CSUM
 	/*
 	 * IOC3 has a fairly simple minded checksumming hardware which simply
 	 * adds up the 1's complement checksum for the entire packet and
@@ -1426,7 +1423,6 @@ static int ioc3_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 		w0 = ETXD_DOCHECKSUM | (csoff << ETXD_CHKOFF_SHIFT);
 	}
-#endif /* CONFIG_SGI_IOC3_ETH_HW_TX_CSUM */
 
 	spin_lock_irq(&ip->ioc3_lock);
 
@@ -1580,12 +1576,37 @@ static u32 ioc3_get_link(struct net_device *dev)
 	return rc;
 }
 
+static u32 ioc3_get_rx_csum(struct net_device *dev)
+{
+	struct ioc3_private *ip = netdev_priv(dev);
+
+	return ip->flags & IOC3_FLAG_RX_CHECKSUMS;
+}
+
+static int ioc3_set_rx_csum(struct net_device *dev, u32 data)
+{
+	struct ioc3_private *ip = netdev_priv(dev);
+
+	spin_lock_bh(&ip->ioc3_lock);
+	if (data)
+		ip->flags |= IOC3_FLAG_RX_CHECKSUMS;
+	else
+		ip->flags &= ~IOC3_FLAG_RX_CHECKSUMS;
+	spin_unlock_bh(&ip->ioc3_lock);
+
+	return 0;
+}
+
 static struct ethtool_ops ioc3_ethtool_ops = {
 	.get_drvinfo		= ioc3_get_drvinfo,
 	.get_settings		= ioc3_get_settings,
 	.set_settings		= ioc3_set_settings,
 	.nway_reset		= ioc3_nway_reset,
 	.get_link		= ioc3_get_link,
+	.get_rx_csum		= ioc3_get_rx_csum,
+	.set_rx_csum		= ioc3_set_rx_csum,
+	.get_tx_csum		= ethtool_op_get_tx_csum,
+	.set_tx_csum		= ethtool_op_set_tx_csum
 };
 
 static int ioc3_ioctl(struct net_device *dev, struct ifreq *rq, int cmd)
