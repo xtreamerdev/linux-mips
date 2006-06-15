@@ -158,7 +158,8 @@ sys_mmap2(unsigned long addr, unsigned long len, unsigned long prot,
 }
 
 save_static_function(sys_fork);
-static_unused int _sys_fork(struct pt_regs regs)
+__attribute_used__ static int
+_sys_fork(struct pt_regs regs)
 {
 	int res;
 
@@ -168,7 +169,8 @@ static_unused int _sys_fork(struct pt_regs regs)
 
 
 save_static_function(sys_clone);
-static_unused int _sys_clone(struct pt_regs regs)
+__attribute_used__ static int
+_sys_clone(struct pt_regs regs)
 {
 	unsigned long clone_flags;
 	unsigned long newsp;
