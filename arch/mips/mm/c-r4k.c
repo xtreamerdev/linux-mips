@@ -996,10 +996,15 @@ static void __init probe_pcache(void)
 	case CPU_SB1:
 		break;
 	case CPU_24K:
-		if (!(read_c0_config7() & (1 << 16)))
+		if ((read_c0_config7() & (1 << 16))) {
+			/* effectively physically indexed dcache,
+			   thus no virtual aliases. */
+			c->dcache.flags |= MIPS_CACHE_PINDEX;
+			break;
+		}
 	default:
-			if (c->dcache.waysize > PAGE_SIZE)
-				c->dcache.flags |= MIPS_CACHE_ALIASES;
+		if (c->dcache.waysize > PAGE_SIZE)
+			c->dcache.flags |= MIPS_CACHE_ALIASES;
 	}
 
 	switch (c->cputype) {
