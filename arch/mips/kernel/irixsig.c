@@ -185,9 +185,6 @@ asmlinkage int do_irix_signal(sigset_t *oldset, struct pt_regs *regs)
 	if (!user_mode(regs))
 		return 1;
 
-	if (try_to_freeze())
-		goto no_signal;
-
 	if (!oldset)
 		oldset = &current->blocked;
 
@@ -195,7 +192,6 @@ asmlinkage int do_irix_signal(sigset_t *oldset, struct pt_regs *regs)
 	if (signr > 0)
 		return handle_signal(signr, &info, &ka, oldset, regs);
 
-no_signal:
 	/*
 	 * Who's code doesn't conform to the restartable syscall convention
 	 * dies here!!!  The li instruction, a single machine instruction,
