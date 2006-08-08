@@ -203,6 +203,7 @@ asmlinkage int do_irix_signal(sigset_t *oldset, struct pt_regs *regs)
 		    regs->regs[2] == ERESTARTNOINTR) {
 			regs->cp0_epc -= 8;
 		}
+		regs->regs[0] = 0;	/* Don't deal with this again.  */
 	}
 	return 0;
 }
