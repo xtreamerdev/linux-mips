@@ -332,7 +332,7 @@ void __init r3k_cache_init(void)
 	flush_cache_range = r3k_flush_cache_range;
 	flush_cache_page = r3k_flush_cache_page;
 	flush_icache_page = r3k_flush_icache_page;
-	flush_icache_range = r3k_flush_icache_range;
+	__flush_icache_range = r3k_flush_icache_range;
 
 	flush_cache_sigtramp = r3k_flush_cache_sigtramp;
 	flush_data_cache_page = r3k_flush_data_cache_page;
