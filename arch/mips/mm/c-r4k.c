@@ -456,7 +456,7 @@ static inline void local_r4k_flush_cache_page(void *args)
 		}
 	}
 	if (exec) {
-		if (cpu_has_vtag_icache) {
+		if (cpu_has_vtag_icache && mm == current->active_mm) {
 			int cpu = smp_processor_id();
 
 			if (cpu_context(cpu, mm) != 0)
@@ -580,7 +580,7 @@ static inline void local_r4k_flush_icache_page(void *args)
 	 * We're not sure of the virtual address(es) involved here, so
 	 * we have to flush the entire I-cache.
 	 */
-	if (cpu_has_vtag_icache) {
+	if (cpu_has_vtag_icache && vma->vm_mm == current->active_mm) {
 		int cpu = smp_processor_id();
 
 		if (cpu_context(cpu, vma->vm_mm) != 0)
