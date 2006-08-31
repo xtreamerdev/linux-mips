@@ -75,4 +75,13 @@
 #define MAP_ANON	MAP_ANONYMOUS
 #define MAP_FILE	0
 
+#ifdef __KERNEL__
+
+#define arch_mmap_check mips_mmap_check
+
+extern int mips_mmap_check(unsigned long addr, unsigned long len,
+	unsigned long flags);
+
+#endif
+
 #endif /* _ASM_MMAN_H */

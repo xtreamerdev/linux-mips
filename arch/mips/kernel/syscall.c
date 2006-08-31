@@ -117,6 +117,22 @@ unsigned long arch_get_unmapped_area(struct file *filp, unsigned long addr,
 	}
 }
 
+int mips_mmap_check(unsigned long addr, unsigned long len,
+	unsigned long flags)
+{
+#ifdef CONFIG_MIPS32_COMPAT
+	if (current->thread.mflags & MF_32BIT_ADDR) {
+		if (len > TASK_SIZE32)
+			return -EINVAL;
+		if (flags & MAP_FIXED &&
+		    (addr >= TASK_SIZE32 || addr + len >= TASK_SIZE32))
+			return -EINVAL;
+	}
+#endif
+
+	return 0;
+}
+
 /* common code for old and new mmaps */
 static inline unsigned long
 do_mmap2(unsigned long addr, unsigned long len, unsigned long prot,
