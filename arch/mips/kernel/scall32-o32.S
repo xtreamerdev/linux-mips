@@ -648,6 +648,10 @@ einval:	li	v0, -EINVAL
 	sys	sys_splice		4
 	sys	sys_sync_file_range	7	/* 4305 */
 	sys	sys_tee			4
+	sys	sys_vmsplice		4
+	sys	sys_ni_syscall		0
+	sys	sys_set_robust_list	2
+	sys	sys_get_robust_list	3
 	.endm
 
 	/* We pre-compute the number of _instruction_ bytes needed to

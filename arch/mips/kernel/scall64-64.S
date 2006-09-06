@@ -463,3 +463,7 @@ sys_call_table:
 	PTR	sys_splice
 	PTR	sys_sync_file_range
 	PTR	sys_tee				/* 5265 */
+	PTR	sys_vmsplice
+	PTR	sys_ni_syscall
+	PTR	sys_set_robust_list
+	PTR	sys_get_robust_list
