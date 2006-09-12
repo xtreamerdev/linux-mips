@@ -30,10 +30,20 @@
 #include <asm/stackframe.h>
 
 #ifdef CONFIG_MIPS_ATLAS
-#include <asm/mips-boards/atlasint.h>
-#define CASCADE_IRQ		MIPSCPU_INT_ATLAS
-#define CASCADE_DISPATCH	atlas_hw0_irqdispatch
-#endif
+
+	.align  5
+NESTED(handle_int, PT_SIZE, sp)
+
+	SAVE_ALL
+	CLI
+
+	PTR_LA	ra, ret_from_irq
+	move	a0, sp
+	j	plat_irq_dispatch
+	END(handle_int)
+
+#else /* CONFIG_MIPS_ATLAS */
+
 #ifdef CONFIG_MIPS_MALTA
 #include <asm/mips-boards/maltaint.h>
 #define CASCADE_IRQ		MIPSCPU_INT_I8259A
@@ -153,3 +163,5 @@ spurious:
 	j	spurious_interrupt
 	 nop
 	END(mipsIRQ)
+
+#endif /* !CONFIG_MIPS_ATLAS */
