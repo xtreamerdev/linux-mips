@@ -171,7 +171,9 @@ asmlinkage int sys32_ptrace(int request, int pid, int addr, int data)
 		case FPC_EIR: {	/* implementation / version register */
 			unsigned int flags;
 
+			preempt_disable();
 			if (!cpu_has_fpu) {
+				preempt_enable();
 				tmp = 0;
 				break;
 			}
