@@ -103,7 +103,7 @@ irqreturn_t sim_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 
 
 /*
- * Estimate CPU frequency.  Sets mips_counter_frequency as a side-effect
+ * Estimate CPU frequency.  Sets mips_hpt_frequency as a side-effect
  */
 static unsigned int __init estimate_cpu_frequency(void)
 {
