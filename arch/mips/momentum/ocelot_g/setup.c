@@ -57,6 +57,7 @@
 #include <asm/gt64240.h>
 #include <asm/irq.h>
 #include <asm/pci.h>
+#include <asm/pgtable.h>
 #include <asm/processor.h>
 #include <asm/ptrace.h>
 #include <asm/reboot.h>
@@ -159,6 +160,10 @@ static void __init setup_l3cache(unsigned long size)
 	rm7k_tcache_enabled = 1;
 
 	printk("Done\n");
+}
+
+void __init plat_timer_setup(struct irqaction *irq)
+{
 }
 
 void __init plat_mem_setup(void)
