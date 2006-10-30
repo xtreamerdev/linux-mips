@@ -58,6 +58,7 @@
 #include <asm/gt64240.h>
 #include <asm/irq.h>
 #include <asm/pci.h>
+#include <asm/pgtable.h>
 #include <asm/processor.h>
 #include <asm/ptrace.h>
 #include <asm/reboot.h>
