@@ -222,8 +222,6 @@ static struct irqaction rt_irqaction = {
 	.name		= "timer"
 };
 
-extern int allocate_irqno(void);
-
 static void ip27_timer_setup(struct irqaction *irq)
 {
 	int irqno  = allocate_irqno();
