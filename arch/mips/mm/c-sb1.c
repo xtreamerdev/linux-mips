@@ -20,6 +20,7 @@
  */
 #include <linux/config.h>
 #include <linux/init.h>
+#include <linux/hardirq.h>
 
 #include <asm/asm.h>
 #include <asm/bootinfo.h>
@@ -234,6 +235,25 @@ void sb1_flush_cache_page(struct vm_area_struct *vma, unsigned long addr, unsign
 	__attribute__((alias("local_sb1_flush_cache_page")));
 #endif
 
+#ifdef CONFIG_SMP
+static void sb1_flush_cache_data_page_ipi(void *info)
+{
+	unsigned long start = (unsigned long)info;
+
+	__sb1_writeback_inv_dcache_range(start, start + PAGE_SIZE);
+}
+
+static void sb1_flush_cache_data_page(unsigned long addr)
+{
+	if (in_atomic())
+		__sb1_writeback_inv_dcache_range(addr, addr + PAGE_SIZE);
+	else
+		on_each_cpu(sb1_flush_cache_data_page_ipi, (void *) addr, 1, 1);
+}
+#else
+void sb1_flush_cache_data_page(unsigned long)
+	__attribute__((alias("local_sb1_flush_cache_data_page")));
+#endif
 
 /*
  * Invalidate all caches on this CPU
@@ -535,7 +555,7 @@ void sb1_cache_init(void)
 
 	flush_cache_sigtramp = sb1_flush_cache_sigtramp;
 	local_flush_data_cache_page = (void *) sb1_nop;
-	flush_data_cache_page = (void *) sb1_nop;
+	flush_data_cache_page = sb1_flush_cache_data_page;
 
 	/* Full flush */
 	__flush_cache_all = sb1___flush_cache_all;
