@@ -31,6 +31,9 @@
 #ifdef CONFIG_PMAC_BACKLIGHT
 #include <asm/backlight.h>
 #endif
+#ifdef CONFIG_BOOTX_TEXT
+#include <asm/btext.h>
+#endif
 
 #include "nv_local.h"
 #include "nv_type.h"
@@ -295,6 +298,8 @@ static struct pci_device_id nvidiafb_pci_tbl[] = {
 	{PCI_VENDOR_ID_NVIDIA, PCIE_DEVICE_ID_NVIDIA_GEFORCE_6200_ALT1,
 	 PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0},
 	{PCI_VENDOR_ID_NVIDIA, PCIE_DEVICE_ID_NVIDIA_GEFORCE_6800_GT,
+	 PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0},
+	{PCI_VENDOR_ID_NVIDIA, PCIE_DEVICE_ID_NVIDIA_QUADRO_NVS280,
 	 PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0},
 	{PCI_VENDOR_ID_NVIDIA, 0x0252,
 	 PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0},
@@ -1105,6 +1110,13 @@ static int nvidiafb_set_par(struct fb_info *info)
 
 	nvidia_vga_protect(par, 0);
 
+#ifdef CONFIG_BOOTX_TEXT
+	/* Update debug text engine */
+	btext_update_display(info->fix.smem_start,
+			     info->var.xres, info->var.yres,
+			     info->var.bits_per_pixel, info->fix.line_length);
+#endif
+
 	NVTRACE_LEAVE();
 	return 0;
 }
@@ -1533,6 +1545,7 @@ static u32 __devinit nvidia_get_arch(struct fb_info *info)
 	case 0x0210:
 	case 0x0220:
 	case 0x0230:
+	case 0x0240:
 	case 0x0290:
 	case 0x0390:
 		arch = NV_ARCH_40;
