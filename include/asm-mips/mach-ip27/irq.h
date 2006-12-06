@@ -19,4 +19,10 @@
  */
 #define NR_IRQS 256
 
+#ifdef CONFIG_SMP
+
+#define ARCH_HAS_IRQ_PER_CPU
+
+#endif
+
 #endif /* __ASM_MACH_IP27_IRQ_H */
