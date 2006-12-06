@@ -438,7 +438,9 @@ config SCSI_DPT_I2O
 
 config SCSI_ADVANSYS
 	tristate "AdvanSys SCSI support"
-	depends on (ISA || EISA || PCI) && SCSI && BROKEN
+	depends on SCSI
+	depends on ISA || EISA || PCI
+	depends on BROKEN || X86_32
 	help
 	  This is a driver for all SCSI host adapters manufactured by
 	  AdvanSys. It is documented in the kernel source in
@@ -521,6 +523,16 @@ config SCSI_PDC_ADMA
 	  This option enables support for Pacific Digital ADMA controllers
 
 	  If unsure, say N.
+
+config SCSI_HPTIOP
+	tristate "HighPoint RocketRAID 3xxx Controller support"
+	depends on SCSI && PCI
+	help
+	  This option enables support for HighPoint RocketRAID 3xxx
+	  controllers.
+
+	  To compile this driver as a module, choose M here; the module
+	  will be called hptiop. If unsure, say N.
 
 config SCSI_SATA_QSTOR
 	tristate "Pacific Digital SATA QStor support"
