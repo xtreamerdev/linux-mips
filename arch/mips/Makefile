@@ -70,16 +70,18 @@ CHECKFLAGS-$(CONFIG_CPU_LITTLE_ENDIAN)	+= -D__MIPSEL__
 
 CHECKFLAGS				= $(CHECKFLAGS-y)
 
-ifdef CONFIG_BUILD_ELF64
-gas-abi			= 64
-ld-emul			= $(64bit-emul)
-vmlinux-32		= vmlinux.32
-vmlinux-64		= vmlinux
-else
+ifdef CONFIG_32BIT
 gas-abi			= 32
 ld-emul			= $(32bit-emul)
 vmlinux-32		= vmlinux
 vmlinux-64		= vmlinux.64
+endif
+
+ifdef CONFIG_64BIT
+gas-abi			= 64
+ld-emul			= $(64bit-emul)
+vmlinux-32		= vmlinux.32
+vmlinux-64		= vmlinux
 
 cflags-y		+= -mabi=64
 ifdef CONFIG_BUILD_ELF64
