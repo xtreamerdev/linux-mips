@@ -36,14 +36,14 @@ extern asmlinkage unsigned int do_IRQ(unsigned int irq, struct pt_regs *regs);
  * functions will take over re-enabling the low-level mask.
  * Otherwise it will be done on return from exception.
  */
-#define __DO_IRQ_SMTC_HOOK()						\
+#define __DO_IRQ_SMTC_HOOK(irq)						\
 do {									\
 	if (irq_hwmask[irq] & 0x0000ff00)				\
 		write_c0_tccontext(read_c0_tccontext() &		\
 		                   ~(irq_hwmask[irq] & 0x0000ff00));	\
 } while (0)
 #else
-#define __DO_IRQ_SMTC_HOOK() do { } while (0)
+#define __DO_IRQ_SMTC_HOOK(irq) do { } while (0)
 #endif
 
 #ifdef CONFIG_PREEMPT
@@ -59,7 +59,7 @@ do {									\
 #define do_IRQ(irq, regs)						\
 do {									\
 	irq_enter();							\
-	__DO_IRQ_SMTC_HOOK();						\
+	__DO_IRQ_SMTC_HOOK(irq);					\
 	__do_IRQ((irq), (regs));					\
 	irq_exit();							\
 } while (0)
