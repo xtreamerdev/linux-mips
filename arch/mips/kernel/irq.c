@@ -99,7 +99,7 @@ asmlinkage unsigned int do_IRQ(unsigned int irq)
 {
 	irq_enter();
 
-	__DO_IRQ_SMTC_HOOK();
+	__DO_IRQ_SMTC_HOOK(irq);
 	__do_IRQ(irq);
 
 	irq_exit();
