@@ -224,6 +224,13 @@ config MTD_MTX1
 	  Flash memory access on 4G Systems MTX-1 Board. If you have one of
 	  these boards and would like to use the flash chips on it, say 'Y'.
 
+config MTD_MALTA
+	tristate "MIPS Malta Flash device"
+	depends on MIPS && MIPS_MALTA && MTD_PARTITIONS
+	help
+	  Flash memory access on the MIPS Malta board. If you have one of
+	  these boards and would like to use the flash chips on it, say 'Y'.
+
 config MTD_DILNETPC
 	tristate "CFI Flash device mapped on DIL/Net PC"
 	depends on X86 && MTD_CONCAT && MTD_PARTITIONS && MTD_CFI_INTELEXT
