@@ -502,7 +502,8 @@ void free_initmem(void)
 
 	freed = prom_free_prom_memory();
 	if (freed)
-		printk(KERN_INFO "Freeing firmware memory: %ldk freed\n",freed);
+		printk(KERN_INFO "Freeing firmware memory: %ldkb freed\n",
+		       freed >> 10);
 
 	start = (unsigned long)(&__init_begin);
 	end = (unsigned long)(&__init_end);
