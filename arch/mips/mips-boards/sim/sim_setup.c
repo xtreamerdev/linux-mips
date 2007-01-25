@@ -60,7 +60,7 @@ void __init plat_setup(void)
 	board_timer_setup = sim_timer_setup;
 	prom_printf("Linux started...\n");
 
-#ifdef CONFIG_MT_SMP
+#ifdef CONFIG_MIPS_MT_SMP
 	sanitize_tlb_entries();
 #endif
 }
