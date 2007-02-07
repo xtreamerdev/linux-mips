@@ -30,6 +30,7 @@
 
 #include <linux/config.h>
 #include <linux/kernel.h>
+#include <linux/device.h>
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/init.h>
@@ -49,6 +50,7 @@
 #include <asm/cacheflush.h>
 #include <asm/atomic.h>
 #include <asm/cpu.h>
+#include <asm/mips_mt.h>
 #include <asm/processor.h>
 #include <asm/system.h>
 #include <asm/vpe.h>
@@ -65,6 +67,7 @@ typedef void *vpe_handle;
 
 static char module_name[] = "vpe";
 static int major;
+static const int minor = 1;	/* fixed for now  */
 
 #ifdef CONFIG_MIPS_APSP_KSPD
  static struct kspd_notifications kspd_events;
@@ -1368,10 +1371,11 @@ static void kspd_sp_exit( int sp_id)
 
 static int __init vpe_module_init(void)
 {
+	struct class_device *class_err;
 	struct vpe *v = NULL;
 	struct tc *t;
 	unsigned long val;
-	int i;
+	int i, err;
 
 	if (!cpu_has_mipsmt) {
 		printk("VPE loader: not a MIPS MT capable processor\n");
@@ -1382,6 +1386,13 @@ static int __init vpe_module_init(void)
 	if (major < 0) {
 		printk("VPE loader: unable to register character device\n");
 		return major;
+	}
+
+	class_err = class_device_create(mt_class, NULL, MKDEV(major, minor),
+	                                NULL, "tc%d", minor);
+	if (IS_ERR(class_err)) {
+		err = PTR_ERR(class_err);
+		goto out_chrdev;
 	}
 
 	dmt();
@@ -1479,6 +1490,11 @@ static int __init vpe_module_init(void)
 	kspd_events.kspd_sp_exit = kspd_sp_exit;
 #endif
 	return 0;
+
+out_chrdev:
+	unregister_chrdev(major, module_name);
+
+	return err;
 }
 
 static void __exit vpe_module_exit(void)
@@ -1491,6 +1507,7 @@ static void __exit vpe_module_exit(void)
 		}
 	}
 
+	class_device_destroy(mt_class, MKDEV(major, minor));
 	unregister_chrdev(major, module_name);
 }
 
