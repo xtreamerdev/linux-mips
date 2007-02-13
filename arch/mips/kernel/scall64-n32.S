@@ -396,4 +396,4 @@ EXPORT(sysn32_call_table)
 	PTR	compat_sys_get_robust_list
 	PTR	sys_ni_syscall
 	PTR	sys_getcpu
-	PTR	sys_epoll_pwait
+	PTR	compat_sys_epoll_pwait
