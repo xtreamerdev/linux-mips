@@ -181,8 +181,9 @@ static __init unsigned long get_m48t35_time(void)
         return mktime(year, month, date, hour, min, sec);
 }
 
-static void startup_rt_irq(unsigned int irq)
+static unsigned int startup_rt_irq(unsigned int irq)
 {
+	return 0;
 }
 
 static void shutdown_rt_irq(unsigned int irq)
@@ -213,13 +214,6 @@ static struct hw_interrupt_type rt_irq_type = {
 	.disable	= disable_rt_irq,
 	.ack		= mask_and_ack_rt,
 	.end		= end_rt_irq,
-};
-
-static struct irqaction rt_irqaction = {
-	.handler	= ip27_rt_timer_interrupt,
-	.flags		= SA_INTERRUPT,
-	.mask		= CPU_MASK_NONE,
-	.name		= "timer"
 };
 
 static void ip27_timer_setup(struct irqaction *irq)
