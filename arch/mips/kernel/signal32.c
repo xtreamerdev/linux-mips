@@ -386,7 +386,7 @@ struct sigframe {
 	u32 sf_code[2];			/* signal trampoline */
 #endif
 	struct sigcontext32 sf_sc;
-	sigset_t sf_mask;
+	compat_sigset_t sf_mask;
 #if ICACHE_REFILLS_WORKAROUND_WAR
 	u32 sf_code[8] ____cacheline_aligned;	/* signal trampoline */
 #endif
