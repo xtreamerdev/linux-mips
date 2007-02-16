@@ -5,6 +5,7 @@
 lib-y	+= csum_partial_copy.o memcpy.o promlib.o strlen_user.o strncpy_user.o \
 	   strnlen_user.o uncached.o
 
-obj-y	+= iomap.o
+obj-y			+= iomap.o
+obj-$(CONFIG_PCI)	+= iomap-pci.o
 
 EXTRA_AFLAGS := $(CFLAGS)
