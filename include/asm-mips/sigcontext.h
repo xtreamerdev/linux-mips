@@ -42,6 +42,7 @@ struct sigcontext {
 
 #if _MIPS_SIM == _MIPS_SIM_ABI64 || _MIPS_SIM == _MIPS_SIM_NABI32
 
+#include <linux/posix_types.h>
 /*
  * Keep this struct definition in sync with the sigcontext fragment
  * in arch/mips/tools/offset.c
@@ -53,20 +54,18 @@ struct sigcontext {
  * entries, add sc_dsp and sc_reserved for padding.  No prisoners.
  */
 struct sigcontext {
-	unsigned long	sc_regs[32];
-	unsigned long	sc_fpregs[32];
-	unsigned long	sc_hi[4];
-	unsigned long	sc_lo[4];
-	unsigned long	sc_pc;
-	unsigned int	sc_fpc_csr;
-	unsigned int	sc_used_math;
-	unsigned int	sc_dsp;
-	unsigned int	sc_reserved;
+	__u64	sc_regs[32];
+	__u64	sc_fpregs[32];
+	__u64	sc_hi[4];
+	__u64	sc_lo[4];
+	__u64	sc_pc;
+	__u32	sc_fpc_csr;
+	__u32	sc_used_math;
+	__u32	sc_dsp;
+	__u32	sc_reserved;
 };
 
 #ifdef __KERNEL__
-
-#include <linux/posix_types.h>
 
 struct sigcontext32 {
 	__u32		sc_regmask;	/* Unused */
