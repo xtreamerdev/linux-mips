@@ -97,7 +97,7 @@ static void au1k_wait(void)
 
 static int __initdata nowait = 0;
 
-int __init wait_disable(char *s)
+static int __init wait_disable(char *s)
 {
 	nowait = 1;
 
