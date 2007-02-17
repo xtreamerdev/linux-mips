@@ -131,6 +131,7 @@ config BASLER_EXCITE
 	select SYS_SUPPORTS_32BIT_KERNEL
 	select SYS_SUPPORTS_64BIT_KERNEL
 	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_KGDB
 	help
 	  The eXcite is a smart camera platform manufactured by
 	  Basler Vision Technologies AG
@@ -196,6 +197,7 @@ config MIPS_EV64120
 	select SYS_SUPPORTS_32BIT_KERNEL
 	select SYS_SUPPORTS_64BIT_KERNEL
 	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_KGDB
 	help
 	  This is an evaluation board based on the Galileo GT-64120
 	  single-chip system controller that contains a MIPS R5000 compatible
@@ -357,6 +359,7 @@ config MOMENCO_JAGUAR_ATX
 	select SYS_SUPPORTS_32BIT_KERNEL
 	select SYS_SUPPORTS_64BIT_KERNEL
 	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_KGDB
 	help
 	  The Jaguar ATX is a MIPS-based Single Board Computer (SBC) made by
 	  Momentum Computer <http://www.momenco.com/>.
@@ -374,6 +377,7 @@ config MOMENCO_OCELOT
 	select SYS_SUPPORTS_32BIT_KERNEL
 	select SYS_SUPPORTS_64BIT_KERNEL
 	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_KGDB
 	help
 	  The Ocelot is a MIPS-based Single Board Computer (SBC) made by
 	  Momentum Computer <http://www.momenco.com/>.
@@ -457,6 +461,7 @@ config DDB5477
 	select SYS_HAS_CPU_R5432
 	select SYS_SUPPORTS_32BIT_KERNEL
 	select SYS_SUPPORTS_64BIT_KERNEL if EXPERIMENTAL
+	select SYS_SUPPORTS_KGDB
 	select SYS_SUPPORTS_LITTLE_ENDIAN
 	help
 	  This enables support for the R5432-based NEC DDB Vrc-5477,
@@ -482,6 +487,7 @@ config PMC_YOSEMITE
 	select SYS_SUPPORTS_64BIT_KERNEL
 	select SYS_SUPPORTS_BIG_ENDIAN
 	select SYS_SUPPORTS_HIGHMEM
+	select SYS_SUPPORTS_KGDB
 	select SYS_SUPPORTS_SMP
 	help
 	  Yosemite is an evaluation board for the RM9000x2 processor
@@ -556,6 +562,7 @@ config SGI_IP27
 	select SYS_HAS_CPU_R10000
 	select SYS_SUPPORTS_64BIT_KERNEL
 	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_KGDB
 	select SYS_SUPPORTS_NUMA
 	select SYS_SUPPORTS_SMP
 	help
@@ -604,6 +611,7 @@ config SIBYTE_SWARM
 	select SYS_HAS_CPU_SB1
 	select SYS_SUPPORTS_BIG_ENDIAN
 	select SYS_SUPPORTS_HIGHMEM
+	select SYS_SUPPORTS_KGDB
 	select SYS_SUPPORTS_LITTLE_ENDIAN
 
 config SIBYTE_SENTOSA
@@ -738,6 +746,7 @@ config TOSHIBA_RBTX4927
 	select SYS_SUPPORTS_32BIT_KERNEL
 	select SYS_SUPPORTS_64BIT_KERNEL
 	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_KGDB
 	select TOSHIBA_BOARDS
 	help
 	  This Toshiba board is based on the TX4927 processor. Say Y here to
@@ -757,6 +766,7 @@ config TOSHIBA_RBTX4938
 	select SYS_SUPPORTS_32BIT_KERNEL
 	select SYS_SUPPORTS_LITTLE_ENDIAN
 	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_KGDB
 	select TOSHIBA_BOARDS
 	help
 	  This Toshiba board is based on the TX4938 processor. Say Y here to
@@ -907,6 +917,7 @@ config IRQ_MV64340
 
 config DDB5XXX_COMMON
 	bool
+	select SYS_SUPPORTS_KGDB
 
 config MIPS_BOARDS_GEN
 	bool
@@ -954,6 +965,7 @@ config SOC_AU1X00
 	bool
 	select SYS_HAS_CPU_MIPS32_R1
 	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_KGDB
 
 config PNX8550
 	bool
@@ -965,6 +977,7 @@ config SOC_PNX8550
 	select HW_HAS_PCI
 	select SYS_HAS_CPU_MIPS32_R1
 	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_KGDB
 
 config SWAP_IO_SPACE
 	bool
