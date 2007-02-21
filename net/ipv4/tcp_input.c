@@ -933,7 +933,7 @@ tcp_sacktag_write_queue(struct sock *sk, struct sk_buff *ack_skb, u32 prior_snd_
 	const struct inet_connection_sock *icsk = inet_csk(sk);
 	struct tcp_sock *tp = tcp_sk(sk);
 	unsigned char *ptr = ack_skb->h.raw + TCP_SKB_CB(ack_skb)->sacked;
-	struct tcp_sack_block *sp = (struct tcp_sack_block *)(ptr+2);
+	struct tcp_sack_block_wire *sp = (struct tcp_sack_block_wire *)(ptr+2);
 	int num_sacks = (ptr[1] - TCPOLEN_SACK_BASE)>>3;
 	int reord = tp->packets_out;
 	int prior_fackets;
@@ -1009,10 +1009,11 @@ tcp_sacktag_write_queue(struct sock *sk, struct sk_buff *ack_skb, u32 prior_snd_
 			for (j = 0; j < i; j++){
 				if (after(ntohl(sp[j].start_seq),
 					  ntohl(sp[j+1].start_seq))){
-					sp[j].start_seq = htonl(tp->recv_sack_cache[j+1].start_seq);
-					sp[j].end_seq = htonl(tp->recv_sack_cache[j+1].end_seq);
-					sp[j+1].start_seq = htonl(tp->recv_sack_cache[j].start_seq);
-					sp[j+1].end_seq = htonl(tp->recv_sack_cache[j].end_seq);
+					struct tcp_sack_block_wire tmp;
+
+					tmp = sp[j];
+					sp[j] = sp[j+1];
+					sp[j+1] = tmp;
 				}
 
 			}
@@ -4292,9 +4293,11 @@ int tcp_rcv_state_process(struct sock *sk, struct sk_buff *skb,
 			 * But, this leaves one open to an easy denial of
 		 	 * service attack, and SYN cookies can't defend
 			 * against this problem. So, we drop the data
-			 * in the interest of security over speed.
+			 * in the interest of security over speed unless
+			 * it's still in use.
 			 */
-			goto discard;
+			kfree_skb(skb);
+			return 0;
 		}
 		goto discard;
 
