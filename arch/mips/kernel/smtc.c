@@ -151,10 +151,7 @@ __setup("ipibufs=", ipibufs);
 __setup("nostlb", stlb_disable);
 __setup("asidmask=", asidmask_set);
 
-/* Enable additional debug checks before going into CPU idle loop */
-#define SMTC_IDLE_HOOK_DEBUG
-
-#ifdef SMTC_IDLE_HOOK_DEBUG
+#ifdef CONFIG_SMTC_IDLE_HOOK_DEBUG
 
 static int hang_trig = 0;
 
@@ -186,7 +183,7 @@ int tcnoprog[NR_CPUS];
 static atomic_t idle_hook_initialized = {0};
 static int clock_hang_reported[NR_CPUS];
 
-#endif /* SMTC_IDLE_HOOK_DEBUG */
+#endif /* CONFIG_SMTC_IDLE_HOOK_DEBUG */
 
 /* Initialize shared TLB - the should probably migrate to smtc_setup_cpus() */
 
@@ -404,10 +401,10 @@ void mipsmt_prepare_cpus(void)
 		printk("ASID mask value override to 0x%x\n", asidmask);
 
 	/* Temporary */
-#ifdef SMTC_IDLE_HOOK_DEBUG
+#ifdef CONFIG_SMTC_IDLE_HOOK_DEBUG
 	if (hang_trig)
 		printk("Logic Analyser Trigger on suspected TC hang\n");
-#endif /* SMTC_IDLE_HOOK_DEBUG */
+#endif /* CONFIG_SMTC_IDLE_HOOK_DEBUG */
 
 	/* Put MVPE's into 'configuration state' */
 	write_c0_mvpcontrol( read_c0_mvpcontrol() | MVPCONTROL_VPC );
@@ -848,9 +845,9 @@ void ipi_decode(struct pt_regs *regs, struct smtc_ipi *pipi)
 	case SMTC_CLOCK_TICK:
 		/* Invoke Clock "Interrupt" */
 		ipi_timer_latch[dest_copy] = 0;
-#ifdef SMTC_IDLE_HOOK_DEBUG
+#ifdef CONFIG_SMTC_IDLE_HOOK_DEBUG
 		clock_hang_reported[dest_copy] = 0;
-#endif /* SMTC_IDLE_HOOK_DEBUG */
+#endif /* CONFIG_SMTC_IDLE_HOOK_DEBUG */
 		local_timer_interrupt(0, NULL, regs);
 		break;
 	case LINUX_SMP_IPI:
@@ -1050,7 +1047,7 @@ EXPORT_SYMBOL(smtc_ipi_replay);
 
 void smtc_idle_loop_hook(void)
 {
-#ifdef SMTC_IDLE_HOOK_DEBUG
+#ifdef CONFIG_SMTC_IDLE_HOOK_DEBUG
 	int im;
 	int flags;
 	int mtflags;
@@ -1143,7 +1140,7 @@ void smtc_idle_loop_hook(void)
 	local_irq_restore(flags);
 	if (pdb_msg != &id_ho_db_msg[0])
 		printk("CPU%d: %s", smp_processor_id(), id_ho_db_msg);
-#endif /* SMTC_IDLE_HOOK_DEBUG */
+#endif /* CONFIG_SMTC_IDLE_HOOK_DEBUG */
 
 	/*
 	 * Replay any accumulated deferred IPIs. If "Instant Replay"
