@@ -198,12 +198,7 @@ EXPORT_SYMBOL(dma_unmap_sg);
 void dma_sync_single_for_cpu(struct device *dev, dma_addr_t dma_handle,
 	size_t size, enum dma_data_direction direction)
 {
-	unsigned long addr;
-
 	BUG_ON(direction == DMA_NONE);
-
-	addr = dma_handle + PAGE_OFFSET;
-	__dma_sync(addr, size, direction);
 }
 
 EXPORT_SYMBOL(dma_sync_single_for_cpu);
@@ -224,12 +219,7 @@ EXPORT_SYMBOL(dma_sync_single_for_device);
 void dma_sync_single_range_for_cpu(struct device *dev, dma_addr_t dma_handle,
 	unsigned long offset, size_t size, enum dma_data_direction direction)
 {
-	unsigned long addr;
-
 	BUG_ON(direction == DMA_NONE);
-
-	addr = dma_handle + offset + PAGE_OFFSET;
-	__dma_sync(addr, size, direction);
 }
 
 EXPORT_SYMBOL(dma_sync_single_range_for_cpu);
@@ -250,14 +240,7 @@ EXPORT_SYMBOL(dma_sync_single_range_for_device);
 void dma_sync_sg_for_cpu(struct device *dev, struct scatterlist *sg, int nelems,
 	enum dma_data_direction direction)
 {
-	int i;
-
 	BUG_ON(direction == DMA_NONE);
-
-	/* Make sure that gcc doesn't leave the empty loop body.  */
-	for (i = 0; i < nelems; i++, sg++)
-		__dma_sync((unsigned long)page_address(sg->page),
-		           sg->length, direction);
 }
 
 EXPORT_SYMBOL(dma_sync_sg_for_cpu);
@@ -350,8 +333,6 @@ void pci_dac_dma_sync_single_for_cpu(struct pci_dev *pdev,
 	dma64_addr_t dma_addr, size_t len, int direction)
 {
 	BUG_ON(direction == PCI_DMA_NONE);
-
-	dma_cache_wback_inv(dma_addr + PAGE_OFFSET, len);
 }
 
 EXPORT_SYMBOL(pci_dac_dma_sync_single_for_cpu);
