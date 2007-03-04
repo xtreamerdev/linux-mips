@@ -9,8 +9,11 @@
 #include <asm/addrspace.h>
 #include <asm/mach-cobalt/cobalt.h>
 
-void prom_putchar(char c)
+static void putchar(int c)
 {
+	if(c == '\n')
+		putchar('\r');
+
 	while(!(COBALT_UART[UART_LSR] & UART_LSR_THRE))
 		;
 
