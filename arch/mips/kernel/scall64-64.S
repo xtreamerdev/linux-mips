@@ -460,3 +460,16 @@ sys_call_table:
 	PTR	sys_pselect6			/* 5260 */
 	PTR	sys_ppoll
 	PTR	sys_unshare
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall			/* 5265 */
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall			/* 5270 */
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ioprio_set
+	PTR	sys_ioprio_get
+	.size	sys_call_table,.-sys_call_table

@@ -645,6 +645,18 @@ einval:	li	v0, -EINVAL
 	sys	sys_pselect6		6
 	sys	sys_ppoll		5
 	sys	sys_unshare		1
+	sys	sys_ni_syscall		0
+	sys	sys_ni_syscall		0	/* 4305 */
+	sys	sys_ni_syscall		0
+	sys	sys_ni_syscall		0
+	sys	sys_ni_syscall		0
+	sys	sys_ni_syscall		0
+	sys	sys_ni_syscall		0	/* 4310 */
+	sys	sys_ni_syscall		0
+	sys	sys_ni_syscall		0
+	sys	sys_ni_syscall		0
+	sys	sys_ioprio_set		3
+	sys	sys_ioprio_get		2	/* 4315 */
 	.endm
 
 	/* We pre-compute the number of _instruction_ bytes needed to

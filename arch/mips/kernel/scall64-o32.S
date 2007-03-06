@@ -508,4 +508,16 @@ sys_call_table:
 	PTR	compat_sys_pselect6
 	PTR	sys_ppoll
 	PTR	sys_unshare
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall			/* 4305 */
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall			/* 4310 */
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ioprio_set
+	PTR	sys_ioprio_get			/* 4315 */
 	.size	sys_call_table,.-sys_call_table

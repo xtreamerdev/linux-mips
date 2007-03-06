@@ -386,3 +386,16 @@ EXPORT(sysn32_call_table)
 	PTR	compat_sys_pselect6
 	PTR	sys_ppoll			/* 6265 */
 	PTR	sys_unshare
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall			/* 6270 */
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall			/* 6275 */
+	PTR	sys_ni_syscall
+	PTR	sys_ioprio_set
+	PTR	sys_ioprio_get
+	.size	sysn32_call_table,.-sysn32_call_table
