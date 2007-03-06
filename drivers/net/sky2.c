@@ -6,7 +6,7 @@
  * of the original driver such as link fail-over and link management because
  * those should be done at higher levels.
  *
- * Copyright (C) 2005 Stephen Hemminger <shemminger@osdl.org>
+ * Copyright (C) 2005 Stephen Hemminger <shemminger@linux-foundation.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@
 #include "sky2.h"
 
 #define DRV_NAME		"sky2"
-#define DRV_VERSION		"0.15"
+#define DRV_VERSION		"0.15.1"
 #define PFX			DRV_NAME " "
 
 /*
@@ -97,25 +97,35 @@ module_param(copybreak, int, 0);
 MODULE_PARM_DESC(copybreak, "Receive copy threshold");
 
 static const struct pci_device_id sky2_id_table[] = {
-	{ PCI_DEVICE(PCI_VENDOR_ID_SYSKONNECT, 0x9000) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_SYSKONNECT, 0x9E00) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_DLINK, 0x4b00) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_DLINK, 0x4b01) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4340) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4341) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4342) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4343) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4344) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4345) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4346) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4347) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4350) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4351) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4352) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4360) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4361) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4362) },
-	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4363) },
+	{ PCI_DEVICE(PCI_VENDOR_ID_SYSKONNECT, 0x9000) }, /* SK-9Sxx */
+	{ PCI_DEVICE(PCI_VENDOR_ID_SYSKONNECT, 0x9E00) }, /* SK-9Exx */
+	{ PCI_DEVICE(PCI_VENDOR_ID_DLINK, 0x4b00) },	/* DGE-560T */
+	{ PCI_DEVICE(PCI_VENDOR_ID_DLINK, 0x4001) }, 	/* DGE-550SX */
+	{ PCI_DEVICE(PCI_VENDOR_ID_DLINK, 0x4B02) },	/* DGE-560SX */
+	{ PCI_DEVICE(PCI_VENDOR_ID_DLINK, 0x4B03) },	/* DGE-550T */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4340) }, /* 88E8021 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4341) }, /* 88E8022 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4342) }, /* 88E8061 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4343) }, /* 88E8062 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4344) }, /* 88E8021 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4345) }, /* 88E8022 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4346) }, /* 88E8061 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4347) }, /* 88E8062 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4350) }, /* 88E8035 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4351) }, /* 88E8036 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4352) }, /* 88E8038 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4353) }, /* 88E8039 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4356) }, /* 88EC033 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4360) }, /* 88E8052 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4361) }, /* 88E8050 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4362) }, /* 88E8053 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4363) }, /* 88E8055 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4364) }, /* 88E8056 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4366) }, /* 88EC036 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4367) }, /* 88EC032 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4368) }, /* 88EC034 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x4369) }, /* 88EC042 */
+	{ PCI_DEVICE(PCI_VENDOR_ID_MARVELL, 0x436A) }, /* 88E8058 */
 	{ 0 }
 };
 
@@ -670,12 +680,13 @@ static void sky2_mac_init(struct sky2_hw *hw, unsigned port)
  * start and end are in units of 4k bytes
  * ram registers are in units of 64bit words
  */
-static void sky2_ramset(struct sky2_hw *hw, u16 q, u8 startk, u8 endk)
+static void sky2_ramset(struct sky2_hw *hw, u16 q, u32 start, u32 space)
 {
-	u32 start, end;
+	u32 end;
 
-	start = startk * 4096/8;
-	end = (endk * 4096/8) - 1;
+	start *= 1024/8;
+	space *= 1024/8;
+	end = start + space - 1;
 
 	sky2_write8(hw, RB_ADDR(q, RB_CTRL), RB_RST_CLR);
 	sky2_write32(hw, RB_ADDR(q, RB_START), start);
@@ -684,7 +695,6 @@ static void sky2_ramset(struct sky2_hw *hw, u16 q, u8 startk, u8 endk)
 	sky2_write32(hw, RB_ADDR(q, RB_RP), start);
 
 	if (q == Q_R1 || q == Q_R2) {
-		u32 space = (endk - startk) * 4096/8;
 		u32 tp = space - space/4;
 
 		/* On receive queue's set the thresholds
@@ -1081,23 +1091,21 @@ static int sky2_up(struct net_device *dev)
 
 	sky2_mac_init(hw, port);
 
-	/* Determine available ram buffer space (in 4K blocks).
-	 * Note: not sure about the FE setting below yet
-	 */
-	if (hw->chip_id == CHIP_ID_YUKON_FE)
-		ramsize = 4;
-	else
-		ramsize = sky2_read8(hw, B2_E_0);
+	/* Determine available ram buffer space (in 4K blocks). */
+	ramsize = sky2_read8(hw, B2_E_0) * 4;
+	if (ramsize != 0) {
+		if (ramsize < 16)
+			rxspace = ramsize / 2;
+		else
+			rxspace = 8 + (2*(ramsize - 16))/3;
 
-	/* Give transmitter one third (rounded up) */
-	rxspace = ramsize - (ramsize + 2) / 3;
+		sky2_ramset(hw, rxqaddr[port], 0, rxspace);
+		sky2_ramset(hw, txqaddr[port], rxspace, ramsize - rxspace);
 
-	sky2_ramset(hw, rxqaddr[port], 0, rxspace);
-	sky2_ramset(hw, txqaddr[port], rxspace, ramsize);
-
-	/* Make sure SyncQ is disabled */
-	sky2_write8(hw, RB_ADDR(port == 0 ? Q_XS1 : Q_XS2, RB_CTRL),
-		    RB_RST_SET);
+		/* Make sure SyncQ is disabled */
+		sky2_write8(hw, RB_ADDR(port == 0 ? Q_XS1 : Q_XS2, RB_CTRL),
+			    RB_RST_SET);
+	}
 
 	sky2_qset(hw, txqaddr[port]);
 
@@ -2544,17 +2552,34 @@ static const struct sky2_stat {
 	{ "rx_unicast",    GM_RXF_UC_OK },
 	{ "tx_mac_pause",  GM_TXF_MPAUSE },
 	{ "rx_mac_pause",  GM_RXF_MPAUSE },
-	{ "collisions",    GM_TXF_SNG_COL },
+	{ "collisions",    GM_TXF_COL },
 	{ "late_collision",GM_TXF_LAT_COL },
 	{ "aborted", 	   GM_TXF_ABO_COL },
+	{ "single_collisions", GM_TXF_SNG_COL },
 	{ "multi_collisions", GM_TXF_MUL_COL },
-	{ "fifo_underrun", GM_TXE_FIFO_UR },
-	{ "fifo_overflow", GM_RXE_FIFO_OV },
-	{ "rx_toolong",    GM_RXF_LNG_ERR },
-	{ "rx_jabber",     GM_RXF_JAB_PKT },
+
+	{ "rx_short",      GM_RXF_SHT },
 	{ "rx_runt", 	   GM_RXE_FRAG },
+	{ "rx_64_byte_packets", GM_RXF_64B },
+	{ "rx_65_to_127_byte_packets", GM_RXF_127B },
+	{ "rx_128_to_255_byte_packets", GM_RXF_255B },
+	{ "rx_256_to_511_byte_packets", GM_RXF_511B },
+	{ "rx_512_to_1023_byte_packets", GM_RXF_1023B },
+	{ "rx_1024_to_1518_byte_packets", GM_RXF_1518B },
+	{ "rx_1518_to_max_byte_packets", GM_RXF_MAX_SZ },
 	{ "rx_too_long",   GM_RXF_LNG_ERR },
+	{ "rx_fifo_overflow", GM_RXE_FIFO_OV },
+	{ "rx_jabber",     GM_RXF_JAB_PKT },
 	{ "rx_fcs_error",   GM_RXF_FCS_ERR },
+
+	{ "tx_64_byte_packets", GM_TXF_64B },
+	{ "tx_65_to_127_byte_packets", GM_TXF_127B },
+	{ "tx_128_to_255_byte_packets", GM_TXF_255B },
+	{ "tx_256_to_511_byte_packets", GM_TXF_511B },
+	{ "tx_512_to_1023_byte_packets", GM_TXF_1023B },
+	{ "tx_1024_to_1518_byte_packets", GM_TXF_1518B },
+	{ "tx_1519_to_max_byte_packets", GM_TXF_MAX_SZ },
+	{ "tx_fifo_underrun", GM_TXE_FIFO_UR },
 };
 
 static u32 sky2_get_rx_csum(struct net_device *dev)
@@ -2688,6 +2713,14 @@ static int sky2_set_mac_address(struct net_device *dev, void *p)
 	return 0;
 }
 
+static void inline sky2_add_filter(u8 filter[8], const u8 *addr)
+{
+	u32 bit;
+
+	bit = ether_crc(ETH_ALEN, addr) & 63;
+	filter[bit >> 3] |= 1 << (bit & 7);
+}
+
 static void sky2_set_multicast(struct net_device *dev)
 {
 	struct sky2_port *sky2 = netdev_priv(dev);
@@ -2696,6 +2729,7 @@ static void sky2_set_multicast(struct net_device *dev)
 	struct dev_mc_list *list = dev->mc_list;
 	u16 reg;
 	u8 filter[8];
+	static const u8 pause_mc_addr[ETH_ALEN] = { 0x1, 0x80, 0xc2, 0x0, 0x0, 0x1 };
 
 	memset(filter, 0, sizeof(filter));
 
@@ -2706,16 +2740,17 @@ static void sky2_set_multicast(struct net_device *dev)
 		reg &= ~(GM_RXCR_UCF_ENA | GM_RXCR_MCF_ENA);
 	else if ((dev->flags & IFF_ALLMULTI) || dev->mc_count > 16)	/* all multicast */
 		memset(filter, 0xff, sizeof(filter));
-	else if (dev->mc_count == 0)	/* no multicast */
+	else if (dev->mc_count == 0 && !sky2->rx_pause)	/* no multicast */
 		reg &= ~GM_RXCR_MCF_ENA;
 	else {
 		int i;
 		reg |= GM_RXCR_MCF_ENA;
 
-		for (i = 0; list && i < dev->mc_count; i++, list = list->next) {
-			u32 bit = ether_crc(ETH_ALEN, list->dmi_addr) & 0x3f;
-			filter[bit / 8] |= 1 << (bit % 8);
-		}
+		if (sky2->rx_pause)
+			sky2_add_filter(filter, pause_mc_addr);
+
+		for (i = 0; list && i < dev->mc_count; i++, list = list->next)
+			sky2_add_filter(filter, list->dmi_addr);
 	}
 
 	gma_write16(hw, port, GM_MC_ADDR_H1,
@@ -3246,12 +3281,13 @@ static int __devinit sky2_probe(struct pci_dev *pdev,
 	spin_lock_init(&hw->hw_lock);
 
 #ifdef __BIG_ENDIAN
-	/* byte swap descriptors in hardware */
+	/* The sk98lin vendor driver uses hardware byte swapping but
+	 * this driver uses software swapping.
+	 */
 	{
 		u32 reg;
-
 		reg = sky2_pci_read32(hw, PCI_DEV_REG2);
-		reg |= PCI_REV_DESC;
+		reg &= ~PCI_REV_DESC;
 		sky2_pci_write32(hw, PCI_DEV_REG2, reg);
 	}
 #endif
@@ -3445,6 +3481,6 @@ module_init(sky2_init_module);
 module_exit(sky2_cleanup_module);
 
 MODULE_DESCRIPTION("Marvell Yukon 2 Gigabit Ethernet driver");
-MODULE_AUTHOR("Stephen Hemminger <shemminger@osdl.org>");
+MODULE_AUTHOR("Stephen Hemminger <shemminger@linux-foundation.org>");
 MODULE_LICENSE("GPL");
 MODULE_VERSION(DRV_VERSION);
