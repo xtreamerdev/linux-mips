@@ -468,3 +468,9 @@ sys_call_table:
 	PTR	sys_move_pages
 	PTR	sys_set_robust_list
 	PTR	sys_get_robust_list
+	PTR	sys_ni_syscall			/* 5270 */
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall
+	PTR	sys_ioprio_set
+	PTR	sys_ioprio_get
+	.size	sys_call_table,.-sys_call_table

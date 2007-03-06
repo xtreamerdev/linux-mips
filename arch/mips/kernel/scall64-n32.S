@@ -394,3 +394,9 @@ EXPORT(sysn32_call_table)
 	PTR	sys_move_pages
 	PTR	compat_sys_set_robust_list
 	PTR	compat_sys_get_robust_list
+	PTR	sys_ni_syscall
+	PTR	sys_ni_syscall			/* 6275 */
+	PTR	sys_ni_syscall
+	PTR	sys_ioprio_set
+	PTR	sys_ioprio_get
+	.size	sysn32_call_table,.-sysn32_call_table
