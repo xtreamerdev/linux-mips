@@ -23,13 +23,15 @@ LONG *_prom_argv, *_prom_envp;
 void __init prom_init(void)
 {
 	PSYSTEM_PARAMETER_BLOCK pb = PROMBLOCK;
+
 	romvec = ROMVECTOR;
 	prom_argc = fw_arg0;
 	_prom_argv = (LONG *) fw_arg1;
 	_prom_envp = (LONG *) fw_arg2;
 
 	if (pb->magic != 0x53435241) {
-		prom_printf("Aieee, bad prom vector magic %08lx\n", pb->magic);
+		prom_printf("Aieee, bad prom vector magic %08lx\n",
+		            (unsigned long) pb->magic);
 		while(1)
 			;
 	}
