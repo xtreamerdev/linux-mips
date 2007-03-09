@@ -17,6 +17,7 @@
  */
 #include <linux/config.h>
 #include <linux/init.h>
+#include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/reboot.h>
 #include <linux/string.h>
@@ -33,6 +34,7 @@ unsigned int soc_pass;
 unsigned int soc_type;
 unsigned int periph_rev;
 unsigned int zbbus_mhz;
+EXPORT_SYMBOL(zbbus_mhz);
 
 static char *soc_str;
 static char *pass_str;
