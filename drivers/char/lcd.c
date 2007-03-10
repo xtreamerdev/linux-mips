@@ -11,9 +11,6 @@
  *       March 2001: Ported from 2.0.34  by Liam Davies
  *
  */
-
-#define RTC_IO_EXTENT	0x10	/*Only really two ports, but... */
-
 #include <linux/types.h>
 #include <linux/errno.h>
 #include <linux/miscdevice.h>
