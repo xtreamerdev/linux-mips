@@ -51,14 +51,7 @@ setup_sigcontext(struct pt_regs *regs, struct sigcontext __user *sc)
 	 * Save FPU state to signal context.  Signal handler will "inherit"
 	 * current FPU state.
 	 */
-	preempt_disable();
-
-	if (!is_fpu_owner()) {
-		own_fpu();
-		restore_fp(current);
-	}
-
-	preempt_enable();
+	own_fpu(1);
 	enable_fp_in_kernel();
 	err |= save_fp_context(sc);
 	disable_fp_in_kernel();
@@ -124,20 +117,16 @@ restore_sigcontext(struct pt_regs *regs, struct sigcontext __user *sc)
 	err |= __get_user(used_math, &sc->sc_used_math);
 	conditional_used_math(used_math);
 
-	preempt_disable();
-
 	if (used_math()) {
 		/* restore fpu context if we have used it before */
-		own_fpu();
-		preempt_enable();
+		own_fpu(0);
 		enable_fp_in_kernel();
 		if (!err)
 			err = check_and_restore_fp_context(sc);
 		disable_fp_in_kernel();
 	} else {
 		/* signal handler may have used FPU.  Give it up. */
-		lose_fpu();
-		preempt_enable();
+		lose_fpu(0);
 	}
 
 	return err;
