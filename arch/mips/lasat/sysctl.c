@@ -90,9 +90,10 @@ int proc_dolasatint(ctl_table *table, int write, struct file *filp,
 	return 0;
 }
 
+#ifdef CONFIG_DS1603
+
 static int rtctmp;
 
-#ifdef CONFIG_DS1603
 /* proc function to read/write RealTime Clock */
 int proc_dolasatrtc(ctl_table *table, int write, struct file *filp,
 		       void *buffer, size_t *lenp, loff_t *ppos)
