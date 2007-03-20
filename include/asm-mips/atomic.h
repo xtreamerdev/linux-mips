@@ -84,9 +84,9 @@ static __inline__ void atomic_add(int i, atomic_t * v)
 	} else {
 		unsigned long flags;
 
-		raw_local_irq_save(flags);
+		local_irq_save(flags);
 		v->counter += i;
-		raw_local_irq_restore(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -126,9 +126,9 @@ static __inline__ void atomic_sub(int i, atomic_t * v)
 	} else {
 		unsigned long flags;
 
-		raw_local_irq_save(flags);
+		local_irq_save(flags);
 		v->counter -= i;
-		raw_local_irq_restore(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -172,11 +172,11 @@ static __inline__ int atomic_add_return(int i, atomic_t * v)
 	} else {
 		unsigned long flags;
 
-		raw_local_irq_save(flags);
+		local_irq_save(flags);
 		result = v->counter;
 		result += i;
 		v->counter = result;
-		raw_local_irq_restore(flags);
+		local_irq_restore(flags);
 	}
 
 	return result;
@@ -219,11 +219,11 @@ static __inline__ int atomic_sub_return(int i, atomic_t * v)
 	} else {
 		unsigned long flags;
 
-		raw_local_irq_save(flags);
+		local_irq_save(flags);
 		result = v->counter;
 		result -= i;
 		v->counter = result;
-		raw_local_irq_restore(flags);
+		local_irq_restore(flags);
 	}
 
 	return result;
@@ -282,12 +282,12 @@ static __inline__ int atomic_sub_if_positive(int i, atomic_t * v)
 	} else {
 		unsigned long flags;
 
-		raw_local_irq_save(flags);
+		local_irq_save(flags);
 		result = v->counter;
 		result -= i;
 		if (result >= 0)
 			v->counter = result;
-		raw_local_irq_restore(flags);
+		local_irq_restore(flags);
 	}
 
 	return result;
@@ -438,9 +438,9 @@ static __inline__ void atomic64_add(long i, atomic64_t * v)
 	} else {
 		unsigned long flags;
 
-		raw_local_irq_save(flags);
+		local_irq_save(flags);
 		v->counter += i;
-		raw_local_irq_restore(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -480,9 +480,9 @@ static __inline__ void atomic64_sub(long i, atomic64_t * v)
 	} else {
 		unsigned long flags;
 
-		raw_local_irq_save(flags);
+		local_irq_save(flags);
 		v->counter -= i;
-		raw_local_irq_restore(flags);
+		local_irq_restore(flags);
 	}
 }
 
@@ -526,11 +526,11 @@ static __inline__ long atomic64_add_return(long i, atomic64_t * v)
 	} else {
 		unsigned long flags;
 
-		raw_local_irq_save(flags);
+		local_irq_save(flags);
 		result = v->counter;
 		result += i;
 		v->counter = result;
-		raw_local_irq_restore(flags);
+		local_irq_restore(flags);
 	}
 
 	return result;
@@ -573,11 +573,11 @@ static __inline__ long atomic64_sub_return(long i, atomic64_t * v)
 	} else {
 		unsigned long flags;
 
-		raw_local_irq_save(flags);
+		local_irq_save(flags);
 		result = v->counter;
 		result -= i;
 		v->counter = result;
-		raw_local_irq_restore(flags);
+		local_irq_restore(flags);
 	}
 
 	return result;
@@ -636,12 +636,12 @@ static __inline__ long atomic64_sub_if_positive(long i, atomic64_t * v)
 	} else {
 		unsigned long flags;
 
-		raw_local_irq_save(flags);
+		local_irq_save(flags);
 		result = v->counter;
 		result -= i;
 		if (result >= 0)
 			v->counter = result;
-		raw_local_irq_restore(flags);
+		local_irq_restore(flags);
 	}
 
 	return result;

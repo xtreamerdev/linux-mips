@@ -48,8 +48,8 @@
  */
 
 #define __bi_flags			unsigned long flags
-#define __bi_local_irq_save(x)		raw_local_irq_save(x)
-#define __bi_local_irq_restore(x)	raw_local_irq_restore(x)
+#define __bi_local_irq_save(x)		local_irq_save(x)
+#define __bi_local_irq_restore(x)	local_irq_restore(x)
 #else
 #define __bi_flags
 #define __bi_local_irq_save(x)
