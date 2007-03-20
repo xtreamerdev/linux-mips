@@ -344,10 +344,6 @@ config AU1X00_GPIO
 	tristate "Alchemy Au1000 GPIO device support"
 	depends on MIPS && SOC_AU1X00
 
-config TS_AU1X00_ADS7846
-	tristate "Au1000/ADS7846 touchscreen support"
-	depends on MIPS && SOC_AU1X00
-
 config AU1X00_USB_TTY
 	tristate "Au1000 USB TTY Device support"
 	depends on MIPS && MIPS_AU1000 && AU1000_USB_DEVICE=y && AU1000_USB_DEVICE
