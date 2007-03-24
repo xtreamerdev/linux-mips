@@ -69,6 +69,6 @@ extern void prom_printf(char *fmt, ...);
 
 #endif
 
-#define IOADDR(a) ((volatile void __iomem *)(IO_BASE + (a)))
+#define IOADDR(a) ((void __iomem *)(IO_BASE + (a)))
 
 #endif
