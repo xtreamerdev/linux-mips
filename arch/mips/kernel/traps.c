@@ -651,7 +651,7 @@ asmlinkage void do_bp(struct pt_regs *regs)
 	unsigned int opcode, bcode;
 	siginfo_t info;
 
-	if (get_user(opcode, (unsigned int __user *) exception_epc(regs)))
+	if (__get_user(opcode, (unsigned int __user *) exception_epc(regs)))
 		goto out_sigsegv;
 
 	/*
@@ -701,7 +701,7 @@ asmlinkage void do_tr(struct pt_regs *regs)
 	unsigned int opcode, tcode = 0;
 	siginfo_t info;
 
-	if (get_user(opcode, (unsigned int __user *) exception_epc(regs)))
+	if (__get_user(opcode, (unsigned int __user *) exception_epc(regs)))
 		goto out_sigsegv;
 
 	/* Immediate versions don't provide a code.  */
