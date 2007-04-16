@@ -28,12 +28,12 @@
 #include <linux/unistd.h>
 #include <linux/compat.h>
 #include <linux/bitops.h>
+#include <linux/uaccess.h>
 
 #include <asm/asm.h>
 #include <asm/cacheflush.h>
 #include <asm/compat-signal.h>
 #include <asm/sim.h>
-#include <asm/uaccess.h>
 #include <asm/ucontext.h>
 #include <asm/system.h>
 #include <asm/fpu.h>

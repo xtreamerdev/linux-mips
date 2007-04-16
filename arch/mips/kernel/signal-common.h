@@ -9,6 +9,55 @@
  */
 
 
+/* Make sure we will not lose FPU ownership */
+#ifdef CONFIG_PREEMPT
+#define lock_fpu_owner()	preempt_disable()
+#define unlock_fpu_owner()	preempt_enable()
+#else
+#define lock_fpu_owner()	pagefault_disable()
+#define unlock_fpu_owner()	pagefault_enable()
+#endif
+
+static inline int protected_save_fp_context(struct sigcontext __user *sc)
+{
+	int err;
+	while (1) {
+		lock_fpu_owner();
+		own_fpu(1);
+		err = save_fp_context(sc); /* this might fail */
+		unlock_fpu_owner();
+		if (likely(!err))
+			break;
+		/* touch the sigcontext and try again */
+		err = __put_user(0, &sc->sc_fpregs[0]) |
+			__put_user(0, &sc->sc_fpregs[31]) |
+			__put_user(0, &sc->sc_fpc_csr);
+		if (err)
+			break;	/* really bad sigcontext */
+	}
+	return err;
+}
+
+static inline int protected_restore_fp_context(struct sigcontext __user *sc)
+{
+	int err, tmp;
+	while (1) {
+		lock_fpu_owner();
+		own_fpu(0);
+		err = restore_fp_context(sc); /* this might fail */
+		unlock_fpu_owner();
+		if (likely(!err))
+			break;
+		/* touch the sigcontext and try again */
+		err = __get_user(tmp, &sc->sc_fpregs[0]) |
+			__get_user(tmp, &sc->sc_fpregs[31]) |
+			__get_user(tmp, &sc->sc_fpc_csr);
+		if (err)
+			break;	/* really bad sigcontext */
+	}
+	return err;
+}
+
 static inline int
 setup_sigcontext(struct pt_regs *regs, struct sigcontext __user *sc)
 {
@@ -51,10 +100,7 @@ setup_sigcontext(struct pt_regs *regs, struct sigcontext __user *sc)
 	 * Save FPU state to signal context.  Signal handler will "inherit"
 	 * current FPU state.
 	 */
-	preempt_disable();
-	own_fpu(1);
-	err |= save_fp_context(sc);
-	preempt_enable();
+	err |= protected_save_fp_context(sc);
 
 out:
 	return err;
@@ -71,10 +117,7 @@ check_and_restore_fp_context(struct sigcontext __user *sc)
 	err = sig = fpcsr_pending(&sc->sc_fpc_csr);
 	if (err > 0)
 		err = 0;
-	preempt_disable();
-	own_fpu(0);
-	err |= restore_fp_context(sc);
-	preempt_enable();
+	err |= protected_restore_fp_context(sc);
 	return err ?: sig;
 }
 

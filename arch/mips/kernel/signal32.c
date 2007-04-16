@@ -22,6 +22,7 @@
 #include <linux/compat.h>
 #include <linux/suspend.h>
 #include <linux/compiler.h>
+#include <linux/uaccess.h>
 
 #include <asm/abi.h>
 #include <asm/asm.h>
@@ -29,7 +30,6 @@
 #include <linux/bitops.h>
 #include <asm/cacheflush.h>
 #include <asm/sim.h>
-#include <asm/uaccess.h>
 #include <asm/ucontext.h>
 #include <asm/system.h>
 #include <asm/fpu.h>
@@ -137,6 +137,55 @@ struct ucontext32 {
 /* Check and clear pending FPU exceptions in saved CSR */
 extern int fpcsr_pending(unsigned int __user *fpcsr);
 
+/* Make sure we will not lose FPU ownership */
+#ifdef CONFIG_PREEMPT
+#define lock_fpu_owner()	preempt_disable()
+#define unlock_fpu_owner()	preempt_enable()
+#else
+#define lock_fpu_owner()	pagefault_disable()
+#define unlock_fpu_owner()	pagefault_enable()
+#endif
+
+static int protected_save_fp_context32(struct sigcontext32 __user *sc)
+{
+	int err;
+	while (1) {
+		lock_fpu_owner();
+		own_fpu(1);
+		err = save_fp_context32(sc); /* this might fail */
+		unlock_fpu_owner();
+		if (likely(!err))
+			break;
+		/* touch the sigcontext and try again */
+		err = __put_user(0, &sc->sc_fpregs[0]) |
+			__put_user(0, &sc->sc_fpregs[31]) |
+			__put_user(0, &sc->sc_fpc_csr);
+		if (err)
+			break;	/* really bad sigcontext */
+	}
+	return err;
+}
+
+static int protected_restore_fp_context32(struct sigcontext32 __user *sc)
+{
+	int err, tmp;
+	while (1) {
+		lock_fpu_owner();
+		own_fpu(0);
+		err = restore_fp_context32(sc); /* this might fail */
+		unlock_fpu_owner();
+		if (likely(!err))
+			break;
+		/* touch the sigcontext and try again */
+		err = __get_user(tmp, &sc->sc_fpregs[0]) |
+			__get_user(tmp, &sc->sc_fpregs[31]) |
+			__get_user(tmp, &sc->sc_fpc_csr);
+		if (err)
+			break;	/* really bad sigcontext */
+	}
+	return err;
+}
+
 static int
 check_and_restore_fp_context32(struct sigcontext32 __user *sc)
 {
@@ -145,10 +194,7 @@ check_and_restore_fp_context32(struct sigcontext32 __user *sc)
 	err = sig = fpcsr_pending(&sc->sc_fpc_csr);
 	if (err > 0)
 		err = 0;
-	preempt_disable();
-	own_fpu(0);
-	err |= restore_fp_context32(sc);
-	preempt_enable();
+	err |= protected_restore_fp_context32(sc);
 	return err ?: sig;
 }
 
@@ -614,10 +660,7 @@ static inline int setup_sigcontext32(struct pt_regs *regs,
 	 * Save FPU state to signal context.  Signal handler will "inherit"
 	 * current FPU state.
 	 */
-	preempt_disable();
-	own_fpu(1);
-	err |= save_fp_context32(sc);
-	preempt_enable();
+	err |= protected_save_fp_context32(sc);
 
 out:
 	return err;
