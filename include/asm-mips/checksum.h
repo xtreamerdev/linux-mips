@@ -160,7 +160,7 @@ static inline unsigned int csum_tcpudp_nofold(unsigned long saddr,
 #else
 	  "r" (((unsigned long)(proto)<<16) + len),
 #endif
-	  "r" (sum));
+	  "r" ((__force unsigned long)sum));
 
 	return sum;
 }
