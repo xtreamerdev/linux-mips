@@ -262,11 +262,12 @@ asmlinkage int sys32_sigaction(int sig, const struct sigaction32 *act,
 
 	if (act) {
 		old_sigset_t mask;
+		s32 handler;
 
 		if (!access_ok(VERIFY_READ, act, sizeof(*act)))
 			return -EFAULT;
-		err |= __get_user((u32)(u64)new_ka.sa.sa_handler,
-		                  &act->sa_handler);
+		err |= __get_user(handler, &act->sa_handler);
+		new_ka.sa.sa_handler = (void __user *)(s64)handler;
 		err |= __get_user(new_ka.sa.sa_flags, &act->sa_flags);
 		err |= __get_user(mask, &act->sa_mask.sig[0]);
 		if (err)
@@ -926,11 +927,12 @@ asmlinkage int sys32_rt_sigaction(int sig, const struct sigaction32 *act,
 
 	if (act) {
 		int err = 0;
+		s32 handler;
 
 		if (!access_ok(VERIFY_READ, act, sizeof(*act)))
 			return -EFAULT;
-		err |= __get_user((u32)(u64)new_sa.sa.sa_handler,
-		                  &act->sa_handler);
+		err |= __get_user(handler, &act->sa_handler);
+		new_sa.sa.sa_handler = (void __user *)(s64)handler;
 		err |= __get_user(new_sa.sa.sa_flags, &act->sa_flags);
 		err |= get_sigset(&new_sa.sa.sa_mask, &act->sa_mask);
 		if (err)

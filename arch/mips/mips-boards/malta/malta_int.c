@@ -40,7 +40,6 @@
 #include <asm/mips-boards/msc01_pci.h>
 
 extern asmlinkage void mipsIRQ(void);
-extern int mips_pcibios_iack(void);
 
 #ifdef CONFIG_KGDB
 extern void breakpoint(void);
@@ -49,11 +48,6 @@ extern int remote_debug;
 #endif
 
 static spinlock_t mips_irq_lock = SPIN_LOCK_UNLOCKED;
-
-/*
- * Algorithmics Bonito64 system controller register base.
- */
-static char * const _bonito = (char *)KSEG1ADDR(BONITO_REG_BASE);
 
 static inline int mips_pcibios_iack(void)
 {
