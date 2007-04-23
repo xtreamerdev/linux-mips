@@ -192,7 +192,8 @@ static inline int get_sigset(sigset_t *kbuf, const sigset32_t *ubuf)
  * Atomically swap in the new signal mask, and wait for a signal.
  */
 save_static_function(sys32_sigsuspend);
-static_unused int _sys32_sigsuspend(abi64_no_regargs, struct pt_regs regs)
+__attribute__((__used__)) static int
+_sys32_sigsuspend(abi64_no_regargs, struct pt_regs regs)
 {
 	sigset32_t *uset;
 	sigset_t newset, saveset;
@@ -219,7 +220,8 @@ static_unused int _sys32_sigsuspend(abi64_no_regargs, struct pt_regs regs)
 }
 
 save_static_function(sys32_rt_sigsuspend);
-static_unused int _sys32_rt_sigsuspend(abi64_no_regargs, struct pt_regs regs)
+__attribute__((__used__)) static int
+_sys32_rt_sigsuspend(abi64_no_regargs, struct pt_regs regs)
 {
 	sigset32_t *uset;
 	sigset_t newset, saveset;
