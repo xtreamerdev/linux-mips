@@ -151,7 +151,8 @@ out:
 }
 
 save_static_function(sys_fork);
-static_unused int _sys_fork(abi64_no_regargs, struct pt_regs regs)
+__attribute__((__used__)) static int
+_sys_fork(abi64_no_regargs, struct pt_regs regs)
 {
 	int res;
 
@@ -160,7 +161,8 @@ static_unused int _sys_fork(abi64_no_regargs, struct pt_regs regs)
 }
 
 save_static_function(sys_clone);
-static_unused int _sys_clone(abi64_no_regargs, struct pt_regs regs)
+__attribute__((__used__)) static int
+_sys_clone(abi64_no_regargs, struct pt_regs regs)
 {
 	unsigned long clone_flags;
 	unsigned long newsp;
