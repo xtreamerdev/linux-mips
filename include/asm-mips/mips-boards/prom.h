@@ -42,6 +42,7 @@ void __init prom_free_prom_memory (void);
 
 extern void mips_display_message(const char *str);
 extern void mips_display_word(unsigned int num);
+extern void mips_scroll_message(void);
 extern int get_ethernet_addr(char *ethernet_addr);
 
 /* Memory descriptor management. */

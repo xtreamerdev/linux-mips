@@ -47,36 +47,10 @@
 
 unsigned long cpu_khz;
 
-#if defined(CONFIG_MIPS_ATLAS)
-static char display_string[] = "        LINUX ON ATLAS       ";
-#endif
-#if defined(CONFIG_MIPS_MALTA)
-#if defined(CONFIG_MIPS_MT_SMTC)
-static char display_string[] = "       SMTC LINUX ON MALTA       ";
-#else
-static char display_string[] = "        LINUX ON MALTA       ";
-#endif /* CONFIG_MIPS_MT_SMTC */
-#endif
-#if defined(CONFIG_MIPS_SEAD)
-static char display_string[] = "        LINUX ON SEAD       ";
-#endif
-static unsigned int display_count;
-#define MAX_DISPLAY_COUNT (sizeof(display_string) - 8)
-
 #define CPUCTR_IMASKBIT (0x100 << MIPSCPU_INT_CPUCTR)
 
-static unsigned int timer_tick_count;
 static int mips_cpu_timer_irq;
 extern void smtc_timer_broadcast(int);
-
-static inline void scroll_display_message(void)
-{
-	if ((timer_tick_count++ % HZ) == 0) {
-		mips_display_message(&display_string[display_count++]);
-		if (display_count == MAX_DISPLAY_COUNT)
-			display_count = 0;
-	}
-}
 
 static void mips_timer_dispatch (struct pt_regs *regs)
 {
@@ -136,7 +110,6 @@ irqreturn_t mips_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 		if (cpu_data[cpu].vpe_id == 0) {
 			timer_interrupt(irq, NULL, regs);
 			smtc_timer_broadcast(cpu_data[cpu].vpe_id);
-			scroll_display_message();
 		} else {
 			write_c0_compare (read_c0_count()
 						+ (mips_hpt_frequency/HZ));
@@ -160,8 +133,6 @@ irqreturn_t mips_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 		/* we keep interrupt disabled all the time */
 		if (!r2 || (read_c0_cause() & (1 << 30)))
 			timer_interrupt(irq, NULL, regs);
-
-		scroll_display_message();
 	} else {
 		/* Everyone else needs to reset the timer int here as
 		   ll_local_timer_interrupt doesn't */
@@ -258,6 +229,7 @@ void __init mips_time_init(void)
         cpu_khz = est_freq / 1000;
 
 	local_irq_restore(flags);
+	mips_scroll_message();
 }
 
 void __init mips_timer_setup(struct irqaction *irq)
