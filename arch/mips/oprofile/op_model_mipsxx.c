@@ -173,7 +173,10 @@ static int mipsxx_perfcount_handler(struct pt_regs *regs)
 	unsigned int counters = op_model_mipsxx.num_counters;
 	unsigned int control;
 	unsigned int counter;
-	int handled = 0;
+	int handled = IRQ_NONE;
+
+	if (cpu_has_mips_r2 && !(read_c0_cause() & (1 << 26)))
+		return handled;
 
 	switch (counters) {
 #define HANDLE_COUNTER(n)						\
@@ -184,7 +187,7 @@ static int mipsxx_perfcount_handler(struct pt_regs *regs)
 		    (counter & M_COUNTER_OVERFLOW)) {			\
 			oprofile_add_sample(regs, n);			\
 			w_c0_perfcntr ## n(reg.counter[n]);		\
-			handled = 1;					\
+			handled = IRQ_HANDLED;				\
 		}
 	HANDLE_COUNTER(3)
 	HANDLE_COUNTER(2)

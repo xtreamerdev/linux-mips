@@ -519,6 +519,30 @@ int (*perf_irq)(struct pt_regs *regs) = null_perf_irq;
 EXPORT_SYMBOL(null_perf_irq);
 EXPORT_SYMBOL(perf_irq);
 
+/*
+ * Performance counter IRQ or -1 if shared with timer
+ */
+int mipsxx_perfcount_irq;
+EXPORT_SYMBOL(mipsxx_perfcount_irq);
+
+/*
+ * Possibly handle a performance counter interrupt.
+ * Return true if the timer interrupt should not be checked
+ */
+static inline int handle_perf_irq(int r2, struct pt_regs *regs)
+{
+	/*
+	 * The performance counter overflow interrupt may be shared with the
+	 * timer interrupt (mipsxx_perfcount_irq < 0). If it is and a
+	 * performance counter has overflowed (perf_irq() == IRQ_HANDLED)
+	 * and we can't reliably determine if a counter interrupt has also
+	 * happened (!r2) then don't check for a timer interrupt.
+	 */
+	return (mipsxx_perfcount_irq < 0) &&
+		perf_irq(regs) == IRQ_HANDLED &&
+		!r2;
+}
+
 asmlinkage void ll_timer_interrupt(int irq, struct pt_regs *regs)
 {
 	int r2 = cpu_has_mips_r2;
@@ -526,19 +550,13 @@ asmlinkage void ll_timer_interrupt(int irq, struct pt_regs *regs)
 	irq_enter();
 	kstat_this_cpu.irqs[irq]++;
 
-	/*
-	 * Suckage alert:
-	 * Before R2 of the architecture there was no way to see if a
-	 * performance counter interrupt was pending, so we have to run the
-	 * performance counter interrupt handler anyway.
-	 */
-	if (!r2 || (read_c0_cause() & (1 << 26)))
-		if (perf_irq(regs))
-			goto out;
+	if (handle_perf_irq(r2, regs))
+		goto out;
 
-	/* we keep interrupt disabled all the time */
-	if (!r2 || (read_c0_cause() & (1 << 30)))
-		timer_interrupt(irq, NULL, regs);
+	if (r2 && ((read_c0_cause() & (1 << 30)) == 0))
+		goto out;
+
+	timer_interrupt(irq, NULL, regs);
 
 out:
 	irq_exit();
