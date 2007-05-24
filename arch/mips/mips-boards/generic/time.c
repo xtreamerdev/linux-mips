@@ -272,7 +272,6 @@ void __init mips_timer_setup(struct irqaction *irq)
 		mips_cpu_timer_irq = MIPSCPU_INT_BASE + MIPSCPU_INT_CPUCTR;
 	}
 
-
 	/* we are using the cpu counter for timer interrupts */
 	irq->handler = mips_timer_interrupt;	/* we use our own handler */
 #ifdef CONFIG_MIPS_MT_SMTC
