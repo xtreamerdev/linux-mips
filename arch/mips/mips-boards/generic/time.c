@@ -109,8 +109,6 @@ irqreturn_t mips_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	 *  the general MIPS timer_interrupt routine.
 	 */
 
-	int vpflags;
-
 	/*
 	 * We could be here due to timer interrupt,
 	 * perf counter overflow, or both.
@@ -118,31 +116,21 @@ irqreturn_t mips_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	(void) handle_perf_irq(1, regs);
 
 	if (read_c0_cause() & (1 << 30)) {
-		/* If timer interrupt, make it de-assert */
-		write_c0_compare (read_c0_count() - 1);
 		/*
-	 	 * DVPE is necessary so long as cross-VPE interrupts
-	 	 * are done via read-modify-write of Cause register.
-	 	 */
-		vpflags = dvpe();
-		clear_c0_cause(CPUCTR_IMASKBIT);
-		evpe(vpflags);
-	/*
-	 * There are things we only want to do once per tick
-	 * in an "MP" system.   One TC of each VPE will take
-	 * the actual timer interrupt.  The others will get
-	 * timer broadcast IPIs. We use whoever it is that takes
-	 * the tick on VPE 0 to run the full timer_interrupt().
-	 */
+		 * There are things we only want to do once per tick
+		 * in an "MP" system.   One TC of each VPE will take
+		 * the actual timer interrupt.  The others will get
+		 * timer broadcast IPIs. We use whoever it is that takes
+		 * the tick on VPE 0 to run the full timer_interrupt().
+		 */
 		if (cpu_data[cpu].vpe_id == 0) {
 			timer_interrupt(irq, NULL, regs);
-			smtc_timer_broadcast(cpu_data[cpu].vpe_id);
 		} else {
 			write_c0_compare (read_c0_count()
 						+ (mips_hpt_frequency/HZ));
 			local_timer_interrupt(irq, dev_id, regs);
-			smtc_timer_broadcast(cpu_data[cpu].vpe_id);
 		}
+		smtc_timer_broadcast(cpu_data[cpu].vpe_id);
 	}
 #else /* CONFIG_MIPS_MT_SMTC */
 	int r2 = cpu_has_mips_r2;
