@@ -25,6 +25,7 @@
 #include <asm/bootinfo.h>
 #include <asm/branch.h>
 #include <asm/break.h>
+#include <asm/bug.h>
 #include <asm/cpu.h>
 #include <asm/dsp.h>
 #include <asm/fpu.h>
@@ -1166,8 +1167,8 @@ static void *set_vi_srs_handler(int n, void *addr, int srs)
 
 		memcpy (b, &except_vec_vi, handler_len);
 #ifdef CONFIG_MIPS_MT_SMTC
-		if (n > 7)
-			printk("Vector index %d exceeds SMTC maximum\n", n);
+		BUG_ON(n > 7);	/* Vector index %d exceeds SMTC maximum. */
+
 		w = (u32 *)(b + mori_offset);
 		*w = (*w & 0xffff0000) | (0x100 << n);
 #endif /* CONFIG_MIPS_MT_SMTC */
