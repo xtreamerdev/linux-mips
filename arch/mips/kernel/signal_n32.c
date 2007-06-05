@@ -74,7 +74,7 @@ struct rt_sigframe_n32 {
 #else
 	u32 rs_code[2];			/* signal trampoline */
 #endif
-	struct siginfo rs_info;
+	struct compat_siginfo rs_info;
 	struct ucontextn32 rs_uc;
 #if ICACHE_REFILLS_WORKAROUND_WAR
 	u32 rs_code[8] ____cacheline_aligned;		/* signal trampoline */
@@ -184,7 +184,7 @@ int setup_rt_frame_n32(struct k_sigaction * ka,
 	install_sigtramp(frame->rs_code, __NR_N32_rt_sigreturn);
 
 	/* Create siginfo.  */
-	err |= copy_siginfo_to_user(&frame->rs_info, info);
+	err |= copy_siginfo_to_user32(&frame->rs_info, info);
 
 	/* Create the ucontext.  */
 	err |= __put_user(0, &frame->rs_uc.uc_flags);
