@@ -39,8 +39,17 @@
 /*
  * clear_bit() doesn't provide any barrier for the compiler.
  */
-#define smp_mb__before_clear_bit()	smp_mb()
-#define smp_mb__after_clear_bit()	smp_mb()
+#ifdef CONFIG_SMP
+#define __bi_barrier()							\
+do {									\
+	__asm__ __volatile__(						\
+	"	.set	mips2		\n"				\
+	"	sync			\n"				\
+	"	.set	pop		\n"				\
+} while (0)
+#else
+#define __bi_barrier()		do { } while (0)
+#endif
 
 /*
  * Only disable interrupt for kernel mode stuff to keep usermode stuff
@@ -55,6 +64,9 @@
 #define __bi_local_irq_save(x)
 #define __bi_local_irq_restore(x)
 #endif /* __KERNEL__ */
+
+#define smp_mb__before_clear_bit()	__bi_barrier()
+#define smp_mb__after_clear_bit()	__bi_barrier()
 
 /*
  * set_bit - Atomically set a bit in memory
@@ -261,9 +273,11 @@ static inline void __change_bit(unsigned long nr, volatile unsigned long * addr)
 static inline int test_and_set_bit(unsigned long nr,
 	volatile unsigned long *addr)
 {
+	unsigned long res;
+
 	if (cpu_has_llsc && R10000_LLSC_WAR) {
 		unsigned long *m = ((unsigned long *) addr) + (nr >> SZLONG_LOG);
-		unsigned long temp, res;
+		unsigned long temp;
 
 		__asm__ __volatile__(
 		"	.set	mips3					\n"
@@ -272,18 +286,13 @@ static inline int test_and_set_bit(unsigned long nr,
 		"	" __SC	"%2, %1					\n"
 		"	beqzl	%2, 1b					\n"
 		"	and	%2, %0, %3				\n"
-#ifdef CONFIG_SMP
-		"	sync						\n"
-#endif
 		"	.set	mips0					\n"
 		: "=&r" (temp), "=m" (*m), "=&r" (res)
 		: "r" (1UL << (nr & SZLONG_MASK)), "m" (*m)
 		: "memory");
-
-		return res != 0;
 	} else if (cpu_has_llsc) {
 		unsigned long *m = ((unsigned long *) addr) + (nr >> SZLONG_LOG);
-		unsigned long temp, res;
+		unsigned long temp;
 
 		__asm__ __volatile__(
 		"	.set	push					\n"
@@ -294,30 +303,26 @@ static inline int test_and_set_bit(unsigned long nr,
 		"	" __SC	"%2, %1					\n"
 		"	beqz	%2, 1b					\n"
 		"	 and	%2, %0, %3				\n"
-#ifdef CONFIG_SMP
-		"	sync						\n"
-#endif
 		"	.set	pop					\n"
 		: "=&r" (temp), "=m" (*m), "=&r" (res)
 		: "r" (1UL << (nr & SZLONG_MASK)), "m" (*m)
 		: "memory");
-
-		return res != 0;
 	} else {
 		volatile unsigned long *a = addr;
 		unsigned long mask;
-		int retval;
 		__bi_flags;
 
 		a += nr >> SZLONG_LOG;
 		mask = 1UL << (nr & SZLONG_MASK);
 		__bi_local_irq_save(flags);
-		retval = (mask & *a) != 0;
+		res = (mask & *a);
 		*a |= mask;
 		__bi_local_irq_restore(flags);
-
-		return retval;
 	}
+
+	__bi_barrier();
+
+	return res != 0;
 }
 
 /*
@@ -355,9 +360,11 @@ static inline int __test_and_set_bit(unsigned long nr,
 static inline int test_and_clear_bit(unsigned long nr,
 	volatile unsigned long *addr)
 {
+	unsigned long res;
+
 	if (cpu_has_llsc && R10000_LLSC_WAR) {
 		unsigned long *m = ((unsigned long *) addr) + (nr >> SZLONG_LOG);
-		unsigned long temp, res;
+		unsigned long temp;
 
 		__asm__ __volatile__(
 		"	.set	mips3					\n"
@@ -367,18 +374,13 @@ static inline int test_and_clear_bit(unsigned long nr,
 		"	" __SC 	"%2, %1					\n"
 		"	beqzl	%2, 1b					\n"
 		"	and	%2, %0, %3				\n"
-#ifdef CONFIG_SMP
-		"	sync						\n"
-#endif
 		"	.set	mips0					\n"
 		: "=&r" (temp), "=m" (*m), "=&r" (res)
 		: "r" (1UL << (nr & SZLONG_MASK)), "m" (*m)
 		: "memory");
-
-		return res != 0;
 	} else if (cpu_has_llsc) {
 		unsigned long *m = ((unsigned long *) addr) + (nr >> SZLONG_LOG);
-		unsigned long temp, res;
+		unsigned long temp;
 
 		__asm__ __volatile__(
 		"	.set	push					\n"
@@ -390,30 +392,26 @@ static inline int test_and_clear_bit(unsigned long nr,
 		"	" __SC 	"%2, %1					\n"
 		"	beqz	%2, 1b					\n"
 		"	 and	%2, %0, %3				\n"
-#ifdef CONFIG_SMP
-		"	sync						\n"
-#endif
 		"	.set	pop					\n"
 		: "=&r" (temp), "=m" (*m), "=&r" (res)
 		: "r" (1UL << (nr & SZLONG_MASK)), "m" (*m)
 		: "memory");
-
-		return res != 0;
 	} else {
 		volatile unsigned long *a = addr;
 		unsigned long mask;
-		int retval;
 		__bi_flags;
 
 		a += nr >> SZLONG_LOG;
 		mask = 1UL << (nr & SZLONG_MASK);
 		__bi_local_irq_save(flags);
-		retval = (mask & *a) != 0;
+		res = mask & *a;
 		*a &= ~mask;
 		__bi_local_irq_restore(flags);
-
-		return retval;
 	}
+
+	__bi_barrier();
+
+	return res != 0;
 }
 
 /*
@@ -451,9 +449,11 @@ static inline int __test_and_clear_bit(unsigned long nr,
 static inline int test_and_change_bit(unsigned long nr,
 	volatile unsigned long *addr)
 {
+	unsigned long res;
+
 	if (cpu_has_llsc && R10000_LLSC_WAR) {
 		unsigned long *m = ((unsigned long *) addr) + (nr >> SZLONG_LOG);
-		unsigned long temp, res;
+		unsigned long temp;
 
 		__asm__ __volatile__(
 		"	.set	mips3					\n"
@@ -462,18 +462,13 @@ static inline int test_and_change_bit(unsigned long nr,
 		"	" __SC	"%2, %1					\n"
 		"	beqzl	%2, 1b					\n"
 		"	and	%2, %0, %3				\n"
-#ifdef CONFIG_SMP
-		"	sync						\n"
-#endif
 		"	.set	mips0					\n"
 		: "=&r" (temp), "=m" (*m), "=&r" (res)
 		: "r" (1UL << (nr & SZLONG_MASK)), "m" (*m)
 		: "memory");
-
-		return res != 0;
 	} else if (cpu_has_llsc) {
 		unsigned long *m = ((unsigned long *) addr) + (nr >> SZLONG_LOG);
-		unsigned long temp, res;
+		unsigned long temp;
 
 		__asm__ __volatile__(
 		"	.set	push					\n"
@@ -484,29 +479,26 @@ static inline int test_and_change_bit(unsigned long nr,
 		"	" __SC	"\t%2, %1				\n"
 		"	beqz	%2, 1b					\n"
 		"	 and	%2, %0, %3				\n"
-#ifdef CONFIG_SMP
-		"	sync						\n"
-#endif
 		"	.set	pop					\n"
 		: "=&r" (temp), "=m" (*m), "=&r" (res)
 		: "r" (1UL << (nr & SZLONG_MASK)), "m" (*m)
 		: "memory");
-
-		return res != 0;
 	} else {
 		volatile unsigned long *a = addr;
-		unsigned long mask, retval;
+		unsigned long mask;
 		__bi_flags;
 
 		a += nr >> SZLONG_LOG;
 		mask = 1UL << (nr & SZLONG_MASK);
 		__bi_local_irq_save(flags);
-		retval = (mask & *a) != 0;
+		res = mask & *a;
 		*a ^= mask;
 		__bi_local_irq_restore(flags);
-
-		return retval;
 	}
+
+	__bi_barrier();
+
+	return res != 0;
 }
 
 /*
