@@ -45,7 +45,7 @@ do {									\
 	__asm__ __volatile__(						\
 	"	.set	mips2		\n"				\
 	"	sync			\n"				\
-	"	.set	pop		\n"				\
+	"	.set	mips0		\n");				\
 } while (0)
 #else
 #define __bi_barrier()		do { } while (0)
