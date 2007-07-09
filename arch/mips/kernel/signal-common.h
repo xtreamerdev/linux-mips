@@ -7,6 +7,9 @@
  * Copyright (C) 1994 - 2000  Ralf Baechle
  * Copyright (C) 1999, 2000 Silicon Graphics, Inc.
  */
+#ifndef __SIGNAL_COMMON_H
+#define __SIGNAL_COMMON_H
+
 #include <linux/compat.h>
 
 /* Make sure we will not lose FPU ownership */
@@ -229,6 +232,8 @@ static inline int install_sigtramp(unsigned int __user *tramp,
 
 #define SI_PAD_SIZE32   ((SI_MAX_SIZE/sizeof(int)) - 3)
 
+#ifdef CONFIG_COMPAT
+
 typedef struct compat_siginfo {
         int si_signo;
         int si_code;
@@ -288,5 +293,7 @@ typedef struct compat_siginfo {
 
         } _sifields;
 } compat_siginfo_t;
+
+#endif
 
 #endif	/* __SIGNAL_COMMON_H */
