@@ -580,7 +580,7 @@ config SGI_IP27
 	  here.
 
 config SGI_IP32
-	bool "Support for SGI IP32 (O2) (EXPERIMENTAL)"
+	bool "Support for SGI IP32 (O2)"
 	depends on EXPERIMENTAL
 	select ARC
 	select ARC32
