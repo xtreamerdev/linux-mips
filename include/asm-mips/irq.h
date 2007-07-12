@@ -29,7 +29,7 @@ struct pt_regs;
 
 extern asmlinkage unsigned int do_IRQ(unsigned int irq, struct pt_regs *regs);
 
-#ifdef CONFIG_MIPS_MT_SMTC
+#ifdef CONFIG_MIPS_MT_SMTC_IM_BACKSTOP
 /*
  * Clear interrupt mask handling "backstop" if irq_hwmask
  * entry so indicates. This implies that the ack() or end()
