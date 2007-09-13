@@ -3,12 +3,50 @@
 
 #include <asm/sgidefs.h>
 
+#ifdef CONFIG_HWTRIGGER
+
+/* Hardware assisted debugging */
+
+#define _HWTRIGGER(code)						\
+do {									\
+	*(volatile unsigned int *)0xbfc00000 = code;			\
+	__asm__ __volatile__ ("sync");					\
+} while (0)
+
+#define HWTRIGGER(regs, code, why)					\
+do {									\
+	extern void show_registers(struct pt_regs *);			\
+	_HWTRIGGER((((int)code) << 16) | 0xdead);			\
+	if (why) {							\
+                char *who = (!regs || !user_mode(regs)) ?		\
+			"Kernel" : current->comm;			\
+		printk("%s:%d: HWTRIGGER(%d) for %s: %s\n",		\
+		       __FILE__, __LINE__,				\
+		       (int)code, who, why);				\
+	}								\
+        if (regs)							\
+		show_registers (regs);					\
+} while (0)
+
+#define CHWTRIGGER(regs, code, why)					\
+do {									\
+	extern int hwtrigger (struct pt_regs *);			\
+	if (hwtrigger(regs))						\
+		HWTRIGGER(regs, code, why);				\
+} while (0)
+#else
+#define _HWTRIGGER(code)
+#define HWTRIGGER(regs, code, why)
+#define CHWTRIGGER(regs, code, why)
+#endif
+
 #ifdef CONFIG_BUG
 
 #include <asm/break.h>
 
 #define BUG()								\
 do {									\
+	_HWTRIGGER(0xffff);						\
 	__asm__ __volatile__("break %0" : : "i" (BRK_BUG));		\
 } while (0)
 
