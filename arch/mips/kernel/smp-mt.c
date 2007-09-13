@@ -35,6 +35,7 @@
 #include <asm/mipsregs.h>
 #include <asm/mipsmtregs.h>
 #include <asm/mips_mt.h>
+#include <asm/mips-boards/maltaint.h>  /* Of course this is f*cking wrong, but it will get fixed :) */
 
 #define MIPS_CPU_IPI_RESCHED_IRQ 0
 #define MIPS_CPU_IPI_CALL_IRQ 1
@@ -264,13 +265,20 @@ void __init plat_prepare_cpus(unsigned int max_cpus)
 	mips_mt_set_cpuoptions();
 
 	/* set up ipi interrupts */
-	if (cpu_has_vint) {
-		set_vi_handler(MIPS_CPU_IPI_RESCHED_IRQ, ipi_resched_dispatch);
-		set_vi_handler(MIPS_CPU_IPI_CALL_IRQ, ipi_call_dispatch);
+	if (cpu_has_veic) {
+		set_vi_handler (MSC01E_INT_SW0, ipi_resched_dispatch);
+		set_vi_handler (MSC01E_INT_SW1, ipi_call_dispatch);
+		cpu_ipi_resched_irq = MSC01E_INT_SW0;
+		cpu_ipi_call_irq = MSC01E_INT_SW1;
 	}
-
-	cpu_ipi_resched_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_RESCHED_IRQ;
-	cpu_ipi_call_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_CALL_IRQ;
+	else {
+		if (cpu_has_vint) {
+			set_vi_handler (MIPS_CPU_IPI_RESCHED_IRQ, ipi_resched_dispatch);
+			set_vi_handler (MIPS_CPU_IPI_CALL_IRQ, ipi_call_dispatch);
+		}
+		cpu_ipi_resched_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_RESCHED_IRQ;
+		cpu_ipi_call_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_CALL_IRQ;
+	}
 
 	setup_irq(cpu_ipi_resched_irq, &irq_resched);
 	setup_irq(cpu_ipi_call_irq, &irq_call);
