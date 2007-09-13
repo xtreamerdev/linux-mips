@@ -674,6 +674,8 @@ static inline void cpu_probe_mips(struct cpuinfo_mips *c)
 		c->cputype = CPU_74K;
 		break;
 	}
+
+	spram_config();
 }
 
 static inline void cpu_probe_alchemy(struct cpuinfo_mips *c)
