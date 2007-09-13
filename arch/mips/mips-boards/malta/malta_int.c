@@ -269,8 +269,8 @@ asmlinkage void plat_irq_dispatch(void)
 
 	if (irq == MIPSCPU_INT_I8259A)
 		malta_hw0_irqdispatch();
-	else if (irq > 0)
-		do_IRQ(MIPSCPU_INT_BASE + irq);
+	else if (irq >= 0)
+		do_IRQ(MIPS_CPU_IRQ_BASE + irq);
 	else
 		spurious_interrupt();
 }
