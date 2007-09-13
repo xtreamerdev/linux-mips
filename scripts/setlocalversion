@@ -6,6 +6,16 @@ usage() {
 	exit 1
 }
 
+if grep "CONFIG_MIPS_MT_SMTC=y" .config >/dev/null ; then 
+  echo -n "-smtc"
+elif grep "CONFIG_MIPS_MT_SMP=y" .config >/dev/null ; then 
+  echo -n "-smp"
+elif grep "CONFIG_MIPS_VPE_LOADER=y" .config >/dev/null; then 
+  echo -n "-vpe"
+else
+  echo -n "-uni"
+fi
+
 cd "${1:-.}" || usage
 
 # Check for git and a git repo.
