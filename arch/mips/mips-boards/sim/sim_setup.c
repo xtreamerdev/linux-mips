@@ -40,9 +40,6 @@ extern void sim_time_init(void);
 static void __init serial_init(void);
 unsigned int _isbonito = 0;
 
-extern void __init sanitize_tlb_entries(void);
-
-
 const char *get_system_type(void)
 {
 	return "MIPSsim";
@@ -57,9 +54,6 @@ void __init plat_mem_setup(void)
 	board_time_init = sim_time_init;
 	pr_info("Linux started...\n");
 
-#ifdef CONFIG_MIPS_MT_SMP
-	sanitize_tlb_entries();
-#endif
 }
 
 void prom_init(void)
