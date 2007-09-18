@@ -40,23 +40,68 @@ struct vm_area_struct;
  * read. Also, write permissions imply read permissions. This is the closest
  * we can get by reasonable means..
  */
-#define __P000	PAGE_NONE
-#define __P001	PAGE_READONLY
-#define __P010	PAGE_COPY
-#define __P011	PAGE_COPY
-#define __P100	PAGE_READONLY
-#define __P101	PAGE_READONLY
-#define __P110	PAGE_COPY
-#define __P111	PAGE_COPY
+#define ___P000	PAGE_NONE
+#define ___P001	PAGE_READONLY
+#define ___P010	PAGE_COPY
+#define ___P011	PAGE_COPY
+#define ___P100	PAGE_READONLY
+#define ___P101	PAGE_READONLY
+#define ___P110	PAGE_COPY
+#define ___P111	PAGE_COPY
 
-#define __S000	PAGE_NONE
-#define __S001	PAGE_READONLY
-#define __S010	PAGE_SHARED
-#define __S011	PAGE_SHARED
-#define __S100	PAGE_READONLY
-#define __S101	PAGE_READONLY
-#define __S110	PAGE_SHARED
-#define __S111	PAGE_SHARED
+#define ___S000	PAGE_NONE
+#define ___S001	PAGE_READONLY
+#define ___S010	PAGE_SHARED
+#define ___S011	PAGE_SHARED
+#define ___S100	PAGE_READONLY
+#define ___S101	PAGE_READONLY
+#define ___S110	PAGE_SHARED
+#define ___S111	PAGE_SHARED
+
+#if defined(CONFIG_DYNAMIC_CCA)
+/*
+ * Dummy values to fil the table in mmap.c
+ * Thereal values will be generated at runtime
+ */
+#define __P000 __pgprot(0)
+#define __P001 __pgprot(0)
+#define __P010 __pgprot(0)
+#define __P011 __pgprot(0)
+#define __P100 __pgprot(0)
+#define __P101 __pgprot(0)
+#define __P110 __pgprot(0)
+#define __P111 __pgprot(0)
+
+#define __S000 __pgprot(0)
+#define __S001 __pgprot(0)
+#define __S010 __pgprot(0)
+#define __S011 __pgprot(0)
+#define __S100 __pgprot(0)
+#define __S101 __pgprot(0)
+#define __S110 __pgprot(0)
+#define __S111 __pgprot(0)
+
+#else
+
+#define __P000 ___P000
+#define __P001 ___P001
+#define __P010 ___P010
+#define __P011 ___P011
+#define __P100 ___P100
+#define __P101 ___P101
+#define __P110 ___P110
+#define __P111 ___P111
+
+#define __S000 ___S000
+#define __S001 ___S001
+#define __S010 ___S010
+#define __S011 ___S011
+#define __S100 ___S100
+#define __S101 ___S101
+#define __S110 ___S110
+#define __S111 ___S111
+
+#endif
 
 /*
  * ZERO_PAGE is a global shared page that is always zero; used

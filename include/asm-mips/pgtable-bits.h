@@ -136,6 +136,13 @@
 
 #ifdef CONFIG_MIPS_UNCACHED
 #define PAGE_CACHABLE_DEFAULT	_CACHE_UNCACHED
+#elif defined(CONFIG_DYNAMIC_CCA)
+#ifndef __ASSEMBLY__
+extern unsigned long _page_cachable_default;
+#define set_page_cacheable_default(cca) \
+	do { _page_cachable_default = (cca) << _CACHE_SHIFT; } while(0)
+#endif
+#define PAGE_CACHABLE_DEFAULT	_page_cachable_default
 #elif defined(CONFIG_DMA_NONCOHERENT)
 #define PAGE_CACHABLE_DEFAULT	_CACHE_CACHABLE_NONCOHERENT
 #elif defined(CONFIG_CPU_RM9000)

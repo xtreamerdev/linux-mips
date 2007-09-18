@@ -1145,10 +1145,48 @@ void au1x00_fixup_config_od(void)
 	}
 }
 
+#if defined(CONFIG_DYNAMIC_CCA)
+int __initdata cca = -1;
+unsigned long _page_cachable_default;
+static int __init setcca(char *str)
+{
+	get_option(&str, &cca);
+	return 1;
+}
+
+__setup("cca=", setcca);
+#endif
+
 static void __init coherency_setup(void)
 {
-	change_c0_config(CONF_CM_CMASK, CONF_CM_DEFAULT);
+#if defined(CONFIG_DYNAMIC_CCA)
+	if (cca < 0 || cca > 7)
+		cca = read_c0_config() & CONF_CM_CMASK;
+	set_page_cacheable_default (cca);
+	printk (KERN_DEBUG "Using cache attribute %d\n", cca);
 
+	{
+		extern pgprot_t protection_map[];
+		protection_map[0] = ___P000;
+		protection_map[1] = ___P001;
+		protection_map[2] = ___P010;
+		protection_map[3] = ___P011;
+		protection_map[4] = ___P100;
+		protection_map[5] = ___P101;
+		protection_map[6] = ___P110;
+		protection_map[7] = ___P111;
+		protection_map[8] = ___S000;
+		protection_map[9] = ___S001;
+		protection_map[10] = ___S010;
+		protection_map[11] = ___S011;
+		protection_map[12] = ___S100;
+		protection_map[13] = ___S101;
+		protection_map[14] = ___S110;
+		protection_map[15] = ___S111;
+	}
+
+#endif
+	change_c0_config(CONF_CM_CMASK, CONF_CM_DEFAULT);
 	/*
 	 * c0_status.cu=0 specifies that updates by the sc instruction use
 	 * the coherency mode specified by the TLB; 1 means cachable

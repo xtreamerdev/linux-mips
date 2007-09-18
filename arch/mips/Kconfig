@@ -1659,6 +1659,22 @@ config NR_CPUS
 	  performance should round up your number of processors to the next
 	  power of two.
 
+config MIPS_CMP
+	bool "MIPS CMP framework support"
+	depends on SMP
+	select DYNAMIC_CCA
+	default n
+	help
+	  This is a placeholder option for the GCMP work. It will need to
+	  be handled differently...
+
+
+config DYNAMIC_CCA
+	bool
+	depends on !(CPU_R3000 || CPU_TX39XX)
+	help
+	  Set this if you need the cache attribute to be set at runtime.
+	
 #
 # Timer Interrupt Frequency Configuration
 #
