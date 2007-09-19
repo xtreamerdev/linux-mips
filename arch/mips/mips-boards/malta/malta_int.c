@@ -262,6 +262,81 @@ asmlinkage void plat_irq_dispatch(void)
 		spurious_interrupt();
 }
 
+
+#if defined(CONFIG_MIPS_MT_SMP)
+
+
+#define MIPS_CPU_IPI_RESCHED_IRQ 0	/* SW int 0 for resched */
+#define C_RESCHED C_SW0
+#define MIPS_CPU_IPI_CALL_IRQ 1		/* SW int 1 for resched */
+#define C_CALL C_SW1
+
+static int cpu_ipi_resched_irq, cpu_ipi_call_irq;
+
+static void ipi_resched_dispatch(void)
+{
+	do_IRQ(MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_RESCHED_IRQ);
+}
+
+static void ipi_call_dispatch(void)
+{
+	do_IRQ(MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_CALL_IRQ);
+}
+
+static irqreturn_t ipi_resched_interrupt(int irq, void *dev_id)
+{
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t ipi_call_interrupt(int irq, void *dev_id)
+{
+	smp_call_function_interrupt();
+
+	return IRQ_HANDLED;
+}
+
+static struct irqaction irq_resched = {
+	.handler	= ipi_resched_interrupt,
+	.flags		= IRQF_DISABLED|IRQF_PERCPU,
+	.name		= "IPI_resched"
+};
+
+static struct irqaction irq_call = {
+	.handler	= ipi_call_interrupt,
+	.flags		= IRQF_DISABLED|IRQF_PERCPU,
+	.name		= "IPI_call"
+};
+
+void core_send_ipi(int cpu, unsigned int action)
+{
+	int i;
+	unsigned long flags;
+	int vpflags;
+
+	local_irq_save (flags);
+
+	vpflags = dvpe();	/* cant access the other CPU's registers whilst MVPE enabled */
+
+	switch (action) {
+	case SMP_CALL_FUNCTION:
+		i = C_CALL;
+		break;
+
+	case SMP_RESCHEDULE_YOURSELF:
+	default:
+		i = C_RESCHED;
+		break;
+	}
+
+	/* 1:1 mapping of vpe and tc... */
+	settc(cpu);
+	write_vpe_c0_cause(read_vpe_c0_cause() | i);
+	evpe(vpflags);
+
+	local_irq_restore(flags);
+}
+#endif
+
 static struct irqaction i8259irq = {
 	.handler = no_action,
 	.name = "XT-PIC cascade"
@@ -339,4 +414,28 @@ void __init arch_init_irq(void)
 		setup_irq (MIPS_CPU_IRQ_BASE+MIPSCPU_INT_I8259A, &i8259irq);
 		setup_irq (MIPS_CPU_IRQ_BASE+MIPSCPU_INT_COREHI, &corehi_irqaction);
 	}
+
+#if defined(CONFIG_MIPS_MT_SMP)
+	/* set up ipi interrupts */
+	if (cpu_has_veic) {
+		set_vi_handler (MSC01E_INT_SW0, ipi_resched_dispatch);
+		set_vi_handler (MSC01E_INT_SW1, ipi_call_dispatch);
+		cpu_ipi_resched_irq = MSC01E_INT_SW0;
+		cpu_ipi_call_irq = MSC01E_INT_SW1;
+	}
+	else {
+		if (cpu_has_vint) {
+			set_vi_handler (MIPS_CPU_IPI_RESCHED_IRQ, ipi_resched_dispatch);
+			set_vi_handler (MIPS_CPU_IPI_CALL_IRQ, ipi_call_dispatch);
+		}
+		cpu_ipi_resched_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_RESCHED_IRQ;
+		cpu_ipi_call_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_CALL_IRQ;
+	}
+
+	setup_irq(cpu_ipi_resched_irq, &irq_resched);
+	setup_irq(cpu_ipi_call_irq, &irq_call);
+
+	set_irq_handler(cpu_ipi_resched_irq, handle_percpu_irq);
+	set_irq_handler(cpu_ipi_call_irq, handle_percpu_irq);
+#endif
 }

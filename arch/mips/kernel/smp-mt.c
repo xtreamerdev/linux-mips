@@ -35,12 +35,6 @@
 #include <asm/mipsregs.h>
 #include <asm/mipsmtregs.h>
 #include <asm/mips_mt.h>
-#include <asm/mips-boards/maltaint.h>  /* Of course this is f*cking wrong, but it will get fixed :) */
-
-#define MIPS_CPU_IPI_RESCHED_IRQ 0
-#define MIPS_CPU_IPI_CALL_IRQ 1
-
-static int cpu_ipi_resched_irq, cpu_ipi_call_irq;
 
 #if 0
 static void dump_mtregisters(int vpe, int tc)
@@ -58,40 +52,6 @@ static void dump_mtregisters(int vpe, int tc)
 	printk("  tchalt 0x%lx\n", read_tc_c0_tchalt());
 }
 #endif
-
-static void ipi_resched_dispatch(void)
-{
-	do_IRQ(MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_RESCHED_IRQ);
-}
-
-static void ipi_call_dispatch(void)
-{
-	do_IRQ(MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_CALL_IRQ);
-}
-
-static irqreturn_t ipi_resched_interrupt(int irq, void *dev_id)
-{
-	return IRQ_HANDLED;
-}
-
-static irqreturn_t ipi_call_interrupt(int irq, void *dev_id)
-{
-	smp_call_function_interrupt();
-
-	return IRQ_HANDLED;
-}
-
-static struct irqaction irq_resched = {
-	.handler	= ipi_resched_interrupt,
-	.flags		= IRQF_DISABLED|IRQF_PERCPU,
-	.name		= "IPI_resched"
-};
-
-static struct irqaction irq_call = {
-	.handler	= ipi_call_interrupt,
-	.flags		= IRQF_DISABLED|IRQF_PERCPU,
-	.name		= "IPI_call"
-};
 
 static void __init smp_copy_vpe_config(void)
 {
@@ -178,11 +138,14 @@ void __init plat_smp_setup(void)
 {
 	unsigned int mvpconf0, ntc, tc, ncpu = 0;
 
+	pr_debug("SMPMT: CPU%d: plat_smp_setup\n", smp_processor_id());
+
 #ifdef CONFIG_MIPS_MT_FPAFF
 	/* If we have an FPU, enroll ourselves in the FPU-full mask */
 	if (cpu_has_fpu)
 		cpu_set(0, mt_fpu_cpumask);
 #endif /* CONFIG_MIPS_MT_FPAFF */
+
 	if (!cpu_has_mipsmt)
 		return;
 
@@ -215,29 +178,9 @@ void __init plat_smp_setup(void)
 
 void __init plat_prepare_cpus(unsigned int max_cpus)
 {
+	pr_debug("SMPMT: CPU%d: plat_prepare_cpus %d\n", smp_processor_id(), max_cpus);
+
 	mips_mt_set_cpuoptions();
-
-	/* set up ipi interrupts */
-	if (cpu_has_veic) {
-		set_vi_handler (MSC01E_INT_SW0, ipi_resched_dispatch);
-		set_vi_handler (MSC01E_INT_SW1, ipi_call_dispatch);
-		cpu_ipi_resched_irq = MSC01E_INT_SW0;
-		cpu_ipi_call_irq = MSC01E_INT_SW1;
-	}
-	else {
-		if (cpu_has_vint) {
-			set_vi_handler (MIPS_CPU_IPI_RESCHED_IRQ, ipi_resched_dispatch);
-			set_vi_handler (MIPS_CPU_IPI_CALL_IRQ, ipi_call_dispatch);
-		}
-		cpu_ipi_resched_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_RESCHED_IRQ;
-		cpu_ipi_call_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_CALL_IRQ;
-	}
-
-	setup_irq(cpu_ipi_resched_irq, &irq_resched);
-	setup_irq(cpu_ipi_call_irq, &irq_call);
-
-	set_irq_handler(cpu_ipi_resched_irq, handle_percpu_irq);
-	set_irq_handler(cpu_ipi_call_irq, handle_percpu_irq);
 }
 
 /*
@@ -251,6 +194,9 @@ void __init plat_prepare_cpus(unsigned int max_cpus)
 void prom_boot_secondary(int cpu, struct task_struct *idle)
 {
 	struct thread_info *gp = task_thread_info(idle);
+
+	pr_debug("SMPMT: CPU%d: prom_boot_secondary cpu %d\n", smp_processor_id(), cpu);
+
 	dvpe();
 	set_c0_mvpcontrol(MVPCONTROL_VPC);
 
@@ -284,6 +230,8 @@ void prom_boot_secondary(int cpu, struct task_struct *idle)
 
 void prom_init_secondary(void)
 {
+	pr_debug("SMPMT: CPU%d: prom_init_secondary\n", smp_processor_id());
+
 	/* Enable per-cpu interrupts */
 
 	/* This is Malta specific: IPI,performance and timer inetrrupts */
@@ -293,6 +241,9 @@ void prom_init_secondary(void)
 
 void prom_smp_finish(void)
 {
+	pr_debug("SMPMT: CPU%d: prom_smp_finish\n", smp_processor_id());
+
+	/* CDFIXME: remove this? */
 	write_c0_compare(read_c0_count() + (8* mips_hpt_frequency/HZ));
 
 #ifdef CONFIG_MIPS_MT_FPAFF
@@ -306,33 +257,6 @@ void prom_smp_finish(void)
 
 void prom_cpus_done(void)
 {
+	pr_debug("SMPMT: CPU%d: prom_cpus_done\n", smp_processor_id());
 }
 
-void core_send_ipi(int cpu, unsigned int action)
-{
-	int i;
-	unsigned long flags;
-	int vpflags;
-
-	local_irq_save (flags);
-
-	vpflags = dvpe();	/* cant access the other CPU's registers whilst MVPE enabled */
-
-	switch (action) {
-	case SMP_CALL_FUNCTION:
-		i = C_SW1;
-		break;
-
-	case SMP_RESCHEDULE_YOURSELF:
-	default:
-		i = C_SW0;
-		break;
-	}
-
-	/* 1:1 mapping of vpe and tc... */
-	settc(cpu);
-	write_vpe_c0_cause(read_vpe_c0_cause() | i);
-	evpe(vpflags);
-
-	local_irq_restore(flags);
-}
