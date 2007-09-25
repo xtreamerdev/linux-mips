@@ -41,6 +41,10 @@
 #include <asm/mips-boards/generic.h>
 #include <asm/mips-boards/msc01_pci.h>
 #include <asm/msc01_ic.h>
+#include <asm/gicregs.h>
+
+/* FIXME : Move this to a better place! */
+extern void malta_ipi_irqdispatch(void);
 
 static DEFINE_SPINLOCK(mips_irq_lock);
 
@@ -256,6 +260,10 @@ asmlinkage void plat_irq_dispatch(void)
 
 	if (irq == MIPSCPU_INT_I8259A)
 		malta_hw0_irqdispatch();
+#if defined(USE_GIC)
+	else if ((irq == MIPSCPU_INT_IPI0) || (irq == MIPSCPU_INT_IPI1))
+		malta_ipi_irqdispatch();
+#endif
 	else if (irq > 0)
 		do_IRQ(MIPS_CPU_IRQ_BASE + irq);
 	else
@@ -266,11 +274,17 @@ asmlinkage void plat_irq_dispatch(void)
 #if defined(CONFIG_MIPS_MT_SMP)
 
 
+#if defined(USE_GIC)
+
+#define MIPS_CPU_IPI_RESCHED_IRQ	3
+#define MIPS_CPU_IPI_CALL_IRQ 		4
+
+#else
+  
 #define MIPS_CPU_IPI_RESCHED_IRQ 0	/* SW int 0 for resched */
 #define C_RESCHED C_SW0
 #define MIPS_CPU_IPI_CALL_IRQ 1		/* SW int 1 for resched */
 #define C_CALL C_SW1
-
 static int cpu_ipi_resched_irq, cpu_ipi_call_irq;
 
 static void ipi_resched_dispatch(void)
@@ -282,6 +296,7 @@ static void ipi_call_dispatch(void)
 {
 	do_IRQ(MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_CALL_IRQ);
 }
+#endif
 
 static irqreturn_t ipi_resched_interrupt(int irq, void *dev_id)
 {
@@ -306,6 +321,32 @@ static struct irqaction irq_call = {
 	.flags		= IRQF_DISABLED|IRQF_PERCPU,
 	.name		= "IPI_call"
 };
+
+#if defined(USE_GIC)
+
+extern void ipi_call_function(unsigned int cpu);
+extern void ipi_resched(unsigned int cpu);
+
+void core_send_ipi(int cpu, unsigned int action)
+{
+	unsigned long flags;
+
+	local_irq_save (flags);
+
+	switch(action) {
+	case SMP_CALL_FUNCTION:
+		ipi_call_function(cpu);
+		break;
+
+	case SMP_RESCHEDULE_YOURSELF:
+		ipi_resched(cpu);
+		break;
+	}
+
+	local_irq_restore(flags);
+}
+
+#else
 
 void core_send_ipi(int cpu, unsigned int action)
 {
@@ -335,6 +376,7 @@ void core_send_ipi(int cpu, unsigned int action)
 
 	local_irq_restore(flags);
 }
+#endif
 #endif
 
 static struct irqaction i8259irq = {
@@ -371,8 +413,12 @@ void __init arch_init_irq(void)
 {
 	init_i8259_irqs();
 
-	if (!cpu_has_veic)
+	if (!cpu_has_veic) {
 		mips_cpu_irq_init();
+#if defined(USE_GIC)
+		gic_init();
+#endif
+	}
 
         switch(mips_revision_sconid) {
         case MIPS_REVISION_SCON_SOCIT:
@@ -416,6 +462,32 @@ void __init arch_init_irq(void)
 	}
 
 #if defined(CONFIG_MIPS_MT_SMP)
+#if defined(USE_GIC)
+	/* set up ipi interrupts */
+	if (cpu_has_vint) {
+		set_vi_handler(MIPSCPU_INT_IPI0, malta_ipi_irqdispatch);
+		set_vi_handler(MIPSCPU_INT_IPI1, malta_ipi_irqdispatch);
+	}
+	{
+		/* FIXME */
+		int i;
+		struct {
+			unsigned int resched;
+			unsigned int call;
+		} ipiirq[] = {
+			{GIC_IPI_EXT_INTR_RESCHED_VPE0, GIC_IPI_EXT_INTR_CALLFNC_VPE0},
+			{GIC_IPI_EXT_INTR_RESCHED_VPE1, GIC_IPI_EXT_INTR_CALLFNC_VPE1}
+		};
+#define NIPI (sizeof(ipiirq)/sizeof(ipiirq[0]))
+		for (i = 0; i < NIPI; i++) {
+			setup_irq(MIPS_GIC_IRQ_BASE + ipiirq[i].resched, &irq_resched);
+			setup_irq(MIPS_GIC_IRQ_BASE + ipiirq[i].call, &irq_call);
+
+			set_irq_handler(MIPS_GIC_IRQ_BASE + ipiirq[i].resched, handle_percpu_irq);
+			set_irq_handler(MIPS_GIC_IRQ_BASE + ipiirq[i].call, handle_percpu_irq);
+		}
+	}
+#else
 	/* set up ipi interrupts */
 	if (cpu_has_veic) {
 		set_vi_handler (MSC01E_INT_SW0, ipi_resched_dispatch);
@@ -437,5 +509,6 @@ void __init arch_init_irq(void)
 
 	set_irq_handler(cpu_ipi_resched_irq, handle_percpu_irq);
 	set_irq_handler(cpu_ipi_call_irq, handle_percpu_irq);
+#endif
 #endif
 }

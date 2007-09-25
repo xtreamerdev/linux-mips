@@ -232,11 +232,18 @@ void prom_init_secondary(void)
 {
 	pr_debug("SMPMT: CPU%d: prom_init_secondary\n", smp_processor_id());
 
+	/* FIXME: This is platform specific */
+
 	/* Enable per-cpu interrupts */
 
 	/* This is Malta specific: IPI,performance and timer inetrrupts */
+#if defined(USE_GIC)
+	write_c0_status((read_c0_status() & ~ST0_IM ) |
+	                (STATUSF_IP3 | STATUSF_IP4 | STATUSF_IP6 | STATUSF_IP7));
+#else
 	write_c0_status((read_c0_status() & ~ST0_IM ) |
 	                (STATUSF_IP0 | STATUSF_IP1 | STATUSF_IP6 | STATUSF_IP7));
+#endif
 }
 
 void prom_smp_finish(void)
