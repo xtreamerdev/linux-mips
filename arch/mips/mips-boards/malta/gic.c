@@ -194,23 +194,22 @@ static void setup_mappings(unsigned int numintrs, unsigned int numvpes)
 
 static int do_probe(void)
 {
-	int retval = 1;
-
 	gcmp_present = (GCMPGCB(GCMPB) & GCMP_GCB_GCMPB_GCMPBASE_MSK) == GCMP_BASE_ADDR;
-	gic_present = (REG(_msc01_biu_base, MSC01_SC_CFG) & 
-			MSC01_SC_CFG_GICPRES_MSK) >> MSC01_SC_CFG_GICPRES_SHF;
 
 	if (gcmp_present)  {
 		printk (KERN_CRIT "GCMP present\n");
 		GCMPGCB(GICBA) = GIC_BASE_ADDR | GCMP_GCB_GICBA_EN_MSK;
+		gic_present = 1;
+	}
+	else {
+		gic_present = (REG(_msc01_biu_base, MSC01_SC_CFG) & 
+			       MSC01_SC_CFG_GICPRES_MSK) >> MSC01_SC_CFG_GICPRES_SHF;
 	}
 
-	if (gic_present) {
+	if (gic_present)
 		printk (KERN_CRIT "GIC present\n");
-	}
-	else retval = 0;
 
-	return(retval);
+	return gic_present;
 }
 
 static void basic_init(unsigned long numintrs, unsigned long numvpes)
@@ -370,7 +369,7 @@ static void gic_irq_init(unsigned int numintrs)
 	GIC_REG(SHARED, GIC_SH_MASK_31_0) = 0;
 }
 
-void __init gic_init(void)
+int __init gic_init(void)
 {
 	unsigned int  numintrs, numvpes, data;
 
@@ -379,7 +378,7 @@ void __init gic_init(void)
 	_msc01_biu_base = (unsigned long) ioremap_nocache(MSC01_BIU_REG_BASE, MSC01_BIU_ADDRSPACE_SZ);
 
 	if (!do_probe())
-		return;
+		return 0;
 
 	numintrs = (GIC_REG(SHARED, GIC_SH_CONFIG) &
 		GIC_SH_CONFIG_NUMINTRS_MSK) >> GIC_SH_CONFIG_NUMINTRS_SHF;
@@ -412,5 +411,5 @@ void __init gic_init(void)
 	printk(KERN_CRIT "%s called\n", __FUNCTION__);
 #endif
 
-	return;
+	return 1;
 }
