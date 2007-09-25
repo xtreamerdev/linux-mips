@@ -392,6 +392,6 @@
 	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_VPE_REG_OFF(intr, vpe)) &= \
 	~GIC_SH_MAP_TO_VPE_REG_BIT(vpe)
 
-extern void gic_init(void);
+extern int gic_init(void);
 
 #endif /* _ASM_GICREGS_H */
