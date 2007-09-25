@@ -274,12 +274,8 @@ asmlinkage void plat_irq_dispatch(void)
 #if defined(CONFIG_MIPS_MT_SMP)
 
 
-#if defined(USE_GIC)
-
-#define MIPS_CPU_IPI_RESCHED_IRQ	3
-#define MIPS_CPU_IPI_CALL_IRQ 		4
-
-#else
+#define GIC_MIPS_CPU_IPI_RESCHED_IRQ	3
+#define GIC_MIPS_CPU_IPI_CALL_IRQ	4
   
 #define MIPS_CPU_IPI_RESCHED_IRQ 0	/* SW int 0 for resched */
 #define C_RESCHED C_SW0
@@ -296,7 +292,6 @@ static void ipi_call_dispatch(void)
 {
 	do_IRQ(MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_CALL_IRQ);
 }
-#endif
 
 static irqreturn_t ipi_resched_interrupt(int irq, void *dev_id)
 {
@@ -322,12 +317,14 @@ static struct irqaction irq_call = {
 	.name		= "IPI_call"
 };
 
-#if defined(USE_GIC)
-
 extern void ipi_call_function(unsigned int cpu);
 extern void ipi_resched(unsigned int cpu);
 
-void core_send_ipi(int cpu, unsigned int action)
+/*
+ * FIXME: This isn't restricted to CMP
+ * The SMVP kernel could use GIC interrupts if available
+ */
+void cmp_send_ipi(int cpu, unsigned int action)
 {
 	unsigned long flags;
 
@@ -346,9 +343,7 @@ void core_send_ipi(int cpu, unsigned int action)
 	local_irq_restore(flags);
 }
 
-#else
-
-void core_send_ipi(int cpu, unsigned int action)
+void smvp_send_ipi(int cpu, unsigned int action)
 {
 	int i;
 	unsigned long flags;
@@ -376,7 +371,6 @@ void core_send_ipi(int cpu, unsigned int action)
 
 	local_irq_restore(flags);
 }
-#endif
 #endif
 
 static struct irqaction i8259irq = {
@@ -411,14 +405,12 @@ int __initdata msc_nr_eicirqs = ARRAY_SIZE(msc_eicirqmap);
 
 void __init arch_init_irq(void)
 {
+	int gicpresent;
 	init_i8259_irqs();
 
-	if (!cpu_has_veic) {
+	if (!cpu_has_veic)
 		mips_cpu_irq_init();
-#if defined(USE_GIC)
-		gic_init();
-#endif
-	}
+	gicpresent = gic_init();
 
         switch(mips_revision_sconid) {
         case MIPS_REVISION_SCON_SOCIT:
@@ -462,13 +454,7 @@ void __init arch_init_irq(void)
 	}
 
 #if defined(CONFIG_MIPS_MT_SMP)
-#if defined(USE_GIC)
-	/* set up ipi interrupts */
-	if (cpu_has_vint) {
-		set_vi_handler(MIPSCPU_INT_IPI0, malta_ipi_irqdispatch);
-		set_vi_handler(MIPSCPU_INT_IPI1, malta_ipi_irqdispatch);
-	}
-	{
+	if (gicpresent) {
 		/* FIXME */
 		int i;
 		struct {
@@ -479,6 +465,12 @@ void __init arch_init_irq(void)
 			{GIC_IPI_EXT_INTR_RESCHED_VPE1, GIC_IPI_EXT_INTR_CALLFNC_VPE1}
 		};
 #define NIPI (sizeof(ipiirq)/sizeof(ipiirq[0]))
+
+		/* set up ipi interrupts */
+		if (cpu_has_vint) {
+			set_vi_handler(MIPSCPU_INT_IPI0, malta_ipi_irqdispatch);
+			set_vi_handler(MIPSCPU_INT_IPI1, malta_ipi_irqdispatch);
+		}
 		for (i = 0; i < NIPI; i++) {
 			setup_irq(MIPS_GIC_IRQ_BASE + ipiirq[i].resched, &irq_resched);
 			setup_irq(MIPS_GIC_IRQ_BASE + ipiirq[i].call, &irq_call);
@@ -487,28 +479,28 @@ void __init arch_init_irq(void)
 			set_irq_handler(MIPS_GIC_IRQ_BASE + ipiirq[i].call, handle_percpu_irq);
 		}
 	}
-#else
-	/* set up ipi interrupts */
-	if (cpu_has_veic) {
-		set_vi_handler (MSC01E_INT_SW0, ipi_resched_dispatch);
-		set_vi_handler (MSC01E_INT_SW1, ipi_call_dispatch);
-		cpu_ipi_resched_irq = MSC01E_INT_SW0;
-		cpu_ipi_call_irq = MSC01E_INT_SW1;
-	}
 	else {
-		if (cpu_has_vint) {
-			set_vi_handler (MIPS_CPU_IPI_RESCHED_IRQ, ipi_resched_dispatch);
-			set_vi_handler (MIPS_CPU_IPI_CALL_IRQ, ipi_call_dispatch);
+		/* set up ipi interrupts */
+		if (cpu_has_veic) {
+			set_vi_handler (MSC01E_INT_SW0, ipi_resched_dispatch);
+			set_vi_handler (MSC01E_INT_SW1, ipi_call_dispatch);
+			cpu_ipi_resched_irq = MSC01E_INT_SW0;
+			cpu_ipi_call_irq = MSC01E_INT_SW1;
 		}
-		cpu_ipi_resched_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_RESCHED_IRQ;
-		cpu_ipi_call_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_CALL_IRQ;
+		else {
+			if (cpu_has_vint) {
+				set_vi_handler (MIPS_CPU_IPI_RESCHED_IRQ, ipi_resched_dispatch);
+				set_vi_handler (MIPS_CPU_IPI_CALL_IRQ, ipi_call_dispatch);
+			}
+			cpu_ipi_resched_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_RESCHED_IRQ;
+			cpu_ipi_call_irq = MIPS_CPU_IRQ_BASE + MIPS_CPU_IPI_CALL_IRQ;
+		}
+
+		setup_irq(cpu_ipi_resched_irq, &irq_resched);
+		setup_irq(cpu_ipi_call_irq, &irq_call);
+
+		set_irq_handler(cpu_ipi_resched_irq, handle_percpu_irq);
+		set_irq_handler(cpu_ipi_call_irq, handle_percpu_irq);
 	}
-
-	setup_irq(cpu_ipi_resched_irq, &irq_resched);
-	setup_irq(cpu_ipi_call_irq, &irq_call);
-
-	set_irq_handler(cpu_ipi_resched_irq, handle_percpu_irq);
-	set_irq_handler(cpu_ipi_call_irq, handle_percpu_irq);
-#endif
 #endif
 }
