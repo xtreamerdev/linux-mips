@@ -24,20 +24,26 @@ static unsigned long _msc01_biu_base;
 static unsigned int gcmp_present, gic_present;
 
 /* FIXME : Cleanup needed */
-static unsigned int gic_pcpu_imasks[2];
+static unsigned int gic_pcpu_imasks[4];
 
 void ipi_call_function(unsigned int cpu)
 {
 #ifdef GIC_DEBUG
 	printk(KERN_CRIT "%s called cpu %d to %d\n", __FUNCTION__, smp_processor_id(), cpu);
 #endif
-	switch(cpu) {
-		case(0):
-			GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_CALLFNC_VPE0);
-			break;
-		case(1):
-			GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_CALLFNC_VPE1);
-			break;
+	switch (cpu) {
+	case 0:
+		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_CALLFNC_VPE0);
+		break;
+	case 1:
+		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_CALLFNC_VPE1);
+		break;
+	case 2:
+		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_CALLFNC_VPE2);
+		break;
+	case 3:
+		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_CALLFNC_VPE3);
+		break;
 	}
 }
 
@@ -47,13 +53,19 @@ void ipi_resched(unsigned int cpu)
 	printk(KERN_CRIT "%s called cpu %d to %d \n", __FUNCTION__, smp_processor_id(), cpu);
 #endif
 
-	switch(cpu) {
-		case(0):
-			GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_RESCHED_VPE0);
-			break;
-		case(1):
-			GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_RESCHED_VPE1);
-			break;
+	switch (cpu) {
+	case 0:
+		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_RESCHED_VPE0);
+		break;
+	case 1:
+		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_RESCHED_VPE1);
+		break;
+	case 2:
+		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_RESCHED_VPE2);
+		break;
+	case 3:
+		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_RESCHED_VPE3);
+		break;
 	}
 }
 
@@ -83,10 +95,14 @@ static void setup_triggers(void)
 	GIC_REG(SHARED, GIC_SH_TRIG_255_224) = 0;
 
 	/* ...except the IPI interrupts */
-	GIC_REG(SHARED, GIC_SH_TRIG_31_0) |= ((1 << GIC_IPI_EXT_INTR_RESCHED_VPE0) | \
-					      (1 << GIC_IPI_EXT_INTR_CALLFNC_VPE0) | \
-					      (1 << GIC_IPI_EXT_INTR_RESCHED_VPE1) | \
-					      (1 << GIC_IPI_EXT_INTR_CALLFNC_VPE1));
+	GIC_REG(SHARED, GIC_SH_TRIG_31_0) |= ((1 << GIC_IPI_EXT_INTR_RESCHED_VPE0) |
+					      (1 << GIC_IPI_EXT_INTR_CALLFNC_VPE0) |
+					      (1 << GIC_IPI_EXT_INTR_RESCHED_VPE1) |
+					      (1 << GIC_IPI_EXT_INTR_CALLFNC_VPE1) |
+					      (1 << GIC_IPI_EXT_INTR_RESCHED_VPE2) |
+					      (1 << GIC_IPI_EXT_INTR_CALLFNC_VPE2) | 
+					      (1 << GIC_IPI_EXT_INTR_RESCHED_VPE3) |
+					      (1 << GIC_IPI_EXT_INTR_CALLFNC_VPE3));
 }
 
 static void setup_pin_maps(void)
@@ -130,22 +146,50 @@ static void setup_pin_maps(void)
 	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(GIC_IPI_EXT_INTR_CALLFNC_VPE1)) = \
 				(GIC_MAP_TO_PIN_MSK | (MIPSCPU_INT_IPI1 - 2));
 
+	/* GIC Global Src xx -> Resched IPI for VPE2 */
+	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(GIC_IPI_EXT_INTR_RESCHED_VPE2)) = \
+				(GIC_MAP_TO_PIN_MSK | (MIPSCPU_INT_IPI0 - 2));
+
+	/* GIC Global Src xx -> SMP Call Function IPI for VPE2 */
+	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(GIC_IPI_EXT_INTR_CALLFNC_VPE2)) = \
+				(GIC_MAP_TO_PIN_MSK | (MIPSCPU_INT_IPI1 - 2));
+
+	/* GIC Global Src xx -> Resched IPI for VPE3 */
+	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(GIC_IPI_EXT_INTR_RESCHED_VPE3)) = \
+				(GIC_MAP_TO_PIN_MSK | (MIPSCPU_INT_IPI0 - 2));
+
+	/* GIC Global Src xx -> SMP Call Function IPI for VPE3 */
+	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(GIC_IPI_EXT_INTR_CALLFNC_VPE2)) = \
+				(GIC_MAP_TO_PIN_MSK | (MIPSCPU_INT_IPI1 - 2));
+
 }
 
 static void setup_vpe_maps(unsigned int numintrs)
 {
 	unsigned int intr;
 
+#ifdef GIC_DEBUG
+	printk (KERN_CRIT "GIC: %s\n", __FUNCTION__);
+#endif
+
 	/* Map All interrupts to VPE 0 */
 	for (intr = 0; intr < numintrs; intr++) {
 		GIC_SH_MAP_TO_VPE_SMASK(intr, 0);
 	}
+
+#ifdef GIC_DEBUG
+	printk (KERN_CRIT "GIC: %s mapping VPE IPI's\n", __FUNCTION__);
+#endif
 
 	/* ...but map IPIs to specific VPEs.. */
 	GIC_SH_MAP_TO_VPE_SMASK(GIC_IPI_EXT_INTR_RESCHED_VPE0, 0);
 	GIC_SH_MAP_TO_VPE_SMASK(GIC_IPI_EXT_INTR_CALLFNC_VPE0, 0);
 	GIC_SH_MAP_TO_VPE_SMASK(GIC_IPI_EXT_INTR_RESCHED_VPE1, 1);
 	GIC_SH_MAP_TO_VPE_SMASK(GIC_IPI_EXT_INTR_CALLFNC_VPE1, 1);
+	GIC_SH_MAP_TO_VPE_SMASK(GIC_IPI_EXT_INTR_RESCHED_VPE2, 2);
+	GIC_SH_MAP_TO_VPE_SMASK(GIC_IPI_EXT_INTR_CALLFNC_VPE2, 2);
+	GIC_SH_MAP_TO_VPE_SMASK(GIC_IPI_EXT_INTR_RESCHED_VPE3, 3);
+	GIC_SH_MAP_TO_VPE_SMASK(GIC_IPI_EXT_INTR_CALLFNC_VPE3, 3);
 }
 
 static void vpe_local_setup(unsigned int numvpes) 
@@ -187,6 +231,10 @@ static void set_interrupt_masks(void)
 
 static void setup_mappings(unsigned int numintrs, unsigned int numvpes)
 {
+#ifdef GIC_DEBUG
+	printk (KERN_CRIT "GIC: %s\n", __FUNCTION__);
+#endif
+
 	setup_pin_maps();
 	vpe_local_setup(numvpes);
 	setup_vpe_maps(numintrs);
@@ -214,6 +262,10 @@ static int do_probe(void)
 
 static void basic_init(unsigned long numintrs, unsigned long numvpes)
 {
+#ifdef GIC_DEBUG
+	printk (KERN_CRIT "GIC: %s\n", __FUNCTION__);
+#endif
+
 	setup_polarities();
 	setup_triggers();
 	set_interrupt_masks();
@@ -241,7 +293,9 @@ static unsigned int get_int(void)
 	mask = GIC_REG(SHARED, GIC_SH_MASK_31_0);
 	pending = (pending & mask & gic_pcpu_imasks[smp_processor_id()]);
 	pending = (31 - clz(pending));
-	return (pending);
+	if (pending == 0xffffffff)
+		HWTRIGGER(get_irq_regs(), 0, "Spurious GIC interrupt");
+	return pending;
 }
 
 asmlinkage void malta_ipi_irqdispatch(void)
@@ -258,6 +312,9 @@ asmlinkage void malta_ipi_irqdispatch(void)
 
 static unsigned int gic_irq_startup(unsigned int irq)
 {
+#ifdef GIC_DEBUG
+	printk(KERN_CRIT "CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
+#endif
 	irq -= MIPS_GIC_IRQ_BASE;
 	switch(irq) {
 		case(GIC_IPI_EXT_INTR_RESCHED_VPE0):
@@ -279,59 +336,29 @@ static unsigned int gic_irq_startup(unsigned int irq)
 
 static void gic_irq_ack(unsigned int irq)
 {
+#ifdef GIC_DEBUG
+	printk(KERN_CRIT "CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
+#endif
 	irq -= MIPS_GIC_IRQ_BASE;
-	switch(irq) {
-		case(GIC_IPI_EXT_INTR_RESCHED_VPE0):
-		case(GIC_IPI_EXT_INTR_CALLFNC_VPE0):
-			clear_c0_cause(0x800 << (irq - 1));
-			clear_c0_status(0x800 << (irq - 1));
-			irq_disable_hazard();
-			break;
-		case(GIC_IPI_EXT_INTR_RESCHED_VPE1):
-		case(GIC_IPI_EXT_INTR_CALLFNC_VPE1):
-			clear_c0_cause(0x800 << (irq - 10));
-			clear_c0_status(0x800 << (irq - 10));
-			irq_disable_hazard();
-			break;
-	}
 	GIC_REG(SHARED, GIC_SH_RMASK_31_0) = (1 << irq);
 	GIC_REG(SHARED, GIC_SH_WEDGE) = irq; 
 }
 
 static void gic_mask_irq(unsigned int irq)
 {
+#ifdef GIC_DEBUG
+	printk(KERN_CRIT "CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
+#endif
 	irq -= MIPS_GIC_IRQ_BASE;
-	switch(irq) {
-		case(GIC_IPI_EXT_INTR_RESCHED_VPE0):
-		case(GIC_IPI_EXT_INTR_CALLFNC_VPE0):
-			clear_c0_status(0x800 << (irq - 1));
-			irq_disable_hazard();
-			break;
-		case(GIC_IPI_EXT_INTR_RESCHED_VPE1):
-		case(GIC_IPI_EXT_INTR_CALLFNC_VPE1):
-			clear_c0_status(0x800 << (irq - 10));
-			irq_disable_hazard();
-			break;
-	}
 	GIC_REG(SHARED, GIC_SH_RMASK_31_0) = (1 << irq); 
 }
 
 static void gic_unmask_irq(unsigned int irq)
 {
+#ifdef GIC_DEBUG
+	printk(KERN_CRIT "CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
+#endif
 	irq -= MIPS_GIC_IRQ_BASE;
-	switch(irq) {
-		case(GIC_IPI_EXT_INTR_RESCHED_VPE0):
-		case(GIC_IPI_EXT_INTR_CALLFNC_VPE0):
-			set_c0_status(0x800 << (irq - 1));
-			irq_enable_hazard();
-			break;
-		case(GIC_IPI_EXT_INTR_RESCHED_VPE1):
-		case(GIC_IPI_EXT_INTR_CALLFNC_VPE1):
-			set_c0_status(0x800 << (irq - 10));
-			irq_enable_hazard();
-			break;
-	}
-
 	GIC_REG(SHARED, GIC_SH_SMASK_31_0) = (1 << irq); 
 }
 
@@ -364,6 +391,8 @@ static void gic_irq_init(unsigned int numintrs)
 	/* Create Per-CPU Masks */
 	gic_pcpu_imasks[0] = ((1 << GIC_IPI_EXT_INTR_RESCHED_VPE0) | (1 << GIC_IPI_EXT_INTR_CALLFNC_VPE0));
 	gic_pcpu_imasks[1] = ((1 << GIC_IPI_EXT_INTR_RESCHED_VPE1) | (1 << GIC_IPI_EXT_INTR_CALLFNC_VPE1));
+	gic_pcpu_imasks[2] = ((1 << GIC_IPI_EXT_INTR_RESCHED_VPE2) | (1 << GIC_IPI_EXT_INTR_CALLFNC_VPE2));
+	gic_pcpu_imasks[3] = ((1 << GIC_IPI_EXT_INTR_RESCHED_VPE3) | (1 << GIC_IPI_EXT_INTR_CALLFNC_VPE3));
 
 	/* Clear GIC IMASK */
 	GIC_REG(SHARED, GIC_SH_MASK_31_0) = 0;
@@ -388,7 +417,7 @@ int __init gic_init(void)
 		GIC_SH_CONFIG_NUMVPES_MSK) >> GIC_SH_CONFIG_NUMVPES_SHF;
 
 #ifdef GIC_DEBUG
-	printk (KERN_CRIT "GIC : %d External Interrupts Supported!\n", numintrs);
+	printk (KERN_CRIT "GIC: %d External Interrupts Supported!\n", numintrs);
 #endif
 
 	/* Setup mappings, polarities, triggers etc */
