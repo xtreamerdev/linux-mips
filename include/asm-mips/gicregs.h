@@ -12,10 +12,14 @@
 #define _ASM_GICREGS_H
 
 /* Temporary Ext Intrs used for IPI */
-#define GIC_IPI_EXT_INTR_RESCHED_VPE0	1	
-#define GIC_IPI_EXT_INTR_CALLFNC_VPE0	2
-#define GIC_IPI_EXT_INTR_RESCHED_VPE1	10
-#define GIC_IPI_EXT_INTR_CALLFNC_VPE1	11
+#define GIC_IPI_EXT_INTR_RESCHED_VPE0	16
+#define GIC_IPI_EXT_INTR_CALLFNC_VPE0	17
+#define GIC_IPI_EXT_INTR_RESCHED_VPE1	18
+#define GIC_IPI_EXT_INTR_CALLFNC_VPE1	19
+#define GIC_IPI_EXT_INTR_RESCHED_VPE2	20
+#define GIC_IPI_EXT_INTR_CALLFNC_VPE2	21
+#define GIC_IPI_EXT_INTR_RESCHED_VPE3	22
+#define GIC_IPI_EXT_INTR_CALLFNC_VPE3	23
 
 #define MIPS_GIC_IRQ_BASE	(MIPS_CPU_IRQ_BASE + 8)
 
@@ -383,14 +387,11 @@
 #define GIC_VPE_SMASK_SWINT1_MSK	(MSK(1) << GIC_VPE_SMASK_SWINT1_SHF)
 
 /*
- * Set/Reset the Mapping of Interrupt X to a VPE.
+ * Set the Mapping of Interrupt X to a VPE.
  */
 #define GIC_SH_MAP_TO_VPE_SMASK(intr, vpe) \
-	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_VPE_REG_OFF(intr, vpe)) |= \
+	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_VPE_REG_OFF(intr, vpe)) = \
 	GIC_SH_MAP_TO_VPE_REG_BIT(vpe)
-#define GIC_SH_MAP_TO_VPE_RMASK(intr, vpe) \
-	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_VPE_REG_OFF(intr, vpe)) &= \
-	~GIC_SH_MAP_TO_VPE_REG_BIT(vpe)
 
 extern int gic_init(void);
 
