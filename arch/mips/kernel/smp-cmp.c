@@ -16,6 +16,7 @@
  *    Chris Dearman (chris@mips.com)
  */
 
+//#define DEBUG
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/cpumask.h>
@@ -40,9 +41,10 @@
  */
 void __init cmp_smp_setup(void)
 {
+	int i;
 	int ncpu = 0;
 
-	pr_debug("SMPCMP: CPU%d: plat_smp_setup\n", smp_processor_id());
+	pr_debug("SMPCMP: CPU%d: %s\n", smp_processor_id(), __FUNCTION__);
 
 #ifdef CONFIG_MIPS_MT_FPAFF
 	/* If we have an FPU, enroll ourselves in the FPU-full mask */
@@ -50,12 +52,20 @@ void __init cmp_smp_setup(void)
 		cpu_set(0, mt_fpu_cpumask);
 #endif /* CONFIG_MIPS_MT_FPAFF */
 
+	for (i = 1; i < NR_CPUS; i++) {
+		if (amon_cpu_avail (i)) {
+			cpu_set(i, phys_cpu_present_map);
+			__cpu_number_map[i]	= ++ncpu;
+			__cpu_logical_map[ncpu]	= i;
+		}
+	}
+
 	printk(KERN_INFO "Detected %i available secondary CPU(s)\n", ncpu);
 }
 
 void __init cmp_prepare_cpus(unsigned int max_cpus)
 {
-	pr_debug("SMPCMP: CPU%d: plat_prepare_cpus %d\n", smp_processor_id(), max_cpus);
+	pr_debug("SMPCMP: CPU%d: %s max_cpus=%d\n", smp_processor_id(), __FUNCTION__, max_cpus);
 
 	/* FIXME: some of these options are per-system, some per-core and some per-cpu */
 	mips_mt_set_cpuoptions();
@@ -74,7 +84,7 @@ void cmp_boot_secondary(int cpu, struct task_struct *idle)
 	unsigned long pc = (unsigned long)&smp_bootstrap;
 	unsigned long a0 = 0;
 
-	pr_debug("SMPCMP: CPU%d: prom_boot_secondary cpu %d\n", smp_processor_id(), cpu);
+	pr_debug("SMPCMP: CPU%d: %s cpu %d\n", smp_processor_id(), __FUNCTION__, cpu);
 
 #if 0
 	/* Needed? */
@@ -82,25 +92,18 @@ void cmp_boot_secondary(int cpu, struct task_struct *idle)
 	                   (unsigned long)(gp + sizeof(struct thread_info)));
 #endif
 
-#if 0
 	amon_cpu_start(cpu, pc, sp, gp, a0);
-#else
-	gp = gp;
-	sp = sp;
-	pc = pc;
-	a0 = a0;
-#endif
 }
 
 void cmp_init_secondary(void)
 {
-	pr_debug("SMPCMP: CPU%d: prom_init_secondary\n", smp_processor_id());
+	pr_debug("SMPCMP: CPU%d: %s\n", smp_processor_id(), __FUNCTION__);
 	/* Enable per-cpu interrupts: platform specific */
 }
 
 void cmp_smp_finish(void)
 {
-	pr_debug("SMPCMP: CPU%d: prom_smp_finish\n", smp_processor_id());
+	pr_debug("SMPCMP: CPU%d: %s\n", smp_processor_id(), __FUNCTION__);
 
 #ifdef CONFIG_MIPS_MT_FPAFF
 	/* If we have an FPU, enroll ourselves in the FPU-full mask */
@@ -113,6 +116,6 @@ void cmp_smp_finish(void)
 
 void cmp_cpus_done(void)
 {
-	pr_debug("SMPCMP: CPU%d: prom_cpus_done\n", smp_processor_id());
+	pr_debug("SMPCMP: CPU%d: %s\n", smp_processor_id(), __FUNCTION__);
 }
 
