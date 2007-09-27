@@ -462,7 +462,9 @@ void __init arch_init_irq(void)
 			unsigned int call;
 		} ipiirq[] = {
 			{GIC_IPI_EXT_INTR_RESCHED_VPE0, GIC_IPI_EXT_INTR_CALLFNC_VPE0},
-			{GIC_IPI_EXT_INTR_RESCHED_VPE1, GIC_IPI_EXT_INTR_CALLFNC_VPE1}
+			{GIC_IPI_EXT_INTR_RESCHED_VPE1, GIC_IPI_EXT_INTR_CALLFNC_VPE1},
+			{GIC_IPI_EXT_INTR_RESCHED_VPE2, GIC_IPI_EXT_INTR_CALLFNC_VPE2},
+			{GIC_IPI_EXT_INTR_RESCHED_VPE3, GIC_IPI_EXT_INTR_CALLFNC_VPE3}
 		};
 #define NIPI (sizeof(ipiirq)/sizeof(ipiirq[0]))
 
@@ -471,6 +473,12 @@ void __init arch_init_irq(void)
 			set_vi_handler(MIPSCPU_INT_IPI0, malta_ipi_irqdispatch);
 			set_vi_handler(MIPSCPU_INT_IPI1, malta_ipi_irqdispatch);
 		}
+		/* Argh.. this really needs sorting out.. */
+		printk ("CPU%d: status register was %08x\n", smp_processor_id(), read_c0_status());
+		write_c0_status(read_c0_status() | STATUSF_IP3 | STATUSF_IP4);
+		printk ("CPU%d: status register now %08x\n", smp_processor_id(), read_c0_status());
+		write_c0_status(0x1100dc00);
+		printk ("CPU%d: status register frc %08x\n", smp_processor_id(), read_c0_status());
 		for (i = 0; i < NIPI; i++) {
 			setup_irq(MIPS_GIC_IRQ_BASE + ipiirq[i].resched, &irq_resched);
 			setup_irq(MIPS_GIC_IRQ_BASE + ipiirq[i].call, &irq_call);
