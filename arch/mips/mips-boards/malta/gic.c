@@ -21,7 +21,8 @@
 static unsigned long _gic_base;
 static unsigned long _gcmp_base;
 static unsigned long _msc01_biu_base;
-static unsigned int gcmp_present, gic_present;
+unsigned int gcmp_present;
+static unsigned int gic_present;
 
 /* FIXME : Cleanup needed */
 static unsigned int gic_pcpu_imasks[4];
@@ -29,7 +30,7 @@ static unsigned int gic_pcpu_imasks[4];
 void ipi_call_function(unsigned int cpu)
 {
 #ifdef GIC_DEBUG
-	printk(KERN_CRIT "%s called cpu %d to %d\n", __FUNCTION__, smp_processor_id(), cpu);
+	printk(KERN_CRIT "CPU%d: %s cpu %d status %08x\n", smp_processor_id(), __FUNCTION__, cpu, read_c0_status());
 #endif
 	switch (cpu) {
 	case 0:
@@ -50,7 +51,7 @@ void ipi_call_function(unsigned int cpu)
 void ipi_resched(unsigned int cpu)
 {
 #ifdef GIC_DEBUG
-	printk(KERN_CRIT "%s called cpu %d to %d \n", __FUNCTION__, smp_processor_id(), cpu);
+	printk(KERN_CRIT "CPU%d: %s cpu %d status %08x\n", smp_processor_id(), __FUNCTION__, cpu, read_c0_status());
 #endif
 
 	switch (cpu) {
@@ -295,6 +296,9 @@ static unsigned int get_int(void)
 	pending = (31 - clz(pending));
 	if (pending == 0xffffffff)
 		HWTRIGGER(get_irq_regs(), 0, "Spurious GIC interrupt");
+#ifdef GIC_DEBUG
+	printk (KERN_CRIT "CPU%d: %s pend=%d\n", smp_processor_id(), __FUNCTION__, pending);
+#endif
 	return pending;
 }
 
@@ -316,20 +320,6 @@ static unsigned int gic_irq_startup(unsigned int irq)
 	printk(KERN_CRIT "CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
 #endif
 	irq -= MIPS_GIC_IRQ_BASE;
-	switch(irq) {
-		case(GIC_IPI_EXT_INTR_RESCHED_VPE0):
-		case(GIC_IPI_EXT_INTR_CALLFNC_VPE0):
-			clear_c0_cause(0x800 << (irq - 1));
-			set_c0_status(0x800 << (irq - 1));
-			irq_enable_hazard();
-			break;
-		case(GIC_IPI_EXT_INTR_RESCHED_VPE1):
-		case(GIC_IPI_EXT_INTR_CALLFNC_VPE1):
-			clear_c0_cause(0x800 << (irq - 10));
-			set_c0_status(0x800 << (irq - 10));
-			irq_enable_hazard();
-			break;
-	}
 	GIC_REG(SHARED, GIC_SH_SMASK_31_0) = (1 << irq);
 	return (0);
 }

@@ -9,7 +9,8 @@
 #else
 #define malta_smtc	0
 #if defined(CONFIG_MIPS_CMP)
-#define malta_cmp	1
+extern int gcmp_present;
+#define malta_cmp	gcmp_present
 #else
 #define malta_cmp	0
 #endif
