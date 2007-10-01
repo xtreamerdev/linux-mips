@@ -19,25 +19,42 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/init.h>
 #include <linux/smp.h>
 
 #include <asm-mips/addrspace.h>
 #include <asm-mips/mips-boards/launch.h>
+#include <asm-mips/mipsmtregs.h>
+
+static int cpumask = ~0;	/* FIXME: 32 CPU's... */
+
+static int __init cpumask_set(char *str)
+{
+	get_option(&str, &cpumask);
+	printk("Cpumask=%08x\n", cpumask);
+	return 1;
+}
+__setup("cpumask=", cpumask_set);
 
 int amon_cpu_avail (int cpu)
 {
 	cpulaunch_t *launch = (cpulaunch_t *)KSEG0ADDR(CPULAUNCH);
 	if (cpu < 0 || cpu >= NCPULAUNCH) {
-		printk ("launch: cpu%d is out of range\n", cpu);
+		printk ("avail: cpu%d is out of range\n", cpu);
 		return 0;
 	}
+	if ((cpumask & (1<<cpu)) == 0) {
+		printk ("avail: ignoring cpu%d\n", cpu);
+		return 0;
+	}
+
 	launch += cpu;
 	if (!(launch->flags & LAUNCH_FREADY)) {
-		printk ("launch: cpu%d is not ready\n", cpu);
+		printk ("avail: cpu%d is not ready\n", cpu);
 		return 0;
 	}
 	if (launch->flags & (LAUNCH_FGO|LAUNCH_FGONE)) {
-		printk ("launch: too late.. cpu%d is already gone\n", cpu);
+		printk ("avail: too late.. cpu%d is already gone\n", cpu);
 		return 0;
 	}
 
