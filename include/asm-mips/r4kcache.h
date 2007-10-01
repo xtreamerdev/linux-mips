@@ -140,9 +140,16 @@ extern void mt_cflush_release(void);
 
 #endif /* CONFIG_MIPS_MT */
 
+#if defined(CONFIG_MIPS_CMP)
+#define trapindexed() do {_HWTRIGGER(0xdead);} while (0)
+#else
+#define trapindexed() do { } while (0)
+#endif
+
 static inline void flush_icache_line_indexed(unsigned long addr)
 {
 	__iflush_prologue
+	trapindexed();	
 	cache_op(Index_Invalidate_I, addr);
 	__iflush_epilogue
 }
@@ -150,12 +157,14 @@ static inline void flush_icache_line_indexed(unsigned long addr)
 static inline void flush_dcache_line_indexed(unsigned long addr)
 {
 	__dflush_prologue
+	trapindexed();	
 	cache_op(Index_Writeback_Inv_D, addr);
 	__dflush_epilogue
 }
 
 static inline void flush_scache_line_indexed(unsigned long addr)
 {
+	trapindexed();	
 	cache_op(Index_Writeback_Inv_SD, addr);
 }
 
@@ -352,6 +361,7 @@ static inline void blast_##pfx##cache##lsize(void)			\
 									\
 	__##pfx##flush_prologue						\
 									\
+	trapindexed();							\
 	for (ws = 0; ws < ws_end; ws += ws_inc)				\
 		for (addr = start; addr < end; addr += lsize * 32)	\
 			cache##lsize##_unroll32(addr|ws,indexop);	\
@@ -386,6 +396,7 @@ static inline void blast_##pfx##cache##lsize##_page_indexed(unsigned long page) 
 									\
 	__##pfx##flush_prologue						\
 									\
+	trapindexed();							\
 	for (ws = 0; ws < ws_end; ws += ws_inc)				\
 		for (addr = start; addr < end; addr += lsize * 32)	\
 			cache##lsize##_unroll32(addr|ws,indexop);	\
