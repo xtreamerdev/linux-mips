@@ -1815,6 +1815,7 @@ static void check_poison_obj(struct kmem_cache *cachep, void *objp)
 			/* Mismatch ! */
 			/* Print header */
 			if (lines == 0) {
+				HWTRIGGER(task_pt_regs(current), 0, "slab corruption");
 				printk(KERN_ERR
 					"Slab corruption: %s start=%p, len=%d\n",
 					cachep->name, realobj, size);
