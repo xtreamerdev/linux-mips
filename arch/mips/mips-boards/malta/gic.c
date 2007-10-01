@@ -160,7 +160,7 @@ static void setup_pin_maps(void)
 				(GIC_MAP_TO_PIN_MSK | (MIPSCPU_INT_IPI0 - 2));
 
 	/* GIC Global Src xx -> SMP Call Function IPI for VPE3 */
-	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(GIC_IPI_EXT_INTR_CALLFNC_VPE2)) = \
+	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(GIC_IPI_EXT_INTR_CALLFNC_VPE3)) = \
 				(GIC_MAP_TO_PIN_MSK | (MIPSCPU_INT_IPI1 - 2));
 
 }
