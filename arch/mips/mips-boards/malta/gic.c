@@ -6,7 +6,6 @@
 #include <asm/irq.h>
 #include <linux/hardirq.h>
 
-//#define GIC_DEBUG			1
 #define GIC_BASE_ADDR			0x1bdc0000
 #define GCMP_BASE_ADDR			0x1fbf8000
 #define MSC01_BIU_REG_BASE		0x1bc80000
@@ -29,9 +28,7 @@ static unsigned int gic_pcpu_imasks[4];
 
 void ipi_call_function(unsigned int cpu)
 {
-#ifdef GIC_DEBUG
-	printk(KERN_CRIT "CPU%d: %s cpu %d status %08x\n", smp_processor_id(), __FUNCTION__, cpu, read_c0_status());
-#endif
+	pr_debug("CPU%d: %s cpu %d status %08x\n", smp_processor_id(), __FUNCTION__, cpu, read_c0_status());
 	switch (cpu) {
 	case 0:
 		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_CALLFNC_VPE0);
@@ -50,9 +47,7 @@ void ipi_call_function(unsigned int cpu)
 
 void ipi_resched(unsigned int cpu)
 {
-#ifdef GIC_DEBUG
-	printk(KERN_CRIT "CPU%d: %s cpu %d status %08x\n", smp_processor_id(), __FUNCTION__, cpu, read_c0_status());
-#endif
+	pr_debug("CPU%d: %s cpu %d status %08x\n", smp_processor_id(), __FUNCTION__, cpu, read_c0_status());
 
 	switch (cpu) {
 	case 0:
@@ -169,18 +164,14 @@ static void setup_vpe_maps(unsigned int numintrs)
 {
 	unsigned int intr;
 
-#ifdef GIC_DEBUG
-	printk (KERN_CRIT "GIC: %s\n", __FUNCTION__);
-#endif
+	pr_debug ("GIC: %s\n", __FUNCTION__);
 
 	/* Map All interrupts to VPE 0 */
 	for (intr = 0; intr < numintrs; intr++) {
 		GIC_SH_MAP_TO_VPE_SMASK(intr, 0);
 	}
 
-#ifdef GIC_DEBUG
-	printk (KERN_CRIT "GIC: %s mapping VPE IPI's\n", __FUNCTION__);
-#endif
+	pr_debug ("GIC: %s mapping VPE IPI's\n", __FUNCTION__);
 
 	/* ...but map IPIs to specific VPEs.. */
 	GIC_SH_MAP_TO_VPE_SMASK(GIC_IPI_EXT_INTR_RESCHED_VPE0, 0);
@@ -232,9 +223,7 @@ static void set_interrupt_masks(void)
 
 static void setup_mappings(unsigned int numintrs, unsigned int numvpes)
 {
-#ifdef GIC_DEBUG
-	printk (KERN_CRIT "GIC: %s\n", __FUNCTION__);
-#endif
+	pr_debug ("GIC: %s\n", __FUNCTION__);
 
 	setup_pin_maps();
 	vpe_local_setup(numvpes);
@@ -246,7 +235,7 @@ static int do_probe(void)
 	gcmp_present = (GCMPGCB(GCMPB) & GCMP_GCB_GCMPB_GCMPBASE_MSK) == GCMP_BASE_ADDR;
 
 	if (gcmp_present)  {
-		printk (KERN_CRIT "GCMP present\n");
+		printk (KERN_DEBUG "GCMP present\n");
 		GCMPGCB(GICBA) = GIC_BASE_ADDR | GCMP_GCB_GICBA_EN_MSK;
 		gic_present = 1;
 	}
@@ -256,17 +245,15 @@ static int do_probe(void)
 	}
 
 	if (gic_present)
-		printk (KERN_CRIT "GIC present\n");
+		printk (KERN_DEBUG "GIC present\n");
 
 	return gic_present;
 }
 
 static void basic_init(unsigned long numintrs, unsigned long numvpes)
 {
-#ifdef GIC_DEBUG
-	printk (KERN_CRIT "GIC: %s\n", __FUNCTION__);
-#endif
-
+	pr_debug ("GIC: %s\n", __FUNCTION__);
+	
 	setup_polarities();
 	setup_triggers();
 	set_interrupt_masks();
@@ -296,9 +283,7 @@ static unsigned int get_int(void)
 	pending = (31 - clz(pending));
 	if (pending == 0xffffffff)
 		HWTRIGGER(get_irq_regs(), 0, "Spurious GIC interrupt");
-#ifdef GIC_DEBUG
-	printk (KERN_CRIT "CPU%d: %s pend=%d\n", smp_processor_id(), __FUNCTION__, pending);
-#endif
+	pr_debug ("CPU%d: %s pend=%d\n", smp_processor_id(), __FUNCTION__, pending);
 	return pending;
 }
 
@@ -316,9 +301,7 @@ asmlinkage void malta_ipi_irqdispatch(void)
 
 static unsigned int gic_irq_startup(unsigned int irq)
 {
-#ifdef GIC_DEBUG
-	printk(KERN_CRIT "CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
-#endif
+	pr_debug("CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
 	irq -= MIPS_GIC_IRQ_BASE;
 	GIC_REG(SHARED, GIC_SH_SMASK_31_0) = (1 << irq);
 	return (0);
@@ -326,9 +309,7 @@ static unsigned int gic_irq_startup(unsigned int irq)
 
 static void gic_irq_ack(unsigned int irq)
 {
-#ifdef GIC_DEBUG
-	printk(KERN_CRIT "CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
-#endif
+	pr_debug("CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
 	irq -= MIPS_GIC_IRQ_BASE;
 	GIC_REG(SHARED, GIC_SH_RMASK_31_0) = (1 << irq);
 	GIC_REG(SHARED, GIC_SH_WEDGE) = irq; 
@@ -336,27 +317,21 @@ static void gic_irq_ack(unsigned int irq)
 
 static void gic_mask_irq(unsigned int irq)
 {
-#ifdef GIC_DEBUG
-	printk(KERN_CRIT "CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
-#endif
+	pr_debug("CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
 	irq -= MIPS_GIC_IRQ_BASE;
 	GIC_REG(SHARED, GIC_SH_RMASK_31_0) = (1 << irq); 
 }
 
 static void gic_unmask_irq(unsigned int irq)
 {
-#ifdef GIC_DEBUG
-	printk(KERN_CRIT "CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
-#endif
+	pr_debug("CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
 	irq -= MIPS_GIC_IRQ_BASE;
 	GIC_REG(SHARED, GIC_SH_SMASK_31_0) = (1 << irq); 
 }
 
 static void gic_set_affinity(unsigned int irq, cpumask_t dest)
 {
-#ifdef GIC_DEBUG
-	printk(KERN_CRIT "%s called\n", __FUNCTION__);
-#endif
+	pr_debug(KERN_DEBUG "%s called\n", __FUNCTION__);
 }
 
 static struct irq_chip gic_irq_controller = {
@@ -406,9 +381,7 @@ int __init gic_init(void)
 	numvpes = (GIC_REG(SHARED, GIC_SH_CONFIG) &
 		GIC_SH_CONFIG_NUMVPES_MSK) >> GIC_SH_CONFIG_NUMVPES_SHF;
 
-#ifdef GIC_DEBUG
-	printk (KERN_CRIT "GIC: %d External Interrupts Supported!\n", numintrs);
-#endif
+	pr_debug (KERN_DEBUG "GIC: %d External Interrupts Supported!\n", numintrs);
 
 	/* Setup mappings, polarities, triggers etc */
 	basic_init(numintrs, numvpes);
@@ -421,14 +394,10 @@ int __init gic_init(void)
 	    	REG(_msc01_biu_base, MSC01_SC_CFG) =
 		(data | (0x1 << MSC01_SC_CFG_GICENA_SHF));
 	
-#ifdef GIC_DEBUG
-		printk(KERN_CRIT "GIC Enabled\n");
-#endif
+		pr_debug("GIC Enabled\n");
 	}
 
-#ifdef GIC_DEBUG
-	printk(KERN_CRIT "%s called\n", __FUNCTION__);
-#endif
+	pr_debug("%s called\n", __FUNCTION__);
 
 	return 1;
 }
