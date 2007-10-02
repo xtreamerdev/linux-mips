@@ -60,8 +60,8 @@ struct vm_area_struct;
 
 #if defined(CONFIG_DYNAMIC_CCA)
 /*
- * Dummy values to fil the table in mmap.c
- * Thereal values will be generated at runtime
+ * Dummy values to fill the table in mmap.c
+ * The real values will be generated at runtime
  */
 #define __P000 __pgprot(0)
 #define __P001 __pgprot(0)
