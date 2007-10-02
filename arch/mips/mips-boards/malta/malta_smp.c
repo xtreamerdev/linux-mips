@@ -2,7 +2,8 @@
  * Malta Platform-specific hooks for SMP operation
  */
 #include <linux/init.h>
-
+#include <linux/smp.h>
+#include <asm/mips-boards/maltaint.h>
 #include <asm/mips-boards/maltasmp.h>
 
 /*
@@ -25,6 +26,7 @@ void core_send_ipi(int cpu, unsigned int action)
 
 void prom_boot_secondary(int cpu, struct task_struct *idle)
 {
+	pr_debug("%s\n", __FUNCTION__);
 	if (malta_smtc)
 		smtc_boot_secondary(cpu, idle);
 	else if (malta_cmp)
@@ -38,6 +40,7 @@ void prom_boot_secondary(int cpu, struct task_struct *idle)
  */
 void prom_init_secondary(void)
 {
+	pr_debug("%s\n", __FUNCTION__);
 	if (malta_smtc) {
 		void smtc_init_secondary(void);
 		int myvpe;
@@ -73,6 +76,7 @@ void prom_init_secondary(void)
 #endif
 		smvp_init_secondary();
 	}
+	pr_debug ("CPU%d: status register %08x\n", smp_processor_id(), read_c0_status());
 }
 
 /*
@@ -84,6 +88,7 @@ void prom_init_secondary(void)
 
 void __init plat_smp_setup(void)
 {
+	pr_debug("%s\n", __FUNCTION__);
 	if (malta_smtc) {
 		if (read_c0_config3() & (1<<2))
 			mipsmt_build_cpu_map(0);
@@ -96,6 +101,7 @@ void __init plat_smp_setup(void)
 
 void __init plat_prepare_cpus(unsigned int max_cpus)
 {
+	pr_debug("%s\n", __FUNCTION__);
 	if (malta_smtc) {
 		if (read_c0_config3() & (1<<2))
 			mipsmt_prepare_cpus();
@@ -108,11 +114,12 @@ void __init plat_prepare_cpus(unsigned int max_cpus)
 }
 
 /*
- * SMP initialization finalization entry point
+ * SMP initialisation finalisation entry point
  */
 
 void prom_smp_finish(void)
 {
+	pr_debug("%s\n", __FUNCTION__);
 	if (malta_smtc)
 		smtc_smp_finish();
 	else if (malta_cmp)
@@ -127,6 +134,7 @@ void prom_smp_finish(void)
 
 void prom_cpus_done(void)
 {
+	pr_debug("%s\n", __FUNCTION__);
 	if (malta_smtc)
 		smtc_cpus_done();
 	else if (malta_cmp)
