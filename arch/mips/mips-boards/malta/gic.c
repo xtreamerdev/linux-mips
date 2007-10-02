@@ -20,8 +20,8 @@
 static unsigned long _gic_base;
 static unsigned long _gcmp_base;
 static unsigned long _msc01_biu_base;
-unsigned int gcmp_present;
-static unsigned int gic_present;
+int gcmp_present = -1;
+static int gic_present = -1;
 
 /* FIXME : Cleanup needed */
 static unsigned int gic_pcpu_imasks[4];
@@ -230,12 +230,35 @@ static void setup_mappings(unsigned int numintrs, unsigned int numvpes)
 	setup_vpe_maps(numintrs);
 }
 
-static int do_probe(void)
+/*
+ * GCMP needs to be detected before any SMP initialisation
+ * FIXME: GCMP support is spearate from GIC
+ */
+int __init gcmp_probe (void)
 {
+	if (gcmp_present >= 0)
+		return gcmp_present;
+
+	_gcmp_base = (unsigned long) ioremap_nocache(GCMP_BASE_ADDR, GCMP_ADDRSPACE_SZ);
+
 	gcmp_present = (GCMPGCB(GCMPB) & GCMP_GCB_GCMPB_GCMPBASE_MSK) == GCMP_BASE_ADDR;
 
-	if (gcmp_present)  {
+	if (gcmp_present)
 		printk (KERN_DEBUG "GCMP present\n");
+
+	return gcmp_present;
+}
+
+int __init gic_probe (void)
+{
+	if (gic_present >= 0)
+		return gic_present;
+
+	_gic_base = (unsigned long) ioremap_nocache(GIC_BASE_ADDR, GIC_ADDRSPACE_SZ);
+	_msc01_biu_base = (unsigned long) ioremap_nocache(MSC01_BIU_REG_BASE, MSC01_BIU_ADDRSPACE_SZ);
+
+	(void) gcmp_probe();
+	if (gcmp_present)  {
 		GCMPGCB(GICBA) = GIC_BASE_ADDR | GCMP_GCB_GICBA_EN_MSK;
 		gic_present = 1;
 	}
@@ -367,11 +390,7 @@ int __init gic_init(void)
 {
 	unsigned int  numintrs, numvpes, data;
 
-	_gic_base = (unsigned long) ioremap_nocache(GIC_BASE_ADDR, GIC_ADDRSPACE_SZ);
-	_gcmp_base = (unsigned long) ioremap_nocache(GCMP_BASE_ADDR, GCMP_ADDRSPACE_SZ);
-	_msc01_biu_base = (unsigned long) ioremap_nocache(MSC01_BIU_REG_BASE, MSC01_BIU_ADDRSPACE_SZ);
-
-	if (!do_probe())
+	if (!gic_probe())
 		return 0;
 
 	numintrs = (GIC_REG(SHARED, GIC_SH_CONFIG) &

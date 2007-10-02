@@ -88,7 +88,9 @@ void prom_init_secondary(void)
 
 void __init plat_smp_setup(void)
 {
+	extern int __init gcmp_probe(void); /* FIXME */
 	pr_debug("%s\n", __FUNCTION__);
+	gcmp_probe();		/* FIXME: Just to be sure */
 	if (malta_smtc) {
 		if (read_c0_config3() & (1<<2))
 			mipsmt_build_cpu_map(0);
