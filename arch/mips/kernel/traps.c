@@ -79,19 +79,22 @@ void (*board_bind_eic_interrupt)(int irq, int regset);
 
 static void show_raw_backtrace(unsigned long reg29)
 {
-	unsigned long *sp = (unsigned long *)reg29;
+	unsigned long *sp = (unsigned long *)(reg29 & ~3);
 	unsigned long addr;
 
 	printk("Call Trace:");
 #ifdef CONFIG_KALLSYMS
 	printk("\n");
 #endif
-	while (!kstack_end(sp)) {
-		addr = *sp++;
-		if (__kernel_text_address(addr))
-			print_ip_sym(addr);
+#define IS_KVA01(a) ((((unsigned int)a) & 0xc0000000) == 0x80000000)
+	if (IS_KVA01(sp)) {
+		while (!kstack_end(sp)) {
+			addr = *sp++;
+			if (__kernel_text_address(addr))
+				print_ip_sym(addr);
+		}
+		printk("\n");
 	}
-	printk("\n");
 }
 
 #ifdef CONFIG_KALLSYMS
