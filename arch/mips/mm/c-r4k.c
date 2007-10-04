@@ -1257,6 +1257,8 @@ void __init r4k_cache_init(void)
 
 	build_clear_page();
 	build_copy_page();
+#if !defined(CONFIG_MIPS_CMP)
 	local_r4k___flush_cache_all(NULL);
+#endif
 	coherency_setup();
 }
