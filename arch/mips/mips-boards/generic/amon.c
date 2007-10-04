@@ -80,6 +80,10 @@ void amon_cpu_start(int cpu,
 	launch->a0 = a0;
 
 	printk ("launch: starting cpu%d\n", cpu);
+
+	/* Make sure target sees parameters before the go bit */
+	smp_mb();
+
 	launch->flags |= LAUNCH_FGO;
 	while ((launch->flags & LAUNCH_FGONE) == 0)
 		;
