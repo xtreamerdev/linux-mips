@@ -31,7 +31,7 @@ static int cpumask = ~0;	/* FIXME: 32 CPU's... */
 static int __init cpumask_set(char *str)
 {
 	get_option(&str, &cpumask);
-	printk("Cpumask=%08x\n", cpumask);
+	pr_debug("cpumask=%08x\n", cpumask);
 	return 1;
 }
 __setup("cpumask=", cpumask_set);
@@ -40,21 +40,21 @@ int amon_cpu_avail (int cpu)
 {
 	cpulaunch_t *launch = (cpulaunch_t *)KSEG0ADDR(CPULAUNCH);
 	if (cpu < 0 || cpu >= NCPULAUNCH) {
-		printk ("avail: cpu%d is out of range\n", cpu);
+		pr_debug("avail: cpu%d is out of range\n", cpu);
 		return 0;
 	}
 	if ((cpumask & (1<<cpu)) == 0) {
-		printk ("avail: ignoring cpu%d\n", cpu);
+		pr_debug("avail: ignoring cpu%d\n", cpu);
 		return 0;
 	}
 
 	launch += cpu;
 	if (!(launch->flags & LAUNCH_FREADY)) {
-		printk ("avail: cpu%d is not ready\n", cpu);
+		pr_debug("avail: cpu%d is not ready\n", cpu);
 		return 0;
 	}
 	if (launch->flags & (LAUNCH_FGO|LAUNCH_FGONE)) {
-		printk ("avail: too late.. cpu%d is already gone\n", cpu);
+		pr_debug("avail: too late.. cpu%d is already gone\n", cpu);
 		return 0;
 	}
 
@@ -69,17 +69,17 @@ void amon_cpu_start(int cpu,
 	if (!amon_cpu_avail(cpu))
 		return;
 	if (cpu == smp_processor_id()) {
-		printk ("launch: I am cpu%d!\n", cpu);
+		pr_debug("launch: I am cpu%d!\n", cpu);
 		return;
 	}
 	launch += cpu;
+
+	pr_debug ("launch: starting cpu%d\n", cpu);
 
 	launch->pc = pc;
 	launch->gp = gp;
 	launch->sp = sp;
 	launch->a0 = a0;
-
-	printk ("launch: starting cpu%d\n", cpu);
 
 	/* Make sure target sees parameters before the go bit */
 	smp_mb();
@@ -87,6 +87,5 @@ void amon_cpu_start(int cpu,
 	launch->flags |= LAUNCH_FGO;
 	while ((launch->flags & LAUNCH_FGONE) == 0)
 		;
-	printk ("launch: cpu%d gone!\n", cpu);
+	pr_debug("launch: cpu%d gone!\n", cpu);
 }
-
