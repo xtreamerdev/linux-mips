@@ -1663,6 +1663,7 @@ config MIPS_CMP
 	bool "MIPS CMP framework support"
 	depends on SMP
 	select DYNAMIC_CCA
+	select WEAK_ORDERING
 	default n
 	help
 	  This is a placeholder option for the GCMP work. It will need to
