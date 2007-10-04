@@ -207,6 +207,14 @@ NESTED(kernel_entry, 16, sp)			# kernel entry point
  * function after setting up the stack and gp registers.
  */
 NESTED(smp_bootstrap, 16, sp)
+#if defined(CONFIG_MIPS_CMP)
+	/*
+	 * FIXME: A hack to approximately synchronise
+	 * count registers across CPU's
+	 * See arch/mips/mips-boards/generic/amon.c
+	 */
+	mtc0	a0,CP0_COUNT
+#endif	
 #ifdef CONFIG_MIPS_MT_SMTC
 	/*
 	 * Read-modify-writes of Status must be atomic, and this
