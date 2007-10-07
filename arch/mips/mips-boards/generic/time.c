@@ -57,8 +57,26 @@ static int mips_cpu_timer_irq;
 extern int cp0_perfcount_irq;
 extern void smtc_timer_broadcast(int);
 
+DEFINE_PER_CPU(unsigned int, tickcount);
+#define tickcount_this_cpu __get_cpu_var(tickcount)
+static unsigned long ledbitmask;
+
 static void mips_timer_dispatch(void)
 {
+#if defined(CONFIG_MIPS_MALTA) || defined(CONFIG_MIPS_ATLAS)
+	/*
+	 * Yes, this is very tacky, won't work as expected with SMTC and dyntick will break it,
+	 * but it gives me a nice warm feeling during debug
+	 */
+#define LEDBAR 0xbf000408
+	if (tickcount_this_cpu++ >= HZ) {
+		tickcount_this_cpu = 0;
+		change_bit(1 << smp_processor_id(), &ledbitmask);
+		smp_wmb(); /* Make sure every one else sees the change */
+		/* This will pick up any recent changes made by other CPU's */
+		*(unsigned int *)LEDBAR = ledbitmask;
+	}
+#endif
 	do_IRQ(mips_cpu_timer_irq);
 }
 
