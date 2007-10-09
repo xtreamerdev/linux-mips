@@ -23,12 +23,24 @@ static unsigned long _msc01_biu_base;
 int gcmp_present = -1;
 static int gic_present = -1;
 
+#define gic_wedgeb2bok 0	/* Can GIC handle b2b writes to wedge register? */
+#if gic_wedgeb2bok==0
+DEFINE_SPINLOCK(gic_wedgeb2b_lock);
+#endif 
+
 /* FIXME : Cleanup needed */
 static unsigned int gic_pcpu_imasks[4];
 
 void ipi_call_function(unsigned int cpu)
 {
+#if gic_wedgeb2bok==0
+	unsigned long flags;
+#endif
 	pr_debug("CPU%d: %s cpu %d status %08x\n", smp_processor_id(), __FUNCTION__, cpu, read_c0_status());
+
+	if (!gic_wedgeb2bok)
+		spin_lock_irqsave(&gic_wedgeb2b_lock, flags);
+
 	switch (cpu) {
 	case 0:
 		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_CALLFNC_VPE0);
@@ -43,11 +55,22 @@ void ipi_call_function(unsigned int cpu)
 		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_CALLFNC_VPE3);
 		break;
 	}
+
+	if (!gic_wedgeb2bok) {
+		(void) GIC_REG(SHARED, GIC_SH_CONFIG);
+		spin_unlock_irqrestore(&gic_wedgeb2b_lock, flags);
+	}
 }
 
 void ipi_resched(unsigned int cpu)
 {
+#if gic_wedgeb2bok==0
+	unsigned long flags;
+#endif
 	pr_debug("CPU%d: %s cpu %d status %08x\n", smp_processor_id(), __FUNCTION__, cpu, read_c0_status());
+
+	if (!gic_wedgeb2bok)
+		spin_lock_irqsave(&gic_wedgeb2b_lock, flags);
 
 	switch (cpu) {
 	case 0:
@@ -62,6 +85,10 @@ void ipi_resched(unsigned int cpu)
 	case 3:
 		GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | GIC_IPI_EXT_INTR_RESCHED_VPE3);
 		break;
+	}
+	if (!gic_wedgeb2bok) {
+		(void) GIC_REG(SHARED, GIC_SH_CONFIG);
+		spin_unlock_irqrestore(&gic_wedgeb2b_lock, flags);
 	}
 }
 
@@ -315,10 +342,8 @@ asmlinkage void malta_ipi_irqdispatch(void)
 	int irq;
 
 	irq = get_int();
-	GIC_REG(SHARED, GIC_SH_WEDGE) = irq;
-	if (irq < 0) {
+	if (irq < 0)
 		return;  /* interrupt has already been cleared */
-	}
 	do_IRQ(MIPS_GIC_IRQ_BASE + irq);
 }
 
@@ -332,10 +357,20 @@ static unsigned int gic_irq_startup(unsigned int irq)
 
 static void gic_irq_ack(unsigned int irq)
 {
+#if gic_wedgeb2bok==0
+	unsigned long flags;
+#endif
 	pr_debug("CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
 	irq -= MIPS_GIC_IRQ_BASE;
 	GIC_REG(SHARED, GIC_SH_RMASK_31_0) = (1 << irq);
-	GIC_REG(SHARED, GIC_SH_WEDGE) = irq; 
+	if (!gic_wedgeb2bok)
+		spin_lock_irqsave(&gic_wedgeb2b_lock, flags);
+	/* FIXME: only need to do this for sw generated interrupts */
+	GIC_REG(SHARED, GIC_SH_WEDGE) = irq;
+	if (!gic_wedgeb2bok) {
+		(void) GIC_REG(SHARED, GIC_SH_CONFIG);
+		spin_unlock_irqrestore(&gic_wedgeb2b_lock, flags);
+	}
 }
 
 static void gic_mask_irq(unsigned int irq)
