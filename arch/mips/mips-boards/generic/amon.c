@@ -81,14 +81,6 @@ void amon_cpu_start(int cpu,
 	launch->sp = sp;
 	launch->a0 = a0;
 
-	/*
-	 * FIXME: This is a kludge to (approximately) synchronise
-	 * the count register on the launched CPU
-	 * assumes we don't need to pass a real argument
-	 */
-#define COUNTKLUDGE	20
-	launch->a0 = read_c0_count()+COUNTKLUDGE;
-
 	/* Make sure target sees parameters before the go bit */
 	smp_mb();
 
