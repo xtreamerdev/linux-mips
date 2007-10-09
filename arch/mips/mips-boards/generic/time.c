@@ -71,7 +71,7 @@ static void mips_timer_dispatch(void)
 #define LEDBAR 0xbf000408
 	if (tickcount_this_cpu++ >= HZ) {
 		tickcount_this_cpu = 0;
-		change_bit(1 << smp_processor_id(), &ledbitmask);
+		change_bit(smp_processor_id(), &ledbitmask);
 		smp_wmb(); /* Make sure every one else sees the change */
 		/* This will pick up any recent changes made by other CPU's */
 		*(unsigned int *)LEDBAR = ledbitmask;
