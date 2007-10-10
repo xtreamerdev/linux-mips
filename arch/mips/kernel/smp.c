@@ -48,6 +48,11 @@ cpumask_t cpu_online_map;		/* Bitmask of currently online CPUs */
 int __cpu_number_map[NR_CPUS];		/* Map physical to logical */
 int __cpu_logical_map[NR_CPUS];		/* Map logical to physical */
 
+#ifdef CONFIG_SMP
+void __init synchronise_count_slave (void);
+void __init synchronise_count_master (void);
+#endif
+
 EXPORT_SYMBOL(phys_cpu_present_map);
 EXPORT_SYMBOL(cpu_online_map);
 
@@ -94,6 +99,8 @@ asmlinkage __cpuinit void start_secondary(void)
 	prom_smp_finish();
 
 	cpu_set(cpu, cpu_callin_map);
+
+	synchronise_count_slave();
 
 	cpu_idle();
 }
@@ -221,6 +228,7 @@ void smp_send_stop(void)
 void __init smp_cpus_done(unsigned int max_cpus)
 {
 	prom_cpus_done();
+	synchronise_count_master();
 }
 
 /* called from main before smp_init() */
