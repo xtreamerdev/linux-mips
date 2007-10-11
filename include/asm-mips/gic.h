@@ -11,17 +11,14 @@
 #ifndef _ASM_GICREGS_H
 #define _ASM_GICREGS_H
 
-/* Temporary Ext Intrs used for IPI */
-#define GIC_IPI_EXT_INTR_RESCHED_VPE0	16
-#define GIC_IPI_EXT_INTR_CALLFNC_VPE0	17
-#define GIC_IPI_EXT_INTR_RESCHED_VPE1	18
-#define GIC_IPI_EXT_INTR_CALLFNC_VPE1	19
-#define GIC_IPI_EXT_INTR_RESCHED_VPE2	20
-#define GIC_IPI_EXT_INTR_CALLFNC_VPE2	21
-#define GIC_IPI_EXT_INTR_RESCHED_VPE3	22
-#define GIC_IPI_EXT_INTR_CALLFNC_VPE3	23
 
-#define MIPS_GIC_IRQ_BASE	(MIPS_CPU_IRQ_BASE + 8)
+/* Constants */
+#define GIC_POL_POS			1
+#define GIC_POL_NEG			0
+#define GIC_TRIG_EDGE			1
+#define GIC_TRIG_LEVEL			0
+
+#define GIC_NUM_INTRS			32
 
 #define MSK(n) ((1 << (n)) - 1)
 #define REG32(addr) (*(volatile unsigned int *) (addr))
@@ -33,6 +30,11 @@
 	REG32(_gic_base + segment##_##SECTION_OFS + offset##_##OFS)
 #define GIC_REG_ADDR(segment, offset) \
 	REG32(_gic_base + segment##_##SECTION_OFS + offset)
+
+#define GIC_ABS_REG(segment, offset) \
+       (_gic_base + segment##_##SECTION_OFS + offset##_##OFS)
+#define GIC_REG_ABS_ADDR(segment, offset) \
+       (_gic_base + segment##_##SECTION_OFS + offset)
 
 /* GIC Address Space */
 #define SHARED_SECTION_OFS		0x0000
@@ -138,6 +140,25 @@
 #define GIC_SH_MAP_TO_VPE_REG_OFF(intr, vpe) \
 	(GIC_SH_INTR_MAP_TO_VPE_BASE_OFS + (32 * (intr)) + (((vpe) / 32) * 4))
 #define GIC_SH_MAP_TO_VPE_REG_BIT(vpe)	(1 << ((vpe) % 32))
+
+/* Polarity : Reset Value is always 0 */
+#define GIC_SH_SET_POLARITY_OFS		0x0100
+#define GIC_SET_POLARITY(intr, pol) \
+	GIC_REG_ADDR(SHARED, GIC_SH_SET_POLARITY_OFS + (((intr) / 32) * 4)) |= ((pol) << ((intr) % 32))
+
+/* Triggering : Reset Value is always 0 */
+#define GIC_SH_SET_TRIGGER_OFS		0x0180
+#define GIC_SET_TRIGGER(intr, trig) \
+	GIC_REG_ADDR(SHARED, GIC_SH_SET_TRIGGER_OFS + (((intr) / 32) * 4)) |= ((trig) << ((intr) % 32))
+
+/* Mask manipulation */
+#define GIC_SH_SMASK_OFS		0x0380
+#define GIC_SET_INTR_MASK(intr, val) \
+	GIC_REG_ADDR(SHARED, GIC_SH_SMASK_OFS + (((intr) / 32) * 4)) = ((val) << ((intr) % 32))
+
+#define GIC_SH_RMASK_OFS		0x0300
+#define GIC_CLR_INTR_MASK(intr, val) \
+	GIC_REG_ADDR(SHARED, GIC_SH_RMASK_OFS + (((intr) / 32) * 4)) = ((val) << ((intr) % 32))
 
 /* Register Map for Local Section */
 #define GIC_VPE_CTL_OFS			0x0000
@@ -273,6 +294,29 @@
 	(((((vpe) / 32) ^ 1) - 1) * 4))
 #define GIC_SH_MAP_TO_VPE_REG_BIT(vpe)	(1 << ((vpe) % 32))
 
+/* Polarity */
+#define GIC_SH_SET_POLARITY_OFS		0x0100
+#define GIC_SET_POLARITY(intr, pol) \
+	GIC_REG_ADDR(SHARED, GIC_SH_SET_POLARITY_OFS + 4 +  \
+	(((((intr) / 32) ^ 1) - 1) * 4)) |= (pol << (intr % 32))
+
+/* Triggering */
+#define GIC_SH_SET_TRIGGER_OFS		0x0180
+#define GIC_SET_TRIGGER(intr, trig) \
+	GIC_REG_ADDR(SHARED, GIC_SH_SET_TRIGGER_OFS + 4 + \
+	(((((intr) / 32) ^ 1) - 1) * 4)) |= (trig << (intr % 32))
+
+/* Mask manipulation */
+#define GIC_SH_SMASK_OFS		0x0380
+#define GIC_SET_INTR_MASK(intr, val) \
+	GIC_REG_ADDR(SHARED, GIC_SH_SMASK_OFS + 4 + \
+	(((((intr) / 32) ^ 1) - 1) * 4)) = (val << (intr % 32))
+
+#define GIC_SH_RMASK_OFS		0x0300
+#define GIC_CLR_INTR_MASK(intr, val) \
+	GIC_REG_ADDR(SHARED, GIC_SH_RMASK_OFS + 4 + \
+	(((((intr) / 32) ^ 1) - 1) * 4)) = (val << (intr % 32))
+
 /* Register Map for Local Section */
 #define GIC_VPE_CTL_OFS			0x0000
 #define GIC_VPE_PEND_OFS		0x0004
@@ -393,6 +437,36 @@
 	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_VPE_REG_OFF(intr, vpe)) = \
 	GIC_SH_MAP_TO_VPE_REG_BIT(vpe)
 
-extern int gic_init(void);
+typedef struct {
+       DECLARE_BITMAP(pcpu_mask, GIC_NUM_INTRS);
+} gic_pcpu_mask_t;
+
+typedef struct {
+       DECLARE_BITMAP(pending, GIC_NUM_INTRS);
+} gic_pending_regs_t;
+
+typedef struct {
+       DECLARE_BITMAP(intrmask, GIC_NUM_INTRS);
+} gic_intrmask_regs_t;
+
+/* 
+ * Interrupt Meta-data specification. The ipiflag helps
+ * in building ipi_map.
+ */
+typedef struct {
+	unsigned int intrnum; 	/* Ext Intr Num 	*/
+	unsigned int cpunum;	/* Directed to this CPU */
+	unsigned int pin;	/* Directed to this Pin */
+	unsigned int polarity;	/* Polarity : +/-	*/
+	unsigned int trigtype;	/* Trigger  : Edge/Levl */
+	unsigned int ipiflag;	/* Is used for IPI ?	*/
+} gic_intr_map_t;
+
+extern void gic_init(unsigned long gic_base_addr, unsigned long gic_addrspace_size, 
+			gic_intr_map_t *intrmap, unsigned int intrmap_size, 
+				unsigned int irqbase);
+
+extern unsigned int gic_get_int(void);
+extern void gic_send_ipi(unsigned int intr);
 
 #endif /* _ASM_GICREGS_H */

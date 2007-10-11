@@ -41,10 +41,13 @@
 #include <asm/mips-boards/generic.h>
 #include <asm/mips-boards/msc01_pci.h>
 #include <asm/msc01_ic.h>
-#include <asm/gicregs.h>
+#include <asm/gic.h>
+#include <asm/gcmpregs.h>
 
-/* FIXME : Move this to a better place! */
-extern void malta_ipi_irqdispatch(void);
+int gcmp_present = -1;
+static unsigned long _msc01_biu_base;
+static unsigned long _gcmp_base;
+static unsigned int ipi_map[NR_CPUS];
 
 static DEFINE_SPINLOCK(mips_irq_lock);
 
@@ -122,6 +125,17 @@ static void malta_hw0_irqdispatch(void)
 	}
 
 	do_IRQ(MALTA_INT_BASE + irq);
+}
+
+static void malta_ipi_irqdispatch(void)
+{
+	int irq;
+
+	irq = gic_get_int();
+	if (irq < 0) {
+		return;  /* interrupt has already been cleared */
+	}
+	do_IRQ(MIPS_GIC_IRQ_BASE + irq);
 }
 
 static void corehi_irqdispatch(void)
@@ -261,7 +275,7 @@ asmlinkage void plat_irq_dispatch(void)
 	if (irq == MIPSCPU_INT_I8259A)
 		malta_hw0_irqdispatch();
 #if defined(USE_GIC)
-	else if ((irq == MIPSCPU_INT_IPI0) || (irq == MIPSCPU_INT_IPI1))
+	else if ((1 << irq) & ipi_map[smp_processor_id()])
 		malta_ipi_irqdispatch();
 #endif
 	else if (irq > 0)
@@ -317,9 +331,51 @@ static struct irqaction irq_call = {
 	.name		= "IPI_call"
 };
 
-extern void ipi_call_function(unsigned int cpu);
-extern void ipi_resched(unsigned int cpu);
+static void ipi_call_function(unsigned int cpu)
+{
+	unsigned int action = 0;
 
+	pr_debug("CPU%d: %s cpu %d status %08x\n", smp_processor_id(), __FUNCTION__, cpu, read_c0_status());
+
+	switch(cpu) {
+	case 0:
+		action = GIC_IPI_EXT_INTR_CALLFNC_VPE0;
+		break;
+	case 1:
+		action = GIC_IPI_EXT_INTR_CALLFNC_VPE1;
+		break;
+	case 2:
+		action = GIC_IPI_EXT_INTR_CALLFNC_VPE2;
+		break;
+	case 3:
+		action = GIC_IPI_EXT_INTR_CALLFNC_VPE3;
+		break;
+	}
+	gic_send_ipi(action);
+}
+
+static void ipi_resched(unsigned int cpu)
+{
+	unsigned int action = 0;
+
+	pr_debug("CPU%d: %s cpu %d status %08x\n", smp_processor_id(), __FUNCTION__, cpu, read_c0_status());
+
+	switch(cpu) {
+	case 0:
+		action = GIC_IPI_EXT_INTR_RESCHED_VPE0;
+		break;
+	case 1:
+		action = GIC_IPI_EXT_INTR_RESCHED_VPE1;
+		break;
+	case 2:
+		action = GIC_IPI_EXT_INTR_RESCHED_VPE2;
+		break;
+	case 3:
+		action = GIC_IPI_EXT_INTR_RESCHED_VPE3;
+		break;
+	}
+	gic_send_ipi(action);
+}
 /*
  * FIXME: This isn't restricted to CMP
  * The SMVP kernel could use GIC interrupts if available
@@ -403,14 +459,86 @@ msc_irqmap_t __initdata msc_eicirqmap[] = {
 };
 int __initdata msc_nr_eicirqs = ARRAY_SIZE(msc_eicirqmap);
 
+/*
+ * This GIC specific tabular array defines the association between External
+ * Interrupts and CPUs/Core Interrupts. The nature of the External
+ * Interrupts is also defined here - polarity/trigger.
+ */
+static gic_intr_map_t gic_intr_map[] = {
+	{ GIC_EXT_INTR(0), 	X,	X,		X, 		X,		X },
+	{ GIC_EXT_INTR(1), 	X,	X,		X, 		X,		X },
+	{ GIC_EXT_INTR(2), 	X,	X,		X, 		X,		X },
+	{ GIC_EXT_INTR(3), 	0,	GIC_CPU_INT0,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
+	{ GIC_EXT_INTR(4), 	0,	GIC_CPU_INT1,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
+	{ GIC_EXT_INTR(5), 	0,	GIC_CPU_INT2,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
+	{ GIC_EXT_INTR(6), 	0,	GIC_CPU_INT3,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
+	{ GIC_EXT_INTR(7), 	0,	GIC_CPU_INT4,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
+	{ GIC_EXT_INTR(8), 	0,	GIC_CPU_INT3,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
+	{ GIC_EXT_INTR(9), 	0,	GIC_CPU_INT3,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
+	{ GIC_EXT_INTR(10), 	X,	X,		X, 		X,		X },
+	{ GIC_EXT_INTR(11), 	X,	X,		X, 		X,		X },
+	{ GIC_EXT_INTR(12), 	0,	GIC_CPU_INT3,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
+	{ GIC_EXT_INTR(13), 	0,	GIC_MAP_TO_NMI_MSK,	GIC_POL_POS, GIC_TRIG_LEVEL,	0 },
+	{ GIC_EXT_INTR(14), 	0,	GIC_MAP_TO_NMI_MSK,	GIC_POL_POS, GIC_TRIG_LEVEL,	0 },
+	{ GIC_EXT_INTR(15), 	X,	X,		X, 		X,		X },
+	{ GIC_EXT_INTR(16), 	0,	GIC_CPU_INT1,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
+	{ GIC_EXT_INTR(17), 	0,	GIC_CPU_INT2,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
+	{ GIC_EXT_INTR(18), 	1,	GIC_CPU_INT1,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
+	{ GIC_EXT_INTR(19), 	1,	GIC_CPU_INT2,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
+	{ GIC_EXT_INTR(20), 	2,	GIC_CPU_INT1,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
+	{ GIC_EXT_INTR(21), 	2,	GIC_CPU_INT2,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
+	{ GIC_EXT_INTR(22), 	3,	GIC_CPU_INT1,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
+	{ GIC_EXT_INTR(23), 	3,	GIC_CPU_INT2,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
+};
+
+/*
+ * GCMP needs to be detected before any SMP initialisation
+ */
+int __init gcmp_probe(unsigned long addr, unsigned long size)
+{
+	if (gcmp_present >= 0)
+		return gcmp_present;
+	
+	_gcmp_base = (unsigned long) ioremap_nocache(GCMP_BASE_ADDR, GCMP_ADDRSPACE_SZ);
+	_msc01_biu_base = (unsigned long) ioremap_nocache(MSC01_BIU_REG_BASE, MSC01_BIU_ADDRSPACE_SZ);
+	gcmp_present = (GCMPGCB(GCMPB) & GCMP_GCB_GCMPB_GCMPBASE_MSK) == GCMP_BASE_ADDR;
+
+	if (gcmp_present)
+		printk (KERN_DEBUG "GCMP present\n");
+	return gcmp_present;
+}
+
+void __init fill_ipi_map(void)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(gic_intr_map); i++) {
+		if (gic_intr_map[i].ipiflag && (gic_intr_map[i].cpunum != X)) {
+			ipi_map[gic_intr_map[i].cpunum] |= (1 << (gic_intr_map[i].pin + 2));
+		}
+	}
+}
+
 void __init arch_init_irq(void)
 {
-	int gicpresent;
+	int gic_present, gcmp_present;
 	init_i8259_irqs();
 
 	if (!cpu_has_veic)
 		mips_cpu_irq_init();
-	gicpresent = gic_init();
+
+	gcmp_present = gcmp_probe(GCMP_BASE_ADDR, GCMP_ADDRSPACE_SZ);
+	if (gcmp_present)  {
+		GCMPGCB(GICBA) = GIC_BASE_ADDR | GCMP_GCB_GICBA_EN_MSK;
+		gic_present = 1;
+	}
+	else {
+		_msc01_biu_base = (unsigned long) ioremap_nocache(MSC01_BIU_REG_BASE, MSC01_BIU_ADDRSPACE_SZ);
+		gic_present = (REG(_msc01_biu_base, MSC01_SC_CFG) & 
+			       MSC01_SC_CFG_GICPRES_MSK) >> MSC01_SC_CFG_GICPRES_SHF;
+	}
+	if (gic_present)
+		printk (KERN_DEBUG "GIC present\n");
 
         switch(mips_revision_sconid) {
         case MIPS_REVISION_SCON_SOCIT:
@@ -454,7 +582,7 @@ void __init arch_init_irq(void)
 	}
 
 #if defined(CONFIG_MIPS_MT_SMP)
-	if (gicpresent) {
+	if (gic_present) {
 		/* FIXME */
 		int i;
 		struct {
@@ -467,6 +595,15 @@ void __init arch_init_irq(void)
 			{GIC_IPI_EXT_INTR_RESCHED_VPE3, GIC_IPI_EXT_INTR_CALLFNC_VPE3}
 		};
 #define NIPI (sizeof(ipiirq)/sizeof(ipiirq[0]))
+		fill_ipi_map();
+		gic_init(GIC_BASE_ADDR, GIC_ADDRSPACE_SZ, gic_intr_map, ARRAY_SIZE(gic_intr_map), MIPS_GIC_IRQ_BASE);
+		if (!gcmp_present) {
+			/* Enable the GIC */
+	    		i = REG(_msc01_biu_base, MSC01_SC_CFG);
+	    		REG(_msc01_biu_base, MSC01_SC_CFG) =
+			(i | (0x1 << MSC01_SC_CFG_GICENA_SHF));
+			pr_debug("GIC Enabled\n");
+		}
 
 		/* set up ipi interrupts */
 		if (cpu_has_vint) {
