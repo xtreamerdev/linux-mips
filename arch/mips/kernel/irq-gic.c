@@ -17,10 +17,24 @@ static gic_pending_regs_t pending_regs[NR_CPUS];
 static gic_intrmask_regs_t intrmask_regs[NR_CPUS];
 static DEFINE_SPINLOCK(gic_lock);
 
+#define gic_wedgeb2bok 0	/* Can GIC handle b2b writes to wedge register? */
+#if gic_wedgeb2bok==0
+static DEFINE_SPINLOCK(gic_wedgeb2b_lock);
+#endif 
+
 void gic_send_ipi(unsigned int intr)
 {
+#if gic_wedgeb2bok==0
+	unsigned long flags;
+#endif
 	pr_debug("CPU%d: %s status %08x\n", smp_processor_id(), __FUNCTION__, read_c0_status());
+	if (!gic_wedgeb2bok)
+		spin_lock_irqsave(&gic_wedgeb2b_lock, flags);
 	GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | intr);
+	if (!gic_wedgeb2bok) {
+		(void) GIC_REG(SHARED, GIC_SH_CONFIG);
+		spin_unlock_irqrestore(&gic_wedgeb2b_lock, flags);
+	}
 }
 
 /* This is Malta specific and needs to be exported */
@@ -86,12 +100,22 @@ static unsigned int gic_irq_startup(unsigned int irq)
 
 static void gic_irq_ack(unsigned int irq)
 {
+#if gic_wedgeb2bok==0
+	unsigned long flags;
+#endif
 	pr_debug("CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
 	irq -= _irqbase;
 	GIC_REG_ADDR(SHARED, (GIC_SH_RMASK_31_0_OFS + (irq / 32))) = (1 << (irq % 32));
 
-	if (_intrmap[irq].trigtype == GIC_TRIG_EDGE)
-		GIC_REG(SHARED, GIC_SH_WEDGE) = irq; 
+	if (_intrmap[irq].trigtype == GIC_TRIG_EDGE) {
+		if (!gic_wedgeb2bok)
+			spin_lock_irqsave(&gic_wedgeb2b_lock, flags);
+		GIC_REG(SHARED, GIC_SH_WEDGE) = irq;
+		if (!gic_wedgeb2bok) {
+			(void) GIC_REG(SHARED, GIC_SH_CONFIG);
+			spin_unlock_irqrestore(&gic_wedgeb2b_lock, flags);
+		}
+	}
 }
 
 static void gic_mask_irq(unsigned int irq)
