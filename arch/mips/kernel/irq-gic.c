@@ -1,3 +1,5 @@
+//#define DEBUG
+
 #include <linux/init.h>
 #include <asm/io.h>
 #include <asm/gic.h>
@@ -87,6 +89,7 @@ unsigned int gic_get_int(void)
 	i = find_first_bit(pending, GIC_NUM_INTRS);
 
 	pr_debug("CPU%d: %s pend=%d\n", smp_processor_id(), __FUNCTION__, i);
+
 	return i;
 }
 
@@ -222,7 +225,8 @@ static void __init gic_basic_init(void)
 				_intrmap[i].polarity, 
 		  	   	_intrmap[i].trigtype);
 		/* Initialise per-cpu Interrupt software masks */
-		set_bit(_intrmap[i].intrnum, pcpu_masks[cpu].pcpu_mask);
+		if (_intrmap[i].ipiflag)
+			set_bit(_intrmap[i].intrnum, pcpu_masks[cpu].pcpu_mask);
 	}
 
 	vpe_local_setup(numvpes);

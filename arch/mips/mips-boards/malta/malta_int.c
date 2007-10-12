@@ -465,9 +465,9 @@ int __initdata msc_nr_eicirqs = ARRAY_SIZE(msc_eicirqmap);
  * Interrupts is also defined here - polarity/trigger.
  */
 static gic_intr_map_t gic_intr_map[] = {
-	{ GIC_EXT_INTR(0), 	X,	X,		X, 		X,		X },
-	{ GIC_EXT_INTR(1), 	X,	X,		X, 		X,		X },
-	{ GIC_EXT_INTR(2), 	X,	X,		X, 		X,		X },
+	{ GIC_EXT_INTR(0), 	X,	X,		X, 		X,		0 },
+	{ GIC_EXT_INTR(1), 	X,	X,		X, 		X,		0 },
+	{ GIC_EXT_INTR(2), 	X,	X,		X, 		X,		0 },
 	{ GIC_EXT_INTR(3), 	0,	GIC_CPU_INT0,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
 	{ GIC_EXT_INTR(4), 	0,	GIC_CPU_INT1,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
 	{ GIC_EXT_INTR(5), 	0,	GIC_CPU_INT2,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
@@ -475,12 +475,12 @@ static gic_intr_map_t gic_intr_map[] = {
 	{ GIC_EXT_INTR(7), 	0,	GIC_CPU_INT4,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
 	{ GIC_EXT_INTR(8), 	0,	GIC_CPU_INT3,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
 	{ GIC_EXT_INTR(9), 	0,	GIC_CPU_INT3,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
-	{ GIC_EXT_INTR(10), 	X,	X,		X, 		X,		X },
-	{ GIC_EXT_INTR(11), 	X,	X,		X, 		X,		X },
+	{ GIC_EXT_INTR(10), 	X,	X,		X, 		X,		0 },
+	{ GIC_EXT_INTR(11), 	X,	X,		X, 		X,		0 },
 	{ GIC_EXT_INTR(12), 	0,	GIC_CPU_INT3,	GIC_POL_POS, 	GIC_TRIG_LEVEL,	0 },
 	{ GIC_EXT_INTR(13), 	0,	GIC_MAP_TO_NMI_MSK,	GIC_POL_POS, GIC_TRIG_LEVEL,	0 },
 	{ GIC_EXT_INTR(14), 	0,	GIC_MAP_TO_NMI_MSK,	GIC_POL_POS, GIC_TRIG_LEVEL,	0 },
-	{ GIC_EXT_INTR(15), 	X,	X,		X, 		X,		X },
+	{ GIC_EXT_INTR(15), 	X,	X,		X, 		X,		0 },
 	{ GIC_EXT_INTR(16), 	0,	GIC_CPU_INT1,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
 	{ GIC_EXT_INTR(17), 	0,	GIC_CPU_INT2,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
 	{ GIC_EXT_INTR(18), 	1,	GIC_CPU_INT1,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
