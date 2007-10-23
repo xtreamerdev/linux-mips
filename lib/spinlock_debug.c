@@ -56,6 +56,8 @@ static void spin_bug(spinlock_t *lock, const char *msg)
 	if (!debug_locks_off())
 		return;
 
+	HWTRIGGER(0, 0, "spin_bug");
+
 	if (lock->owner && lock->owner != SPINLOCK_OWNER_INIT)
 		owner = lock->owner;
 	printk(KERN_EMERG "BUG: spinlock %s on CPU#%d, %s/%d\n",
