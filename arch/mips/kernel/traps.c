@@ -1717,13 +1717,31 @@ void __init trap_init(void)
 
 #ifdef CONFIG_HWTRIGGER
 
+void
+hwtriggerinfo (char *file, int line, void *rp, unsigned int code, char *why)
+{
+	struct pt_regs *regs = (struct pt_regs *)rp;
+	if (why) {
+                char *who = (!regs || !user_mode(regs)) ?
+			"Kernel" : current->comm;
+		printk("%s:%d: HWTRIGGER(%u) for %s: %s\n",
+		       file, line,
+		       code, who, why);
+	}
+        if (regs)
+		show_registers (regs);
+	else
+		dump_stack();
+}
+
 /*
  * Decide if HWTRIGGER is needed
  */
 
 int
-hwtrigger (struct pt_regs *regs)
+chwtrigger (void *rp)
 {
+	struct pt_regs *regs = (struct pt_regs *)rp;
 	struct {
 		char *comm;
 		int len;
@@ -1752,4 +1770,6 @@ hwtrigger (struct pt_regs *regs)
 	/* Trigger on everything else */
 	return 1;
 }
+
+
 #endif

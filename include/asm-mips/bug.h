@@ -7,6 +7,9 @@
 
 /* Hardware assisted debugging */
 
+extern void hwtriggerinfo(char *file, int line, void *regs, unsigned int code, char *why);
+extern int chwtrigger(void *regs);
+
 #define _HWTRIGGER(code)						\
 do {									\
 	*(volatile unsigned int *)0xbfc00000 = code;			\
@@ -15,24 +18,14 @@ do {									\
 
 #define HWTRIGGER(regs, code, why)					\
 do {									\
-	extern void show_registers(struct pt_regs *);			\
-	_HWTRIGGER((((int)code) << 16) | 0xdead);			\
-	if (why) {							\
-                char *who = (!regs || !user_mode(regs)) ?		\
-			"Kernel" : current->comm;			\
-		printk("%s:%d: HWTRIGGER(%d) for %s: %s\n",		\
-		       __FILE__, __LINE__,				\
-		       (int)code, who, why);				\
-	}								\
-        if (regs)							\
-		show_registers (regs);					\
+	_HWTRIGGER(code);						\
+	hwtriggerinfo(__FILE__, __LINE__, regs, code, why);		\
 } while (0)
 
 #define CHWTRIGGER(regs, code, why)					\
 do {									\
-	extern int hwtrigger (struct pt_regs *);			\
-	if (hwtrigger(regs))						\
-		HWTRIGGER(regs, code, why);				\
+	if (chwtrigger(regs))						\
+		HWTRIGGER (regs, code, why);				\
 } while (0)
 #else
 #define _HWTRIGGER(code)
@@ -56,6 +49,7 @@ do {									\
 
 #define BUG_ON(condition)						\
 do {									\
+	if (condition) _HWTRIGGER(0xffff);				\
 	__asm__ __volatile__("tne $0, %0, %1"				\
 			     : : "r" (condition), "i" (BRK_BUG));	\
 } while (0)
