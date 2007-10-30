@@ -17,7 +17,6 @@ static gic_intr_map_t *_intrmap;
 static gic_pcpu_mask_t pcpu_masks[NR_CPUS];
 static gic_pending_regs_t pending_regs[NR_CPUS];
 static gic_intrmask_regs_t intrmask_regs[NR_CPUS];
-static DEFINE_SPINLOCK(gic_lock);
 
 #define gic_wedgeb2bok 0	/* Can GIC handle b2b writes to wedge register? */
 #if gic_wedgeb2bok==0
@@ -136,6 +135,9 @@ static void gic_unmask_irq(unsigned int irq)
 }
 
 #ifdef CONFIG_SMP
+
+static DEFINE_SPINLOCK(gic_lock);
+
 static void gic_set_affinity(unsigned int irq, cpumask_t cpumask)
 {
 	cpumask_t	tmp = CPU_MASK_NONE;
