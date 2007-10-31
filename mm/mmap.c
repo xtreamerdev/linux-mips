@@ -1870,6 +1870,9 @@ unsigned long do_brk(unsigned long addr, unsigned long len)
 	if ((addr + len) > TASK_SIZE || (addr + len) < addr)
 		return -EINVAL;
 
+	if (is_hugepage_only_range(mm, addr, len))
+		return -EINVAL;
+
 	flags = VM_DATA_DEFAULT_FLAGS | VM_ACCOUNT | mm->def_flags;
 
 	error = arch_mmap_check(addr, len, flags);
