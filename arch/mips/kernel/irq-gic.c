@@ -189,7 +189,10 @@ static void __init setup_intr(unsigned int intr, unsigned int cpu, unsigned int 
 				unsigned int polarity, unsigned int trigtype)
 {
 	/* Setup Intr to Pin mapping */
-	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(intr)) = (GIC_MAP_TO_PIN_MSK | pin);		
+	if (pin < 64)
+		GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(intr)) = (GIC_MAP_TO_PIN_MSK | pin);
+	else
+		GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(intr)) = pin;
 
 	/* Setup Intr to CPU mapping */
 	GIC_SH_MAP_TO_VPE_SMASK(intr, cpu);
