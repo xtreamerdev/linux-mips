@@ -137,8 +137,8 @@ probe_spram(char *type,
 	unsigned int offset = 0;
 	int i;
 	unsigned int tag0, tag1;
-	unsigned int firstpa, lastpa, pa;
-	unsigned int firstsize, lastsize, size;
+	unsigned int firstpa = 0, lastpa = 0, pa = 0;
+	unsigned int firstsize = 0, lastsize = 0, size;
 	unsigned int enabled;
 
 	/*
