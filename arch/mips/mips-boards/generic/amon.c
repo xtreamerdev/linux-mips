@@ -26,25 +26,11 @@
 #include <asm-mips/mips-boards/launch.h>
 #include <asm-mips/mipsmtregs.h>
 
-static int cpumask = ~0;	/* FIXME: 32 CPU's... */
-
-static int __init cpumask_set(char *str)
-{
-	get_option(&str, &cpumask);
-	pr_debug("cpumask=%08x\n", cpumask);
-	return 1;
-}
-__setup("cpumask=", cpumask_set);
-
 int amon_cpu_avail (int cpu)
 {
 	cpulaunch_t *launch = (cpulaunch_t *)KSEG0ADDR(CPULAUNCH);
 	if (cpu < 0 || cpu >= NCPULAUNCH) {
 		pr_debug("avail: cpu%d is out of range\n", cpu);
-		return 0;
-	}
-	if ((cpumask & (1<<cpu)) == 0) {
-		pr_debug("avail: ignoring cpu%d\n", cpu);
 		return 0;
 	}
 

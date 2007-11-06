@@ -37,6 +37,33 @@
 #include <asm/mips_mt.h>
 
 /*
+ * Crude manipulation of the CPU masks to control which
+ * which CPU's are brought online during initialisation
+ *
+ * Beware... this needs to be called after CPU discovery
+ * but before CPU bringup
+ */
+static int __init allowcpus(char *str)
+{
+	cpumask_t cpu_allow_map;
+	char buf[256];
+	int len;
+
+	cpus_clear(cpu_allow_map);
+	if (cpulist_parse(str, cpu_allow_map) == 0) {
+		cpu_set(0, cpu_allow_map);
+		cpus_and (cpu_possible_map, cpu_possible_map, cpu_allow_map);
+		len = cpulist_scnprintf(buf, sizeof(buf)-1, cpu_possible_map);
+		buf[len] = '\0';
+		pr_debug("Allowable CPUs: %s\n", buf);
+		return 1;
+	}
+	else
+		return 0;
+}
+__setup("allowcpus=", allowcpus);
+
+/*
  * Common setup before any secondaries are started
  */
 void __init cmp_smp_setup(void)
