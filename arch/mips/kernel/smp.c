@@ -69,6 +69,34 @@ static void smp_tune_scheduling (void)
 extern void __init calibrate_delay(void);
 extern ATTRIB_NORET void cpu_idle(void);
 
+/* Number of TCs (or siblings in Intel speak) per CPU core */
+int smp_num_siblings = 1;
+EXPORT_SYMBOL(smp_num_siblings);
+
+/* representing the TCs (or siblings in Intel speak) of each logical CPU */
+cpumask_t cpu_sibling_map[NR_CPUS] __read_mostly;
+EXPORT_SYMBOL(cpu_sibling_map);
+
+/* representing cpus for which sibling maps can be computed */
+static cpumask_t cpu_sibling_setup_map;
+
+static inline void set_cpu_sibling_map(int cpu)
+{
+	int i;
+
+	cpu_set(cpu, cpu_sibling_setup_map);
+
+	if (smp_num_siblings > 1) {
+		for_each_cpu_mask(i, cpu_sibling_setup_map) {
+			if (cpu_data[cpu].core == cpu_data[i].core) {
+				cpu_set(i, cpu_sibling_map[cpu]);
+				cpu_set(cpu, cpu_sibling_map[i]);
+			}
+		}
+	} else
+		cpu_set(cpu, cpu_sibling_map[cpu]);
+}
+
 /*
  * First C code run on the secondary CPUs after being started up by
  * the master.
@@ -97,6 +125,7 @@ asmlinkage __cpuinit void start_secondary(void)
 	cpu_data[cpu].udelay_val = loops_per_jiffy;
 
 	prom_smp_finish();
+	set_cpu_sibling_map(cpu);
 
 	cpu_set(cpu, cpu_callin_map);
 
@@ -238,6 +267,7 @@ void __init smp_prepare_cpus(unsigned int max_cpus)
 	current_thread_info()->cpu = 0;
 	smp_tune_scheduling();
 	plat_prepare_cpus(max_cpus);
+	set_cpu_sibling_map(0);
 #ifndef CONFIG_HOTPLUG_CPU
 	cpu_present_map = cpu_possible_map;
 #endif

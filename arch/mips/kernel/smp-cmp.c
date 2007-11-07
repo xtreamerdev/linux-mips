@@ -87,6 +87,12 @@ void __init cmp_smp_setup(void)
 		}
 	}
 
+	if (cpu_has_mipsmt) {
+		unsigned int nvpe, mvpconf0 = read_c0_mvpconf0();
+
+		nvpe = ((mvpconf0 & MVPCONF0_PTC) >> MVPCONF0_PTC_SHIFT) + 1;
+		smp_num_siblings = nvpe;
+	}
 	printk(KERN_INFO "Detected %i available secondary CPU(s)\n", ncpu);
 }
 
@@ -124,8 +130,18 @@ void cmp_boot_secondary(int cpu, struct task_struct *idle)
 
 void cmp_init_secondary(void)
 {
+	struct cpuinfo_mips *c = &current_cpu_data;
+
 	pr_debug("SMPCMP: CPU%d: %s\n", smp_processor_id(), __FUNCTION__);
 	/* Enable per-cpu interrupts: platform specific */
+
+	c->core = (read_c0_ebase() >> 1) & 0xff;
+#if defined(CONFIG_MIPS_MT_SMP) || defined(CONFIG_MIPS_MT_SMTC)
+	c->vpe_id = (read_c0_tcbind() >> TCBIND_CURVPE_SHIFT) & TCBIND_CURVPE;
+#endif
+#ifdef CONFIG_MIPS_MT_SMTC
+	c->tc_id  = (read_c0_tcbind() >> TCBIND_CURTC_SHIFT) & TCBIND_CURTC;
+#endif
 }
 
 void cmp_smp_finish(void)
