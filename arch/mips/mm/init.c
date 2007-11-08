@@ -279,7 +279,7 @@ void copy_from_user_page(struct vm_area_struct *vma,
 		void *vfrom = kmap_coherent(page, vaddr) + (vaddr & ~PAGE_MASK);
 		memcpy(dst, vfrom, len);
 		kunmap_coherent(page);
-	} else
+	} else {
 		memcpy(dst, src, len);
 		if (cpu_has_dc_aliases)
 			SetPageDcacheDirty(page);
