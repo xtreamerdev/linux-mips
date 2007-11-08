@@ -1445,7 +1445,6 @@ config MIPS_MT_SMTC
 	select CPU_ADVANCED
 	select CPU_HAS_LLSC
 	select CPU_MIPSR2_IRQ_VI
-	select CPU_MIPSR2_SRS
 	select SMP
 
 config MIPS_MT_SMP
@@ -1457,7 +1456,6 @@ config MIPS_VPE_LOADER
 	depends on MIPS_MT
 	select CPU_MIPSR2_IRQ_VI
 	select CPU_MIPSR2_IRQ_EI
-	select CPU_MIPSR2_SRS
 	help
 	  Includes a loader for loading an elf relocatable object
 	  onto another VPE and running it.
@@ -1588,19 +1586,11 @@ config CPU_MIPSR2_IRQ_EI
 	   sources. Say N unless you know that external interrupt support is
 	   required.
 
-config CPU_MIPSR2_SRS
-	bool "Make shadow set registers available for interrupt handlers"
-	depends on CPU_MIPSR2_IRQ_VI || CPU_MIPSR2_IRQ_EI
-	help
-	   Allow the kernel to use shadow register sets for fast interrupts.
-	   Interrupt handlers must be specially written to use shadow sets.
-	   Say N unless you know that shadow register set upport is needed.
-endmenu
-
 config CPU_HAS_SYNC
 	bool
 	depends on !CPU_R3000
 	default y
+endmenu
 
 #
 # Use the generic interrupt handling code in kernel/irq/:

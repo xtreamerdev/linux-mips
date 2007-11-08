@@ -1044,71 +1044,11 @@ void *set_except_vector(int n, void *addr)
 	return (void *)old_handler;
 }
 
-#ifdef CONFIG_CPU_MIPSR2
-/*
- * Shadow register allocation
- * FIXME: SMP...
- */
-
-/* MIPSR2 shadow register sets */
-struct shadow_registers {
-	spinlock_t sr_lock;	/*  */
-	int sr_supported;	/* Number of shadow register sets supported */
-	int sr_allocated;	/* Bitmap of allocated shadow registers */
-} shadow_registers;
-
-static void mips_srs_init(void)
-{
-#ifdef CONFIG_CPU_MIPSR2_SRS
-	shadow_registers.sr_supported = ((read_c0_srsctl() >> 26) & 0x0f) + 1;
-	printk ("%d MIPSR2 register sets available\n", shadow_registers.sr_supported);
-#else
-	shadow_registers.sr_supported = 1;
-#endif
-	shadow_registers.sr_allocated = 1;	/* Set 0 used by kernel */
-	spin_lock_init(&shadow_registers.sr_lock);
-}
-
-int mips_srs_max(void)
-{
-	return shadow_registers.sr_supported;
-}
-
-int mips_srs_alloc (void)
-{
-	struct shadow_registers *sr = &shadow_registers;
-	unsigned long flags;
-	int set;
-
-	spin_lock_irqsave(&sr->sr_lock, flags);
-
-	for (set = 0; set < sr->sr_supported; set++) {
-		if ((sr->sr_allocated & (1 << set)) == 0) {
-			sr->sr_allocated |= 1 << set;
-			spin_unlock_irqrestore(&sr->sr_lock, flags);
-			return set;
-		}
-	}
-
-	/* None available */
-	spin_unlock_irqrestore(&sr->sr_lock, flags);
-	return -1;
-}
-
-void mips_srs_free(int set)
-{
-	struct shadow_registers *sr = &shadow_registers;
-	unsigned long flags;
-
-	spin_lock_irqsave(&sr->sr_lock, flags);
-	sr->sr_allocated &= ~(1 << set);
-	spin_unlock_irqrestore(&sr->sr_lock, flags);
-}
-
 static void *set_vi_srs_handler(int n, void *addr, int srs)
 {
 	unsigned long handler;
 	unsigned long old_handler = vi_handlers[n];
+	int srssets = current_cpu_data.srsets;
 	u32 *w;
 	unsigned char *b;
 
@@ -1124,7 +1064,7 @@ static void *set_vi_srs_handler(int n, void *addr, int srs)
 
 	b = (unsigned char *)(ebase + 0x200 + n*VECTORSPACING);
 
-	if (srs >= mips_srs_max())
+	if (srs >= srssets)
 		panic("Shadow register set %d not supported", srs);
 
 	if (cpu_has_veic) {
@@ -1132,7 +1072,7 @@ static void *set_vi_srs_handler(int n, void *addr, int srs)
 			board_bind_eic_interrupt (n, srs);
 	} else if (cpu_has_vint) {
 		/* SRSMap is only defined if shadow sets are implemented */
-		if (mips_srs_max() > 1)
+		if (srssets > 1)
 			change_c0_srsmap (0xf << n*4, srs << n*4);
 	}
 
@@ -1198,7 +1138,6 @@ void *set_vi_handler(int n, void *addr)
 {
 	return set_vi_srs_handler (n, addr, 0);
 }
-#endif
 
 /*
  * This is used by native signal handling
@@ -1401,10 +1340,6 @@ void __init trap_init(void)
 		ebase = (unsigned long) alloc_bootmem_low_pages (0x200 + VECTORSPACING*64);
 	else
 		ebase = CAC_BASE;
-
-#ifdef CONFIG_CPU_MIPSR2
-	mips_srs_init();
-#endif
 
 	per_cpu_trap_init();
 
