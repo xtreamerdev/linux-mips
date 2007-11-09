@@ -11,6 +11,8 @@
 #ifndef _ASM_GICREGS_H
 #define _ASM_GICREGS_H
 
+#define GICISBYTELITTLEENDIAN
+#define GICISWORDLITTLEENDIAN
 
 /* Constants */
 #define GIC_POL_POS			1
@@ -36,6 +38,23 @@
 #define GIC_REG_ABS_ADDR(segment, offset) \
        (_gic_base + segment##_##SECTION_OFS + offset)
 
+#ifdef  GICISBYTELITTLEENDIAN
+#define GICREAD(reg, data)	(data) = (reg), (data) = le32_to_cpu(data)
+#define GICWRITE(reg, data)	(reg) = cpu_to_le32(data)
+#define GICBIS(reg, bits)			\
+	({unsigned int data;			\
+		GICREAD(reg, data);		\
+		data |= bits;			\
+		GICWRITE(reg, data);		\
+	})
+
+#else
+#define GICREAD(reg, data)	(data) = (reg)
+#define GICWRITE(reg, data)	(reg) = (data)
+#define GICBIS(reg, bits)	(reg) |= (bits)
+#endif
+
+
 /* GIC Address Space */
 #define SHARED_SECTION_OFS		0x0000
 #define SHARED_SECTION_SIZE		0x8000
@@ -47,7 +66,7 @@
 #define USM_VISIBLE_SECTION_SIZE	0x10000
 
 /* Register Map for Shared Section */
-#ifdef CONFIG_CPU_LITTLE_ENDIAN
+#if defined(CONFIG_CPU_LITTLE_ENDIAN) || defined(GICISWORDLITTLEENDIAN)
 
 #define	GIC_SH_CONFIG_OFS		0x0000
 
@@ -144,21 +163,21 @@
 /* Polarity : Reset Value is always 0 */
 #define GIC_SH_SET_POLARITY_OFS		0x0100
 #define GIC_SET_POLARITY(intr, pol) \
-	GIC_REG_ADDR(SHARED, GIC_SH_SET_POLARITY_OFS + (((intr) / 32) * 4)) |= ((pol) << ((intr) % 32))
+	GICBIS(GIC_REG_ADDR(SHARED, GIC_SH_SET_POLARITY_OFS + (((intr) / 32) * 4)), (pol) << ((intr) % 32))
 
 /* Triggering : Reset Value is always 0 */
 #define GIC_SH_SET_TRIGGER_OFS		0x0180
 #define GIC_SET_TRIGGER(intr, trig) \
-	GIC_REG_ADDR(SHARED, GIC_SH_SET_TRIGGER_OFS + (((intr) / 32) * 4)) |= ((trig) << ((intr) % 32))
+	GICBIS(GIC_REG_ADDR(SHARED, GIC_SH_SET_TRIGGER_OFS + (((intr) / 32) * 4)), (trig) << ((intr) % 32))
 
 /* Mask manipulation */
 #define GIC_SH_SMASK_OFS		0x0380
 #define GIC_SET_INTR_MASK(intr, val) \
-	GIC_REG_ADDR(SHARED, GIC_SH_SMASK_OFS + (((intr) / 32) * 4)) = ((val) << ((intr) % 32))
+	GICWRITE(GIC_REG_ADDR(SHARED, GIC_SH_SMASK_OFS + (((intr) / 32) * 4)), ((val) << ((intr) % 32)))
 
 #define GIC_SH_RMASK_OFS		0x0300
 #define GIC_CLR_INTR_MASK(intr, val) \
-	GIC_REG_ADDR(SHARED, GIC_SH_RMASK_OFS + (((intr) / 32) * 4)) = ((val) << ((intr) % 32))
+	GICWRITE(GIC_REG_ADDR(SHARED, GIC_SH_RMASK_OFS + (((intr) / 32) * 4)), ((val) << ((intr) % 32)))
 
 /* Register Map for Local Section */
 #define GIC_VPE_CTL_OFS			0x0000
@@ -297,25 +316,21 @@
 /* Polarity */
 #define GIC_SH_SET_POLARITY_OFS		0x0100
 #define GIC_SET_POLARITY(intr, pol) \
-	GIC_REG_ADDR(SHARED, GIC_SH_SET_POLARITY_OFS + 4 +  \
-	(((((intr) / 32) ^ 1) - 1) * 4)) |= (pol << (intr % 32))
+	GICBIS(GIC_REG_ADDR(SHARED, GIC_SH_SET_POLARITY_OFS + 4 + (((((intr) / 32) ^ 1) - 1) * 4)), (pol) << ((intr) % 32))
 
 /* Triggering */
 #define GIC_SH_SET_TRIGGER_OFS		0x0180
 #define GIC_SET_TRIGGER(intr, trig) \
-	GIC_REG_ADDR(SHARED, GIC_SH_SET_TRIGGER_OFS + 4 + \
-	(((((intr) / 32) ^ 1) - 1) * 4)) |= (trig << (intr % 32))
+	GICBIS(GIC_REG_ADDR(SHARED, GIC_SH_SET_TRIGGER_OFS + 4 + (((((intr) / 32) ^ 1) - 1) * 4)), (trig) << ((intr) % 32))
 
 /* Mask manipulation */
 #define GIC_SH_SMASK_OFS		0x0380
 #define GIC_SET_INTR_MASK(intr, val) \
-	GIC_REG_ADDR(SHARED, GIC_SH_SMASK_OFS + 4 + \
-	(((((intr) / 32) ^ 1) - 1) * 4)) = (val << (intr % 32))
+	GICWRITE(GIC_REG_ADDR(SHARED, GIC_SH_SMASK_OFS + 4 + (((((intr) / 32) ^ 1) - 1) * 4)), ((val) << ((intr) % 32)))
 
 #define GIC_SH_RMASK_OFS		0x0300
 #define GIC_CLR_INTR_MASK(intr, val) \
-	GIC_REG_ADDR(SHARED, GIC_SH_RMASK_OFS + 4 + \
-	(((((intr) / 32) ^ 1) - 1) * 4)) = (val << (intr % 32))
+	GICWRITE(GIC_REG_ADDR(SHARED, GIC_SH_RMASK_OFS + 4 + (((((intr) / 32) ^ 1) - 1) * 4)), ((val) << ((intr) % 32))
 
 /* Register Map for Local Section */
 #define GIC_VPE_CTL_OFS			0x0000
@@ -434,8 +449,8 @@
  * Set the Mapping of Interrupt X to a VPE.
  */
 #define GIC_SH_MAP_TO_VPE_SMASK(intr, vpe) \
-	GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_VPE_REG_OFF(intr, vpe)) = \
-	GIC_SH_MAP_TO_VPE_REG_BIT(vpe)
+	GICWRITE(GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_VPE_REG_OFF(intr, vpe)), \
+		 GIC_SH_MAP_TO_VPE_REG_BIT(vpe))
 
 typedef struct {
        DECLARE_BITMAP(pcpu_mask, GIC_NUM_INTRS);

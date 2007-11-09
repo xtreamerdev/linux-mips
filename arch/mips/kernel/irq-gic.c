@@ -31,7 +31,7 @@ void gic_send_ipi(unsigned int intr)
 	pr_debug("CPU%d: %s status %08x\n", smp_processor_id(), __FUNCTION__, read_c0_status());
 	if (!gic_wedgeb2bok)
 		spin_lock_irqsave(&gic_wedgeb2b_lock, flags);
-	GIC_REG(SHARED, GIC_SH_WEDGE) = (0x80000000 | intr);
+	GICWRITE(GIC_REG(SHARED, GIC_SH_WEDGE), 0x80000000 | intr);
 	if (!gic_wedgeb2bok) {
 		(void) GIC_REG(SHARED, GIC_SH_CONFIG);
 		spin_unlock_irqrestore(&gic_wedgeb2b_lock, flags);
@@ -43,23 +43,25 @@ static void vpe_local_setup(unsigned int numvpes)
 {
 	int i;
     	unsigned long timer_interrupt = 5, perf_interrupt = 5;
+	unsigned int vpe_ctl;
 
 	/*
 	 * Setup the default performance counter timer interrupts 
 	 * for all VPEs
 	 */
 	for (i = 0; i < numvpes; i++) {
-		GIC_REG(VPE_LOCAL, GIC_VPE_OTHER_ADDR) = i;
+		GICWRITE(GIC_REG(VPE_LOCAL, GIC_VPE_OTHER_ADDR), i);
 
 		/* Are Interrupts locally routable? */
-		if (GIC_REG(VPE_OTHER, GIC_VPE_CTL) & GIC_VPE_CTL_TIMER_RTBL_MSK)
-			GIC_REG(VPE_OTHER, GIC_VPE_TIMER_MAP) =
-				GIC_MAP_TO_PIN_MSK | timer_interrupt;
+		GICREAD(GIC_REG(VPE_OTHER, GIC_VPE_CTL), vpe_ctl);
+		if (vpe_ctl & GIC_VPE_CTL_TIMER_RTBL_MSK)
+			GICWRITE(GIC_REG(VPE_OTHER, GIC_VPE_TIMER_MAP),
+				 GIC_MAP_TO_PIN_MSK | timer_interrupt);
 
-		if (GIC_REG(VPE_OTHER, GIC_VPE_CTL) & GIC_VPE_CTL_PERFCNT_RTBL_MSK)
-			GIC_REG( VPE_OTHER, GIC_VPE_PERFCTR_MAP) =
-				GIC_MAP_TO_PIN_MSK | perf_interrupt;
-    }
+		if (vpe_ctl & GIC_VPE_CTL_PERFCNT_RTBL_MSK)
+			GICWRITE(GIC_REG( VPE_OTHER, GIC_VPE_PERFCTR_MAP),
+				 GIC_MAP_TO_PIN_MSK | perf_interrupt);
+	}
 }
 
 unsigned int gic_get_int(void)
@@ -67,7 +69,7 @@ unsigned int gic_get_int(void)
 	unsigned int i;
 	unsigned long *pending, *intrmask, *pcpu_mask;
 	unsigned long *pending_abs, *intrmask_abs;
-
+	
 	/* Get per-cpu bitmaps */
 	pending = pending_regs[smp_processor_id()].pending;
 	intrmask = intrmask_regs[smp_processor_id()].intrmask;
@@ -75,12 +77,13 @@ unsigned int gic_get_int(void)
 
 	pending_abs = (unsigned long *)GIC_REG_ABS_ADDR(SHARED, GIC_SH_PEND_31_0_OFS);
 	intrmask_abs = (unsigned long *)GIC_REG_ABS_ADDR(SHARED, GIC_SH_MASK_31_0_OFS);
-
-	bitmap_zero(pending, GIC_NUM_INTRS);
-	bitmap_zero(intrmask, GIC_NUM_INTRS);
-
-	bitmap_copy(pending, pending_abs, GIC_NUM_INTRS);
-	bitmap_copy(intrmask, intrmask_abs, GIC_NUM_INTRS);
+	
+	for (i = 0; i < BITS_TO_LONGS(GIC_NUM_INTRS); i++) {
+		GICREAD(*pending_abs, pending[i]);
+		GICREAD(*intrmask_abs, intrmask[i]);
+		pending_abs++;
+		intrmask_abs++;
+	}
 
 	bitmap_and(pending, pending, intrmask, GIC_NUM_INTRS);
 	bitmap_and(pending, pending, pcpu_mask, GIC_NUM_INTRS);
@@ -96,7 +99,8 @@ static unsigned int gic_irq_startup(unsigned int irq)
 {
 	pr_debug("CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
 	irq -= _irqbase;
-	GIC_REG_ADDR(SHARED, (GIC_SH_SMASK_31_0_OFS + (irq / 32))) = (1 << (irq % 32));
+	/* FIXME: this is wrong for !GICISWORDLITTLEENDIAN */
+	GICWRITE(GIC_REG_ADDR(SHARED, (GIC_SH_SMASK_31_0_OFS + (irq / 32))), 1 << (irq % 32));
 	return (0);
 }
 
@@ -107,12 +111,12 @@ static void gic_irq_ack(unsigned int irq)
 #endif
 	pr_debug("CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
 	irq -= _irqbase;
-	GIC_REG_ADDR(SHARED, (GIC_SH_RMASK_31_0_OFS + (irq / 32))) = (1 << (irq % 32));
+	GICWRITE(GIC_REG_ADDR(SHARED, (GIC_SH_RMASK_31_0_OFS + (irq / 32))), 1 << (irq % 32));
 
 	if (_intrmap[irq].trigtype == GIC_TRIG_EDGE) {
 		if (!gic_wedgeb2bok)
 			spin_lock_irqsave(&gic_wedgeb2b_lock, flags);
-		GIC_REG(SHARED, GIC_SH_WEDGE) = irq;
+		GICWRITE(GIC_REG(SHARED, GIC_SH_WEDGE), irq);
 		if (!gic_wedgeb2bok) {
 			(void) GIC_REG(SHARED, GIC_SH_CONFIG);
 			spin_unlock_irqrestore(&gic_wedgeb2b_lock, flags);
@@ -124,14 +128,16 @@ static void gic_mask_irq(unsigned int irq)
 {
 	pr_debug("CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
 	irq -= _irqbase;
-	GIC_REG_ADDR(SHARED, (GIC_SH_RMASK_31_0_OFS + (irq / 32))) = (1 << (irq % 32)); 
+	/* FIXME: this is wrong for !GICISWORDLITTLEENDIAN */
+	GICWRITE(GIC_REG_ADDR(SHARED, (GIC_SH_RMASK_31_0_OFS + (irq / 32))), 1 << (irq % 32)); 
 }
 
 static void gic_unmask_irq(unsigned int irq)
 {
 	pr_debug("CPU%d: %s: irq%d\n", smp_processor_id(), __FUNCTION__, irq);
 	irq -= _irqbase;
-	GIC_REG_ADDR(SHARED, (GIC_SH_SMASK_31_0_OFS + (irq / 32))) = (1 << (irq % 32)); 
+	/* FIXME: this is wrong for !GICISWORDLITTLEENDIAN */
+	GICWRITE(GIC_REG_ADDR(SHARED, (GIC_SH_SMASK_31_0_OFS + (irq / 32))), 1 << (irq % 32));
 }
 
 #ifdef CONFIG_SMP
@@ -190,9 +196,9 @@ static void __init setup_intr(unsigned int intr, unsigned int cpu, unsigned int 
 {
 	/* Setup Intr to Pin mapping */
 	if (pin < 64)
-		GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(intr)) = (GIC_MAP_TO_PIN_MSK | pin);
+		GICWRITE(GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(intr)), GIC_MAP_TO_PIN_MSK | pin);
 	else
-		GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(intr)) = pin;
+		GICWRITE(GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(intr)), pin);
 
 	/* Setup Intr to CPU mapping */
 	GIC_SH_MAP_TO_VPE_SMASK(intr, cpu);
@@ -244,17 +250,17 @@ void __init gic_init(unsigned long gic_base_addr, unsigned long gic_addrspace_si
 			gic_intr_map_t *intr_map, unsigned int intr_map_size,
 			unsigned int irqbase)
 {
+	unsigned int gicconfig;
 	_gic_base = (unsigned long) ioremap_nocache(gic_base_addr, gic_addrspace_size);
 	_irqbase = irqbase;
 	_intrmap = intr_map;
 	_mapsize = intr_map_size;
-
-	numintrs = (GIC_REG(SHARED, GIC_SH_CONFIG) &
-		GIC_SH_CONFIG_NUMINTRS_MSK) >> GIC_SH_CONFIG_NUMINTRS_SHF;
+	
+	GICREAD(GIC_REG(SHARED, GIC_SH_CONFIG), gicconfig);
+	numintrs = (gicconfig & GIC_SH_CONFIG_NUMINTRS_MSK) >> GIC_SH_CONFIG_NUMINTRS_SHF;
 	numintrs = ((numintrs + 1) * 8);
 
-	numvpes = (GIC_REG(SHARED, GIC_SH_CONFIG) &
-		GIC_SH_CONFIG_NUMVPES_MSK) >> GIC_SH_CONFIG_NUMVPES_SHF;
+	numvpes = (gicconfig & GIC_SH_CONFIG_NUMVPES_MSK) >> GIC_SH_CONFIG_NUMVPES_SHF;
 
 	pr_debug("%s called\n", __FUNCTION__);
 
