@@ -21,6 +21,7 @@
 #include <linux/kallsyms.h>
 #include <linux/bootmem.h>
 #include <linux/interrupt.h>
+#include <linux/ptrace.h>
 
 #include <asm/bootinfo.h>
 #include <asm/branch.h>
@@ -733,7 +734,10 @@ asmlinkage void do_bp(struct pt_regs *regs)
 		break;
 	default:
 		die_if_kernel("Break instruction in kernel code", regs);
-		CHWTRIGGER(regs, SIGTRAP, "do_bp");
+		if (!(current->ptrace & PT_PTRACED) ||
+		    (bcode != (BRK_SSTEPBP << 10))) {
+			CHWTRIGGER(regs, SIGTRAP, "do_bp");
+		}
 		force_sig(SIGTRAP, current);
 	}
 	return;
