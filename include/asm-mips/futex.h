@@ -32,7 +32,7 @@
 	"	.set	mips0					\n"	\
 	"	.section .fixup,\"ax\"				\n"	\
 	"4:	li	%0, %6					\n"	\
-	"	j	2b					\n"	\
+	"	j	3b					\n"	\
 	"	.previous					\n"	\
 	"	.section __ex_table,\"a\"			\n"	\
 	"	"__UA_ADDR "\t1b, 4b				\n"	\
@@ -101,4 +101,4 @@ futex_atomic_op_inuser (int encoded_op, int __user *uaddr)
 }
 
 #endif
-#endif
+#endif /* _ASM_FUTEX_H */
