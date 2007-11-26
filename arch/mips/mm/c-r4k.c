@@ -43,7 +43,7 @@ static inline void r4k_on_each_cpu(void (*func) (void *info), void *info,
 {
 	preempt_disable();
 
-#if !defined(CONFIG_MIPS_MT_SMP) && !defined(CONFIG_MIPS_MT_SMTC)
+#if defined(CONFIG_MIPS_CMP) || (!defined(CONFIG_MIPS_MT_SMP) && !defined(CONFIG_MIPS_MT_SMTC))
 	smp_call_function(func, info, retry, wait);
 #endif
 	func(info);
