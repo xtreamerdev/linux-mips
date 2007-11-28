@@ -163,6 +163,8 @@ static void gic_set_affinity(unsigned int irq, cpumask_t cpumask)
 		/* Re-route this IRQ */
 		GIC_SH_MAP_TO_VPE_SMASK(irq, first_cpu(tmp));
 
+		/* FIXME: assumption that _intrmap is ordered and has no holes */
+
 		/* Update the intr_map */
 		_intrmap[irq].cpunum = first_cpu(tmp);
 
@@ -195,13 +197,19 @@ static void __init setup_intr(unsigned int intr, unsigned int cpu, unsigned int 
 				unsigned int polarity, unsigned int trigtype)
 {
 	/* Setup Intr to Pin mapping */
-	if (pin < 64)
-		GICWRITE(GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(intr)), GIC_MAP_TO_PIN_MSK | pin);
-	else
+	if (pin & GIC_MAP_TO_NMI_MSK) {
 		GICWRITE(GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(intr)), pin);
-
-	/* Setup Intr to CPU mapping */
-	GIC_SH_MAP_TO_VPE_SMASK(intr, cpu);
+		/* FIXME: hack to route NMI to all cpu's */
+		for (cpu = 0; cpu < NR_CPUS; cpu += 32) {
+			GICWRITE(GIC_REG_ADDR(SHARED,  GIC_SH_MAP_TO_VPE_REG_OFF(intr, cpu)),
+				 0xffffffff);
+		}
+	}
+	else {
+		GICWRITE(GIC_REG_ADDR(SHARED, GIC_SH_MAP_TO_PIN(intr)), GIC_MAP_TO_PIN_MSK | pin);
+		/* Setup Intr to CPU mapping */
+		GIC_SH_MAP_TO_VPE_SMASK(intr, cpu);
+	}
 
 	/* Setup Intr Polarity */
 	GIC_SET_POLARITY(intr, polarity);
