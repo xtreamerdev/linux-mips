@@ -732,6 +732,13 @@ asmlinkage void do_bp(struct pt_regs *regs)
 	case BRK_BUG:
 		die("Kernel bug detected", regs);
 		break;
+	case BRK_HWTRIGGER << 10:
+		if (user_mode(regs)) {
+			CHWTRIGGER(regs,"userland trigger",(unsigned int)0);
+			compute_return_epc(regs);
+			return 0;
+		}
+		/* Fall through */
 	default:
 		die_if_kernel("Break instruction in kernel code", regs);
 		if (!(current->ptrace & PT_PTRACED) ||
