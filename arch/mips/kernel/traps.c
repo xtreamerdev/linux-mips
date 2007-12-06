@@ -734,9 +734,9 @@ asmlinkage void do_bp(struct pt_regs *regs)
 		break;
 	case BRK_HWTRIGGER << 10:
 		if (user_mode(regs)) {
-			CHWTRIGGER(regs,"userland trigger",(unsigned int)0);
+			CHWTRIGGER(regs, (unsigned int)0, "userland trigger");
 			compute_return_epc(regs);
-			return 0;
+			return;
 		}
 		/* Fall through */
 	default:
