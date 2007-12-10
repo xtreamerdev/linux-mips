@@ -168,6 +168,7 @@ static inline void check_wait(void)
 
 	case CPU_24K:
 	case CPU_34K:
+	case CPU_1004K:
 		cpu_wait = r4k_wait;
 		if (read_c0_config7() & MIPS_CONF7_WII)
 			cpu_wait = r4k_wait_irqoff;
@@ -672,6 +673,9 @@ static inline void cpu_probe_mips(struct cpuinfo_mips *c)
 		break;
 	case PRID_IMP_74K:
 		c->cputype = CPU_74K;
+		break;
+	case PRID_IMP_1004K:
+		c->cputype = CPU_1004K;
 		break;
 	}
 

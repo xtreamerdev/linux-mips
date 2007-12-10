@@ -919,6 +919,7 @@ static __init void build_tlb_write_entry(u32 **p, struct label **l,
 	case CPU_24K:
 	case CPU_34K:
 	case CPU_74K:
+	case CPU_1004K:
 		i_ehb(p);
 		tlbw(p);
 		break;

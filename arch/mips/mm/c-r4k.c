@@ -922,6 +922,7 @@ static void __init probe_pcache(void)
 	case CPU_24K:
 	case CPU_34K:
 	case CPU_74K:
+	case CPU_1004K:
 		if ((read_c0_config7() & (1 << 16))) {
 			/* effectively physically indexed dcache,
 			   thus no virtual aliases. */
