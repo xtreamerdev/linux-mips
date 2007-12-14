@@ -72,7 +72,7 @@ void start_thread(struct pt_regs * regs, unsigned long pc, unsigned long sp)
 	unsigned long status;
 
 	/* New thread loses kernel privileges. */
-	status = regs->cp0_status & ~(ST0_CU0|ST0_CU1||ST0_FR|KU_MASK);
+	status = regs->cp0_status & ~(ST0_CU0|ST0_CU1|ST0_FR|KU_MASK);
 #ifdef CONFIG_64BIT
 	status |= (current->thread.mflags & MF_32BIT_REGS) ? 0 : ST0_FR;
 #endif
