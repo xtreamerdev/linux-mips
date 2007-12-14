@@ -40,6 +40,7 @@ void prom_boot_secondary(int cpu, struct task_struct *idle)
  */
 void prom_init_secondary(void)
 {
+	extern int gic_present;
 	pr_debug("%s\n", __FUNCTION__);
 	if (malta_smtc) {
 		void smtc_init_secondary(void);
@@ -57,23 +58,18 @@ void prom_init_secondary(void)
 		smtc_init_secondary();
 	}
 	else if (malta_cmp) {
-#if defined(USE_GIC)
+		/* Assume GIC is present */
 		write_c0_status((read_c0_status() & ~ST0_IM ) |
 				(STATUSF_IP3 | STATUSF_IP4 | STATUSF_IP6 | STATUSF_IP7));
-#else
-		write_c0_status((read_c0_status() & ~ST0_IM ) |
-				(STATUSF_IP0 | STATUSF_IP1 | STATUSF_IP6 | STATUSF_IP7));
-#endif
 		cmp_init_secondary();
 	}
 	else if (malta_smvp) {
-#if defined(USE_GIC)
-		write_c0_status((read_c0_status() & ~ST0_IM ) |
-				(STATUSF_IP3 | STATUSF_IP4 | STATUSF_IP6 | STATUSF_IP7));
-#else
-		write_c0_status((read_c0_status() & ~ST0_IM ) |
-				(STATUSF_IP0 | STATUSF_IP1 | STATUSF_IP6 | STATUSF_IP7));
-#endif
+		if (gic_present)
+			write_c0_status((read_c0_status() & ~ST0_IM ) |
+					(STATUSF_IP3 | STATUSF_IP4 | STATUSF_IP6 | STATUSF_IP7));
+		else 
+			write_c0_status((read_c0_status() & ~ST0_IM ) |
+					(STATUSF_IP0 | STATUSF_IP1 | STATUSF_IP6 | STATUSF_IP7));
 		smvp_init_secondary();
 	}
 	pr_debug ("CPU%d: status register %08x\n", smp_processor_id(), read_c0_status());

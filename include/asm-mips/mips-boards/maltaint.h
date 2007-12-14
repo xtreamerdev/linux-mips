@@ -27,8 +27,6 @@
 
 #include <irq.h>
 
-#define USE_GIC		/* FIXME */
-
 /*
  * Interrupts 0..15 are used for Malta ISA compatible interrupts
  */

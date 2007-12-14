@@ -45,6 +45,7 @@
 #include <asm/gcmpregs.h>
 
 int gcmp_present = -1;
+int gic_present = 0;
 static unsigned long _msc01_biu_base;
 static unsigned long _gcmp_base;
 static unsigned int ipi_map[NR_CPUS];
@@ -274,10 +275,8 @@ asmlinkage void plat_irq_dispatch(void)
 
 	if (irq == MIPSCPU_INT_I8259A)
 		malta_hw0_irqdispatch();
-#if defined(USE_GIC)
-	else if ((1 << irq) & ipi_map[smp_processor_id()])
+	else if (gic_present && ((1 << irq) & ipi_map[smp_processor_id()]))
 		malta_ipi_irqdispatch();
-#endif
 	else if (irq > 0)
 		do_IRQ(MIPS_CPU_IRQ_BASE + irq);
 	else
