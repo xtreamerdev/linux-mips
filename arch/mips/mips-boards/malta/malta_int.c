@@ -30,6 +30,7 @@
 #include <linux/kernel.h>
 #include <linux/random.h>
 
+#include <asm/traps.h>
 #include <asm/i8259.h>
 #include <asm/irq_cpu.h>
 #include <asm/io.h>
@@ -647,4 +648,98 @@ void __init arch_init_irq(void)
 		set_irq_handler(cpu_ipi_call_irq, handle_percpu_irq);
 	}
 #endif
+}
+
+void malta_be_init(void)
+{
+	if (gcmp_present) {
+		/* Could change CM error mask register */
+	}
+}
+
+
+static char *tr[8] = {
+	"mem",	"gcr",	"gic",	"mmio",
+	"0x04",	"0x05",	"0x06",	"0x07"
+};
+
+static char *mcmd[32] = {
+	"0x00",	"Legacy Write", "Legacy Read", "0x03",
+	"0x04", "0x05",	"0x06",	"0x07",
+	"Coherent Read Own", "Coherent Read Share", "Coherent Read Discard", "Coherent Ready Share Always",
+	"Coherent Upgrade", "Coherent Writeback", "0x0e", "0x0f",
+	"Coherent Copyback", "Coherent Copyback Invalidate", "Coherent Invalidate", "Coherent Write Invalidate",
+	"Coherent Completion Sync", "0x15", "0x16", "0x17",
+	"0x18", "0x19", "0x1a", "0x1b",
+	"0x1c", "0x1d", "0x1e", "0x1f"
+};
+
+static char *core[8] = {
+	"Invalid/OK", 	"Invalid/Data",
+	"Shared/OK",	"Shared/Data",
+	"Modified/OK",	"Modified/Data",
+	"Exclusive/OK",	"Exclusive/Data"
+};
+
+static char *causes[32] = {
+	"None", "GC_WR_ERR", "GC_RD_ERR", "COH_WR_ERR",
+	"COH_RD_ERR", "MMIO_WR_ERR", "MMIO_RD_ERR", "0x07",
+	"0x08", "0x09", "0x0a", "0x0b",
+	"0x0c", "0x0d", "0x0e", "0x0f",
+	"0x10", "0x11", "0x12", "0x13",
+	"0x14", "0x15", "0x16", "INTVN_WR_ERR",
+	"INTVN_RD_ERR", "0x19", "0x1a", "0x1b",
+	"0x1c", "0x1d", "0x1e", "0x1f"
+};
+
+int malta_be_handler(struct pt_regs *regs, int is_fixup)
+{
+	/* This duplicates the handling in do_be which seems wrong */
+	int retval = is_fixup ? MIPS_BE_FIXUP : MIPS_BE_FATAL;
+
+	if (gcmp_present) {
+		unsigned long cm_error = GCMPGCB(GCMEC);
+		unsigned long cm_addr = GCMPGCB(GCMEA);
+		unsigned long cm_other = GCMPGCB(GCMEO);
+		unsigned long cause, ocause;
+		char buf[256];
+
+		if ((cause = (cm_error & GCMP_GCB_GMEC_ERROR_TYPE_MSK)) != 0) {
+			cause >>= GCMP_GCB_GMEC_ERROR_TYPE_SHF; 
+			if (cause < 16) {
+				unsigned long cca_bits = (cm_error >> 15) & 7;
+				unsigned long tr_bits = (cm_error >> 12) & 7;
+				unsigned long mcmd_bits = (cm_error >> 7) & 0x1f;
+				unsigned long stag_bits = (cm_error >> 3) & 15;
+				unsigned long sport_bits = (cm_error >> 0) & 7;
+				snprintf (buf, sizeof(buf), "CCA=%lu TR=%s MCmd=%s STag=%lu SPort=%lu\n",
+					  cca_bits, tr[tr_bits], mcmd[mcmd_bits], stag_bits, sport_bits);
+			}
+			else {
+				/* glob state & sresp together */
+				unsigned long c3_bits = (cm_error >> 18) & 7;
+				unsigned long c2_bits = (cm_error >> 15) & 7;
+				unsigned long c1_bits = (cm_error >> 12) & 7;
+				unsigned long c0_bits = (cm_error >> 9) & 7;
+				unsigned long sc_bit = (cm_error >> 8) & 1;
+				unsigned long mcmd_bits = (cm_error >> 3) & 0x1f;
+				unsigned long sport_bits = (cm_error >> 0) & 7;
+				snprintf (buf, sizeof(buf), "C3=%s C2=%s C1=%s C0=%s SC=%s MCmd=%s SPort=%lu\n",
+					  core[c3_bits], core[c2_bits], core[c1_bits], core[c0_bits],
+					  sc_bit ? "True" : "False", mcmd[mcmd_bits], sport_bits);
+				
+			}
+
+			ocause = (cm_other & GCMP_GCB_GMEO_ERROR_2ND_MSK) >> GCMP_GCB_GMEO_ERROR_2ND_SHF;
+
+			printk ("CM_ERROR=%08lx %s <%s>\n", cm_error, causes[cause], buf);
+			printk ("CM_ADDR =%08lx\n", cm_addr);
+			printk ("CM_OTHER=%08lx %s\n", cm_other, causes[ocause]);
+
+			/* reprime cause register */
+			GCMPGCB(GCMEC) = 0;
+		}
+	}
+
+	return retval;
 }

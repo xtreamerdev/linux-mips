@@ -60,8 +60,14 @@
 #define GCMP_GCB_GCMPREV_OFS		0x0030			/* GCMP Revision Register */
 #define GCMP_GCB_GCMEM_OFS		0x0040			/* Global CM Error Mask */
 #define GCMP_GCB_GCMEC_OFS		0x0048			/* Global CM Error Cause */
+#define  GCMP_GCB_GMEC_ERROR_TYPE_SHF	27
+#define  GCMP_GCB_GMEC_ERROR_TYPE_MSK	GCMPGCBMSK(GMEC_ERROR_TYPE,5)
+#define  GCMP_GCB_GMEC_ERROR_INFO_SHF	0
+#define  GCMP_GCB_GMEC_ERROR_INFO_MSK	GCMPGCBMSK(GMEC_ERROR_INFO,27)
 #define GCMP_GCB_GCMEA_OFS		0x0050			/* Global CM Error Address */
-#define GCMP_GCB_GCMEMULTI_OFS		0x0058			/* Global CM Error Multiple */
+#define GCMP_GCB_GCMEO_OFS		0x0058			/* Global CM Error Multiple */
+#define  GCMP_GCB_GMEO_ERROR_2ND_SHF	0
+#define  GCMP_GCB_GMEO_ERROR_2ND_MSK	GCMPGCBMSK(GMEO_ERROR_2ND,5)
 #define GCMP_GCB_GICBA_OFS		0x0080			/* Global Interrupt Controller Base Address */
 #define  GCMP_GCB_GICBA_BASE_SHF	17
 #define  GCMP_GCB_GICBA_BASE_MSK	GCMPGCBMSK(GICBA_BASE,15)

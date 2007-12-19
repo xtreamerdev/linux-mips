@@ -39,6 +39,9 @@ extern void mips_reboot_setup(void);
 extern void mips_time_init(void);
 extern unsigned long mips_rtc_get_time(void);
 
+extern void malta_be_init(void);
+extern void malta_be_handler(struct pt_regs *, unsigned long);
+
 #ifdef CONFIG_KGDB
 extern void kgdb_config(void);
 #endif
@@ -188,4 +191,7 @@ void __init plat_mem_setup(void)
 
 	board_time_init = mips_time_init;
 	rtc_mips_get_time = mips_rtc_get_time;
+
+	board_be_init = malta_be_init;
+	board_be_handler = malta_be_handler;
 }
