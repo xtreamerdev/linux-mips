@@ -1204,6 +1204,17 @@ static void __init coherency_setup(void)
 	}
 }
 
+#if defined(CONFIG_DMA_NONCOHERENT)
+int __initdata coherentio = 0;
+static int __init setcoherentio(char *str)
+{
+	coherentio = 1;
+	return 1;
+}
+
+__setup("coherentio", setcoherentio);
+#endif
+
 void __init r4k_cache_init(void)
 {
 	extern void build_clear_page(void);
@@ -1250,10 +1261,17 @@ void __init r4k_cache_init(void)
 	flush_data_cache_page	= r4k_flush_data_cache_page;
 	flush_icache_range	= r4k_flush_icache_range;
 
-#ifdef CONFIG_DMA_NONCOHERENT
-	_dma_cache_wback_inv	= r4k_dma_cache_wback_inv;
-	_dma_cache_wback	= r4k_dma_cache_wback_inv;
-	_dma_cache_inv		= r4k_dma_cache_inv;
+#if defined(CONFIG_DMA_NONCOHERENT)
+	if (coherentio) {
+		_dma_cache_wback_inv	= (void *)cache_noop;
+		_dma_cache_wback	= (void *)cache_noop;
+		_dma_cache_inv		= (void *)cache_noop;
+	}
+	else {
+		_dma_cache_wback_inv	= r4k_dma_cache_wback_inv;
+		_dma_cache_wback	= r4k_dma_cache_wback_inv;
+		_dma_cache_inv		= r4k_dma_cache_inv;
+	}
 #endif
 
 	build_clear_page();
