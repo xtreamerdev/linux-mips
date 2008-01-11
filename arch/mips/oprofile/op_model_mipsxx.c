@@ -277,7 +277,7 @@ static int __init mipsxx_init(void)
 	if (!cpu_has_mipsmt_pertccounters)
 		counters >>= 1;
 #endif
-	on_each_cpu(&reset_counters, (void *)counters, 0, 1);
+	on_each_cpu(reset_counters, (void *)counters, 0, 1);
 
 	op_model_mipsxx_ops.num_counters = counters;
 	switch (current_cpu_data.cputype) {
@@ -344,7 +344,7 @@ static void mipsxx_exit(void)
 {
 	int counters = op_model_mipsxx_ops.num_counters;
 
-	on_each_cpu(&reset_counters, (void *)counters, 0, 1);
+	on_each_cpu(reset_counters, (void *)counters, 0, 1);
 
 	perf_irq = null_perf_irq;
 }
