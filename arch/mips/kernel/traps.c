@@ -194,16 +194,19 @@ EXPORT_SYMBOL(dump_stack);
 void show_code(unsigned int *pc)
 {
 	long i;
+	unsigned short *pc16 = NULL;
 
 	printk("\nCode:");
 
+	if ((unsigned int)pc & 1)
+		pc16 = (unsigned short *)((unsigned int)pc & ~1);
 	for(i = -3 ; i < 6 ; i++) {
 		unsigned int insn;
-		if (__get_user(insn, pc + i)) {
+		if (pc16 ? __get_user(insn, pc16 + i) : __get_user(insn, pc + i)) {
 			printk(" (Bad address in epc)\n");
 			break;
 		}
-		printk("%c%08x%c", (i?' ':'<'), insn, (i?' ':'>'));
+		printk("%c%0*x%c", (i?' ':'<'), pc16 ? 4 : 8, insn, (i?' ':'>'));
 	}
 }
 
