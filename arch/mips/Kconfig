@@ -1585,12 +1585,12 @@ config CPU_MIPSR2_IRQ_EI
 	   controller to allow fast dispatching from many possible interrupt
 	   sources. Say N unless you know that external interrupt support is
 	   required.
+endmenu
 
 config CPU_HAS_SYNC
 	bool
 	depends on !CPU_R3000
 	default y
-endmenu
 
 #
 # Use the generic interrupt handling code in kernel/irq/:
