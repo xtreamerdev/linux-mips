@@ -765,11 +765,11 @@ static inline void rm7k_erratum31(void)
 	}
 }
 
-static char *way_string[] __initdata = { NULL, "direct mapped", "2-way",
+static char *way_string[] __cpuinitdata = { NULL, "direct mapped", "2-way",
 	"3-way", "4-way", "5-way", "6-way", "7-way", "8-way"
 };
 
-static void __init probe_pcache(void)
+static void __cpuinit probe_pcache(void)
 {
 	struct cpuinfo_mips *c = &current_cpu_data;
 	unsigned int config = read_c0_config();
@@ -1050,7 +1050,7 @@ static void __init probe_pcache(void)
  * executes in KSEG1 space or else you will crash and burn badly.  You have
  * been warned.
  */
-static int __init probe_scache(void)
+static int __cpuinit probe_scache(void)
 {
 	extern unsigned long stext;
 	unsigned long flags, addr, begin, end, pow2;
@@ -1112,7 +1112,7 @@ extern int r5k_sc_init(void);
 extern int rm7k_sc_init(void);
 extern int mips_sc_init(void);
 
-static void __init setup_scache(void)
+static void __cpuinit setup_scache(void)
 {
 	struct cpuinfo_mips *c = &current_cpu_data;
 	unsigned int config = read_c0_config();
@@ -1248,7 +1248,7 @@ static inline void coherency_setup(void)
 	}
 }
 
-void __init r4k_cache_init(void)
+void __cpuinit r4k_cache_init(void)
 {
 	extern void build_clear_page(void);
 	extern void build_copy_page(void);

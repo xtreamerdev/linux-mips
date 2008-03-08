@@ -196,12 +196,16 @@ NESTED(kernel_entry, 16, sp)			# kernel entry point
 
 	j		start_kernel
 	END(kernel_entry)
+	__FINIT
 
 #ifdef CONFIG_QEMU
 	__INIT
 #endif
 
 #ifdef CONFIG_SMP
+#ifndef CONFIG_HOTPLUG_CPU
+	__INIT			/* no __CPUINIT; it's a 2.6.25 thing  */
+#endif
 /*
  * SMP slave cpus entry point.  Board specific code for bootstrap calls this
  * function after setting up the stack and gp registers.
@@ -230,7 +234,9 @@ NESTED(smp_bootstrap, 16, sp)
 	END(smp_bootstrap)
 #endif /* CONFIG_SMP */
 
+#ifndef CONFIG_HOTPLUG_CPU
 	__FINIT
+#endif
 
 	.comm	kernelsp,    NR_CPUS * 8, 8
 	.comm	pgd_current, NR_CPUS * 8, 8

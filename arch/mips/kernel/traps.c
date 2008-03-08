@@ -1214,7 +1214,7 @@ extern void cpu_cache_init(void);
 extern void tlb_init(void);
 extern void flush_tlb_handlers(void);
 
-void __init per_cpu_trap_init(void)
+void __cpuinit per_cpu_trap_init(void)
 {
 	unsigned int cpu = smp_processor_id();
 	unsigned int status_set = ST0_CU0;
@@ -1318,7 +1318,8 @@ void __init set_handler (unsigned long offset, void *addr, unsigned long size)
 }
 
 /* Install uncached CPU exception handler */
-void __init set_uncached_handler (unsigned long offset, void *addr, unsigned long size)
+void __cpuinit set_uncached_handler(unsigned long offset, void *addr,
+	unsigned long size)
 {
 #ifdef CONFIG_32BIT
 	unsigned long uncached_ebase = KSEG1ADDR(ebase);

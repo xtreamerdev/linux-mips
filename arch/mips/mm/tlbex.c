@@ -44,18 +44,18 @@ static __init int __attribute__((unused)) r45k_bvahwbug(void)
 	return 0;
 }
 
-static __init int __attribute__((unused)) r4k_250MHZhwbug(void)
+static __cpuinit int __attribute__((unused)) r4k_250MHZhwbug(void)
 {
 	/* XXX: We should probe for the presence of this bug, but we don't. */
 	return 0;
 }
 
-static __init int __attribute__((unused)) bcm1250_m3_war(void)
+static __cpuinit int __attribute__((unused)) bcm1250_m3_war(void)
 {
 	return BCM1250_M3_WAR;
 }
 
-static __init int __attribute__((unused)) r10000_llsc_war(void)
+static __cpuinit int __attribute__((unused)) r10000_llsc_war(void)
 {
 	return R10000_LLSC_WAR;
 }
@@ -128,7 +128,7 @@ struct insn {
 	 | (e) << RE_SH						\
 	 | (f) << FUNC_SH)
 
-static __initdata struct insn insn_table[] = {
+static __cpuinitdata struct insn insn_table[] = {
 	{ insn_addiu, M(addiu_op,0,0,0,0,0), RS | RT | SIMM },
 	{ insn_addu, M(spec_op,0,0,0,0,addu_op), RS | RT | RD },
 	{ insn_and, M(spec_op,0,0,0,0,and_op), RS | RT | RD },
@@ -181,7 +181,7 @@ static __initdata struct insn insn_table[] = {
 
 #undef M
 
-static __init u32 build_rs(u32 arg)
+static __cpuinit u32 build_rs(u32 arg)
 {
 	if (arg & ~RS_MASK)
 		printk(KERN_WARNING "TLB synthesizer field overflow\n");
@@ -189,7 +189,7 @@ static __init u32 build_rs(u32 arg)
 	return (arg & RS_MASK) << RS_SH;
 }
 
-static __init u32 build_rt(u32 arg)
+static __cpuinit u32 build_rt(u32 arg)
 {
 	if (arg & ~RT_MASK)
 		printk(KERN_WARNING "TLB synthesizer field overflow\n");
@@ -197,7 +197,7 @@ static __init u32 build_rt(u32 arg)
 	return (arg & RT_MASK) << RT_SH;
 }
 
-static __init u32 build_rd(u32 arg)
+static __cpuinit u32 build_rd(u32 arg)
 {
 	if (arg & ~RD_MASK)
 		printk(KERN_WARNING "TLB synthesizer field overflow\n");
@@ -205,7 +205,7 @@ static __init u32 build_rd(u32 arg)
 	return (arg & RD_MASK) << RD_SH;
 }
 
-static __init u32 build_re(u32 arg)
+static __cpuinit u32 build_re(u32 arg)
 {
 	if (arg & ~RE_MASK)
 		printk(KERN_WARNING "TLB synthesizer field overflow\n");
@@ -213,7 +213,7 @@ static __init u32 build_re(u32 arg)
 	return (arg & RE_MASK) << RE_SH;
 }
 
-static __init u32 build_simm(s32 arg)
+static __cpuinit u32 build_simm(s32 arg)
 {
 	if (arg > 0x7fff || arg < -0x8000)
 		printk(KERN_WARNING "TLB synthesizer field overflow\n");
@@ -221,7 +221,7 @@ static __init u32 build_simm(s32 arg)
 	return arg & 0xffff;
 }
 
-static __init u32 build_uimm(u32 arg)
+static __cpuinit u32 build_uimm(u32 arg)
 {
 	if (arg & ~IMM_MASK)
 		printk(KERN_WARNING "TLB synthesizer field overflow\n");
@@ -229,7 +229,7 @@ static __init u32 build_uimm(u32 arg)
 	return arg & IMM_MASK;
 }
 
-static __init u32 build_bimm(s32 arg)
+static __cpuinit u32 build_bimm(s32 arg)
 {
 	if (arg > 0x1ffff || arg < -0x20000)
 		printk(KERN_WARNING "TLB synthesizer field overflow\n");
@@ -240,7 +240,7 @@ static __init u32 build_bimm(s32 arg)
 	return ((arg < 0) ? (1 << 15) : 0) | ((arg >> 2) & 0x7fff);
 }
 
-static __init u32 build_jimm(u32 arg)
+static __cpuinit u32 build_jimm(u32 arg)
 {
 	if (arg & ~((JIMM_MASK) << 2))
 		printk(KERN_WARNING "TLB synthesizer field overflow\n");
@@ -248,7 +248,7 @@ static __init u32 build_jimm(u32 arg)
 	return (arg >> 2) & JIMM_MASK;
 }
 
-static __init u32 build_func(u32 arg)
+static __cpuinit u32 build_func(u32 arg)
 {
 	if (arg & ~FUNC_MASK)
 		printk(KERN_WARNING "TLB synthesizer field overflow\n");
@@ -256,7 +256,7 @@ static __init u32 build_func(u32 arg)
 	return arg & FUNC_MASK;
 }
 
-static __init u32 build_set(u32 arg)
+static __cpuinit u32 build_set(u32 arg)
 {
 	if (arg & ~SET_MASK)
 		printk(KERN_WARNING "TLB synthesizer field overflow\n");
@@ -268,7 +268,7 @@ static __init u32 build_set(u32 arg)
  * The order of opcode arguments is implicitly left to right,
  * starting with RS and ending with FUNC or IMM.
  */
-static void __init build_insn(u32 **buf, enum opcode opc, ...)
+static void __cpuinit build_insn(u32 **buf, enum opcode opc, ...)
 {
 	struct insn *ip = NULL;
 	unsigned int i;
@@ -303,69 +303,69 @@ static void __init build_insn(u32 **buf, enum opcode opc, ...)
 }
 
 #define I_u1u2u3(op)						\
-	static inline void __init i##op(u32 **buf, unsigned int a,	\
+	static inline void __cpuinit i##op(u32 **buf, unsigned int a,	\
 	 	unsigned int b, unsigned int c)			\
 	{							\
 		build_insn(buf, insn##op, a, b, c);		\
 	}
 
 #define I_u2u1u3(op)						\
-	static inline void __init i##op(u32 **buf, unsigned int a,	\
+	static inline void __cpuinit i##op(u32 **buf, unsigned int a,	\
 	 	unsigned int b, unsigned int c)			\
 	{							\
 		build_insn(buf, insn##op, b, a, c);		\
 	}
 
 #define I_u3u1u2(op)						\
-	static inline void __init i##op(u32 **buf, unsigned int a,	\
+	static inline void __cpuinit i##op(u32 **buf, unsigned int a,	\
 	 	unsigned int b, unsigned int c)			\
 	{							\
 		build_insn(buf, insn##op, b, c, a);		\
 	}
 
 #define I_u1u2s3(op)						\
-	static inline void __init i##op(u32 **buf, unsigned int a,	\
+	static inline void __cpuinit i##op(u32 **buf, unsigned int a,	\
 	 	unsigned int b, signed int c)			\
 	{							\
 		build_insn(buf, insn##op, a, b, c);		\
 	}
 
 #define I_u2s3u1(op)						\
-	static inline void __init i##op(u32 **buf, unsigned int a,	\
+	static inline void __cpuinit i##op(u32 **buf, unsigned int a,	\
 	 	signed int b, unsigned int c)			\
 	{							\
 		build_insn(buf, insn##op, c, a, b);		\
 	}
 
 #define I_u2u1s3(op)						\
-	static inline void __init i##op(u32 **buf, unsigned int a,	\
+	static inline void __cpuinit i##op(u32 **buf, unsigned int a,	\
 	 	unsigned int b, signed int c)			\
 	{							\
 		build_insn(buf, insn##op, b, a, c);		\
 	}
 
 #define I_u1u2(op)						\
-	static inline void __init i##op(u32 **buf, unsigned int a,	\
+	static inline void __cpuinit i##op(u32 **buf, unsigned int a,	\
 	 	unsigned int b)					\
 	{							\
 		build_insn(buf, insn##op, a, b);		\
 	}
 
 #define I_u1s2(op)						\
-	static inline void __init i##op(u32 **buf, unsigned int a,	\
+	static inline void __cpuinit i##op(u32 **buf, unsigned int a,	\
 	 	signed int b)					\
 	{							\
 		build_insn(buf, insn##op, a, b);		\
 	}
 
 #define I_u1(op)						\
-	static inline void __init i##op(u32 **buf, unsigned int a)	\
+	static inline void __cpuinit i##op(u32 **buf, unsigned int a)	\
 	{							\
 		build_insn(buf, insn##op, a);			\
 	}
 
 #define I_0(op)							\
-	static inline void __init i##op(u32 **buf)		\
+	static inline void __cpuinit i##op(u32 **buf)		\
 	{							\
 		build_insn(buf, insn##op);			\
 	}
@@ -442,7 +442,7 @@ struct label {
 	enum label_id lab;
 };
 
-static __init void build_label(struct label **lab, u32 *addr,
+static __cpuinit void build_label(struct label **lab, u32 *addr,
 			       enum label_id l)
 {
 	(*lab)->addr = addr;
@@ -508,34 +508,34 @@ L_LA(_r3000_write_probe_fail)
 #define i_ehb(buf) i_sll(buf, 0, 0, 3)
 
 #ifdef CONFIG_64BIT
-static __init int __attribute__((unused)) in_compat_space_p(long addr)
+static __cpuinit int __attribute__((unused)) in_compat_space_p(long addr)
 {
 	/* Is this address in 32bit compat space? */
 	return (((addr) & 0xffffffff00000000L) == 0xffffffff00000000L);
 }
 
-static __init int __attribute__((unused)) rel_highest(long val)
+static __cpuinit int __attribute__((unused)) rel_highest(long val)
 {
 	return ((((val + 0x800080008000L) >> 48) & 0xffff) ^ 0x8000) - 0x8000;
 }
 
-static __init int __attribute__((unused)) rel_higher(long val)
+static __cpuinit int __attribute__((unused)) rel_higher(long val)
 {
 	return ((((val + 0x80008000L) >> 32) & 0xffff) ^ 0x8000) - 0x8000;
 }
 #endif
 
-static __init int rel_hi(long val)
+static __cpuinit int rel_hi(long val)
 {
 	return ((((val + 0x8000L) >> 16) & 0xffff) ^ 0x8000) - 0x8000;
 }
 
-static __init int rel_lo(long val)
+static __cpuinit int rel_lo(long val)
 {
 	return ((val & 0xffff) ^ 0x8000) - 0x8000;
 }
 
-static __init void i_LA_mostly(u32 **buf, unsigned int rs, long addr)
+static __cpuinit void i_LA_mostly(u32 **buf, unsigned int rs, long addr)
 {
 #ifdef CONFIG_64BIT
 	if (!in_compat_space_p(addr)) {
@@ -553,7 +553,7 @@ static __init void i_LA_mostly(u32 **buf, unsigned int rs, long addr)
 		i_lui(buf, rs, rel_hi(addr));
 }
 
-static __init void __attribute__((unused)) i_LA(u32 **buf, unsigned int rs,
+static __cpuinit void __attribute__((unused)) i_LA(u32 **buf, unsigned int rs,
 						long addr)
 {
 	i_LA_mostly(buf, rs, addr);
@@ -571,7 +571,7 @@ struct reloc {
 	enum label_id lab;
 };
 
-static __init void r_mips_pc16(struct reloc **rel, u32 *addr,
+static __cpuinit void r_mips_pc16(struct reloc **rel, u32 *addr,
 			       enum label_id l)
 {
 	(*rel)->addr = addr;
@@ -596,7 +596,7 @@ static inline void __resolve_relocs(struct reloc *rel, struct label *lab)
 	}
 }
 
-static __init void resolve_relocs(struct reloc *rel, struct label *lab)
+static __cpuinit void resolve_relocs(struct reloc *rel, struct label *lab)
 {
 	struct label *l;
 
@@ -606,7 +606,7 @@ static __init void resolve_relocs(struct reloc *rel, struct label *lab)
 				__resolve_relocs(rel, l);
 }
 
-static __init void move_relocs(struct reloc *rel, u32 *first, u32 *end,
+static __cpuinit void move_relocs(struct reloc *rel, u32 *first, u32 *end,
 			       long off)
 {
 	for (; rel->lab != label_invalid; rel++)
@@ -614,7 +614,7 @@ static __init void move_relocs(struct reloc *rel, u32 *first, u32 *end,
 			rel->addr += off;
 }
 
-static __init void move_labels(struct label *lab, u32 *first, u32 *end,
+static __cpuinit void move_labels(struct label *lab, u32 *first, u32 *end,
 			       long off)
 {
 	for (; lab->lab != label_invalid; lab++)
@@ -622,7 +622,7 @@ static __init void move_labels(struct label *lab, u32 *first, u32 *end,
 			lab->addr += off;
 }
 
-static __init void copy_handler(struct reloc *rel, struct label *lab,
+static __cpuinit void copy_handler(struct reloc *rel, struct label *lab,
 				u32 *first, u32 *end, u32 *target)
 {
 	long off = (long)(target - first);
@@ -633,7 +633,7 @@ static __init void copy_handler(struct reloc *rel, struct label *lab,
 	move_labels(lab, first, end, off);
 }
 
-static __init int __attribute__((unused)) insn_has_bdelay(struct reloc *rel,
+static __cpuinit int __attribute__((unused)) insn_has_bdelay(struct reloc *rel,
 							  u32 *addr)
 {
 	for (; rel->lab != label_invalid; rel++) {
@@ -647,42 +647,42 @@ static __init int __attribute__((unused)) insn_has_bdelay(struct reloc *rel,
 }
 
 /* convenience functions for labeled branches */
-static void __init __attribute__((unused))
+static void __cpuinit __attribute__((unused))
 	il_bltz(u32 **p, struct reloc **r, unsigned int reg, enum label_id l)
 {
 	r_mips_pc16(r, *p, l);
 	i_bltz(p, reg, 0);
 }
 
-static void __init __attribute__((unused)) il_b(u32 **p, struct reloc **r,
+static void __cpuinit __attribute__((unused)) il_b(u32 **p, struct reloc **r,
 					 enum label_id l)
 {
 	r_mips_pc16(r, *p, l);
 	i_b(p, 0);
 }
 
-static void __init il_beqz(u32 **p, struct reloc **r, unsigned int reg,
+static void __cpuinit il_beqz(u32 **p, struct reloc **r, unsigned int reg,
 		    enum label_id l)
 {
 	r_mips_pc16(r, *p, l);
 	i_beqz(p, reg, 0);
 }
 
-static void __init __attribute__((unused))
+static void __cpuinit __attribute__((unused))
 il_beqzl(u32 **p, struct reloc **r, unsigned int reg, enum label_id l)
 {
 	r_mips_pc16(r, *p, l);
 	i_beqzl(p, reg, 0);
 }
 
-static void __init il_bnez(u32 **p, struct reloc **r, unsigned int reg,
+static void __cpuinit il_bnez(u32 **p, struct reloc **r, unsigned int reg,
 		    enum label_id l)
 {
 	r_mips_pc16(r, *p, l);
 	i_bnez(p, reg, 0);
 }
 
-static void __init il_bgezl(u32 **p, struct reloc **r, unsigned int reg,
+static void __cpuinit il_bgezl(u32 **p, struct reloc **r, unsigned int reg,
 		     enum label_id l)
 {
 	r_mips_pc16(r, *p, l);
@@ -718,16 +718,16 @@ static void __init il_bgezl(u32 **p, struct reloc **r, unsigned int reg,
  * We deliberately chose a buffer size of 128, so we won't scribble
  * over anything important on overflow before we panic.
  */
-static __initdata u32 tlb_handler[128];
+static __cpuinitdata u32 tlb_handler[128];
 
 /* simply assume worst case size for labels and relocs */
-static __initdata struct label labels[128];
-static __initdata struct reloc relocs[128];
+static __cpuinitdata struct label labels[128];
+static __cpuinitdata struct reloc relocs[128];
 
 /*
  * The R3000 TLB handler is simple.
  */
-static void __init build_r3000_tlb_refill_handler(void)
+static void __cpuinit build_r3000_tlb_refill_handler(void)
 {
 	long pgdc = (long)pgd_current;
 	u32 *p;
@@ -777,7 +777,7 @@ static void __init build_r3000_tlb_refill_handler(void)
  * other one.To keep things simple, we first assume linear space,
  * then we relocate it to the final handler layout as needed.
  */
-static __initdata u32 final_handler[64];
+static __cpuinitdata u32 final_handler[64];
 
 /*
  * Hazards
@@ -801,7 +801,7 @@ static __initdata u32 final_handler[64];
  *
  * As if we MIPS hackers wouldn't know how to nop pipelines happy ...
  */
-static __init void __attribute__((unused)) build_tlb_probe_entry(u32 **p)
+static __cpuinit void __attribute__((unused)) build_tlb_probe_entry(u32 **p)
 {
 	switch (current_cpu_data.cputype) {
 	/* Found by experiment: R4600 v2.0 needs this, too.  */
@@ -825,7 +825,7 @@ static __init void __attribute__((unused)) build_tlb_probe_entry(u32 **p)
  */
 enum tlb_write_entry { tlb_random, tlb_indexed };
 
-static __init void build_tlb_write_entry(u32 **p, struct label **l,
+static __cpuinit void build_tlb_write_entry(u32 **p, struct label **l,
 					 struct reloc **r,
 					 enum tlb_write_entry wmode)
 {
@@ -963,7 +963,7 @@ static __init void build_tlb_write_entry(u32 **p, struct label **l,
  * TMP and PTR are scratch.
  * TMP will be clobbered, PTR will hold the pmd entry.
  */
-static __init void
+static __cpuinit void
 build_get_pmde64(u32 **p, struct label **l, struct reloc **r,
 		 unsigned int tmp, unsigned int ptr)
 {
@@ -1041,7 +1041,7 @@ build_get_pmde64(u32 **p, struct label **l, struct reloc **r,
  * BVADDR is the faulting address, PTR is scratch.
  * PTR will hold the pgd for vmalloc.
  */
-static __init void
+static __cpuinit void
 build_get_pgd_vmalloc64(u32 **p, struct label **l, struct reloc **r,
 			unsigned int bvaddr, unsigned int ptr)
 {
@@ -1067,7 +1067,7 @@ build_get_pgd_vmalloc64(u32 **p, struct label **l, struct reloc **r,
  * TMP and PTR are scratch.
  * TMP will be clobbered, PTR will hold the pgd entry.
  */
-static __init void __attribute__((unused))
+static __cpuinit void __attribute__((unused))
 build_get_pgde32(u32 **p, unsigned int tmp, unsigned int ptr)
 {
 	long pgdc = (long)pgd_current;
@@ -1102,7 +1102,7 @@ build_get_pgde32(u32 **p, unsigned int tmp, unsigned int ptr)
 
 #endif /* !CONFIG_64BIT */
 
-static __init void build_adjust_context(u32 **p, unsigned int ctx)
+static __cpuinit void build_adjust_context(u32 **p, unsigned int ctx)
 {
 	unsigned int shift = 4 - (PTE_T_LOG2 + 1) + PAGE_SHIFT - 12;
 	unsigned int mask = (PTRS_PER_PTE / 2 - 1) << (PTE_T_LOG2 + 1);
@@ -1128,7 +1128,8 @@ static __init void build_adjust_context(u32 **p, unsigned int ctx)
 	i_andi(p, ctx, ctx, mask);
 }
 
-static __init void build_get_ptep(u32 **p, unsigned int tmp, unsigned int ptr)
+static __cpuinit void build_get_ptep(u32 **p, unsigned int tmp,
+	unsigned int ptr)
 {
 	/*
 	 * Bug workaround for the Nevada. It seems as if under certain
@@ -1153,7 +1154,7 @@ static __init void build_get_ptep(u32 **p, unsigned int tmp, unsigned int ptr)
 	i_ADDU(p, ptr, ptr, tmp); /* add in offset */
 }
 
-static __init void build_update_entries(u32 **p, unsigned int tmp,
+static __cpuinit void build_update_entries(u32 **p, unsigned int tmp,
 					unsigned int ptep)
 {
 	/*
@@ -1196,7 +1197,7 @@ static __init void build_update_entries(u32 **p, unsigned int tmp,
 #endif
 }
 
-static void __init build_r4000_tlb_refill_handler(void)
+static void __cpuinit build_r4000_tlb_refill_handler(void)
 {
 	u32 *p = tlb_handler;
 	struct label *l = labels;
@@ -1344,7 +1345,7 @@ u32 __tlb_handler_align handle_tlbl[FASTPATH_SIZE];
 u32 __tlb_handler_align handle_tlbs[FASTPATH_SIZE];
 u32 __tlb_handler_align handle_tlbm[FASTPATH_SIZE];
 
-static void __init
+static void __cpuinit
 iPTE_LW(u32 **p, struct label **l, unsigned int pte, unsigned int ptr)
 {
 #ifdef CONFIG_SMP
@@ -1364,7 +1365,7 @@ iPTE_LW(u32 **p, struct label **l, unsigned int pte, unsigned int ptr)
 #endif
 }
 
-static void __init
+static void __cpuinit
 iPTE_SW(u32 **p, struct reloc **r, unsigned int pte, unsigned int ptr,
 	unsigned int mode)
 {
@@ -1424,7 +1425,7 @@ iPTE_SW(u32 **p, struct reloc **r, unsigned int pte, unsigned int ptr,
  * the page table where this PTE is located, PTE will be re-loaded
  * with it's original value.
  */
-static void __init
+static void __cpuinit
 build_pte_present(u32 **p, struct label **l, struct reloc **r,
 		  unsigned int pte, unsigned int ptr, enum label_id lid)
 {
@@ -1435,7 +1436,7 @@ build_pte_present(u32 **p, struct label **l, struct reloc **r,
 }
 
 /* Make PTE valid, store result in PTR. */
-static void __init
+static void __cpuinit
 build_make_valid(u32 **p, struct reloc **r, unsigned int pte,
 		 unsigned int ptr)
 {
@@ -1448,7 +1449,7 @@ build_make_valid(u32 **p, struct reloc **r, unsigned int pte,
  * Check if PTE can be written to, if not branch to LABEL. Regardless
  * restore PTE with value from PTR when done.
  */
-static void __init
+static void __cpuinit
 build_pte_writable(u32 **p, struct label **l, struct reloc **r,
 		   unsigned int pte, unsigned int ptr, enum label_id lid)
 {
@@ -1461,7 +1462,7 @@ build_pte_writable(u32 **p, struct label **l, struct reloc **r,
 /* Make PTE writable, update software status bits as well, then store
  * at PTR.
  */
-static void __init
+static void __cpuinit
 build_make_write(u32 **p, struct reloc **r, unsigned int pte,
 		 unsigned int ptr)
 {
@@ -1475,7 +1476,7 @@ build_make_write(u32 **p, struct reloc **r, unsigned int pte,
  * Check if PTE can be modified, if not branch to LABEL. Regardless
  * restore PTE with value from PTR when done.
  */
-static void __init
+static void __cpuinit
 build_pte_modifiable(u32 **p, struct label **l, struct reloc **r,
 		     unsigned int pte, unsigned int ptr, enum label_id lid)
 {
@@ -1492,7 +1493,7 @@ build_pte_modifiable(u32 **p, struct label **l, struct reloc **r,
  * This places the pte into ENTRYLO0 and writes it with tlbwi.
  * Then it returns.
  */
-static void __init
+static void __cpuinit
 build_r3000_pte_reload_tlbwi(u32 **p, unsigned int pte, unsigned int tmp)
 {
 	i_mtc0(p, pte, C0_ENTRYLO0); /* cp0 delay */
@@ -1508,7 +1509,7 @@ build_r3000_pte_reload_tlbwi(u32 **p, unsigned int pte, unsigned int tmp)
  * may have the probe fail bit set as a result of a trap on a
  * kseg2 access, i.e. without refill.  Then it returns.
  */
-static void __init
+static void __cpuinit
 build_r3000_tlb_reload_write(u32 **p, struct label **l, struct reloc **r,
 			     unsigned int pte, unsigned int tmp)
 {
@@ -1525,7 +1526,7 @@ build_r3000_tlb_reload_write(u32 **p, struct label **l, struct reloc **r,
 	i_rfe(p); /* branch delay */
 }
 
-static void __init
+static void __cpuinit
 build_r3000_tlbchange_handler_head(u32 **p, unsigned int pte,
 				   unsigned int ptr)
 {
@@ -1545,7 +1546,7 @@ build_r3000_tlbchange_handler_head(u32 **p, unsigned int pte,
 	i_tlbp(p); /* load delay */
 }
 
-static void __init build_r3000_tlb_load_handler(void)
+static void __cpuinit build_r3000_tlb_load_handler(void)
 {
 	u32 *p = handle_tlbl;
 	struct label *l = labels;
@@ -1582,7 +1583,7 @@ static void __init build_r3000_tlb_load_handler(void)
 #endif
 }
 
-static void __init build_r3000_tlb_store_handler(void)
+static void __cpuinit build_r3000_tlb_store_handler(void)
 {
 	u32 *p = handle_tlbs;
 	struct label *l = labels;
@@ -1619,7 +1620,7 @@ static void __init build_r3000_tlb_store_handler(void)
 #endif
 }
 
-static void __init build_r3000_tlb_modify_handler(void)
+static void __cpuinit build_r3000_tlb_modify_handler(void)
 {
 	u32 *p = handle_tlbm;
 	struct label *l = labels;
@@ -1659,7 +1660,7 @@ static void __init build_r3000_tlb_modify_handler(void)
 /*
  * R4000 style TLB load/store/modify handlers.
  */
-static void __init
+static void __cpuinit
 build_r4000_tlbchange_handler_head(u32 **p, struct label **l,
 				   struct reloc **r, unsigned int pte,
 				   unsigned int ptr)
@@ -1683,7 +1684,7 @@ build_r4000_tlbchange_handler_head(u32 **p, struct label **l,
 	build_tlb_probe_entry(p);
 }
 
-static void __init
+static void __cpuinit
 build_r4000_tlbchange_handler_tail(u32 **p, struct label **l,
 				   struct reloc **r, unsigned int tmp,
 				   unsigned int ptr)
@@ -1700,7 +1701,7 @@ build_r4000_tlbchange_handler_tail(u32 **p, struct label **l,
 #endif
 }
 
-static void __init build_r4000_tlb_load_handler(void)
+static void __cpuinit build_r4000_tlb_load_handler(void)
 {
 	u32 *p = handle_tlbl;
 	struct label *l = labels;
@@ -1745,7 +1746,7 @@ static void __init build_r4000_tlb_load_handler(void)
 #endif
 }
 
-static void __init build_r4000_tlb_store_handler(void)
+static void __cpuinit build_r4000_tlb_store_handler(void)
 {
 	u32 *p = handle_tlbs;
 	struct label *l = labels;
@@ -1781,7 +1782,7 @@ static void __init build_r4000_tlb_store_handler(void)
 #endif
 }
 
-static void __init build_r4000_tlb_modify_handler(void)
+static void __cpuinit build_r4000_tlb_modify_handler(void)
 {
 	u32 *p = handle_tlbm;
 	struct label *l = labels;
@@ -1818,7 +1819,7 @@ static void __init build_r4000_tlb_modify_handler(void)
 #endif
 }
 
-void __init build_tlb_refill_handler(void)
+void __cpuinit build_tlb_refill_handler(void)
 {
 	/*
 	 * The refill handler is generated per-CPU, multi-node systems
@@ -1864,7 +1865,7 @@ void __init build_tlb_refill_handler(void)
 	}
 }
 
-void __init flush_tlb_handlers(void)
+void __cpuinit flush_tlb_handlers(void)
 {
 	flush_icache_range((unsigned long)handle_tlbl,
 			   (unsigned long)handle_tlbl + sizeof(handle_tlbl));

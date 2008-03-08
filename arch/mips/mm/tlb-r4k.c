@@ -373,7 +373,7 @@ void __init add_wired_entry(unsigned long entrylo0, unsigned long entrylo1,
  * lifetime of the system
  */
 
-static int temp_tlb_entry __initdata;
+static int temp_tlb_entry __cpuinitdata;
 
 __init int add_temporary_entry(unsigned long entrylo0, unsigned long entrylo1,
 			       unsigned long entryhi, unsigned long pagemask)
@@ -486,7 +486,7 @@ static void __init probe_tlb(unsigned long config)
 #endif
 }
 
-static int __initdata ntlb = 0;
+static int __cpuinitdata ntlb = 0;
 static int __init set_ntlb(char *str)
 {
 	get_option(&str, &ntlb);
@@ -495,7 +495,7 @@ static int __init set_ntlb(char *str)
 
 __setup("ntlb=", set_ntlb);
 
-void __init tlb_init(void)
+void __cpuinit tlb_init(void)
 {
 	unsigned int config = read_c0_config();
 
