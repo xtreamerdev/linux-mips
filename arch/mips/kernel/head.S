@@ -194,8 +194,11 @@ NESTED(kernel_entry, 16, sp)			# kernel entry point
 
 	j		start_kernel
 	END(kernel_entry)
+	__FINIT
 
+#ifndef CONFIG_HOTPLUG_CPU
 	__INIT
+#endif
 
 #ifdef CONFIG_SMP
 /*
