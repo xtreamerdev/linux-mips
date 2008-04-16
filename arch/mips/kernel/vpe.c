@@ -968,12 +968,14 @@ int vpe_elfload(struct vpe * v)
 		struct elf_phdr *phdr = (struct elf_phdr *) ((char *)hdr + hdr->e_phoff);
 
 		for (i = 0; i < hdr->e_phnum; i++) {
-			if (phdr->p_type != PT_LOAD)
-				continue;
-
-			memcpy((void *)phdr->p_vaddr, (char *)hdr + phdr->p_offset, phdr->p_filesz);
-			memset((void *)phdr->p_vaddr + phdr->p_filesz, 0, phdr->p_memsz - phdr->p_filesz);
-			phdr++;
+			if (phdr->p_type == PT_LOAD) {
+				memcpy((void *)phdr->p_paddr,
+				       (char *)hdr + phdr->p_offset,
+				       phdr->p_filesz);
+				memset((void *)phdr->p_paddr + phdr->p_filesz,
+				       0, phdr->p_memsz - phdr->p_filesz);
+		    }
+		    phdr++;
 		}
 
 		for (i = 0; i < hdr->e_shnum; i++) {
