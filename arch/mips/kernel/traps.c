@@ -620,11 +620,11 @@ asmlinkage void do_fpe(struct pt_regs *regs, unsigned long fcr31)
 	force_sig(SIGFPE, current);
 }
 
-static void do_trap_or_bp(struct pt_regs *regs, unsigned int code, int trap)
+static void do_trap_or_bp(struct pt_regs *regs, unsigned int code,
+	const char *str)
 {
-	const char *str = trap ? "Trap" : "Break";
 	siginfo_t info;
-	char b[30];
+	char b[40];
 
 	/*
 	 * A short test says that IRIX 5.3 sends SIGTRAP for all trap
@@ -652,6 +652,7 @@ static void do_trap_or_bp(struct pt_regs *regs, unsigned int code, int trap)
 		break;
 	default:
 		scnprintf(b, sizeof(b), "%s instruction in kernel code", str);
+		die_if_kernel(b, regs);
 		force_sig(SIGTRAP, current);
 	}
 }
@@ -673,7 +674,7 @@ asmlinkage void do_bp(struct pt_regs *regs)
 	if (bcode >= (1 << 10))
 		bcode >>= 10;
 
-	do_trap_or_bp(regs, bcode, 0);
+	do_trap_or_bp(regs, bcode, "Break");
 	return;
 
 out_sigsegv:
@@ -693,7 +694,7 @@ asmlinkage void do_tr(struct pt_regs *regs)
 	if (!(opcode & OPCODE))
 		tcode = ((opcode >> 6) & ((1 << 10) - 1));
 
-	do_trap_or_bp(regs, tcode, 1);
+	do_trap_or_bp(regs, tcode, "Trap");
 	return;
 
 out_sigsegv:
