@@ -804,8 +804,9 @@ static __cpuinitdata u32 final_handler[64];
 static __cpuinit void __attribute__((unused)) build_tlb_probe_entry(u32 **p)
 {
 	switch (current_cpu_data.cputype) {
-	/* Found by experiment: R4600 v2.0 needs this, too.  */
+	/* Found by experiment: R4600 v2.0/R4700 needs this, too.  */
 	case CPU_R4600:
+	case CPU_R4700:
 	case CPU_R5000:
 	case CPU_R5000A:
 	case CPU_NEVADA:
