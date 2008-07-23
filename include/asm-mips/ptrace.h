@@ -37,8 +37,8 @@ struct pt_regs {
 
 	/* Saved special registers. */
 	unsigned long cp0_status;
-	unsigned long lo;
 	unsigned long hi;
+	unsigned long lo;
 	unsigned long cp0_badvaddr;
 	unsigned long cp0_cause;
 	unsigned long cp0_epc;
