@@ -25,6 +25,7 @@
 #include <linux/kernel_stat.h>
 
 #include <asm/errno.h>
+#include <asm/gdb-stub.h>
 #include <asm/irq_regs.h>
 #include <asm/signal.h>
 #include <asm/system.h>
