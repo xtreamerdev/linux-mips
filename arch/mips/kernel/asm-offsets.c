@@ -14,6 +14,7 @@
 #include <linux/mm.h>
 #include <linux/interrupt.h>
 #include <linux/kbuild.h>
+#include <asm/gdb-stub.h>
 #include <asm/ptrace.h>
 #include <asm/processor.h>
 
@@ -294,4 +295,110 @@ void output_irq_cpustat_t_defines(void)
 			offsetof(irq_cpustat_t, __softirq_pending));
 	DEFINE(IC_IRQ_CPUSTAT_T, sizeof(irq_cpustat_t));
 	BLANK();
+}
+
+void output_gdbreg_defines(void)
+{
+	COMMENT("MIPS struct gdb_regs offsets.");
+	OFFSET(GDB_FR_REG0, gdb_regs, reg0);
+	OFFSET(GDB_FR_REG1, gdb_regs, reg1);
+	OFFSET(GDB_FR_REG2, gdb_regs, reg2);
+	OFFSET(GDB_FR_REG3, gdb_regs, reg3);
+	OFFSET(GDB_FR_REG4, gdb_regs, reg4);
+	OFFSET(GDB_FR_REG5, gdb_regs, reg5);
+	OFFSET(GDB_FR_REG6, gdb_regs, reg6);
+	OFFSET(GDB_FR_REG7, gdb_regs, reg7);
+	OFFSET(GDB_FR_REG8, gdb_regs, reg8);
+	OFFSET(GDB_FR_REG9, gdb_regs, reg9);
+	OFFSET(GDB_FR_REG10, gdb_regs, reg10);
+	OFFSET(GDB_FR_REG11, gdb_regs, reg11);
+	OFFSET(GDB_FR_REG12, gdb_regs, reg12);
+	OFFSET(GDB_FR_REG13, gdb_regs, reg13);
+	OFFSET(GDB_FR_REG14, gdb_regs, reg14);
+	OFFSET(GDB_FR_REG15, gdb_regs, reg15);
+	OFFSET(GDB_FR_REG16, gdb_regs, reg16);
+	OFFSET(GDB_FR_REG17, gdb_regs, reg17);
+	OFFSET(GDB_FR_REG18, gdb_regs, reg18);
+	OFFSET(GDB_FR_REG19, gdb_regs, reg19);
+	OFFSET(GDB_FR_REG20, gdb_regs, reg20);
+	OFFSET(GDB_FR_REG21, gdb_regs, reg21);
+	OFFSET(GDB_FR_REG22, gdb_regs, reg22);
+	OFFSET(GDB_FR_REG23, gdb_regs, reg23);
+	OFFSET(GDB_FR_REG24, gdb_regs, reg24);
+	OFFSET(GDB_FR_REG25, gdb_regs, reg25);
+	OFFSET(GDB_FR_REG26, gdb_regs, reg26);
+	OFFSET(GDB_FR_REG27, gdb_regs, reg27);
+	OFFSET(GDB_FR_REG28, gdb_regs, reg28);
+	OFFSET(GDB_FR_REG29, gdb_regs, reg29);
+	OFFSET(GDB_FR_REG30, gdb_regs, reg30);
+	OFFSET(GDB_FR_REG31, gdb_regs, reg31);
+	BLANK();
+
+	OFFSET(GDB_FR_STATUS, gdb_regs, cp0_status);
+	OFFSET(GDB_FR_HI, gdb_regs, hi);
+	OFFSET(GDB_FR_LO, gdb_regs, lo);
+#ifdef CONFIG_CPU_HAS_SMARTMIPS
+	OFFSET(GDB_FR_ACX, gdb_regs, acx);
+#endif
+	OFFSET(GDB_FR_BADVADDR, gdb_regs, cp0_badvaddr);
+	OFFSET(GDB_FR_CAUSE, gdb_regs, cp0_cause);
+	OFFSET(GDB_FR_EPC, gdb_regs, cp0_epc);
+	BLANK();
+
+	OFFSET(GDB_FR_FPR0, gdb_regs, fpr0);
+	OFFSET(GDB_FR_FPR1, gdb_regs, fpr1);
+	OFFSET(GDB_FR_FPR2, gdb_regs, fpr2);
+	OFFSET(GDB_FR_FPR3, gdb_regs, fpr3);
+	OFFSET(GDB_FR_FPR4, gdb_regs, fpr4);
+	OFFSET(GDB_FR_FPR5, gdb_regs, fpr5);
+	OFFSET(GDB_FR_FPR6, gdb_regs, fpr6);
+	OFFSET(GDB_FR_FPR7, gdb_regs, fpr7);
+	OFFSET(GDB_FR_FPR8, gdb_regs, fpr8);
+	OFFSET(GDB_FR_FPR9, gdb_regs, fpr9);
+	OFFSET(GDB_FR_FPR10, gdb_regs, fpr10);
+	OFFSET(GDB_FR_FPR11, gdb_regs, fpr11);
+	OFFSET(GDB_FR_FPR12, gdb_regs, fpr12);
+	OFFSET(GDB_FR_FPR13, gdb_regs, fpr13);
+	OFFSET(GDB_FR_FPR14, gdb_regs, fpr14);
+	OFFSET(GDB_FR_FPR15, gdb_regs, fpr15);
+	OFFSET(GDB_FR_FPR16, gdb_regs, fpr16);
+	OFFSET(GDB_FR_FPR17, gdb_regs, fpr17);
+	OFFSET(GDB_FR_FPR18, gdb_regs, fpr18);
+	OFFSET(GDB_FR_FPR19, gdb_regs, fpr19);
+	OFFSET(GDB_FR_FPR20, gdb_regs, fpr20);
+	OFFSET(GDB_FR_FPR21, gdb_regs, fpr21);
+	OFFSET(GDB_FR_FPR22, gdb_regs, fpr22);
+	OFFSET(GDB_FR_FPR23, gdb_regs, fpr23);
+	OFFSET(GDB_FR_FPR24, gdb_regs, fpr24);
+	OFFSET(GDB_FR_FPR25, gdb_regs, fpr25);
+	OFFSET(GDB_FR_FPR26, gdb_regs, fpr26);
+	OFFSET(GDB_FR_FPR27, gdb_regs, fpr27);
+	OFFSET(GDB_FR_FPR28, gdb_regs, fpr28);
+	OFFSET(GDB_FR_FPR29, gdb_regs, fpr29);
+	OFFSET(GDB_FR_FPR30, gdb_regs, fpr30);
+	OFFSET(GDB_FR_FPR31, gdb_regs, fpr31);
+	BLANK();
+
+	OFFSET(GDB_FR_FSR, gdb_regs, cp1_fsr);
+	OFFSET(GDB_FR_FIR, gdb_regs, cp1_fir);
+	OFFSET(GDB_FR_FRP, gdb_regs, frame_ptr);
+	OFFSET(GDB_FR_DUMMY, gdb_regs, dummy);
+
+	OFFSET(GDB_FR_CP0_INDEX, gdb_regs, cp0_index);
+	OFFSET(GDB_FR_CP0_RANDOM, gdb_regs, cp0_random);
+	OFFSET(GDB_FR_CP0_ENTRYLO0, gdb_regs, cp0_entrylo0);
+	OFFSET(GDB_FR_CP0_ENTRYLO1, gdb_regs, cp0_entrylo1);
+	OFFSET(GDB_FR_CP0_CONTEXT, gdb_regs, cp0_context);
+	OFFSET(GDB_FR_CP0_PAGEMASK, gdb_regs, cp0_pagemask);
+	OFFSET(GDB_FR_CP0_WIRED, gdb_regs, cp0_wired);
+	OFFSET(GDB_FR_CP0_REG7, gdb_regs, cp0_reg7);
+	OFFSET(GDB_FR_CP0_REG8, gdb_regs, cp0_reg8);
+	OFFSET(GDB_FR_CP0_REG9, gdb_regs, cp0_reg9);
+	OFFSET(GDB_FR_CP0_ENTRYHI, gdb_regs, cp0_entryhi);
+	OFFSET(GDB_FR_CP0_REG11, gdb_regs, cp0_reg11);
+	OFFSET(GDB_FR_CP0_REG12, gdb_regs, cp0_reg12);
+	OFFSET(GDB_FR_CP0_REG13, gdb_regs, cp0_reg13);
+	OFFSET(GDB_FR_CP0_REG14, gdb_regs, cp0_reg14);
+	OFFSET(GDB_FR_CP0_PRID, gdb_regs, cp0_prid);
+	DEFINE(GDB_FR_SIZE, sizeof(struct gdb_regs));
 }
