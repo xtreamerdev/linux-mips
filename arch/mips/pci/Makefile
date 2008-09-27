@@ -15,6 +15,7 @@ obj-$(CONFIG_MIPS_TX3927)	+= ops-tx3927.o
 obj-$(CONFIG_PCI_VR41XX)	+= ops-vr41xx.o pci-vr41xx.o
 obj-$(CONFIG_NEC_CMBVR4133)	+= fixup-vr4133.o
 obj-$(CONFIG_MARKEINS)		+= ops-emma2rh.o pci-emma2rh.o fixup-emma2rh.o
+obj-$(CONFIG_BCM47XX)		+= pci-bcm47xx.o
 
 #
 # These are still pretty much in the old state, watch, go blind.
