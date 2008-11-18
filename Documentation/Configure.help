@@ -4831,6 +4831,7 @@ CONFIG_M386
    - "Winchip-2A" for IDT Winchips with 3dNow! capabilities.
    - "CyrixIII" for VIA Cyrix III or VIA C3.
    - "VIA C3-2 for VIA C3-2 "Nehemiah" (model 9 and above).
+   - "Geode GX/LX" for AMD/NSC Geode GX and AMD Geode LX.
 
   If you don't know what to do, choose "386".
 
@@ -20200,6 +20201,22 @@ CONFIG_HW_RANDOM
 
   If unsure, say N.
 
+AMD Geode LX HW Random Number Generator support
+CONFIG_GEODE_RNG
+  This driver provides kernel-side support for the Random Number
+  Generator hardware found on the AMD Geode LX.
+
+  It runs a timer function which automatically adds entropy directly
+  into the kernel pool. You may need this driver if your system runs
+  headless and has no other source of entropy.
+
+  To compile this driver as a module ( = code which can be inserted in
+  and removed from the running kernel whenever you want), say M here
+  and read <file:Documentation/modules.txt>. The module will be called
+  hw_random.
+
+  If unsure, say N.
+
 Power Management support
 CONFIG_PM
   "Power Management" means that parts of your computer are shut
@@ -20669,6 +20686,22 @@ CONFIG_SC1200_WDT
   This driver is also available as a module ( = code which can be
   inserted in and removed from the running kernel whenever you want).
   The module is called sc1200wdt.o.  If you want to compile it as a
+  module, say M here and read <file:Documentation/modules.txt>.  Most
+  people will say N.
+
+AMD/NSC Geode Hardware Watchdog
+CONFIG_GEODE_WDT
+  This driver enables a watchdog capability built into the
+  CS5535/CS5536 companion chips for the AMD Geode GX and LX
+  processors.  This watchdog watches your kernel to make sure
+  it doesn't freeze, and if it does, it reboots your computer after
+  a certain amount of time.
+
+  This driver depends on CONFIG_MGEODE_LX.
+
+  This driver is also available as a module ( = code which can be
+  inserted in and removed from the running kernel whenever you want).
+  The module is called geodewdt.o.  If you want to compile it as a
   module, say M here and read <file:Documentation/modules.txt>.  Most
   people will say N.
 
@@ -28819,6 +28852,7 @@ CONFIG_SCx200_I2C_SDA
 NatSemi SCx200 ACCESS.bus
 CONFIG_SCx200_ACB
   Enable the use of the ACCESS.bus controllers of a SCx200 processor.
+  It also enables the I2C controller found on Geode GX/LX processors.
 
   If you don't know what to do here, say N.
 
