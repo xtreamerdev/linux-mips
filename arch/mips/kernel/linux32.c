@@ -234,9 +234,9 @@ sys32_settimeofday(struct compat_timeval __user *tv, struct timezone __user *tz)
 	return do_sys_settimeofday(tv ? &kts : NULL, tz ? &ktz : NULL);
 }
 
-SYSCALL_DEFINE5(32_llseek, unsigned long, fd, unsigned long, offset_high,
-	unsigned long, offset_low, loff_t __user *, result,
-	unsigned long, origin)
+SYSCALL_DEFINE5(32_llseek, unsigned int, fd, unsigned int, offset_high,
+		unsigned int, offset_low, loff_t __user *, result,
+		unsigned int, origin)
 {
 	return sys_llseek(fd, offset_high, offset_low, result, origin);
 }
