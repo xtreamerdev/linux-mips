@@ -1897,10 +1897,6 @@ config SECCOMP
 
 endmenu
 
-config RWSEM_GENERIC_SPINLOCK
-	bool
-	default y
-
 config LOCKDEP_SUPPORT
 	bool
 	default y
