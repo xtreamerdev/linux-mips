@@ -455,12 +455,12 @@ endif
 # Simplified: what IP22 does at 128MB+ in ksegN, IP28 does at 512MB+ in xkphys
 #
 ifdef CONFIG_SGI_IP28
-  ifeq ($(call cc-option-yn,-mr10k-cache-barrier=1), n)
-      $(error gcc doesn't support needed option -mr10k-cache-barrier=1)
+  ifeq ($(call cc-option-yn,-mr10k-cache-barrier=store), n)
+      $(error gcc doesn't support needed option -mr10k-cache-barrier=store)
   endif
 endif
 core-$(CONFIG_SGI_IP28)		+= arch/mips/sgi-ip22/
-cflags-$(CONFIG_SGI_IP28)	+= -mr10k-cache-barrier=1 -Iinclude/asm-mips/mach-ip28
+cflags-$(CONFIG_SGI_IP28)	+= -mr10k-cache-barrier=store -Iinclude/asm-mips/mach-ip28
 load-$(CONFIG_SGI_IP28)		+= 0xa800000020004000
 
 #
