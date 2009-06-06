@@ -145,11 +145,6 @@ static void sb1250_set_affinity(unsigned int irq, unsigned long mask)
 		i++;
 	}
 
-	if (mask) {
-		printk("attempted to set irq affinity for irq %d to multiple CPUs\n", irq);
-		return;
-	}
-
 	/* Convert logical CPU to physical CPU */
 	cpu = cpu_logical_map(i);
 
