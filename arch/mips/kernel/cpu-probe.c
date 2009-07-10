@@ -21,6 +21,7 @@
 #include <asm/fpu.h>
 #include <asm/mipsregs.h>
 #include <asm/system.h>
+#include <asm/spram.h>
 
 /*
  * Not all of the MIPS CPUs have the "wait" instruction available. Moreover,
@@ -668,12 +669,6 @@ static void __cpuinit decode_configs(struct cpuinfo_mips *c)
 	if (!decode_config3(c))
 		return;
 }
-
-#ifdef CONFIG_CPU_MIPSR2
-extern void spram_config(void);
-#else
-static inline void spram_config(void) {}
-#endif
 
 static inline void cpu_probe_mips(struct cpuinfo_mips *c)
 {
