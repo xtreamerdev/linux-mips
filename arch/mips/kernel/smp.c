@@ -31,6 +31,7 @@
 #include <linux/cpumask.h>
 #include <linux/cpu.h>
 #include <linux/err.h>
+#include <linux/smp.h>
 
 #include <asm/atomic.h>
 #include <asm/cpu.h>
@@ -52,8 +53,6 @@ int __cpu_logical_map[NR_CPUS];		/* Map logical to physical */
 
 EXPORT_SYMBOL(phys_cpu_present_map);
 EXPORT_SYMBOL(cpu_online_map);
-
-extern void cpu_idle(void);
 
 /* Number of TCs (or siblings in Intel speak) per CPU core */
 int smp_num_siblings = 1;
