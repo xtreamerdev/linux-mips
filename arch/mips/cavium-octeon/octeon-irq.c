@@ -180,9 +180,10 @@ static void octeon_irq_ciu0_disable(unsigned int irq)
 static void octeon_irq_ciu0_set_affinity(unsigned int irq, const struct cpumask *dest)
 {
 	int cpu;
+	unsigned long flags;
 	int bit = irq - OCTEON_IRQ_WORKQ0;	/* Bit 0-63 of EN0 */
 
-	write_lock(&octeon_irq_ciu0_rwlock);
+	write_lock_irqsave(&octeon_irq_ciu0_rwlock, flags);
 	for_each_online_cpu(cpu) {
 		int coreid = cpu_logical_map(cpu);
 		uint64_t en0 =
@@ -198,7 +199,7 @@ static void octeon_irq_ciu0_set_affinity(unsigned int irq, const struct cpumask 
 	 * of them are done.
 	 */
 	cvmx_read_csr(CVMX_CIU_INTX_EN0(cvmx_get_core_num() * 2));
-	write_unlock(&octeon_irq_ciu0_rwlock);
+	write_unlock_irqrestore(&octeon_irq_ciu0_rwlock, flags);
 }
 #endif
 
@@ -295,9 +296,10 @@ static void octeon_irq_ciu1_disable(unsigned int irq)
 static void octeon_irq_ciu1_set_affinity(unsigned int irq, const struct cpumask *dest)
 {
 	int cpu;
+	unsigned long flags;
 	int bit = irq - OCTEON_IRQ_WDOG0;	/* Bit 0-63 of EN1 */
 
-	write_lock(&octeon_irq_ciu1_rwlock);
+	write_lock_irqsave(&octeon_irq_ciu1_rwlock, flags);
 	for_each_online_cpu(cpu) {
 		int coreid = cpu_logical_map(cpu);
 		uint64_t en1 =
@@ -314,7 +316,7 @@ static void octeon_irq_ciu1_set_affinity(unsigned int irq, const struct cpumask 
 	 * of them are done.
 	 */
 	cvmx_read_csr(CVMX_CIU_INTX_EN1(cvmx_get_core_num() * 2 + 1));
-	write_unlock(&octeon_irq_ciu1_rwlock);
+	write_unlock_irqrestore(&octeon_irq_ciu1_rwlock, flags);
 }
 #endif
 
