@@ -108,10 +108,11 @@
 #define USER_PTRS_PER_PGD	(TASK_SIZE / PGDIR_SIZE)
 #define FIRST_USER_PGD_NR	0
 
-#define VMALLOC_START		XKSEG
+#define MAP_BASE		XKSEG
+#define VMALLOC_START		(MAP_BASE + (2 * PAGE_SIZE))
 #define VMALLOC_VMADDR(x)	((unsigned long)(x))
 #define VMALLOC_END	\
-	(VMALLOC_START + ((1 << PGD_ORDER) * PTRS_PER_PTE * PAGE_SIZE))
+	(MAP_BASE + ((1 << PGD_ORDER) * PTRS_PER_PTE * PAGE_SIZE))
 
 #include <asm/pgtable-bits.h>
 
