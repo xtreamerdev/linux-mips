@@ -3,6 +3,7 @@
  * Copyright (C) 2005 Mips Technologies, Inc
  */
 #include <linux/cpu.h>
+#include <linux/cpuset.h>
 #include <linux/cpumask.h>
 #include <linux/delay.h>
 #include <linux/kernel.h>
@@ -39,18 +40,16 @@ static inline struct task_struct *find_process_by_pid(pid_t pid)
 	return pid ? find_task_by_vpid(pid) : current;
 }
 
-
 /*
  * mipsmt_sys_sched_setaffinity - set the cpu affinity of a process
  */
 asmlinkage long mipsmt_sys_sched_setaffinity(pid_t pid, unsigned int len,
 				      unsigned long __user *user_mask_ptr)
 {
-	cpumask_t new_mask;
-	cpumask_t effective_mask;
-	int retval;
-	struct task_struct *p;
+	cpumask_t cpus_allowed, new_mask, effective_mask;
 	struct thread_info *ti;
+	struct task_struct *p;
+	int retval;
 
 	if (len < sizeof(new_mask))
 		return -EINVAL;
@@ -70,18 +69,17 @@ asmlinkage long mipsmt_sys_sched_setaffinity(pid_t pid, unsigned int len,
 
 	/*
 	 * It is not safe to call set_cpus_allowed with the
-	 * tasklist_lock held.  We will bump the task_struct's
+	 * tasklist_lock held. We will bump the task_struct's
 	 * usage count and drop tasklist_lock before invoking
 	 * set_cpus_allowed.
 	 */
 	get_task_struct(p);
+	read_unlock(&tasklist_lock);
 
 	retval = -EPERM;
 	if ((current->euid != p->euid) && (current->euid != p->uid) &&
-			!capable(CAP_SYS_NICE)) {
-		read_unlock(&tasklist_lock);
+			!capable(CAP_SYS_NICE))
 		goto out_unlock;
-	}
 
 	retval = security_task_setscheduler(p, 0, NULL);
 	if (retval)
@@ -90,20 +88,31 @@ asmlinkage long mipsmt_sys_sched_setaffinity(pid_t pid, unsigned int len,
 	/* Record new user-specified CPU set for future reference */
 	p->thread.user_cpus_allowed = new_mask;
 
-	/* Unlock the task list */
-	read_unlock(&tasklist_lock);
-
+ again:
 	/* Compute new global allowed CPU set if necessary */
 	ti = task_thread_info(p);
 	if (test_ti_thread_flag(ti, TIF_FPUBOUND) &&
 	    cpus_intersects(new_mask, mt_fpu_cpumask)) {
 		cpus_and(effective_mask, new_mask, mt_fpu_cpumask);
-		retval = set_cpus_allowed(p, effective_mask);
+		retval = set_cpus_allowed_ptr(p, &effective_mask);
 	} else {
+		effective_mask = new_mask;
 		clear_ti_thread_flag(ti, TIF_FPUBOUND);
-		retval = set_cpus_allowed(p, new_mask);
+		retval = set_cpus_allowed_ptr(p, &new_mask);
 	}
 
+	if (!retval) {
+		cpuset_cpus_allowed(p, &cpus_allowed);
+		if (!cpus_subset(effective_mask, cpus_allowed)) {
+			/*
+			 * We must have raced with a concurrent cpuset
+			 * update. Just reset the cpus_allowed to the
+			 * cpuset's cpus_allowed
+			 */
+			new_mask = cpus_allowed;
+			goto again;
+		}
+	}
 out_unlock:
 	put_task_struct(p);
 	put_online_cpus();
