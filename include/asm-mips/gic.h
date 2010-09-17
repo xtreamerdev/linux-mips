@@ -471,6 +471,7 @@ struct gic_intrmask_regs {
 struct gic_intr_map {
 	unsigned int intrnum; 	/* Ext Intr Num 	*/
 	unsigned int cpunum;	/* Directed to this CPU */
+#define GIC_UNUSED		0xdead			/* Dummy data */
 	unsigned int pin;	/* Directed to this Pin */
 	unsigned int polarity;	/* Polarity : +/-	*/
 	unsigned int trigtype;	/* Trigger  : Edge/Levl */

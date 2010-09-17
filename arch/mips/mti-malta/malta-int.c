@@ -369,6 +369,8 @@ static int __initdata msc_nr_eicirqs = ARRAY_SIZE(msc_eicirqmap);
  * Interrupts and CPUs/Core Interrupts. The nature of the External
  * Interrupts is also defined here - polarity/trigger.
  */
+#define X GIC_UNUSED
+
 static struct gic_intr_map gic_intr_map[] = {
 	{ GIC_EXT_INTR(0), 	X,	X,		X, 		X,		0 },
 	{ GIC_EXT_INTR(1), 	X,	X,		X, 		X,		0 },
@@ -395,6 +397,8 @@ static struct gic_intr_map gic_intr_map[] = {
 	{ GIC_EXT_INTR(22), 	3,	GIC_CPU_INT1,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
 	{ GIC_EXT_INTR(23), 	3,	GIC_CPU_INT2,	GIC_POL_POS, GIC_TRIG_EDGE,	1 },
 };
+#undef X
+
 #endif
 
 /*

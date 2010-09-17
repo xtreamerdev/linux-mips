@@ -6,7 +6,6 @@
 #include <asm/io.h>
 #include <asm/gic.h>
 #include <asm/gcmpregs.h>
-#include <asm/mips-boards/maltaint.h>
 #include <asm/irq.h>
 #include <linux/hardirq.h>
 #include <asm-generic/bitops/find.h>
@@ -249,7 +248,7 @@ static void __init gic_basic_init(void)
 	/* Setup specifics */
 	for (i = 0; i < _mapsize; i++) {
 		cpu = _intrmap[i].cpunum;
-		if (cpu == X)
+		if (cpu == GIC_UNUSED)
 			continue;
 
 		setup_intr(_intrmap[i].intrnum,
