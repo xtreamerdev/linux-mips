@@ -416,7 +416,7 @@ sys_call_table:
 	PTR	sys_pipe2
 	PTR	sys_inotify_init1
 	PTR	sys_preadv
-	PTR	sys_pwritev			/* 5390 */
+	PTR	sys_pwritev			/* 5290 */
 	PTR	sys_rt_tgsigqueueinfo
 	PTR	sys_perf_event_open
 	PTR	sys_accept4
