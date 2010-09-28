@@ -613,6 +613,9 @@ static int handle_signal(unsigned long sig, siginfo_t *info,
 	else
 		ret = current->thread.abi->setup_frame(ka, regs, sig, oldset);
 
+	if (ret)
+		return ret;
+
 	spin_lock_irq(&current->sighand->siglock);
 	sigorsets(&current->blocked, &current->blocked, &ka->sa.sa_mask);
 	if (!(ka->sa.sa_flags & SA_NODEFER))
