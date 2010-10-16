@@ -63,7 +63,7 @@ stack_done:
 	sw	t0, PT_R7(sp)		# set error flag
 	beqz	t0, 1f
 
-	lw	t1, PR_R2(sp)		# syscall number
+	lw	t1, PT_R2(sp)		# syscall number
 	negu	v0			# error
 	sw	t1, PT_R0(sp)		# save it for syscall restarting
 1:	sw	v0, PT_R2(sp)		# result
