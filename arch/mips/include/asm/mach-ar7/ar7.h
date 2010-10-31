@@ -161,4 +161,6 @@ static inline void ar7_device_off(u32 bit)
 	msleep(20);
 }
 
+void __init ar7_init_clocks(void);
+
 #endif /* __AR7_H__ */
