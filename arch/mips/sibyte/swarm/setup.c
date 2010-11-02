@@ -82,7 +82,7 @@ int swarm_be_handler(struct pt_regs *regs, int is_fixup)
 enum swarm_rtc_type {
 	RTC_NONE,
 	RTC_XICOR,
-	RTC_M4LT81
+	RTC_M41T81,
 };
 
 enum swarm_rtc_type swarm_rtc_type;
@@ -93,7 +93,7 @@ unsigned long read_persistent_clock(void)
 	case RTC_XICOR:
 		return xicor_get_time();
 
-	case RTC_M4LT81:
+	case RTC_M41T81:
 		return m41t81_get_time();
 
 	case RTC_NONE:
@@ -108,7 +108,7 @@ int rtc_mips_set_time(unsigned long sec)
 	case RTC_XICOR:
 		return xicor_set_time(sec);
 
-	case RTC_M4LT81:
+	case RTC_M41T81:
 		return m41t81_set_time(sec);
 
 	case RTC_NONE:
@@ -134,7 +134,7 @@ void __init plat_mem_setup(void)
 	if (xicor_probe())
 		swarm_rtc_type = RTC_XICOR;
 	if (m41t81_probe())
-		swarm_rtc_type = RTC_M4LT81;
+		swarm_rtc_type = RTC_M41T81;
 
 	printk("This kernel optimized for "
 #ifdef CONFIG_SIMULATION
