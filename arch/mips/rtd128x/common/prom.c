@@ -202,7 +202,6 @@ void __init rtd128x_env_get_bootrev(void)
 
 void __init prom_init(void)
 {
-	int i;
 	prom_argc = fw_arg0;
 	_prom_argv = (int *)fw_arg1;
 	_prom_envp = (int *)fw_arg2;
