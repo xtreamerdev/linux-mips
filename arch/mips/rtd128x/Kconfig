@@ -1,0 +1,14 @@
+config RTD128X_RECLAIM_BOOT_MEMORY
+        bool "reclaim memory from bootloader"
+
+#
+# FIXME: do we really need this?
+#
+#config RTD128X_EXTERNAL_TIMER
+#        bool "use external timer interrupt"
+
+#
+# TODO
+#
+#config RTD128X_WATCHDOG
+#        bool "use internal watchdog"

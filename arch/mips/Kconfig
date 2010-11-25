@@ -706,6 +706,22 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
 		Hikari
 	  Say Y here for most Octeon reference boards.
 
+config RTD128X
+	bool "Realtek Galaxy SoC based boards"
+	select CEVT_R4K
+	select CSRC_R4K
+	select IRQ_CPU
+	select GENERIC_ISA_DMA
+	select DMA_NONCOHERENT
+	select SYS_HAS_CPU_MIPS32_R2
+	select SYS_HAS_EARLY_PRINTK
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_SUPPORTS_ZBOOT_UART16550
+	help
+	  This options supports Realtek SoC based boards.
+	  Say Y here for Realtek SoC based boards.
+
 endchoice
 
 source "arch/mips/alchemy/Kconfig"
@@ -721,6 +737,7 @@ source "arch/mips/txx9/Kconfig"
 source "arch/mips/vr41xx/Kconfig"
 source "arch/mips/cavium-octeon/Kconfig"
 source "arch/mips/loongson/Kconfig"
+source "arch/mips/rtd128x/Kconfig"
 
 endmenu
 

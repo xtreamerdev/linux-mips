@@ -1,0 +1,8 @@
+#
+# Realtek Galaxy SoC boards
+#
+
+platform-${CONFIG_RTD128X} += rtd128x/
+cflags-${CONFIG_RTD128X}   += -I$(srctree)/arch/mips/include/asm/mach-rtd128x/
+load-${CONFIG_RTD128X}     := 0xffffffff80100000
+all-$(CONFIG_RTD128X)      := $(COMPRESSION_FNAME).bin
